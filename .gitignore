@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# build outputs
+.next/
+dist/
+build/
+*.tsbuildinfo
+
+# turbo
+.turbo/
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editor / os
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# fonts (binary, not committed — see apps/web/public/fonts/README.md)

@@ -1,0 +1,9 @@
+{
+  "extends": "@arbyte/config/typescript/nextjs.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "declaration": true,
+    "noEmit": false
+  },
+  "include": ["src"]
+}

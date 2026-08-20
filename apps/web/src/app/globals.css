@@ -1,0 +1,6 @@
+@import "tailwindcss";
+@import "@arbyte/tokens";
+
+body {
+  font-family: var(--font-estedad), sans-serif;
+}
