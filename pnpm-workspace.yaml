@@ -3,7 +3,14 @@ packages:
   - "packages/*"
 allowBuilds:
   '@nestjs/core': true
+  '@prisma/engines': true
   '@scarf/scarf': false
   esbuild: true
+  # ‌msgpackr-extract/workerd ترنزیتیو ناشناخته‌اند (نه چیزی که ArByte مستقیم
+  # نیاز دارد — workerd یعنی ران‌تایم Cloudflare Workers که طبق ADR-002 اصلاً
+  # استفاده نمی‌شود). عمداً build نمی‌شوند تا اسکریپت native غیرضروری اجرا نشود.
+  msgpackr-extract: false
+  prisma: true
   sharp: true
   unrs-resolver: true
+  workerd: false

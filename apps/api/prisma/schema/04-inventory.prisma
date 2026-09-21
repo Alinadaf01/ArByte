@@ -1,0 +1,78 @@
+// موجودی و انبار — بندهای §۷.۳۷ تا §۷.۳۹، §۸.۳۰ تا §۸.۳۴، به‌علاوه‌ی الحاقیه‌ی
+// T-003 (انبار مکان‌دار) و سند مقایسه‌ی وایب‌شاپ (lowStockThreshold قابل
+// override per-محصول).
+
+enum InventoryTransactionType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+  RESERVATION
+  RELEASE
+}
+
+/// الحاقیه‌ی T-003، بخش ۳ — برای لانچ یک ردیف با isDefault=true کافی است؛
+/// UI انتخابگر ندارد، اما ساختار بُعد مکان را از روز اول دارد.
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String
+  city      String?
+  isDefault Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inventory             Inventory[]
+  inventoryTransactions InventoryTransaction[]
+}
+
+/// §۸.۳۰، §۸.۳۱ — کلید مرکب variantId+warehouseId (الحاقیه). `version` برای
+/// Optimistic Locking (قاعده‌ی فنی #۳، §۸.۸۳). `lowStockThreshold` نال یعنی
+/// پیش‌فرض سراسری Setting اعمال شود (سند مقایسه‌ی وایب‌شاپ، بخش ۲.۴).
+///
+/// ⚠️ `availableQuantity` در دیتابیس واقعی یک ستون
+/// `GENERATED ALWAYS AS ("quantity" - "reservedQuantity") STORED` است (§۸.۳۱:
+/// ستون محاسباتی/view، نه محاسبه در اپلیکیشن). عمداً بدون `@default` و
+/// nullable نوشته شده تا Prisma Client هرگز مقداری برایش در INSERT/UPDATE
+/// نفرستد — فرستادن هر مقداری (حتی ۰ پیش‌فرض) را Postgres رد می‌کند چون ستون
+/// واقعاً GENERATED است. هیچ‌جای کد نباید صریح این فیلد را ست کند؛ جزئیات در
+/// docs/data-model.md.
+model Inventory {
+  variantId         String
+  warehouseId       String
+  quantity          Int      @default(0)
+  reservedQuantity  Int      @default(0)
+  availableQuantity Int?
+  lowStockThreshold Int?
+  version           Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, warehouseId])
+  @@index([warehouseId])
+}
+
+/// §۸.۳۳، §۸.۳۴ (کاردکس) — روی variantId طبق الحاقیه. موجودی هرگز مستقیم
+/// UPDATE نمی‌شود؛ هر تغییر یک ردیف اینجا هم می‌سازد.
+model InventoryTransaction {
+  id             String                   @id @default(cuid())
+  variantId      String
+  warehouseId    String
+  type           InventoryTransactionType
+  quantityChange Int
+  quantityBefore Int
+  quantityAfter  Int
+  userId         String?
+  reference      String?
+  note           String?
+  createdAt      DateTime                 @default(now())
+
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  warehouse Warehouse      @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([variantId, createdAt])
+  @@index([warehouseId])
+}

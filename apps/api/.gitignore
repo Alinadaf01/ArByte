@@ -1,0 +1,8 @@
+node_modules
+# Keep environment variables out of version control
+.env
+
+
+# مسیر واقعی خروجی generator با schema چندفایلی (prisma/schema/*.prisma) یک
+# سطح پایین‌تر از چیزی است که prisma init فرض کرده بود.
+/prisma/generated/

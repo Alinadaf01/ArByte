@@ -8,8 +8,12 @@ services:
       POSTGRES_USER: arbyte
       POSTGRES_PASSWORD: arbyte
       POSTGRES_DB: arbyte
+    # پورت 5432 روی هاست عمداً استفاده نشده — یکی از رایج‌ترین پورت‌هایی است
+    # که نصب‌های محلی/سیستمی Postgres هم می‌گیرند (در T-003 دقیقاً همین برخورد
+    # روی ماشین توسعه پیش آمد)؛ 5435 برخورد کمتری دارد. پورت داخلی کانتینر
+    # همچنان استاندارد 5432 است.
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - arbyte_postgres_data:/var/lib/postgresql/data
     healthcheck:

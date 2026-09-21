@@ -1,0 +1,14 @@
+// T-003 — اسکیمای Prisma. طبق تصمیم پروژه، schema به‌صورت چندفایلی زیر
+// prisma/schema/ سازمان‌دهی شده (هر فایل یک دامنه، مطابق تقسیم‌بندی
+// T-003-data-model.md) نه یک schema.prisma غول‌پیکر — نگهداری و review
+// را عملی نگه می‌دارد. آدرس اتصال دیتابیس در prisma7.config.ts است، نه
+// اینجا (قرارداد Prisma 7).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
