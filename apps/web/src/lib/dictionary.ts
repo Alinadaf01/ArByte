@@ -8,5 +8,6 @@ export const dictionary = {
   home: {
     title: "آربایت",
     status: "اسکلت پروژه راه‌اندازی شد.",
+    cta: "مشاهده‌ی فروشگاه",
   },
 } as const;

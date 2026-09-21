@@ -1,10 +1,357 @@
 /*
- * @arbyte/tokens
+ * @arbyte/tokens — خروجی T-001.
  *
- * این فایل عمداً خالی است.
- * خروجی T-001 (Design Tokens) اینجا می‌نشیند — به‌عنوان CSS Variables
- * مطابق ADR-001 (Tailwind CSS v4 + CSS Variables) و بند ۵.۸۴ برند بوک
- * (Colors, Typography, Spacing, Radius, Shadow, Breakpoints, Animation).
+ * منبع: docs/design/storefront/README.md (بخش «Design Tokens»، «Responsive
+ * System»، «Interaction & Motion System»). هر جا با بند ۴/۵ برند بوک تفاوت
+ * دارد، طبق docs/adr/ADR-004-design-tokens.md طراحی برنده است.
  *
- * تا آن زمان هیچ رنگ/فاصله/تایپوگرافی‌ای اینجا حدس زده نشده است.
+ * دو لایه:
+ *   ۱. `:root` — پالت خام (primitive). کامپوننت‌ها مستقیم از این‌ها استفاده
+ *      نکنند؛ این لایه فقط برای این است که افزودن حالت تیره در آینده یک تغییر
+ *      در یک‌جا باشد، نه بازنویسی همه‌ی مصرف‌کننده‌ها.
+ *   ۲. `@theme` — توکن‌های سمنتیک که Tailwind v4 از آن‌ها به‌صورت خودکار
+ *      کلاس تولید می‌کند (`bg-surface-page`, `text-primary`, `rounded-card`,
+ *      `shadow-popover`, `animate-pop`, ...). کامپوننت‌ها فقط از این کلاس‌ها
+ *      استفاده می‌کنند — قانون ESLint `no-hex-colors` هر HEX مستقیم در
+ *      کامپوننت را رد می‌کند.
  */
+
+:root {
+  /* ---- بنفش (Violet) — بند ۴.۲/۴.۳ برند بوک، بدون تغییر ---- */
+  --palette-violet: #6c4dff;
+  --palette-violet-deep: #4b32c3;
+  --palette-violet-light-1: #8b6bff;
+  --palette-violet-light-2: #a88cff;
+  --palette-violet-tint-1: #ede9fa;
+  --palette-violet-tint-2: #f4f1fd;
+  --palette-violet-tint-3: #f2effb;
+  --palette-violet-tint-4: #ece8f9;
+  --palette-violet-tint-border: #d6ccf7;
+
+  /* ---- فیروزه‌ای (Cyan) — بند ۴.۴ برند بوک، بدون تغییر ---- */
+  --palette-cyan: #22d3ee;
+  --palette-cyan-deep: #0e7490;
+  --palette-cyan-badge-ink: #0b3b45;
+
+  /* ---- خنثی — ADR-004: پس‌زمینه/بردر عوض شد ---- */
+  --palette-paper: #f6f4fc;
+  --palette-surface: #ffffff;
+  --palette-ink: #17151f;
+  --palette-ink-2: #3d3950;
+  --palette-muted: #5f5b6b;
+  --palette-muted-2: #6e6880;
+  --palette-line: #eae6f4;
+  --palette-line-2: #e0dbf0;
+  --palette-line-3: #f0edf8;
+
+  /* ---- وضعیت — ADR-004: warning/error عوض شد؛ success/info رزرو ---- */
+  --palette-danger: #b42318;
+  --palette-danger-border: #e0a3a3;
+  --palette-danger-tint: #fbeeee;
+  --palette-warn-text: #b4530a;
+  /* رزرو — apps/web مصرف نمی‌کند مگر جایی که طراحی صراحتاً بخواهد (ADR-004) */
+  --palette-status-success: #16a34a;
+  --palette-status-info: #2563eb;
+
+  /* ---- روی پس‌زمینه‌ی تیره / صفحه‌ی ورود ---- */
+  --palette-on-dark-1: #ffffff;
+  --palette-on-dark-2: #b9b4c9;
+  --palette-on-dark-3: #a8a3ba;
+  --palette-login-canvas: #07060b;
+
+  /* ---- مقیاس‌های فشار (press) — نسبت به عنصر فرق می‌کند ---- */
+  --press-scale-default: 0.96;
+  --press-scale-nav: 0.95;
+  --press-scale-button-lg: 0.97;
+  --press-scale-drawer-row: 0.98;
+}
+
+@theme {
+  /* ============ رنگ ============ */
+  --color-paper: var(--palette-paper);
+  --color-surface: var(--palette-surface);
+  --color-surface-dark: var(--palette-ink);
+  --color-login-canvas: var(--palette-login-canvas);
+
+  --color-primary: var(--palette-ink);
+  --color-secondary: var(--palette-muted);
+  --color-secondary-2: var(--palette-ink-2);
+  --color-caption: var(--palette-muted-2);
+  --color-on-dark: var(--palette-on-dark-1);
+  --color-on-dark-secondary: var(--palette-on-dark-2);
+  --color-on-dark-tertiary: var(--palette-on-dark-3);
+
+  --color-border: var(--palette-line);
+  --color-border-input: var(--palette-line-2);
+  --color-border-divider: var(--palette-line-3);
+  --color-border-done: var(--palette-violet-tint-border);
+
+  --color-brand: var(--palette-violet);
+  --color-brand-active: var(--palette-violet-deep);
+  --color-brand-on-dark: var(--palette-violet-light-1);
+  --color-brand-on-dark-alt: var(--palette-violet-light-2);
+  --color-brand-tint-1: var(--palette-violet-tint-1);
+  --color-brand-tint-2: var(--palette-violet-tint-2);
+  --color-brand-tint-3: var(--palette-violet-tint-3);
+  --color-brand-tint-4: var(--palette-violet-tint-4);
+
+  --color-accent: var(--palette-cyan);
+  --color-accent-deep: var(--palette-cyan-deep);
+  --color-accent-badge-ink: var(--palette-cyan-badge-ink);
+
+  --color-danger: var(--palette-danger);
+  --color-danger-border: var(--palette-danger-border);
+  --color-danger-tint: var(--palette-danger-tint);
+  --color-warning: var(--palette-warn-text);
+  /* رزرو — ر.ک. ADR-004، بخش «سؤال باز» */
+  --color-success: var(--palette-status-success);
+  --color-info: var(--palette-status-info);
+
+  --color-focus-ring: var(--palette-violet);
+  --color-focus-ring-on-dark: var(--palette-violet-light-1);
+
+  /* ============ تایپوگرافی ============ */
+  --font-sans: "Estedad", Tahoma, sans-serif;
+
+  /* بند ۴.۲۹ برند بوک؛ فقط وزن‌های ۴۰۰/۵۰۰/۶۰۰/۷۰۰ (ر.ک. apps/web/src/lib/fonts.ts) */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-emphasis: 600;
+  --font-weight-heading: 700;
+
+  /* مقیاس دسکتاپ — در ۷۶۷px به‌پایین با مقادیر ثابت زیر بازنویسی می‌شود */
+  --text-hero: clamp(30px, 4.4vw, 60px);
+  --text-h2: clamp(26px, 3vw, 40px);
+  --text-subhead: clamp(20px, 2.4vw, 28px);
+  --text-card-title: 19px;
+  --text-body: clamp(14px, 0.6vw + 13px, 15.5px);
+  --text-caption: clamp(12.5px, 0.3vw + 12px, 13px);
+  --text-micro: 12px;
+  /* حداقل ۱۶px روی input در موبایل تا iOS Safari هنگام فوکوس zoom نکند
+     (override واقعی در media query پایین فایل است) */
+  --text-input: var(--text-body);
+  /* فقط برای Latin/اعداد فنی در بین متن RTL (بند ۴.۴۵) — letter-spacing گسترده‌تر */
+  --tracking-latin-run: 0.05em;
+  --tracking-heading-lg: -0.02em;
+
+  /* ============ Spacing — مقیاس ۴px (بند ۵.۸)، پایه‌ی همه‌ی کلاس‌های p, gap, m ============ */
+  --spacing: 4px;
+
+  /* Layout — بند «Spacing & layout» در docs/design/storefront/README.md */
+  --breakpoint-md: 48rem; /* 768px — شروع Tablet */
+  --breakpoint-lg: 64rem; /* 1024px — شروع Desktop */
+
+  /* ============ Radius ============ */
+  --radius-chip: 10px;
+  --radius-tile-sm: 12px;
+  --radius-icon-button-sm: 12px;
+  --radius-icon-button: 13px;
+  --radius-tile: 16px;
+  --radius-panel-compact: 18px;
+  --radius-panel: 20px;
+  --radius-card: 22px;
+  --radius-card-lg: 26px;
+  --radius-pill: 999px;
+
+  /* ============ Shadow ============ */
+  --shadow-card: 0 12px 34px rgba(23, 21, 31, 0.08);
+  --shadow-popover: 0 22px 50px rgba(23, 21, 31, 0.14);
+  --shadow-drawer: -18px 0 44px rgba(23, 21, 31, 0.18);
+  --shadow-sheet: 0 -18px 48px rgba(23, 21, 31, 0.18);
+  --shadow-bottom-nav: 0 -6px 24px rgba(23, 21, 31, 0.06);
+  --shadow-button-accent: 0 10px 34px rgba(108, 77, 255, 0.34);
+
+  /* ============ Easing / Duration ============ */
+  --ease-standard: cubic-bezier(0.3, 1, 0.4, 1);
+  --duration-press: 160ms;
+  --duration-interactive: 200ms;
+  --duration-menu: 220ms;
+  --duration-panel: 300ms;
+  --duration-scrim: 280ms;
+
+  /* ============ Animation — بند «Interaction & Motion System» ============ */
+  /* arbPopA/arbPopB و arbShake/arbShakeB جفت‌های هم‌شکل با نام متفاوت‌اند تا
+     در رویدادهای تکرارشونده (تغییر تعداد، خطای اعتبارسنجی) با تعویض کلاس
+     دوباره اجرا شوند — CSS با اعمال دوباره‌ی همان animation-name ری‌استارت
+     نمی‌کند. در React/Vue معادل idiomatic تغییر یک `key` است. */
+  --animate-pop: arb-pop 340ms var(--ease-standard);
+  --animate-pop-a: arb-pop-a 300ms var(--ease-standard);
+  --animate-pop-b: arb-pop-b 300ms var(--ease-standard);
+  --animate-shake: arb-shake 420ms var(--ease-standard);
+  --animate-shake-b: arb-shake-b 420ms var(--ease-standard);
+  --animate-toast-in: arb-toast-in 320ms var(--ease-standard);
+  --animate-badge-pop: arb-badge-pop 400ms var(--ease-standard);
+  --animate-rise: arb-rise 360ms var(--ease-standard);
+  --animate-fade-in: arb-fade-in 260ms ease;
+  --animate-spin: arb-spin 720ms linear infinite;
+  --animate-step-in: arb-step-in 450ms var(--ease-standard);
+}
+
+/* ============ Keyframes ============ */
+/* صرفاً انیمیشن‌های عمومیِ چندصفحه‌ای. انیمیشن‌های محیطی صفحه‌ی Login
+   (arbOrb1-3, arbMesh, arbRing, arbHalo, arbDraw, arbShakeA/B مخصوص آن صفحه)
+   محلی در همان صفحه تعریف می‌شوند، نه اینجا — فقط مال یک صفحه‌اند. */
+
+@keyframes arb-pop {
+  0% {
+    transform: scale(0.88);
+  }
+  55% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes arb-pop-a {
+  0% {
+    transform: scale(0.72);
+  }
+  55% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes arb-pop-b {
+  0% {
+    transform: scale(0.72);
+  }
+  55% {
+    transform: scale(1.16);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes arb-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes arb-shake-b {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+@keyframes arb-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes arb-badge-pop {
+  0% {
+    transform: scale(0.55);
+  }
+  55% {
+    transform: scale(1.14);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes arb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(11px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes arb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes arb-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes arb-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ============ Base — روی هر صفحه، طبق «Shared base» در README طراحی ============ */
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  /* صفحه‌ی Login (پس‌زمینه‌ی تیره) به‌جای این از --color-focus-ring-on-dark استفاده می‌کند. */
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ============ بازنویسی موبایل (≤767px) — بند «Typography» موبایل در README ============ */
+@media (max-width: 767px) {
+  :root {
+    --text-body: 15px;
+    --text-caption: 13px;
+    /* حداقل 16px روی input تا iOS Safari هنگام فوکوس zoom نکند */
+    --text-input: 16px;
+    --text-hero: 28px; /* سقف عنوان اصلی در موبایل */
+  }
+}
+
+/* در ≥768px مقدار پیش‌فرض --text-input (برابر --text-body در @theme) کافی است. */

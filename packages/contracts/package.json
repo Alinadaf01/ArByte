@@ -7,10 +7,15 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.6.3"
+    "@arbyte/config": "workspace:*",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
   }
 }
