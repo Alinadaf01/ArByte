@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input,textarea{font-family:inherit;}
+input::placeholder,textarea::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button:active:not(:disabled){transform:scale(.97);}
+@keyframes arbSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition-duration:.001s !important;}}
+</style>
+</helmet>
+
+<div dir="rtl" data-screen-label="Checkout" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,40px) 5vw clamp(20px,3vh,28px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <h1 style="margin:0;font-size:clamp(26px,3.2vw,40px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">تکمیل خرید</h1>
+    <ol style="margin:18px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};color:#5F5B6B;"><span style="width:24px;height:24px;border-radius:50%;background:#EDE9FA;color:#4B32C3;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">✓</span><a href="./Cart.dc.html" style="color:#5F5B6B;">سبد خرید</a></li>
+      <li aria-hidden="true" style="width:26px;height:1px;background:#DDD8EC;"></li>
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};font-weight:600;color:#17151F;"><span style="width:24px;height:24px;border-radius:50%;background:#17151F;color:#FFFFFF;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">۲</span>پرداخت</li>
+      <li aria-hidden="true" style="width:26px;height:1px;background:#DDD8EC;"></li>
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};color:#6E6880;"><span style="width:24px;height:24px;border-radius:50%;border:1px solid #DDD8EC;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">۳</span>ثبت سفارش</li>
+    </ol>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+  <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,18px);">
+
+    <section style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <h2 style="margin:0;font-size:15.5px;font-weight:700;">آدرس تحویل</h2>
+        <button type="button" onClick="{{ onNewAddr }}" style="min-height:44px;padding:0 16px;border-radius:12px;white-space:nowrap;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">{{ newAddrTxt }}</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;">
+        <button type="button" onClick="{{ onAddr0 }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border-radius:15px;cursor:pointer;font-family:inherit;text-align:right;background:{{ aBg0 }};border:1.5px solid {{ aBd0 }};transition:all .2s ease;">
+          <span style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:#17151F;">خانه<span style="padding:3px 8px;border-radius:7px;background:#EDE9FA;font-size:10.5px;font-weight:600;color:#4B32C3;">پیش‌فرض</span></span>
+          <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">تهران، سعادت‌آباد، بلوار دریا، کوچه ششم، پلاک ۱۲، واحد ۴</span>
+          <span style="font-size:{{ fsLabel }};color:#6E6880;">سمیه احمدی · ۰۹۱۲۳۴۵۶۷۸۹</span>
+        </button>
+        <button type="button" onClick="{{ onAddr1 }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border-radius:15px;cursor:pointer;font-family:inherit;text-align:right;background:{{ aBg1 }};border:1.5px solid {{ aBd1 }};transition:all .2s ease;">
+          <span style="font-size:13.5px;font-weight:600;color:#17151F;">محل کار</span>
+          <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">تهران، ونک، خیابان ملاصدرا، برج آبی، طبقه ۹</span>
+          <span style="font-size:{{ fsLabel }};color:#6E6880;">سمیه احمدی · ۰۲۱۸۸۷۷۶۶۵۵</span>
+        </button>
+      </div>
+
+      <sc-if value="{{ showNew }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;padding-top:14px;border-top:1px solid #F0EDF8;">
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">نام گیرنده
+            <input type="text" placeholder="نام و نام خانوادگی" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره موبایل
+            <input type="tel" placeholder="۰۹۱۲۰۰۰۰۰۰۰" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">شهر
+            <input type="text" placeholder="تهران" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">کد پستی
+            <input type="text" placeholder="۱۰ رقم" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="grid-column:1/-1;display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">نشانی کامل
+            <textarea rows="2" placeholder="خیابان، کوچه، پلاک و واحد" style="padding:12px 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;line-height:1.8;resize:vertical;min-width:0;"></textarea>
+          </label>
+        </div>
+      </sc-if>
+    </section>
+
+    <section style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:15.5px;font-weight:700;">روش پرداخت</h2>
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <button type="button" onClick="{{ onPay0 }}" style="display:flex;align-items:flex-start;gap:12px;padding:15px;border-radius:15px;cursor:pointer;font-family:inherit;text-align:right;background:{{ pBg0 }};border:1.5px solid {{ pBd0 }};transition:all .2s ease;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ pIc0 }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><rect x="2.5" y="5" width="19" height="14" rx="3"></rect><path d="M2.5 9.5h19"></path></svg>
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+            <span style="font-size:14px;font-weight:600;color:#17151F;">پرداخت اینترنتی</span>
+            <span style="font-size:{{ fsLabel }};line-height:1.75;color:#5F5B6B;">انتقال به درگاه بانکی و پرداخت با هر کارت شتاب.</span>
+          </span>
+        </button>
+        <button type="button" onClick="{{ onPay1 }}" style="display:flex;align-items:flex-start;gap:12px;padding:15px;border-radius:15px;cursor:pointer;font-family:inherit;text-align:right;background:{{ pBg1 }};border:1.5px solid {{ pBd1 }};transition:all .2s ease;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ pIc1 }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+            <span style="font-size:14px;font-weight:600;color:#17151F;">پرداخت اقساطی</span>
+            <span style="font-size:{{ fsLabel }};line-height:1.75;color:#5F5B6B;">تا ۱۲ قسط، هر ماه {{ instalFa }} تومان. نیاز به احراز هویت دارد.</span>
+          </span>
+        </button>
+        <button type="button" onClick="{{ onPay2 }}" style="display:flex;align-items:flex-start;gap:12px;padding:15px;border-radius:15px;cursor:pointer;font-family:inherit;text-align:right;background:{{ pBg2 }};border:1.5px solid {{ pBd2 }};transition:all .2s ease;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ pIc2 }}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M4 9.5 12 5l8 4.5"></path><path d="M6 10.5v7M10 10.5v7M14 10.5v7M18 10.5v7"></path><path d="M3.5 19.5h17"></path></svg>
+          <span style="display:flex;flex-direction:column;gap:4px;min-width:0;">
+            <span style="font-size:14px;font-weight:600;color:#17151F;">حواله بانکی</span>
+            <span style="font-size:{{ fsLabel }};line-height:1.75;color:#5F5B6B;">مناسب خرید سازمانی. شماره شبا پس از ثبت سفارش نمایش داده می‌شود.</span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <section style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+      <h2 style="margin:0;font-size:15.5px;font-weight:700;">فاکتور</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button type="button" onClick="{{ onInv0 }}" style="min-height:44px;padding:0 20px;border-radius:12px;border:1px solid {{ iBd0 }};background:{{ iBg0 }};color:{{ iFg0 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">شخصی</button>
+        <button type="button" onClick="{{ onInv1 }}" style="min-height:44px;padding:0 20px;border-radius:12px;border:1px solid {{ iBd1 }};background:{{ iBg1 }};color:{{ iFg1 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">حقوقی</button>
+      </div>
+      <sc-if value="{{ isCorp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">نام شرکت
+            <input type="text" placeholder="نام ثبتی شرکت" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">شناسه ملی
+            <input type="text" placeholder="۱۱ رقم" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">کد اقتصادی
+            <input type="text" placeholder="اختیاری" style="min-height:46px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+        </div>
+      </sc-if>
+      <label style="display:flex;flex-direction:column;gap:6px;font-size:{{ fsLabel }};color:#5F5B6B;">یادداشت برای ما
+        <textarea rows="2" placeholder="مثلاً ساعت تحویل، یا درخواست نصب رم پیش از ارسال" style="padding:12px 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;line-height:1.8;resize:vertical;min-width:0;"></textarea>
+      </label>
+    </section>
+
+  </div>
+
+  <aside style="flex:1 1 300px;max-width:{{ asideMax }};min-width:0;position:{{ asidePos }};top:96px;display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+
+    <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <h2 style="margin:0;font-size:14.5px;font-weight:700;">سفارش شما</h2>
+        <a href="./Cart.dc.html" style="font-size:12.5px;font-weight:600;">ویرایش</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px;">
+        <sc-for list="{{ lines }}" as="l" hint-placeholder-count="3">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <span style="font-size:{{ fsBody }};line-height:1.7;color:#3D3950;min-width:0;">{{ l.label }}</span>
+            <span style="font-size:{{ fsBody }};font-weight:500;white-space:nowrap;">{{ l.sum }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:11px;padding-top:14px;border-top:1px solid #F0EDF8;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:{{ fsBody }};color:#5F5B6B;">تخفیف ARB10</span>
+          <span style="font-size:14px;font-weight:500;color:#0E7490;">− ۴۱٫۱۶۰٫۰۰۰ تومان</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:{{ fsBody }};color:#5F5B6B;">ارسال پیشتاز</span>
+          <span style="font-size:14px;font-weight:500;">رایگان</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid #F0EDF8;">
+        <span style="font-size:14.5px;font-weight:700;">مبلغ قابل پرداخت</span>
+        <span style="font-size:clamp(18px,2.2vw,22px);font-weight:700;letter-spacing:-.025em;white-space:nowrap;">{{ totalFa }}</span>
+      </div>
+      <button type="button" onClick="{{ onPlace }}" disabled="{{ placing }}" style="margin-top:4px;min-height:50px;border-radius:999px;border:0;background:{{ placeBg }};color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:{{ placeCur }};display:flex;align-items:center;justify-content:center;gap:10px;transition:background .25s ease;">
+        <sc-if value="{{ placing }}" hint-placeholder-val="{{ false }}">
+          <i aria-hidden="true" style="width:17px;height:17px;flex:none;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#FFFFFF;display:block;animation:arbSpin .7s linear infinite;"></i>
+        </sc-if>
+        {{ placeTxt }}
+      </button>
+      <p style="margin:0;font-size:12px;line-height:1.8;color:#5F5B6B;text-align:center;">با ثبت سفارش، <a href="./Legal.dc.html">قوانین آربایت</a> را می‌پذیرید.</p>
+    </div>
+
+    <div style="padding:16px 18px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;align-items:flex-start;gap:11px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M12 3.2 5 6v5.5c0 4.2 2.9 7.6 7 9.3 4.1-1.7 7-5.1 7-9.3V6Z"></path><path d="m9.2 12.1 2 2 3.6-3.9"></path></svg>
+      <p style="margin:0;font-size:{{ fsBody }};line-height:1.85;color:#3D3950;">مبلغ تا زمان تحویل و تأیید شما نزد درگاه می‌ماند. در صورت مغایرت، بازگشت وجه تا ۷۲ ساعت انجام می‌شود.</p>
+    </div>
+
+  </aside>
+
+</div>
+
+<dc-import name="MobileNav" active="cart" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { addr: 0, pay: 0, inv: 0, newAddr: false, placing: false, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  LINES = [
+    { label: "MSI Titan 18 HX A2XWJG · ۶۴GB/۲TB", sum: 289.5 },
+    { label: "ASUS ProArt Display OLED 32", sum: 96.5 },
+    { label: "کیت رم ۶۴GB DDR5 · ۲ عدد", sum: 25.6 }
+  ];
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  money(m){ return this.fa(Math.round(m).toLocaleString("en-US").replace(/,/g, "٫")); }
+  pick = (k, v) => () => this.setState({ [k]: v });
+  onNewAddr = () => this.setState((s) => ({ newAddr: !s.newAddr }));
+  onPlace = () => {
+    this.setState({ placing: true });
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.setState({ placing: false }), 1600);
+  };
+  componentWillUnmount(){
+    clearTimeout(this.t);
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+
+  renderVals(){
+    const st = this.state;
+    const sub = this.LINES.reduce((a, l) => a + l.sum, 0);
+    const total = (sub * 0.9) * 1000000;
+    const m = st.mobile === true;
+    const o = {
+      asideMax: m ? "none" : "380px",
+      asidePos: m ? "static" : "sticky",
+      fsInput: m ? "16px" : "13.5px",
+      fsLabel: m ? "13px" : "12.5px",
+      fsBody: m ? "15px" : "13.5px",
+      fsStep: m ? "13px" : "12px",
+      fsStepLabel: m ? "14px" : "13px",
+      lines: this.LINES.map((l) => ({ label: l.label, sum: this.money(l.sum * 1000000) })),
+      totalFa: this.money(total) + " تومان",
+      instalFa: this.money(total / 12),
+      onNewAddr: this.onNewAddr, showNew: st.newAddr,
+      newAddrTxt: st.newAddr ? "بستن فرم" : "آدرس جدید",
+      isCorp: st.inv === 1,
+      onPlace: this.onPlace,
+      placeTxt: st.placing ? "در حال انتقال به درگاه…" : "پرداخت و ثبت سفارش",
+      placeBg: st.placing ? "#6C4DFF" : "#17151F",
+      placing: st.placing === true,
+      placeCur: st.placing ? "progress" : "pointer"
+    };
+    [0, 1].forEach((i) => {
+      const a = st.addr === i;
+      o["onAddr" + i] = this.pick("addr", i);
+      o["aBg" + i] = a ? "#F4F1FD" : "#FFFFFF";
+      o["aBd" + i] = a ? "#6C4DFF" : "#E7E3F3";
+      const v = st.inv === i;
+      o["onInv" + i] = this.pick("inv", i);
+      o["iBg" + i] = v ? "#17151F" : "#FFFFFF";
+      o["iFg" + i] = v ? "#FFFFFF" : "#3D3950";
+      o["iBd" + i] = v ? "#17151F" : "#E0DBF0";
+    });
+    [0, 1, 2].forEach((i) => {
+      const p = st.pay === i;
+      o["onPay" + i] = this.pick("pay", i);
+      o["pBg" + i] = p ? "#F4F1FD" : "#FFFFFF";
+      o["pBd" + i] = p ? "#6C4DFF" : "#E7E3F3";
+      o["pIc" + i] = p ? "#6C4DFF" : "#6E6880";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

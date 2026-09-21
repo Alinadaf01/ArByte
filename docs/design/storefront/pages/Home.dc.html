@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;background:#F6F4FC;font-family:'Estedad',Tahoma,sans-serif;}
+a{color:#4B32C3;text-decoration:none;}
+a:hover{color:#6C4DFF;}
+@keyframes drift1{0%{transform:translate3d(0,0,0) scale(1);}50%{transform:translate3d(6%,-5%,0) scale(1.12);}100%{transform:translate3d(0,0,0) scale(1);}}
+@keyframes drift2{0%{transform:translate3d(0,0,0) scale(1.05);}50%{transform:translate3d(-7%,6%,0) scale(.92);}100%{transform:translate3d(0,0,0) scale(1.05);}}
+@keyframes tick{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+@keyframes bob{0%{transform:translateY(0);}50%{transform:translateY(-7px);}100%{transform:translateY(0);}}
+@keyframes sweep{0%{opacity:0;transform:translateY(-100%);}35%{opacity:1;}100%{opacity:0;transform:translateY(240%);}}
+</style>
+<script src="./image-slot.js"></script>
+<script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js" integrity="sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67" crossorigin="anonymous"></script>
+</helmet>
+<div dir="rtl" data-screen-label="Home" ref="{{ scRef }}" onScroll="{{ onScroll }}" style="height:100vh;overflow-y:auto;overflow-x:hidden;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;position:relative;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<div style="position:relative;">
+
+<div style="position:sticky;top:72px;z-index:0;height:calc(100vh - 72px);min-height:440px;overflow:hidden;display:flex;flex-direction:column;background:#F6F4FC;">
+
+  <div aria-hidden="true" style="position:absolute;inset:0;overflow:hidden;">
+    <div style="position:absolute;inset:-10%;background-image:linear-gradient(rgba(23,21,31,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(23,21,31,.045) 1px,transparent 1px);background-size:64px 64px;-webkit-mask-image:radial-gradient(62% 58% at 50% 46%,#000 0%,transparent 78%);mask-image:radial-gradient(62% 58% at 50% 46%,#000 0%,transparent 78%);"></div>
+    <div style="position:absolute;top:-18%;right:6%;width:46vw;height:46vw;border-radius:50%;background:radial-gradient(circle,rgba(108,77,255,.30),rgba(108,77,255,0) 68%);will-change:transform;animation:drift1 17s ease-in-out infinite;animation-play-state:{{ bgPlay }};"></div>
+    <div style="position:absolute;bottom:-22%;left:2%;width:42vw;height:42vw;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.26),rgba(34,211,238,0) 68%);will-change:transform;animation:drift2 21s ease-in-out infinite;animation-play-state:{{ bgPlay }};"></div>
+    <div style="position:absolute;inset:0;background:radial-gradient(52% 48% at 50% 58%, rgba(108,77,255,.16) 0%, rgba(246,244,252,0) 70%);"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:46%;background:linear-gradient(#F6F4FC,rgba(246,244,252,0));"></div>
+  </div>
+
+  <div style="position:{{ heroTxtPos }};z-index:2;top:{{ heroTxtTop }};right:{{ heroTxtRight }};margin:{{ heroTxtM }};width:{{ heroTxtW }};text-align:right;">
+    <div style="display:flex;justify-content:flex-start;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 8px 7px 16px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(23,21,31,.08);box-shadow:0 8px 24px rgba(23,21,31,.06);font-size:13px;font-weight:600;color:#3D3950;white-space:nowrap;">
+        <span style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;background:linear-gradient(135deg,#6C4DFF,#4B32C3);color:#FFFFFF;font-size:12px;">
+          <i style="width:6px;height:6px;border-radius:50%;background:#22D3EE;display:block;"></i>
+          جدید
+        </span>
+        چهار مدل تازه
+      </div>
+    </div>
+    <h1 style="margin:0;font-size:clamp(30px,4.3vw,64px);font-weight:700;line-height:1.62;letter-spacing:-.03em;text-wrap:pretty;">
+      تکنولوژی با ظرافت
+    </h1>
+    <p style="margin:14px 0 0;font-size:15px;font-weight:500;line-height:1.9;color:#5F5B6B;">چهار لپ‌تاپ که کارشناسان آربایت انتخاب کرده‌اند. هر دستگاه پیش از ارسال تست و سریالش ثبت می‌شود.</p>
+    <p style="margin:12px 0 0;font-size:13px;font-weight:500;line-height:1.8;color:#5F5B6B;transition:opacity .35s ease;opacity:{{ subOp }};">اسکرول کنید</p>
+  </div>
+
+  <div ref="{{ panelRef }}" style="position:relative;flex:1;min-height:0;width:{{ heroPanelW }};margin:{{ heroPanelM }};">
+    <div style="position:absolute;inset:0;overflow:hidden;mix-blend-mode:{{ blend }};">
+      <img alt="" ref="{{ imgRef }}" src="https://raw.githubusercontent.com/duthiljean/hero-apple/main/frames/frame_0001.jpg" style="position:absolute;bottom:0;left:50%;height:100%;width:auto;max-width:none;display:block;transform-origin:50% 100%;transform:translate(-50%,0);" />
+    </div>
+  </div>
+
+  <div aria-hidden="true" style="position:absolute;left:0;right:0;bottom:clamp(96px,17vh,168px);height:clamp(60px,9vh,96px);z-index:1;background:radial-gradient(48% 100% at 50% 0%,rgba(108,77,255,.20),rgba(108,77,255,0) 72%);"></div>
+
+  <div style="position:relative;flex:none;margin:clamp(10px,1.6vh,16px) 5vw clamp(20px,3.5vh,32px);min-height:{{ ctaMinH }};z-index:3;border-radius:22px;background:rgba(255,255,255,.86);border:1px solid rgba(255,255,255,.8);box-shadow:0 24px 60px rgba(23,21,31,.13);display:flex;flex-wrap:wrap;align-items:center;gap:clamp(12px,1.6vw,22px);padding:clamp(12px,1.8vh,16px) clamp(16px,2vw,24px);">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:clamp(10px,1.6vw,18px);flex:0 1 auto;">
+      <div style="display:flex;flex-direction:column;gap:3px;">
+        <span style="font-size:12px;color:#5F5B6B;white-space:nowrap;">انتخاب کارشناسان آربایت</span>
+        <span style="font-size:clamp(16px,2.4vh,20px);font-weight:700;letter-spacing:-.02em;white-space:nowrap;">مدل {{ modelText }}</span>
+      </div>
+      <a href="#" style="padding:11px 22px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease, transform .25s ease;" style-hover="background:#6C4DFF;transform:translateY(-2px);">مشاهده مدل‌ها</a>
+      <a href="#" style="padding:11px 18px;border-radius:999px;border:1px solid rgba(23,21,31,.16);color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:border-color .25s ease, color .25s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">مشاوره انتخاب</a>
+    </div>
+
+    <i style="width:1px;align-self:stretch;margin:clamp(16px,3vh,26px) 0;background:rgba(23,21,31,.1);flex:none;display:{{ divDisp }};"></i>
+
+    <div style="flex:1 1 220px;min-width:0;align-self:stretch;position:relative;min-height:100px;">
+
+      <article style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:opacity .5s ease, transform .5s ease;opacity:{{ o0 }};transform:translateY({{ y0 }});">
+        <div style="display:flex;align-items:center;gap:9px;flex:none;">
+          <span dir="ltr" style="font-size:13px;font-weight:600;color:#5F5B6B;font-family:sans-serif;letter-spacing:.04em;white-space:nowrap;order:2;"><strong style="color:#17151F;">01</strong> / 04</span>
+          <span style="width:24px;height:24px;border-radius:7px;flex:none;font-size:13px;background:rgba(108,77,255,.14);display:flex;align-items:center;justify-content:center;color:#6C4DFF;font-size:16px;">✦</span>
+        </div>
+        <h3 style="margin:0;flex:none;font-size:clamp(15px,2.1vh,18px);font-weight:700;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">کالای اصل، با گارانتی رسمی</h3>
+        <div style="margin-top:3px;flex:none;display:flex;align-items:center;gap:12px;">
+          <div style="flex:1;display:flex;gap:6px;">
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t0 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t1 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t2 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t3 }});transition:transform .16s linear;"></span></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:#5F5B6B;">اصالت</span>
+        </div>
+      </article>
+
+      <article style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:opacity .5s ease, transform .5s ease;opacity:{{ o1 }};transform:translateY({{ y1 }});">
+        <div style="display:flex;align-items:center;gap:9px;flex:none;">
+          <span dir="ltr" style="font-size:13px;font-weight:600;color:#5F5B6B;font-family:sans-serif;letter-spacing:.04em;white-space:nowrap;order:2;"><strong style="color:#17151F;">02</strong> / 04</span>
+          <span style="width:24px;height:24px;border-radius:7px;flex:none;font-size:13px;background:rgba(108,77,255,.14);display:flex;align-items:center;justify-content:center;color:#6C4DFF;font-size:16px;">◐</span>
+        </div>
+        <h3 style="margin:0;flex:none;font-size:clamp(15px,2.1vh,18px);font-weight:700;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">قدرت پردازش، بی‌صدا</h3>
+        <div style="margin-top:3px;flex:none;display:flex;align-items:center;gap:12px;">
+          <div style="flex:1;display:flex;gap:6px;">
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t0 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t1 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t2 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t3 }});transition:transform .16s linear;"></span></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:#5F5B6B;">عملکرد</span>
+        </div>
+      </article>
+
+      <article style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:opacity .5s ease, transform .5s ease;opacity:{{ o2 }};transform:translateY({{ y2 }});">
+        <div style="display:flex;align-items:center;gap:9px;flex:none;">
+          <span dir="ltr" style="font-size:13px;font-weight:600;color:#5F5B6B;font-family:sans-serif;letter-spacing:.04em;white-space:nowrap;order:2;"><strong style="color:#17151F;">03</strong> / 04</span>
+          <span style="width:24px;height:24px;border-radius:7px;flex:none;font-size:13px;background:rgba(108,77,255,.14);display:flex;align-items:center;justify-content:center;color:#6C4DFF;font-size:16px;">▣</span>
+        </div>
+        <h3 style="margin:0;flex:none;font-size:clamp(15px,2.1vh,18px);font-weight:700;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">نمایشگری که چشم را خسته نمی‌کند</h3>
+        <div style="margin-top:3px;flex:none;display:flex;align-items:center;gap:12px;">
+          <div style="flex:1;display:flex;gap:6px;">
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t0 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t1 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t2 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t3 }});transition:transform .16s linear;"></span></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:#5F5B6B;">نمایشگر</span>
+        </div>
+      </article>
+
+      <article style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;transition:opacity .5s ease, transform .5s ease;opacity:{{ o3 }};transform:translateY({{ y3 }});">
+        <div style="display:flex;align-items:center;gap:9px;flex:none;">
+          <span dir="ltr" style="font-size:13px;font-weight:600;color:#5F5B6B;font-family:sans-serif;letter-spacing:.04em;white-space:nowrap;order:2;"><strong style="color:#17151F;">04</strong> / 04</span>
+          <span style="width:24px;height:24px;border-radius:7px;flex:none;font-size:13px;background:rgba(34,211,238,.18);display:flex;align-items:center;justify-content:center;color:#0E7490;font-size:16px;">⌁</span>
+        </div>
+        <h3 style="margin:0;flex:none;font-size:clamp(15px,2.1vh,18px);font-weight:700;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">ارسال سریع، پشتیبانی واقعی</h3>
+        <div style="margin-top:3px;flex:none;display:flex;align-items:center;gap:12px;">
+          <div style="flex:1;display:flex;gap:6px;">
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t0 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t1 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#6C4DFF;transform-origin:right;transform:scaleX({{ t2 }});transition:transform .16s linear;"></span></i>
+            <i style="flex:1;height:3px;border-radius:2px;background:#E4E0F0;overflow:hidden;display:block;"><span style="display:block;height:100%;background:#22D3EE;transform-origin:right;transform:scaleX({{ t3 }});transition:transform .16s linear;"></span></i>
+          </div>
+          <span style="font-size:12px;font-weight:600;color:#5F5B6B;">خرید</span>
+        </div>
+      </article>
+
+    </div>
+  </div>
+
+  <div style="position:absolute;bottom:0;right:0;left:0;height:3px;background:rgba(23,21,31,.08);z-index:3;">
+    <span ref="{{ progRef }}" style="display:block;height:100%;background:linear-gradient(90deg,#22D3EE,#6C4DFF);width:0%;"></span>
+  </div>
+
+  <div aria-hidden="true" style="position:absolute;inset:0;z-index:4;background:#F6F4FC;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity .6s ease;opacity:{{ loaderOp }};pointer-events:{{ loaderPE }};">
+    <div style="font-size:14px;font-weight:600;color:#5F5B6B;">{{ pctText }}</div>
+    <div style="width:180px;height:2px;background:#E4E0F0;overflow:hidden;">
+      <span style="display:block;height:100%;background:#6C4DFF;width:{{ pw2 }};"></span>
+    </div>
+  </div>
+
+</div>
+
+<div ref="{{ spacerRef }}" style="height:{{ spacerH }};"></div>
+</div>
+
+<section data-screen-label="Categories" style="position:relative;padding:clamp(56px,9vh,96px) 5vw 56px;background:#FFFFFF;border-top:1px solid #EAE6F4;">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:32px;">
+    <div>
+      <h2 style="margin:0;font-size:clamp(26px,3vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.5;">دسته‌بندی محصولات</h2>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.8;color:#5F5B6B;">نشانگر را روی هر دسته ببرید تا باز شود.</p>
+    </div>
+    <a href="#" style="font-size:14px;font-weight:600;">همه دسته‌ها</a>
+  </div>
+  <div style="display:flex;flex-direction:{{ catDir }};gap:clamp(8px,1vw,14px);height:{{ catRailH }};">
+
+    <div role="button" tabindex="0" aria-label="دسته لپ‌تاپ" onMouseEnter="{{ onC1 }}" onFocus="{{ onC1 }}" onClick="{{ onC1 }}" style="position:relative;flex:{{ f1 }};min-width:0;min-height:{{ catTileH }};border-radius:20px;overflow:hidden;cursor:pointer;background:linear-gradient(155deg,#CFC4F7,#EFEAFB);transition:flex .7s cubic-bezier(.25,1,.5,1);">
+      <div style="position:absolute;inset:0;"><image-slot id="arb-cat-01" shape="rect" fit="cover" placeholder="دسته لپ‌تاپ — ۹۰۰×۱۴۰۰"></image-slot></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(23,21,31,.92),rgba(23,21,31,.7) 46%,rgba(23,21,31,.32));"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:rgba(23,21,31,.46);transition:opacity .5s ease;opacity:{{ i1 }};"></div>
+      <div style="position:absolute;inset:auto 0 0 0;pointer-events:none;padding:clamp(16px,2vw,28px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:opacity .45s ease, transform .45s ease;opacity:{{ a1 }};transform:translateY({{ ay1 }});">
+        <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.32);background:rgba(23,21,31,.5);font-size:12px;font-weight:600;color:#FFFFFF;white-space:nowrap;">۳۸ محصول</span>
+        <h3 style="margin:0;font-size:clamp(22px,2.6vw,38px);font-weight:700;line-height:1.5;color:#FFFFFF;white-space:nowrap;">لپ‌تاپ</h3>
+        <p style="margin:0;font-size:14px;line-height:1.8;color:rgba(255,255,255,.92);">اولترابوک، گیمینگ، ورک‌استیشن</p>
+        <a href="#" style="margin-top:4px;pointer-events:auto;padding:10px 20px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده دسته</a>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset:0;padding:clamp(14px,1.6vw,22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;align-items:center;pointer-events:none;transition:opacity .45s ease;opacity:{{ i1 }};">
+        <span dir="ltr" style="font-size:13px;font-weight:600;font-family:sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.9);">01</span>
+        <span style="font-size:15px;font-weight:600;color:#FFFFFF;white-space:nowrap;">لپ‌تاپ</span>
+      </div>
+    </div>
+
+    <div role="button" tabindex="0" aria-label="دسته گوشی موبایل" onMouseEnter="{{ onC2 }}" onFocus="{{ onC2 }}" onClick="{{ onC2 }}" style="position:relative;flex:{{ f2 }};min-width:0;min-height:{{ catTileH }};border-radius:20px;overflow:hidden;cursor:pointer;background:linear-gradient(155deg,#BFD9F5,#EAF1FB);transition:flex .7s cubic-bezier(.25,1,.5,1);">
+      <div style="position:absolute;inset:0;"><image-slot id="arb-cat-02" shape="rect" fit="cover" placeholder="دسته موبایل — ۹۰۰×۱۴۰۰"></image-slot></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(23,21,31,.92),rgba(23,21,31,.7) 46%,rgba(23,21,31,.32));"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:rgba(23,21,31,.46);transition:opacity .5s ease;opacity:{{ i2 }};"></div>
+      <div style="position:absolute;inset:auto 0 0 0;pointer-events:none;padding:clamp(16px,2vw,28px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:opacity .45s ease, transform .45s ease;opacity:{{ a2 }};transform:translateY({{ ay2 }});">
+        <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.32);background:rgba(23,21,31,.5);font-size:12px;font-weight:600;color:#FFFFFF;white-space:nowrap;">۵۲ محصول</span>
+        <h3 style="margin:0;font-size:clamp(22px,2.6vw,38px);font-weight:700;line-height:1.5;color:#FFFFFF;white-space:nowrap;">گوشی موبایل</h3>
+        <p style="margin:0;font-size:14px;line-height:1.8;color:rgba(255,255,255,.92);">پرچم‌دار و میان‌رده</p>
+        <a href="#" style="margin-top:4px;pointer-events:auto;padding:10px 20px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده دسته</a>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset:0;padding:clamp(14px,1.6vw,22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;align-items:center;pointer-events:none;transition:opacity .45s ease;opacity:{{ i2 }};">
+        <span dir="ltr" style="font-size:13px;font-weight:600;font-family:sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.9);">02</span>
+        <span style="font-size:15px;font-weight:600;color:#FFFFFF;white-space:nowrap;">موبایل</span>
+      </div>
+    </div>
+
+    <div role="button" tabindex="0" aria-label="دسته صدا و هدفون" onMouseEnter="{{ onC3 }}" onFocus="{{ onC3 }}" onClick="{{ onC3 }}" style="position:relative;flex:{{ f3 }};min-width:0;min-height:{{ catTileH }};border-radius:20px;overflow:hidden;cursor:pointer;background:linear-gradient(155deg,#B7E6EF,#E6F7FA);transition:flex .7s cubic-bezier(.25,1,.5,1);">
+      <div style="position:absolute;inset:0;"><image-slot id="arb-cat-03" shape="rect" fit="cover" placeholder="دسته هدفون — ۹۰۰×۱۴۰۰"></image-slot></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(23,21,31,.92),rgba(23,21,31,.7) 46%,rgba(23,21,31,.32));"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:rgba(23,21,31,.46);transition:opacity .5s ease;opacity:{{ i3 }};"></div>
+      <div style="position:absolute;inset:auto 0 0 0;pointer-events:none;padding:clamp(16px,2vw,28px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:opacity .45s ease, transform .45s ease;opacity:{{ a3 }};transform:translateY({{ ay3 }});">
+        <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.32);background:rgba(23,21,31,.5);font-size:12px;font-weight:600;color:#FFFFFF;white-space:nowrap;">۴۱ محصول</span>
+        <h3 style="margin:0;font-size:clamp(22px,2.6vw,38px);font-weight:700;line-height:1.5;color:#FFFFFF;white-space:nowrap;">صدا و هدفون</h3>
+        <p style="margin:0;font-size:14px;line-height:1.8;color:rgba(255,255,255,.92);">بی‌سیم، مانیتورینگ، اسپیکر</p>
+        <a href="#" style="margin-top:4px;pointer-events:auto;padding:10px 20px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده دسته</a>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset:0;padding:clamp(14px,1.6vw,22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;align-items:center;pointer-events:none;transition:opacity .45s ease;opacity:{{ i3 }};">
+        <span dir="ltr" style="font-size:13px;font-weight:600;font-family:sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.9);">03</span>
+        <span style="font-size:15px;font-weight:600;color:#FFFFFF;white-space:nowrap;">هدفون</span>
+      </div>
+    </div>
+
+    <div role="button" tabindex="0" aria-label="دسته گیمینگ" onMouseEnter="{{ onC4 }}" onFocus="{{ onC4 }}" onClick="{{ onC4 }}" style="position:relative;flex:{{ f4 }};min-width:0;min-height:{{ catTileH }};border-radius:20px;overflow:hidden;cursor:pointer;background:linear-gradient(155deg,#C9C2E8,#ECEAF7);transition:flex .7s cubic-bezier(.25,1,.5,1);">
+      <div style="position:absolute;inset:0;"><image-slot id="arb-cat-04" shape="rect" fit="cover" placeholder="دسته گیمینگ — ۹۰۰×۱۴۰۰"></image-slot></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(23,21,31,.92),rgba(23,21,31,.7) 46%,rgba(23,21,31,.32));"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:rgba(23,21,31,.46);transition:opacity .5s ease;opacity:{{ i4 }};"></div>
+      <div style="position:absolute;inset:auto 0 0 0;pointer-events:none;padding:clamp(16px,2vw,28px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:opacity .45s ease, transform .45s ease;opacity:{{ a4 }};transform:translateY({{ ay4 }});">
+        <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.32);background:rgba(23,21,31,.5);font-size:12px;font-weight:600;color:#FFFFFF;white-space:nowrap;">۲۷ محصول</span>
+        <h3 style="margin:0;font-size:clamp(22px,2.6vw,38px);font-weight:700;line-height:1.5;color:#FFFFFF;white-space:nowrap;">گیمینگ</h3>
+        <p style="margin:0;font-size:14px;line-height:1.8;color:rgba(255,255,255,.92);">کنسول، دسته، صندلی</p>
+        <a href="#" style="margin-top:4px;pointer-events:auto;padding:10px 20px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده دسته</a>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset:0;padding:clamp(14px,1.6vw,22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;align-items:center;pointer-events:none;transition:opacity .45s ease;opacity:{{ i4 }};">
+        <span dir="ltr" style="font-size:13px;font-weight:600;font-family:sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.9);">04</span>
+        <span style="font-size:15px;font-weight:600;color:#FFFFFF;white-space:nowrap;">گیمینگ</span>
+      </div>
+    </div>
+
+    <div role="button" tabindex="0" aria-label="دسته لوازم جانبی" onMouseEnter="{{ onC5 }}" onFocus="{{ onC5 }}" onClick="{{ onC5 }}" style="position:relative;flex:{{ f5 }};min-width:0;min-height:{{ catTileH }};border-radius:20px;overflow:hidden;cursor:pointer;background:linear-gradient(155deg,#D8D3E4,#F0EEF6);transition:flex .7s cubic-bezier(.25,1,.5,1);">
+      <div style="position:absolute;inset:0;"><image-slot id="arb-cat-05" shape="rect" fit="cover" placeholder="لوازم جانبی — ۹۰۰×۱۴۰۰"></image-slot></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(to top,rgba(23,21,31,.92),rgba(23,21,31,.7) 46%,rgba(23,21,31,.32));"></div>
+      <div aria-hidden="true" style="position:absolute;inset:0;pointer-events:none;background:rgba(23,21,31,.46);transition:opacity .5s ease;opacity:{{ i5 }};"></div>
+      <div style="position:absolute;inset:auto 0 0 0;pointer-events:none;padding:clamp(16px,2vw,28px);display:flex;flex-direction:column;align-items:flex-start;gap:10px;transition:opacity .45s ease, transform .45s ease;opacity:{{ a5 }};transform:translateY({{ ay5 }});">
+        <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.32);background:rgba(23,21,31,.5);font-size:12px;font-weight:600;color:#FFFFFF;white-space:nowrap;">۶۴ محصول</span>
+        <h3 style="margin:0;font-size:clamp(22px,2.6vw,38px);font-weight:700;line-height:1.5;color:#FFFFFF;white-space:nowrap;">لوازم جانبی</h3>
+        <p style="margin:0;font-size:14px;line-height:1.8;color:rgba(255,255,255,.92);">شارژر، هاب، کیف و کوله</p>
+        <a href="#" style="margin-top:4px;pointer-events:auto;padding:10px 20px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده دسته</a>
+      </div>
+      <div aria-hidden="true" style="position:absolute;inset:0;padding:clamp(14px,1.6vw,22px);display:flex;flex-direction:column;justify-content:flex-end;gap:8px;align-items:center;pointer-events:none;transition:opacity .45s ease;opacity:{{ i5 }};">
+        <span dir="ltr" style="font-size:13px;font-weight:600;font-family:sans-serif;letter-spacing:.06em;color:rgba(255,255,255,.9);">05</span>
+        <span style="font-size:15px;font-weight:600;color:#FFFFFF;white-space:nowrap;">جانبی</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section data-screen-label="Flagships" style="position:relative;min-height:calc(100vh - 72px);display:flex;flex-direction:column;justify-content:center;gap:clamp(12px,2vh,26px);padding:clamp(18px,4vh,56px) 5vw;background:#121019;overflow:hidden;">
+  <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(60% 50% at 78% 18%,rgba(139,107,255,.16),rgba(0,0,0,0) 70%),radial-gradient(56% 46% at 16% 80%,rgba(34,211,238,.12),rgba(0,0,0,0) 70%);"></div>
+
+  <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+    <div>
+      <h2 style="margin:0;font-size:clamp(24px,2.8vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.45;color:#FFFFFF;">دو پرچم‌دار، یک انتخاب</h2>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.85;color:#A8A3BA;max-width:62ch;">هر دو با Core Ultra 9 290HX Plus و RTX 5090. تفاوت در توان پایدار و نمایشگر است.</p>
+    </div>
+    <span style="font-size:12.5px;color:#A8A3BA;">با دکمه‌های پایین جابه‌جا کنید</span>
+  </div>
+
+  <div style="position:relative;display:grid;">
+    <div style="grid-area:1/1;display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:clamp(16px,2.5vw,44px);align-items:center;transition:opacity .5s ease, transform .5s ease, visibility .5s ease;opacity:{{ dA }};transform:translateX({{ dxA }});pointer-events:{{ peA }};visibility:{{ visA }};">
+
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;height:clamp(150px,36vh,290px);aspect-ratio:5/4;max-width:100%;display:flex;align-items:center;justify-content:center;">
+        <div aria-hidden="true" style="position:absolute;width:84%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(139,107,255,.3),rgba(0,0,0,0) 70%);"></div>
+        <img alt="MSI Titan 18 HX A2W" src="../../uploads/MSI.webp" style="position:relative;width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.12);filter:drop-shadow(0 26px 40px rgba(0,0,0,.45));" />
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:clamp(7px,1.2vh,14px);">
+        <div>
+          <span dir="ltr" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#A88CFF;letter-spacing:.04em;"><i style="width:7px;height:7px;border-radius:50%;background:#A88CFF;display:block;"></i>MSI</span>
+          <h3 dir="ltr" style="margin:0;font-size:clamp(21px,2.4vw,32px);font-weight:700;line-height:1.35;letter-spacing:-.02em;color:#FFFFFF;text-align:right;">Titan 18 HX A2W</h3>
+          <p style="margin:6px 0 0;font-size:14px;font-weight:600;line-height:1.7;color:#A88CFF;">سلطه کامل، بی‌صدا</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="flex:none;width:8.5ch;font-size:12.5px;color:#A8A3BA;">توان کل</span>
+            <span style="flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;display:block;"><i style="display:block;height:100%;width:84%;border-radius:4px;background:linear-gradient(90deg,#8B6BFF,#C4B4FF);"></i></span>
+            <span dir="ltr" style="flex:none;font-size:13.5px;font-weight:700;color:#FFFFFF;">۲۷۰W</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="flex:none;width:8.5ch;font-size:12.5px;color:#A8A3BA;">روشنایی</span>
+            <span style="flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;display:block;"><i style="display:block;height:100%;width:62%;border-radius:4px;background:linear-gradient(90deg,#8B6BFF,#C4B4FF);"></i></span>
+            <span dir="ltr" style="flex:none;font-size:13.5px;font-weight:700;color:#FFFFFF;">۱۰۰۰ nits</span>
+          </div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;"><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">RTX 5090 · ۲۴GB</span><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">۱۸ اینچ Mini LED ۲۴۰Hz</span><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">کیبورد Cherry MX</span></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+          <a href="#" style="pointer-events:auto;padding:9px 22px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده و خرید</a>
+          <a href="#" style="pointer-events:auto;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.22);color:#FFFFFF;font-size:14px;font-weight:600;white-space:nowrap;transition:border-color .25s ease;" style-hover="border-color:#FFFFFF;">مشخصات کامل</a>
+        </div>
+      </div>
+    </div>
+    <div style="grid-area:1/1;display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:clamp(16px,2.5vw,44px);align-items:center;transition:opacity .5s ease, transform .5s ease, visibility .5s ease;opacity:{{ dB }};transform:translateX({{ dxB }});pointer-events:{{ peB }};visibility:{{ visB }};">
+
+      <div style="display:flex;flex-direction:column;justify-content:center;gap:clamp(7px,1.2vh,14px);">
+        <div>
+          <span dir="ltr" style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#22D3EE;letter-spacing:.04em;"><i style="width:7px;height:7px;border-radius:50%;background:#22D3EE;display:block;"></i>ASUS ROG</span>
+          <h3 dir="ltr" style="margin:0;font-size:clamp(21px,2.4vw,32px);font-weight:700;line-height:1.35;letter-spacing:-.02em;color:#FFFFFF;text-align:right;">Strix SCAR 18 (2026)</h3>
+          <p style="margin:6px 0 0;font-size:14px;font-weight:600;line-height:1.7;color:#22D3EE;">پیروزی، شتاب‌گرفته</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="flex:none;width:8.5ch;font-size:12.5px;color:#A8A3BA;">توان کل</span>
+            <span style="flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;display:block;"><i style="display:block;height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,#22D3EE,#A5F3FC);"></i></span>
+            <span dir="ltr" style="flex:none;font-size:13.5px;font-weight:700;color:#FFFFFF;">۳۲۰W</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="flex:none;width:8.5ch;font-size:12.5px;color:#A8A3BA;">روشنایی</span>
+            <span style="flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden;display:block;"><i style="display:block;height:100%;width:100%;border-radius:4px;background:linear-gradient(90deg,#22D3EE,#A5F3FC);"></i></span>
+            <span dir="ltr" style="flex:none;font-size:13.5px;font-weight:700;color:#FFFFFF;">۱۶۰۰ nits</span>
+          </div></div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;"><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">RTX 5090 · ۱۷۵W</span><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">۴K Mini LED ۲۴۰Hz</span><span style="padding:6px 12px;border-radius:9px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12.5px;font-weight:500;color:#D7D3E4;white-space:nowrap;">تا ۱۲۸GB رم</span></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+          <a href="#" style="pointer-events:auto;padding:9px 22px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">مشاهده و خرید</a>
+          <a href="#" style="pointer-events:auto;padding:9px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.22);color:#FFFFFF;font-size:14px;font-weight:600;white-space:nowrap;transition:border-color .25s ease;" style-hover="border-color:#FFFFFF;">مشخصات کامل</a>
+        </div>
+      </div>
+
+      <div style="position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="position:relative;height:clamp(150px,36vh,290px);aspect-ratio:5/4;max-width:100%;display:flex;align-items:center;justify-content:center;">
+        <div aria-hidden="true" style="position:absolute;width:84%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.26),rgba(0,0,0,0) 70%);"></div>
+        <img alt="ASUS ROG Strix SCAR 18" src="../../uploads/ASUS.png" style="position:relative;width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.36);filter:drop-shadow(0 26px 40px rgba(0,0,0,.45));" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position:relative;display:flex;justify-content:center;">
+    <div style="display:flex;align-items:center;gap:6px;padding:6px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);">
+      <button type="button" onClick="{{ onDuelA }}" style="padding:11px 22px;border-radius:999px;border:0;background:{{ tabBgA }};color:{{ tabFgA }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .3s ease, color .3s ease;">MSI Titan 18 HX</button>
+      <button type="button" onClick="{{ onDuelB }}" style="padding:11px 22px;border-radius:999px;border:0;background:{{ tabBgB }};color:{{ tabFgB }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .3s ease, color .3s ease;">ROG Strix SCAR 18</button>
+    </div>
+  </div>
+
+</section>
+
+<section data-screen-label="Featured" style="position:relative;padding:56px 5vw clamp(56px,9vh,110px);background:#FFFFFF;">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:32px;">
+    <h2 style="margin:0;font-size:clamp(26px,3vw,40px);font-weight:700;letter-spacing:-.02em;">محصولات منتخب</h2>
+    <a href="#" style="font-size:14px;font-weight:600;">مشاهده فروشگاه</a>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr;gap:clamp(16px,2vw,22px);">
+
+    <article style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));border-radius:26px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;">
+      <div style="position:relative;min-height:clamp(240px,36vh,340px);background:linear-gradient(150deg,#E4DDFB,#F5F3FD);">
+        <image-slot id="arb-prd-01" shape="rect" fit="contain" placeholder="اولترابوک ۱۴ اینچی — ۱۴۰۰×۱۰۵۰"></image-slot>
+      </div>
+      <div style="padding:clamp(22px,3vw,40px);display:flex;flex-direction:column;justify-content:center;gap:16px;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+          <span style="padding:6px 14px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:12px;font-weight:600;white-space:nowrap;">انتخاب کارشناسان</span>
+          <span style="font-size:13px;color:#5F5B6B;">تست‌شده و آماده ارسال</span>
+        </div>
+        <h3 style="margin:0;font-size:clamp(22px,2.4vw,32px);font-weight:700;line-height:1.55;letter-spacing:-.02em;">اولترابوک ۱۴ اینچی، نسل تازه</h3>
+        <p style="margin:0;font-size:14px;line-height:1.9;color:#5F5B6B;max-width:46ch;">سبک‌ترین گزینه برای کار روزمره و سفر؛ با بدنه آلومینیومی و باتری یک روز کامل.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;"><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">پردازنده ۸ هسته‌ای</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۳۲GB رم</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۱TB SSD</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">نمایشگر ۱۲۰Hz</span></div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:4px;">
+          <span style="font-size:clamp(20px,2.2vw,26px);font-weight:700;letter-spacing:-.02em;white-space:nowrap;">۸۹٫۵۰۰٫۰۰۰ تومان</span>
+          <button type="button" onClick="{{ onCart1 }}" style="padding:13px 26px;border-radius:999px;border:1px solid {{ cartBd1 }};background:{{ cartBg1 }};color:{{ cartFg1 }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .25s ease, color .25s ease, border-color .25s ease;">{{ cartTxt1 }}</button>
+          <a href="#" style="font-size:14px;font-weight:600;">جزئیات کامل</a>
+        </div>
+      </div>
+    </article>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(16px,2vw,22px);">
+
+    <article style="display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);">
+      <div style="position:relative;aspect-ratio:16/11;background:linear-gradient(150deg,#EFEBFA,#F8F7FC);">
+        <image-slot id="arb-prd-02" shape="rect" fit="contain" placeholder="ورک‌استیشن ۱۶ اینچی — ۱۲۰۰×۸۲۵"></image-slot>
+        <span style="position:absolute;top:14px;right:14px;padding:5px 12px;border-radius:999px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:12px;font-weight:600;color:#0E7490;white-space:nowrap;pointer-events:none;">موجود</span>
+      </div>
+      <div style="padding:22px;display:flex;flex-direction:column;gap:14px;flex:1;">
+        <span style="font-size:12px;font-weight:600;color:#4B32C3;">ورک‌استیشن</span>
+        <h3 style="margin:0;font-size:19px;font-weight:700;line-height:1.6;letter-spacing:-.01em;">لپ‌تاپ ۱۶ اینچی برای رندر و مدل‌سازی</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;"><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۶۴GB رم</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۲TB SSD</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">گرافیک حرفه‌ای</span></div>
+        <div style="margin-top:auto;padding-top:6px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;">۱۴۲٫۰۰۰٫۰۰۰ تومان</span>
+          <button type="button" onClick="{{ onCart2 }}" style="padding:11px 20px;border-radius:999px;border:1px solid {{ cartBd2 }};background:{{ cartBg2 }};color:{{ cartFg2 }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .25s ease, color .25s ease, border-color .25s ease;">{{ cartTxt2 }}</button>
+        </div>
+      </div>
+    </article>
+
+    <article style="display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);">
+      <div style="position:relative;aspect-ratio:16/11;background:linear-gradient(150deg,#EFEBFA,#F8F7FC);">
+        <image-slot id="arb-prd-03" shape="rect" fit="contain" placeholder="لپ‌تاپ گیمینگ — ۱۲۰۰×۸۲۵"></image-slot>
+        <span style="position:absolute;top:14px;right:14px;padding:5px 12px;border-radius:999px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:12px;font-weight:600;color:#B4530A;white-space:nowrap;pointer-events:none;">۳ عدد باقی‌مانده</span>
+      </div>
+      <div style="padding:22px;display:flex;flex-direction:column;gap:14px;flex:1;">
+        <span style="font-size:12px;font-weight:600;color:#4B32C3;">گیمینگ</span>
+        <h3 style="margin:0;font-size:19px;font-weight:700;line-height:1.6;letter-spacing:-.01em;">لپ‌تاپ ۱۵ اینچی با نمایشگر ۱۶۵ هرتز</h3>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;"><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۱۶GB رم</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۱TB SSD</span><span style="padding:6px 12px;border-radius:10px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:13px;font-weight:500;color:#3D3950;white-space:nowrap;">۱۶۵Hz</span></div>
+        <div style="margin-top:auto;padding-top:6px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;">۷۴٫۹۰۰٫۰۰۰ تومان</span>
+          <button type="button" onClick="{{ onCart3 }}" style="padding:11px 20px;border-radius:999px;border:1px solid {{ cartBd3 }};background:{{ cartBg3 }};color:{{ cartFg3 }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .25s ease, color .25s ease, border-color .25s ease;">{{ cartTxt3 }}</button>
+        </div>
+      </div>
+    </article>
+    </div>
+
+  </div>
+</section>
+
+<section data-screen-label="Journal" style="position:relative;overflow:hidden;padding:clamp(48px,7vh,84px) 5vw clamp(40px,6vh,72px);background:#F6F4FC;border-top:1px solid #EAE6F4;">
+  <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(54% 46% at 50% 88%,rgba(108,77,255,.14),rgba(246,244,252,0) 72%);"></div>
+
+  <div style="position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+    <div>
+      <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(23,21,31,.08);font-size:12.5px;font-weight:600;color:#4B32C3;"><i style="width:6px;height:6px;border-radius:50%;background:#22D3EE;display:block;"></i>بلاگ آربایت</span>
+      <h2 style="margin:10px 0 0;font-size:clamp(26px,3vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.45;">پیش از خرید، بخوانید</h2>
+      <p style="margin:6px 0 0;font-size:14px;line-height:1.85;color:#5F5B6B;max-width:52ch;">راهنماها و بررسی‌هایی که کارشناسان آربایت می‌نویسند. {{ journalHint }}</p>
+    </div>
+    <a href="#" style="font-size:14px;font-weight:600;">همه نوشته‌ها</a>
+  </div>
+
+  <div ref="{{ arcRef }}" style="position:relative;display:{{ arcDisp }};gap:12px;overflow-x:{{ arcOx }};-webkit-overflow-scrolling:touch;padding-bottom:{{ arcPb }};margin-top:clamp(12px,2vh,24px);height:{{ arcH }};">
+    <article ref="{{ b0 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip0 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip0 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#6C4DFF,#3B22A8);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">راهنمای خرید</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">چطور لپ‌تاپ درست را انتخاب کنیم</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۷ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b1 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip1 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip1 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#17151F,#3D3950);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">بررسی</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">Titan 18 HX در کار واقعی</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۹ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b2 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip2 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip2 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#0E7490,#22D3EE);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">مقایسه</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">Mini LED یا OLED؟</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۶ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#22D3EE;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b3 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip3 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip3 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#6C4DFF,#3B22A8);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">راهنمای خرید</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">رم و SSD؛ چقدر کافی است</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۵ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b4 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip4 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip4 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#17151F,#3D3950);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">نگهداری</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">باتری را چطور زنده نگه داریم</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۴ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b5 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip5 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip5 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#0E7490,#22D3EE);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">بررسی</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">هدفون‌های بی‌سیم زیر ده میلیون</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۸ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#22D3EE;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b6 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip6 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip6 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#6C4DFF,#3B22A8);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">گیمینگ</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">تنظیمات درست برای ۲۴۰ هرتز</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۶ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b7 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip7 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip7 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#17151F,#3D3950);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">راهنمای خرید</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">مانیتور دوم برای کار</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۵ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#A88CFF;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+    <article ref="{{ b8 }}" style="position:{{ cardPos }};top:{{ cardTop }};left:{{ cardLeft }};width:{{ cardW }};height:{{ cardH }};margin:{{ cardM }};flex:{{ cardFlex }};perspective:900px;will-change:transform;" style-hover="z-index:99 !important;">
+      <div onClick="{{ onFlip8 }}" style="position:relative;width:100%;height:100%;cursor:pointer;transform-style:preserve-3d;transform:{{ flip8 }};transition:transform .6s cubic-bezier(.3,1,.4,1);" style-hover="transform:rotateY(180deg) scale(1.22);">
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(155deg,#0E7490,#22D3EE);box-shadow:0 12px 30px rgba(23,21,31,.2);backface-visibility:hidden;-webkit-backface-visibility:hidden;">
+          <span style="font-size:{{ cardTagFs }};font-weight:700;color:#FFFFFF;">پشت صحنه</span>
+          <h3 style="margin:0;font-size:{{ cardTitleFs }};font-weight:700;line-height:1.62;color:#FFFFFF;text-wrap:pretty;">تست آربایت پیش از ارسال</h3>
+        </div>
+        <div style="position:absolute;inset:0;border-radius:13px;overflow:hidden;padding:11px;display:flex;flex-direction:column;justify-content:flex-end;gap:5px;background:#17151F;box-shadow:0 12px 30px rgba(23,21,31,.24);backface-visibility:hidden;-webkit-backface-visibility:hidden;transform:rotateY(180deg);">
+          <span style="font-size:{{ cardMetaFs }};color:#A8A3BA;">۳ دقیقه مطالعه</span>
+          <span style="font-size:{{ cardCtaFs }};font-weight:700;color:#22D3EE;">خواندن مقاله ←</span>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section data-screen-label="FAQ" style="position:relative;padding:clamp(56px,8vh,96px) 5vw clamp(64px,9vh,110px);background:#FFFFFF;border-top:1px solid #EAE6F4;">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4vw,72px);align-items:start;max-width:1240px;margin:0 auto;">
+
+    <aside style="position:sticky;top:96px;display:flex;flex-direction:column;gap:18px;">
+      <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;background:#F1EEFA;font-size:12.5px;font-weight:600;color:#4B32C3;"><i style="width:6px;height:6px;border-radius:50%;background:#6C4DFF;display:block;"></i>سوالات متداول</span>
+      <div>
+        <h2 style="margin:0;font-size:clamp(28px,3.2vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.4;text-wrap:pretty;">دنبال جواب می‌گردید؟</h2>
+        <p style="margin:10px 0 0;font-size:14.5px;line-height:1.95;color:#5F5B6B;max-width:42ch;">آنچه بیشتر از ما می‌پرسند، یک‌جا. اگر سوال شما اینجا نبود، کارشناس‌ها در دسترس‌اند.</p>
+      </div>
+      <div style="margin-top:4px;padding:22px;border-radius:20px;background:#17151F;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <span style="position:relative;width:8px;height:8px;border-radius:50%;background:#22D3EE;display:block;"></span>
+          <span style="font-size:13px;font-weight:600;color:#FFFFFF;">پشتیبانی همین حالا آنلاین است</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span dir="ltr" style="font-size:22px;font-weight:700;letter-spacing:-.02em;color:#FFFFFF;text-align:right;">۴ دقیقه</span>
+            <span style="font-size:12px;color:#A8A3BA;">میانگین زمان پاسخ</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <span dir="ltr" style="font-size:22px;font-weight:700;letter-spacing:-.02em;color:#FFFFFF;text-align:right;">۹ تا ۲۱</span>
+            <span style="font-size:12px;color:#A8A3BA;">هر روز هفته</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:9px;">
+          <a href="#" style="padding:11px 22px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:14px;font-weight:600;white-space:nowrap;transition:background .25s ease;" style-hover="background:#E9E4FA;">گفت‌وگو با کارشناس</a>
+          <a href="#" style="padding:11px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.22);color:#FFFFFF;font-size:14px;font-weight:600;white-space:nowrap;transition:border-color .25s ease;" style-hover="border-color:#FFFFFF;">تماس تلفنی</a>
+        </div>
+      </div>
+    </aside>
+
+    <div style="display:flex;flex-direction:column;">
+      <div role="button" tabindex="0" onClick="{{ onF0 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;border-bottom:1px solid #EFECF7;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">01</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">گارانتی محصولات چطور است؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr0 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op0 }};">همه محصولات گارانتی رسمی شرکتی دارند و مدت آن روی صفحه هر محصول نوشته شده است. کارت گارانتی همراه دستگاه ارسال می‌شود و برای پرچم‌دارها تعویض سه‌روزه هم اضافه می‌شود.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot0 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc0 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+      <div role="button" tabindex="0" onClick="{{ onF1 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;border-bottom:1px solid #EFECF7;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">02</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">ارسال چقدر طول می‌کشد؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr1 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op1 }};">سفارش‌های ثبت‌شده تا ساعت ۱۴ همان روز ارسال می‌شوند. تهران یک روز کاری و شهرستان دو تا سه روز کاری. ارسال برای خریدهای بالای پنجاه میلیون تومان رایگان است.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot1 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc1 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+      <div role="button" tabindex="0" onClick="{{ onF2 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;border-bottom:1px solid #EFECF7;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">03</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">می‌توانم دستگاه را پیش از تحویل تست کنم؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr2 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op2 }};">بله. در تحویل حضوری دستگاه را روشن می‌کنیم تا سلامت پیکسل‌ها، پورت‌ها و کیبورد را ببینید و بعد خرید را تأیید کنید.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot2 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc2 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+      <div role="button" tabindex="0" onClick="{{ onF3 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;border-bottom:1px solid #EFECF7;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">04</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">شرایط مرجوعی و تعویض چیست؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr3 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op3 }};">تا هفت روز پس از تحویل، اگر جعبه و لوازم جانبی کامل باشد، مرجوعی بدون نیاز به دلیل پذیرفته می‌شود. هزینه بازگشت کالا با ماست.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot3 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc3 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+      <div role="button" tabindex="0" onClick="{{ onF4 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;border-bottom:1px solid #EFECF7;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">05</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">پرداخت اقساطی دارید؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr4 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op4 }};">بله، پرداخت اعتباری تا دوازده ماه از طریق درگاه‌های همکار فعال است. سقف اعتبار شما پس از احراز هویت در پنل کاربری مشخص می‌شود.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot4 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc4 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+      <div role="button" tabindex="0" onClick="{{ onF5 }}" style="position:relative;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;padding:20px 20px 20px 16px;border-radius:16px;cursor:pointer;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+        <span dir="ltr" style="font-size:12px;font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:4px;">06</span>
+        <div style="min-width:0;">
+          <h3 style="margin:0;font-size:clamp(15px,1.5vw,17px);font-weight:600;line-height:1.7;text-wrap:pretty;">از کجا مطمئن شوم کالا اصل است؟</h3>
+          <div style="display:grid;grid-template-rows:{{ fr5 }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+            <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:14px;line-height:2;color:#5F5B6B;max-width:56ch;transition:opacity .4s ease;opacity:{{ op5 }};">هر دستگاه پیش از ارسال تست می‌شود و شماره سریالش در پرونده خرید شما ثبت می‌شود. همان سریال را می‌توانید از پنل کاربری استعلام بگیرید.</p></div>
+          </div>
+        </div>
+        <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ rot5 }});">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </span>
+        <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ sc5 }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section data-screen-label="Community" style="position:relative;overflow:hidden;padding:clamp(52px,7vh,88px) 5vw clamp(48px,6vh,76px);background:#F6F4FC;border-top:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(28px,4vw,64px);align-items:start;">
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <span style="display:inline-flex;align-self:flex-start;align-items:center;gap:7px;padding:5px 13px;border-radius:999px;background:#FFFFFF;border:1px solid rgba(23,21,31,.08);font-size:12.5px;font-weight:600;color:#4B32C3;"><i style="width:6px;height:6px;border-radius:50%;background:#6C4DFF;display:block;"></i>جامعه آربایت</span>
+      <h2 style="margin:0;font-size:clamp(26px,3vw,40px);font-weight:700;letter-spacing:-.025em;line-height:1.45;text-wrap:pretty;">کسانی که اینجا خرید کردند</h2>
+      <p style="margin:0;font-size:14.5px;line-height:1.95;color:#5F5B6B;max-width:40ch;">سفارش‌ها از انبار تهران ارسال می‌شوند و به هفت مرکز استانی زیر می‌رسند. زمان تحویل در شهرستان دو تا سه روز کاری است.</p>
+      <div style="display:grid;grid-template-columns:repeat(3,auto);gap:clamp(18px,3vw,36px);margin-top:6px;justify-content:start;">
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <span style="font-size:clamp(24px,2.6vw,32px);font-weight:700;letter-spacing:-.03em;color:#17151F;">۱۲٬۴۰۰</span>
+          <span style="font-size:12.5px;color:#5F5B6B;">سفارش تحویل‌شده</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <span style="font-size:clamp(24px,2.6vw,32px);font-weight:700;letter-spacing:-.03em;color:#17151F;">۹۶٪</span>
+          <span style="font-size:12.5px;color:#5F5B6B;">رضایت از خرید</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:3px;">
+          <span style="font-size:clamp(24px,2.6vw,32px);font-weight:700;letter-spacing:-.03em;color:#17151F;">۸</span>
+          <span style="font-size:12.5px;color:#5F5B6B;">سال فعالیت</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+      <div ref="{{ mapRef }}" role="img" aria-label="نقشه ایران با شهرهای تحت پوشش ارسال آربایت" style="width:100%;height:clamp(260px,36vh,380px);"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">
+        <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:12px;background:#FFFFFF;border:1px solid #E7E3F3;">
+          <i style="width:9px;height:9px;border-radius:50%;background:#6C4DFF;flex:none;display:block;"></i>
+          <span style="font-size:12.5px;line-height:1.5;color:#3D3950;">انبار مرکزی تهران</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:12px;background:#FFFFFF;border:1px solid #E7E3F3;">
+          <i style="width:9px;height:9px;border-radius:50%;background:#FFFFFF;border:1.8px solid #6C4DFF;flex:none;display:block;"></i>
+          <span style="font-size:12.5px;line-height:1.5;color:#3D3950;">تحویل یک تا سه روز کاری</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section data-screen-label="Guarantees" style="padding:clamp(26px,4vh,40px) 5vw;background:#FFFFFF;border-top:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto clamp(18px,2.5vh,26px);padding:14px 18px;border-radius:16px;background:#F6F4FC;border:1px solid #EAE6F4;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+    <div style="display:flex;align-items:center;gap:11px;min-width:0;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2.5 7.5h10v9h-10z"></path><path d="M12.5 10.5h4l3 3v3h-7z"></path><circle cx="6.5" cy="17.5" r="1.8"></circle><circle cx="16.5" cy="17.5" r="1.8"></circle></svg>
+      <p style="margin:0;font-size:13.5px;line-height:1.8;color:#3D3950;">سفارش داده‌اید؟ بدون ورود به حساب، با شماره سفارش وضعیتش را ببینید.</p>
+    </div>
+    <a href="./TrackOrder.dc.html" style="min-height:44px;padding:0 18px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">پیگیری سفارش</a>
+  </div>
+  <div style="max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:clamp(16px,2vw,28px);">
+    <div style="display:flex;align-items:flex-start;gap:11px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M12 3.2 5 6v5.5c0 4.2 2.9 7.6 7 9.3 4.1-1.7 7-5.1 7-9.3V6Z"></path><path d="m9.2 12.1 2 2 3.6-3.9"></path></svg>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">گارانتی رسمی</span>
+        <span style="font-size:12.5px;line-height:1.7;color:#5F5B6B;">کارت گارانتی همراه دستگاه</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:11px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M2.5 7.5h10v9h-10z"></path><path d="M12.5 10.5h4l3 3v3h-7z"></path><circle cx="6.5" cy="17.5" r="1.8"></circle><circle cx="16.5" cy="17.5" r="1.8"></circle></svg>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">ارسال رایگان</span>
+        <span style="font-size:12.5px;line-height:1.7;color:#5F5B6B;">خرید بالای ۵۰ میلیون تومان</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:11px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><path d="M4 11a8 8 0 1 1 2.3 5.7"></path><path d="M4 20v-5h5"></path></svg>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">هفت روز مرجوعی</span>
+        <span style="font-size:12.5px;line-height:1.7;color:#5F5B6B;">هزینه بازگشت با ماست</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:11px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:2px;"><rect x="3" y="4.5" width="18" height="12" rx="2"></rect><path d="M8 20h8"></path><path d="m9.5 10.3 1.8 1.8 3.2-3.4"></path></svg>
+      <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">تست پیش از ارسال</span>
+        <span style="font-size:12.5px;line-height:1.7;color:#5F5B6B;">سریال در پرونده خرید شما</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<dc-import name="MobileNav" active="home" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;killWhiteBg&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;تصویر محصول&quot;},&quot;eagerCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:60,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:20,&quot;max&quot;:220,&quot;section&quot;:&quot;عملکرد&quot;}}">
+class Component extends DCLogic {
+  state = { pct: 0, ready: false, act: 0, started: false, cat: 1, mobile: false, flip: null };
+  pickCat = (n) => () => { if (this.state.cat !== n) this.setState({ cat: n }); };
+  flipT(i){ return this.state.mobile === true && this.state.flip === i ? "rotateY(180deg)" : "none"; }
+  onFlip = (i) => () => { if (this.state.mobile === true) this.setState((s) => ({ flip: s.flip === i ? null : i })); };
+  pickFaq = (n) => () => this.setState((st) => ({ faq: st.faq === n ? -1 : n }));
+  mapRef = React.createRef();
+  CITIES = [
+    { name: "تهران", lon: 51.389, lat: 35.689, hub: true, dx: 0, dy: -13 },
+    { name: "مازندران", lon: 53.06, lat: 36.565, dx: 10, dy: -14 },
+    { name: "خراسان", lon: 59.606, lat: 36.297, dx: 0, dy: -12 },
+    { name: "قم", lon: 50.876, lat: 34.64, dx: -13, dy: 5 },
+    { name: "اصفهان", lon: 51.667, lat: 32.65, dx: 3, dy: 15 },
+    { name: "شیراز", lon: 52.531, lat: 29.591, dx: 0, dy: 16 },
+    { name: "بندرعباس", lon: 56.279, lat: 27.187, dx: 4, dy: 16 }
+  ];
+  initMap(){
+    const go = () => {
+      if (!window.d3 || !window.topojson || !this.mapRef.current) return setTimeout(go, 120);
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json").then((topo) => {
+        const all = topojson.feature(topo, topo.objects.countries).features;
+        this.iran = all.filter((f) => f.id === "364")[0];
+        this.near = all.filter((f) => {
+          if (f.id === "364") return false;
+          const b = d3.geoBounds(f);
+          return b[1][0] > 42 && b[0][0] < 65 && b[1][1] > 23 && b[0][1] < 41;
+        });
+        this.drawMap(false);
+        this.mapRO = new ResizeObserver(() => this.drawMap(true));
+        this.mapRO.observe(this.mapRef.current);
+      });
+    };
+    go();
+  }
+  drawMap(quiet){
+    const host = this.mapRef.current;
+    if (!host || !this.iran) return;
+    const w = host.clientWidth, h = host.clientHeight;
+    if (!w || !h) return;
+    if (quiet && this.mapW === w && this.mapH === h) return;
+    this.mapW = w; this.mapH = h;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const still = quiet || reduce;
+    host.innerHTML = "";
+    const svg = d3.select(host).append("svg").attr("viewBox", "0 0 " + w + " " + h)
+      .attr("width", "100%").attr("height", "100%").style("display", "block").style("overflow", "visible");
+    const defs = svg.append("defs");
+    const lg = defs.append("linearGradient").attr("id", "arbIranFill").attr("x1", "0").attr("y1", "0").attr("x2", "0.6").attr("y2", "1");
+    lg.append("stop").attr("offset", "0%").attr("stop-color", "#6C4DFF").attr("stop-opacity", 0.17);
+    lg.append("stop").attr("offset", "100%").attr("stop-color", "#22D3EE").attr("stop-opacity", 0.14);
+    const rg = defs.append("radialGradient").attr("id", "arbHubGlow");
+    rg.append("stop").attr("offset", "0%").attr("stop-color", "#6C4DFF").attr("stop-opacity", 0.32);
+    rg.append("stop").attr("offset", "100%").attr("stop-color", "#6C4DFF").attr("stop-opacity", 0);
+
+    const proj = d3.geoMercator().fitExtent([[30, 24], [w - 30, h - 24]], this.iran);
+    const path = d3.geoPath(proj);
+
+    const bb = d3.geoBounds(this.iran);
+    const cols = w < 460 ? 34 : 46;
+    const step = (bb[1][0] - bb[0][0]) / cols;
+    const grid = [];
+    for (let lat = bb[0][1], row = 0; lat <= bb[1][1]; lat += step * 0.82, row++) {
+      const off = row % 2 ? step / 2 : 0;
+      for (let lon = bb[0][0] + off; lon <= bb[1][0]; lon += step) {
+        if (d3.geoContains(this.iran, [lon, lat])) {
+          const p = proj([lon, lat]);
+          grid.push({ x: p[0], y: p[1] });
+        }
+      }
+    }
+    const cell = Math.abs(proj([bb[0][0] + step, bb[0][1]])[0] - proj([bb[0][0], bb[0][1]])[0]);
+    const dotR = Math.max(1.05, cell * 0.2);
+    const hub0 = proj([this.CITIES[0].lon, this.CITIES[0].lat]);
+    const far = Math.max(w, h);
+    const dots = svg.append("g").selectAll("circle").data(grid).join("circle")
+      .attr("cx", (d) => d.x).attr("cy", (d) => d.y).attr("r", dotR)
+      .attr("fill", (d) => {
+        const t = Math.min(1, Math.hypot(d.x - hub0[0], d.y - hub0[1]) / (far * 0.62));
+        return d3.interpolateRgb("#6C4DFF", "#9FD8E6")(t);
+      })
+      .attr("opacity", still ? 0.62 : 0);
+    if (!still) dots.transition()
+      .delay((d) => Math.min(760, Math.hypot(d.x - hub0[0], d.y - hub0[1]) * 1.5))
+      .duration(420).attr("opacity", 0.62);
+
+    const pts = this.CITIES.map((c) => { const p = proj([c.lon, c.lat]); return { c, x: p[0], y: p[1] }; });
+    const hub = pts[0];
+    const rl = defs.append("linearGradient").attr("id", "arbRoute").attr("x1", "0%").attr("x2", "100%");
+    rl.append("stop").attr("offset", "0%").attr("stop-color", "#6C4DFF").attr("stop-opacity", 0);
+    rl.append("stop").attr("offset", "18%").attr("stop-color", "#6C4DFF").attr("stop-opacity", 0.85);
+    rl.append("stop").attr("offset", "100%").attr("stop-color", "#22D3EE").attr("stop-opacity", 0.9);
+    const routes = svg.append("g").attr("fill", "none").attr("stroke", "url(#arbRoute)")
+      .attr("stroke-width", 1.3).attr("stroke-linecap", "round");
+    const arcs = pts.slice(1).map((p) => {
+      const mx = (hub.x + p.x) / 2, my = (hub.y + p.y) / 2;
+      const nx = -(p.y - hub.y), ny = p.x - hub.x;
+      const len = Math.sqrt(nx * nx + ny * ny) || 1;
+      const bow = Math.min(44, len * 0.22);
+      return routes.append("path").attr("d", "M" + hub.x + "," + hub.y + " Q" + (mx + nx / len * bow) + "," + (my + ny / len * bow) + " " + p.x + "," + p.y);
+    });
+    svg.append("circle").attr("cx", hub.x).attr("cy", hub.y).attr("r", Math.min(w, h) * 0.17).attr("fill", "url(#arbHubGlow)");
+
+    const g = svg.append("g");
+    pts.forEach((p, i) => {
+      const node = g.append("g").attr("transform", "translate(" + p.x + "," + p.y + ")");
+      if (p.c.hub && !reduce) {
+        const ring = node.append("circle").attr("fill", "none").attr("stroke", "#6C4DFF").attr("stroke-width", 1.4);
+        const pulse = () => ring.attr("r", 5).attr("opacity", 0.9).transition().duration(2200)
+          .ease(d3.easeCubicOut).attr("r", 22).attr("opacity", 0).on("end", pulse);
+        pulse();
+      }
+      node.append("circle").attr("r", p.c.hub ? 5 : 3.6)
+        .attr("fill", p.c.hub ? "#6C4DFF" : "#FFFFFF")
+        .attr("stroke", p.c.hub ? "#FFFFFF" : "#6C4DFF")
+        .attr("stroke-width", p.c.hub ? 1.6 : 1.8);
+      node.append("text").attr("x", p.c.dx).attr("y", p.c.dy).attr("direction", "ltr")
+        .attr("text-anchor", p.c.dx > 2 ? "start" : (p.c.dx < -2 ? "end" : "middle"))
+        .attr("font-size", 11.5).attr("font-weight", 600).attr("fill", "#2C2838")
+        .attr("paint-order", "stroke").attr("stroke", "#F6F4FC").attr("stroke-width", 3.5).attr("stroke-linejoin", "round")
+        .text(p.c.name);
+      if (still) return;
+      node.attr("opacity", 0).transition().delay(900 + i * 110).duration(420).attr("opacity", 1)
+        .attrTween("transform", () => (k) => "translate(" + p.x + "," + p.y + ") scale(" + (0.45 + 0.55 * k) + ")");
+    });
+
+    if (still) { arcs.forEach((a) => a.attr("stroke-opacity", 0.55)); return; }
+    const parcels = svg.append("g");
+    arcs.forEach((a, i) => {
+      const node = a.node(), L = node.getTotalLength();
+      a.attr("stroke-dasharray", L).attr("stroke-dashoffset", L).attr("stroke-opacity", 0.55)
+        .transition().delay(820 + i * 120).duration(700).ease(d3.easeCubicOut).attr("stroke-dashoffset", 0);
+      const ship = parcels.append("circle").attr("r", 3).attr("fill", "#22D3EE").attr("opacity", 0);
+      const run = () => ship.attr("opacity", 0).attr("transform", null)
+        .transition().delay(i * 300).duration(120).attr("opacity", 1)
+        .transition().duration(1700).ease(d3.easeCubicInOut)
+        .attrTween("transform", () => (k) => { const p = node.getPointAtLength(k * L); return "translate(" + p.x + "," + p.y + ")"; })
+        .transition().duration(260).attr("opacity", 0)
+        .transition().delay(900 + (arcs.length - i) * 120).duration(0).on("end", run);
+      setTimeout(run, 1500 + i * 120);
+    });
+  }
+
+  faqVals(){
+    const open = this.state.faq == null ? 0 : this.state.faq;
+    const o = {};
+    for (let i = 0; i < 6; i++) {
+      const on = open === i;
+      o["onF" + i] = this.pickFaq(i);
+      o["fr" + i] = on ? "1fr" : "0fr";
+      o["op" + i] = on ? 1 : 0;
+      o["rot" + i] = on ? "180deg" : "0deg";
+      o["sc" + i] = on ? 1 : 0;
+    }
+    return o;
+  }
+  pickDuel = (n) => () => { if (this.state.duel !== n) this.setState({ duel: n }); };
+  toggleCart = (n) => () => this.setState((st) => ({ cart: Object.assign({}, st.cart, { [n]: !(st.cart || {})[n] }) }));
+  cartVals(n){
+    const on = (this.state.cart || {})[n];
+    return {
+      ["cartTxt" + n]: on ? "در سبد" : "افزودن به سبد",
+      ["cartBg" + n]: on ? "#EDE8FC" : "#17151F",
+      ["cartFg" + n]: on ? "#4B32C3" : "#FFFFFF",
+      ["cartBd" + n]: on ? "#C9BEFA" : "#17151F",
+      ["onCart" + n]: this.toggleCart(n)
+    };
+  }
+  steps = [[0,0.26],[0.26,0.52],[0.52,0.78],[0.78,1.01]];
+  bands = [[0,46,99],[16,46,99],[24,40,99],[32,33,99],[48,34,99],[64,30,99],[80,33,99],[88,37,99],[104,32,99],[112,27,99],[120,26,98],[128,22,96],[136,37,94],[144,36,93],[152,33,91],[160,28,86],[168,25,80],[176,24,77],[184,30,74],[192,36,68],[200,34,64],[208,30,61],[216,25,56],[219,25,54]];
+  spacerRef = React.createRef();
+  scRef = React.createRef();
+  arcRef = React.createRef();
+  bRefs = [0,1,2,3,4,5,6,7,8].map(() => React.createRef());
+  layoutArc(){
+    const arc = this.arcRef.current, sc = this.scRef.current;
+    if (!arc || !sc) return;
+    if (this.state.mobile === true) {
+      this.bRefs.forEach((r) => { const el = r.current; if (el) { el.style.transform = ""; el.style.opacity = ""; el.style.zIndex = ""; } });
+      return;
+    }
+    const cr = sc.getBoundingClientRect(), r = arc.getBoundingClientRect();
+    const VH = cr.height || 1;
+    const top = r.top - cr.top;
+    const cl = (v) => Math.max(0, Math.min(1, v));
+    const m = cl((VH * 1.0 - top) / (VH * 0.58));
+    const rp = cl((VH * 0.5 - top) / (VH * 0.6));
+    const W = arc.clientWidth || 1, H = arc.clientHeight || 1, N = 9;
+    const narrow = W < 720;
+    const spread = narrow ? 78 : 54;
+    const half = spread * Math.PI / 360;
+    const chord = Math.max(W * 0.5, W - (narrow ? 140 : 180));
+    const R = chord / (2 * Math.sin(half));
+    const cy = -H * 0.17 + R;
+    const start = -90 - spread / 2, step = spread / (N - 1);
+    const drift = (rp - 0.5) * 3;
+    const arcScale = narrow ? 0.88 : 0.95;
+    const ringR = Math.min(W, H) * 0.26;
+    const lerp = (a, b, t) => a * (1 - t) + b * t;
+    for (let i = 0; i < N; i++) {
+      const el = this.bRefs[i].current;
+      if (!el) continue;
+      const ra = ((i / N) * 360 - 90) * Math.PI / 180;
+      const rx = Math.cos(ra) * ringR, ry = Math.sin(ra) * ringR, rr = (i / N) * 360;
+      const aa = start + i * step + drift, aRad = aa * Math.PI / 180;
+      const ax = Math.cos(aRad) * R, ay = Math.sin(aRad) * R + cy;
+      const x = lerp(rx, ax, m), y = lerp(ry, ay, m);
+      const rot = lerp(rr, aa + 90, m), s = lerp(0.82, arcScale, m);
+      el.style.transform = "translate3d(" + x.toFixed(1) + "px," + y.toFixed(1) + "px,0) rotate(" + rot.toFixed(2) + "deg) scale(" + s.toFixed(3) + ")";
+      el.style.opacity = (0.18 + 0.82 * m).toFixed(3);
+      el.style.zIndex = String(10 + i);
+    }
+  }
+  imgRef = React.createRef();
+  panelRef = React.createRef();
+  progRef = React.createRef();
+  get N(){ return 220; }
+  band(i){
+    const b = this.bands;
+    if (i <= b[0][0]) return b[0];
+    for (let k = 1; k < b.length; k++) {
+      if (i <= b[k][0]) {
+        const a = b[k-1], c = b[k], f = (i - a[0]) / (c[0] - a[0]);
+        return [i, a[1] + (c[1]-a[1])*f, a[2] + (c[2]-a[2])*f];
+      }
+    }
+    return b[b.length-1];
+  }
+  fit(i){
+    const im = this.imgRef.current, pn = this.panelRef.current;
+    if (!im || !pn) return;
+    const P = pn.clientHeight, PW = pn.clientWidth;
+    if (!P) return;
+    const bd = this.band(i), h = Math.max(8, bd[2] - bd[1]) / 100, bot = bd[2] / 100;
+    const frameW = P * 1400 / 2164;
+    const scH = 0.94 / h;
+    const scW = (PW * 0.98) / (frameW * 0.8);
+    const sc = Math.max(1, Math.min(scH, scW, 2.7));
+    const ty = ((1 - bot) * sc - 0.015) * 100;
+    im.style.transform = "translate(-50%," + ty.toFixed(2) + "%) scale(" + sc.toFixed(3) + ")";
+  }
+  url(i){ return "https://raw.githubusercontent.com/duthiljean/hero-apple/main/frames/frame_" + String(i*4+1).padStart(4,"0") + ".jpg"; }
+  componentDidMount(){
+    this.loaded = 0; this.target = 0; this.disp = 0; this.shown = -1; this.cache = [];
+    this.eager = Math.min(this.props.eagerCount ?? (window.matchMedia("(max-width: 767px)").matches ? 28 : 60), this.N);
+    this.pctTimer = setInterval(() => {
+      const pct = Math.min(100, Math.round(this.loaded / this.eager * 100));
+      if (pct !== this.state.pct) this.setState({ pct: pct });
+      if (this.loaded >= this.eager) clearInterval(this.pctTimer);
+    }, 250);
+    this.queue = []; for (let i = 0; i < this.eager; i++) this.queue.push(i);
+    this.rest = []; for (let i = this.eager; i < this.N; i++) this.rest.push(i);
+    this.inflight = 0; this.pump(2);
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => { if (this.state.mobile !== this.mq.matches) this.setState({ mobile: this.mq.matches }); };
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+    this.onResize = () => { this.fit(this.shown < 0 ? 0 : this.shown); this.layoutArc(); };
+    window.addEventListener("resize", this.onResize);
+    requestAnimationFrame(() => { this.fit(0); this.layoutArc(); });
+    const tickArc = () => {
+      const a = this.arcRef.current, s = this.scRef.current;
+      if (a && s) {
+        const t = Math.round(a.getBoundingClientRect().top - s.getBoundingClientRect().top);
+        if (t !== this.lastArcTop) { this.lastArcTop = t; this.layoutArc(); }
+      }
+      this.arcRaf = requestAnimationFrame(tickArc);
+    };
+    this.arcRaf = requestAnimationFrame(tickArc);
+    this.initMap();
+  }
+  componentWillUnmount(){ clearInterval(this.pctTimer); clearInterval(this.revTimer); clearTimeout(this.revFade); cancelAnimationFrame(this.arcRaf); if (this.mq) { if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.syncMq); else this.mq.removeListener(this.syncMq); } window.removeEventListener("resize", this.onResize); }
+  pump(slots){
+    while (this.inflight < slots && this.queue.length) {
+      const i = this.queue.shift(); this.inflight++;
+      const img = new Image(); img.decoding = "async";
+      const settle = () => {
+        this.inflight--; this.loaded++;
+        if (this.loaded >= this.eager && !this.state.ready) { this.setState({ ready: true }); this.drain(); }
+        this.pump(2);
+      };
+      img.onload = settle; img.onerror = settle; img.src = this.url(i); this.cache[i] = img;
+    }
+  }
+  drain(){
+    if (this.drained || !this.rest.length) return; this.drained = true;
+    const idle = window.requestIdleCallback || ((f) => setTimeout(() => f({ timeRemaining: () => 8 }), 400));
+    const step = () => {
+      if (!this.rest.length) return;
+      this.queue.push(this.rest.shift()); this.pump(1);
+      idle(step, { timeout: 2000 });
+    };
+    idle(step, { timeout: 2000 });
+  }
+  loop(){
+    if (this.raf) return; this.raf = true;
+    const tick = () => {
+      const d = this.target - this.disp;
+      if (Math.abs(d) < 0.05) this.disp = this.target; else this.disp += d * 0.42;
+      const i = Math.max(0, Math.min(this.N - 1, Math.round(this.disp)));
+      const p = this.p == null ? 0 : this.p;
+      if (i !== this.shown) {
+        this.shown = i;
+        if (this.imgRef.current) this.imgRef.current.src = this.url(i);
+        this.fit(i);
+      }
+      if (this.progRef.current) this.progRef.current.style.width = (p * 100).toFixed(2) + "%";
+      let act = 0;
+      this.steps.forEach((s, k) => { if (p >= s[0] && p < s[1]) act = k; });
+      const next = {};
+      if (act !== this.state.act) next.act = act;
+      if ((p > 0.008) !== this.state.started) next.started = p > 0.008;
+      if (Object.keys(next).length) this.setState(next);
+      if (this.disp !== this.target) requestAnimationFrame(tick); else this.raf = false;
+    };
+    requestAnimationFrame(tick);
+  }
+  onScroll = (e) => {
+    const el = e.currentTarget, sp = this.spacerRef.current;
+    const total = Math.max(1, sp ? (sp.offsetTop + sp.offsetHeight - el.clientHeight) : (el.scrollHeight - el.clientHeight));
+    const p = Math.max(0, Math.min(1, el.scrollTop / total));
+    this.p = p; this.target = p * (this.N - 1); this.loop();
+    this.layoutArc();
+    requestAnimationFrame(() => this.layoutArc());
+  };
+  renderVals(){
+    const s = this.state, act = s.act;
+    const m = s.mobile === true;
+    const o = (i) => act === i ? 1 : 0;
+    const y = (i) => (act === i ? 0 : (act > i ? -16 : 16)) + "px";
+    const t = (i) => act >= i ? 1 : 0;
+    return Object.assign({}, this.cartVals(1), this.cartVals(2), this.cartVals(3), this.faqVals(), {
+      onScroll: this.onScroll, spacerRef: this.spacerRef, imgRef: this.imgRef, mapRef: this.mapRef,
+      scRef: this.scRef, arcRef: this.arcRef,
+      b0: this.bRefs[0], b1: this.bRefs[1], b2: this.bRefs[2], b3: this.bRefs[3], b4: this.bRefs[4],
+      b5: this.bRefs[5], b6: this.bRefs[6], b7: this.bRefs[7], b8: this.bRefs[8],
+      panelRef: this.panelRef, progRef: this.progRef,
+      blend: (this.props.killWhiteBg ?? true) ? "multiply" : "normal",
+      pctText: s.pct < 100 ? "بارگذاری " + s.pct.toLocaleString("fa-IR") + "٪" : "آماده",
+      pw2: s.pct + "%",
+      loaderOp: s.ready ? 0 : 1, loaderPE: s.ready ? "none" : "auto",
+      bgPlay: s.started ? "paused" : "running",
+      subOp: s.started ? 0 : 1,
+      modelText: (act + 1).toLocaleString("fa-IR") + " از ۴",
+      onDuelA: this.pickDuel(1), onDuelB: this.pickDuel(2),
+      dA: (s.duel ?? 1) === 1 ? 1 : 0, dB: (s.duel ?? 1) === 2 ? 1 : 0,
+      dxA: (s.duel ?? 1) === 1 ? "0px" : "-28px", dxB: (s.duel ?? 1) === 2 ? "0px" : "28px",
+      peA: (s.duel ?? 1) === 1 ? "auto" : "none", peB: (s.duel ?? 1) === 2 ? "auto" : "none",
+      visA: (s.duel ?? 1) === 1 ? "visible" : "hidden", visB: (s.duel ?? 1) === 2 ? "visible" : "hidden",
+      tabBgA: (s.duel ?? 1) === 1 ? "#FFFFFF" : "transparent",
+      tabFgA: (s.duel ?? 1) === 1 ? "#17151F" : "#C9C5D6",
+      tabBgB: (s.duel ?? 1) === 2 ? "#FFFFFF" : "transparent",
+      tabFgB: (s.duel ?? 1) === 2 ? "#17151F" : "#C9C5D6",
+      onC1: this.pickCat(1), onC2: this.pickCat(2), onC3: this.pickCat(3), onC4: this.pickCat(4), onC5: this.pickCat(5),
+      cardTitleFs: m ? "16px" : "12px",
+      cardTagFs: m ? "12.5px" : "10px",
+      cardMetaFs: m ? "12.5px" : "9.5px",
+      cardCtaFs: m ? "13px" : "11.5px",
+      journalHint: m ? "برای دیدن پشت هر کارت روی آن بزنید." : "اسکرول کنید تا باز شوند؛ نشانگر را روی هر کارت ببرید.",
+      arcDisp: m ? "flex" : "block",
+      arcOx: m ? "auto" : "visible",
+      arcPb: m ? "10px" : "0",
+      arcH: m ? "auto" : "clamp(320px,44vh,470px)",
+      cardPos: m ? "relative" : "absolute",
+      cardTop: m ? "auto" : "50%",
+      cardLeft: m ? "auto" : "50%",
+      cardW: m ? "190px" : "92px",
+      cardH: m ? "250px" : "132px",
+      cardM: m ? "0" : "-66px 0 0 -46px",
+      cardFlex: m ? "0 0 auto" : "0 1 auto",
+      flip0: this.flipT(0), flip1: this.flipT(1), flip2: this.flipT(2), flip3: this.flipT(3), flip4: this.flipT(4),
+      flip5: this.flipT(5), flip6: this.flipT(6), flip7: this.flipT(7), flip8: this.flipT(8),
+      onFlip0: this.onFlip(0), onFlip1: this.onFlip(1), onFlip2: this.onFlip(2), onFlip3: this.onFlip(3), onFlip4: this.onFlip(4),
+      onFlip5: this.onFlip(5), onFlip6: this.onFlip(6), onFlip7: this.onFlip(7), onFlip8: this.onFlip(8),
+      heroTxtW: m ? "min(90%,520px)" : "min(42%,520px)",
+      heroTxtPos: m ? "relative" : "absolute",
+      heroTxtTop: m ? "auto" : "clamp(36px,7vh,76px)",
+      heroTxtRight: m ? "auto" : "5vw",
+      heroTxtM: m ? "clamp(14px,2.5vh,26px) 5vw 0" : "0",
+      heroPanelW: m ? "92%" : "min(52%,560px)",
+      heroPanelM: m ? "clamp(10px,2vh,20px) auto 0" : "clamp(28px,5vh,56px) auto 0 5vw",
+      ctaMinH: m ? "auto" : "clamp(128px,19vh,148px)",
+      divDisp: m ? "none" : "block",
+      spacerH: m ? "320vh" : "520vh",
+      catDir: m ? "column" : "row",
+      catRailH: m ? "auto" : "clamp(340px,52vh,520px)",
+      catTileH: m ? "168px" : "0",
+      f1: m ? 1 : (s.cat === 1 ? 4 : 1), f2: m ? 1 : (s.cat === 2 ? 4 : 1), f3: m ? 1 : (s.cat === 3 ? 4 : 1), f4: m ? 1 : (s.cat === 4 ? 4 : 1), f5: m ? 1 : (s.cat === 5 ? 4 : 1),
+      a1: m || s.cat === 1 ? 1 : 0, a2: m || s.cat === 2 ? 1 : 0, a3: m || s.cat === 3 ? 1 : 0, a4: m || s.cat === 4 ? 1 : 0, a5: m || s.cat === 5 ? 1 : 0,
+      i1: m ? 0 : (s.cat === 1 ? 0 : 1), i2: m ? 0 : (s.cat === 2 ? 0 : 1), i3: m ? 0 : (s.cat === 3 ? 0 : 1), i4: m ? 0 : (s.cat === 4 ? 0 : 1), i5: m ? 0 : (s.cat === 5 ? 0 : 1),
+      ay1: m || s.cat === 1 ? "0px" : "24px", ay2: m || s.cat === 2 ? "0px" : "24px", ay3: m || s.cat === 3 ? "0px" : "24px", ay4: m || s.cat === 4 ? "0px" : "24px", ay5: m || s.cat === 5 ? "0px" : "24px",
+      o0: o(0), o1: o(1), o2: o(2), o3: o(3),
+      y0: y(0), y1: y(1), y2: y(2), y3: y(3),
+      t0: t(0), t1: t(1), t2: t(2), t3: t(3)
+    });
+  }
+}
+</script>
+</body>
+</html>

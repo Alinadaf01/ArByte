@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+nav a{text-decoration:none;color:inherit;}
+nav a:hover{color:#6C4DFF;}
+nav a,aside a,button{-webkit-tap-highlight-color:transparent;}
+nav a:focus-visible,aside a:focus-visible,button:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+nav a{transition:transform .16s cubic-bezier(.3,1,.4,1);}
+nav a:active{transform:scale(.95);}
+aside a{text-decoration:none;transition:background-color .18s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+aside a:hover{background-color:#F4F1FD;}
+aside a:active{transform:scale(.98);background-color:#EDE9FA;}
+button:active{transform:scale(.94);}
+@keyframes arbDrawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes arbFadeIn{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<nav dir="rtl" style="height:72px;display:flex;align-items:center;gap:clamp(12px,2vw,30px);padding:0 5vw;background:rgba(246,244,252,.9);backdrop-filter:blur(14px);border-bottom:1px solid rgba(23,21,31,.06);font-family:'Estedad',Tahoma,sans-serif;color:#17151F;">
+
+  <a href="./Home.dc.html" style="display:flex;align-items:center;flex:none;" style-hover="color:#17151F;">
+    <img alt="آربایت" src="../../brand/logo/lockup/lockup-horizontal-light-bg.svg" style="height:30px;width:auto;display:block;" />
+  </a>
+
+  <div onMouseEnter="{{ openMega }}" onMouseLeave="{{ closeMega }}" style="position:relative;display:flex;align-items:center;gap:clamp(14px,1.6vw,26px);font-size:14px;font-weight:500;height:100%;">
+    <a href="./Products.dc.html" style="display:flex;align-items:center;gap:5px;color:{{ cProducts }};white-space:nowrap;">
+      محصولات
+      <svg width="11" height="11" viewBox="0 0 18 18" fill="none" style="transition:transform .3s ease;transform:rotate({{ megaRot }});"><path d="m4.5 7.2 3.8 3.8a1 1 0 0 0 1.4 0l3.8-3.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    </a>
+    <a href="./Categories.dc.html" style="color:{{ cCategories }};white-space:nowrap;">دسته‌بندی‌ها</a>
+    <a href="./Blog.dc.html" style="color:{{ cBlog }};white-space:nowrap;">بلاگ</a>
+    <a href="./About.dc.html" style="color:{{ cAbout }};white-space:nowrap;">درباره ما</a>
+    <a href="./Support.dc.html" style="color:{{ cSupport }};white-space:nowrap;">پشتیبانی</a>
+
+    <div style="position:absolute;top:70px;right:-16px;width:min(620px,86vw);padding:20px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;box-shadow:0 22px 50px rgba(23,21,31,.14);display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 18px;opacity:{{ megaOp }};visibility:{{ megaVis }};transform:translateY({{ megaY }});transition:opacity .22s ease,transform .22s cubic-bezier(.3,1,.4,1);z-index:40;">
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">لپ‌تاپ گیمینگ</span>
+        <span style="font-size:12px;color:#5F5B6B;">RTX 50 و نمایشگر پرنرخ</span>
+      </a>
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">لپ‌تاپ حرفه‌ای</span>
+        <span style="font-size:12px;color:#5F5B6B;">رندر، مهندسی و تدوین</span>
+      </a>
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">مانیتور و نمایشگر</span>
+        <span style="font-size:12px;color:#5F5B6B;">۴K، OLED و اولترایید</span>
+      </a>
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">قطعات و ارتقا</span>
+        <span style="font-size:12px;color:#5F5B6B;">رم، SSD و خنک‌کننده</span>
+      </a>
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#17151F;">لوازم جانبی</span>
+        <span style="font-size:12px;color:#5F5B6B;">کیبورد، ماوس و هدست</span>
+      </a>
+      <a href="./Compare.dc.html" style="display:flex;flex-direction:column;gap:3px;padding:11px 12px;border-radius:12px;transition:background .2s ease;" style-hover="background:#F4F1FD;">
+        <span style="font-size:14px;font-weight:600;color:#4B32C3;">مقایسه محصولات</span>
+        <span style="font-size:12px;color:#5F5B6B;">تا سه دستگاه کنار هم</span>
+      </a>
+    </div>
+  </div>
+
+  <div style="margin-inline-start:auto;display:flex;align-items:center;gap:8px;">
+    <a href="./Search.dc.html" aria-label="جستجو" style="width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;transition:background .2s ease;" style-hover="background:#ECE8F9;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+    </a>
+    <a href="./Wishlist.dc.html" aria-label="علاقه‌مندی‌ها" style="width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;transition:background .2s ease;" style-hover="background:#ECE8F9;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.4-4.6-7.4-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.4 2.8c0 5-7.4 9.6-7.4 9.6Z"></path></svg>
+    </a>
+    <a href="./Login.dc.html" aria-label="ورود به حساب" style="width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;transition:background .2s ease;" style-hover="background:#ECE8F9;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.6"></circle><path d="M5 19.5c1.4-3.1 4-4.6 7-4.6s5.6 1.5 7 4.6"></path></svg>
+    </a>
+    <a href="./Cart.dc.html" style="position:relative;display:flex;align-items:center;gap:9px;height:44px;padding:0 16px;border-radius:13px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h2.2l2 11h9.3l2-8H7"></path><circle cx="9.5" cy="19" r="1.5"></circle><circle cx="17" cy="19" r="1.5"></circle></svg>
+      <span style="min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:#22D3EE;color:#0B3B45;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ cartCount }}</span>
+    </a>
+  </div>
+</nav>
+</sc-if>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<nav dir="rtl" style="height:56px;display:flex;align-items:center;gap:4px;padding:0 12px;background:rgba(246,244,252,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(23,21,31,.07);font-family:'Estedad',Tahoma,sans-serif;color:#17151F;">
+
+  <button type="button" onClick="{{ openDrawer }}" aria-label="باز کردن منو" aria-expanded="{{ drawerOpen }}" style="width:44px;height:44px;flex:none;border-radius:12px;border:0;background:transparent;color:#17151F;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"></path></svg>
+  </button>
+
+  <a href="./Home.dc.html" style="display:flex;align-items:center;justify-content:center;flex:1;min-width:0;">
+    <img alt="آربایت" src="../../brand/logo/lockup/lockup-horizontal-light-bg.svg" style="height:26px;width:auto;display:block;" />
+  </a>
+
+  <a href="./Search.dc.html" aria-label="جستجو" style="width:44px;height:44px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+  </a>
+
+  <a href="./Cart.dc.html" aria-label="سبد خرید" style="position:relative;width:44px;height:44px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h2.2l2 11h9.3l2-8H7"></path><circle cx="9.5" cy="19" r="1.5"></circle><circle cx="17" cy="19" r="1.5"></circle></svg>
+    <span style="position:absolute;top:4px;left:4px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#22D3EE;color:#0B3B45;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ cartCount }}</span>
+  </a>
+</nav>
+
+<div onClick="{{ closeDrawer }}" style="position:fixed;inset:0;z-index:60;background:rgba(23,21,31,.5);backdrop-filter:blur(2px);opacity:{{ drawerOp }};visibility:{{ drawerVis }};transition:opacity .28s ease;"></div>
+
+<aside dir="rtl" aria-label="منوی اصلی" style="position:fixed;top:0;bottom:0;right:0;z-index:61;width:min(320px,86vw);background:#FFFFFF;box-shadow:-18px 0 44px rgba(23,21,31,.18);transform:translateX({{ drawerX }});visibility:{{ drawerVis }};transition:transform .3s cubic-bezier(.3,1,.4,1);display:flex;flex-direction:column;font-family:'Estedad',Tahoma,sans-serif;color:#17151F;overflow-y:auto;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #EFECF7;">
+    <img alt="آربایت" src="../../brand/logo/lockup/lockup-horizontal-light-bg.svg" style="height:26px;width:auto;display:block;" />
+    <button type="button" onClick="{{ closeDrawer }}" aria-label="بستن منو" style="width:44px;height:44px;border-radius:12px;border:0;background:transparent;color:#3D3950;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="m7 7 10 10M17 7 7 17"></path></svg>
+    </button>
+  </div>
+
+  <a href="./Login.dc.html" style="display:flex;align-items:center;gap:12px;margin:12px 12px 6px;padding:14px;border-radius:16px;background:#17151F;color:#FFFFFF;">
+    <span style="width:38px;height:38px;flex:none;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.6" r="3.6"></circle><path d="M5 19.5c1.4-3.1 4-4.6 7-4.6s5.6 1.5 7 4.6"></path></svg>
+    </span>
+    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+      <span style="font-size:14.5px;font-weight:600;color:#FFFFFF;">ورود یا ثبت‌نام</span>
+      <span style="font-size:12px;color:#B9B4C9;">با کد پیامکی، بدون رمز</span>
+    </span>
+  </a>
+
+  <div style="padding:8px 12px 4px;display:flex;flex-direction:column;">
+    <p style="margin:10px 6px 6px;font-size:11.5px;font-weight:700;color:#6E6880;">خرید</p>
+    <a href="./Products.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">همه محصولات</a>
+    <a href="./Categories.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">دسته‌بندی‌ها</a>
+    <a href="./Compare.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">مقایسه محصولات</a>
+    <a href="./Wishlist.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">علاقه‌مندی‌ها</a>
+
+    <p style="margin:14px 6px 6px;font-size:11.5px;font-weight:700;color:#6E6880;">پشتیبانی</p>
+    <a href="./TrackOrder.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">پیگیری سفارش</a>
+    <a href="./Support.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">تماس با پشتیبانی</a>
+    <a href="./Legal.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">قوانین و سوالات</a>
+
+    <p style="margin:14px 6px 6px;font-size:11.5px;font-weight:700;color:#6E6880;">آربایت</p>
+    <a href="./Blog.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">بلاگ</a>
+    <a href="./About.dc.html" style="display:flex;align-items:center;min-height:48px;padding:0 14px;border-radius:13px;font-size:14.5px;font-weight:500;color:#3D3950;">درباره ما</a>
+  </div>
+
+  <div style="margin-top:auto;padding:16px 18px calc(16px + env(safe-area-inset-bottom));border-top:1px solid #EFECF7;display:flex;flex-direction:column;gap:6px;">
+    <span style="display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#0E7490;"><i style="width:7px;height:7px;border-radius:50%;background:#22D3EE;display:block;"></i>پشتیبانی آنلاین ۹ تا ۲۱</span>
+    <a href="tel:+982191001000" style="font-size:15px;font-weight:700;color:#17151F;">۰۲۱ ۹۱۰۰۱۰۰۰</a>
+  </div>
+</aside>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:300},&quot;active&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;&quot;,&quot;products&quot;,&quot;categories&quot;,&quot;blog&quot;,&quot;about&quot;,&quot;support&quot;],&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;cartCount&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;۲&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { mega: false, drawer: false, mobile: null };
+  openMega = () => this.setState({ mega: true });
+  closeMega = () => this.setState({ mega: false });
+  lock = (on) => { try { document.body.style.overflow = on ? "hidden" : ""; } catch (e) {} };
+  openDrawer = () => { this.lock(true); this.setState({ drawer: true }); };
+  closeDrawer = () => { this.lock(false); this.setState({ drawer: false }); };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+    this.onKey = (e) => { if (e.key === "Escape") this.closeDrawer(); };
+    window.addEventListener("keydown", this.onKey);
+  }
+  componentWillUnmount(){
+    if (this.mq) {
+      if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+      else this.mq.removeListener(this.sync);
+    }
+    window.removeEventListener("keydown", this.onKey);
+    this.lock(false);
+  }
+  renderVals() {
+    const a = this.props.active || "";
+    const on = "#4B32C3", off = "#3D3950";
+    const m = this.state.mega;
+    const mob = this.state.mobile === true;
+    const d = this.state.drawer;
+    return {
+      isMobile: mob, isDesktop: !mob,
+      openMega: this.openMega, closeMega: this.closeMega,
+      openDrawer: this.openDrawer, closeDrawer: this.closeDrawer,
+      drawerOpen: d ? "true" : "false",
+      drawerOp: d ? 1 : 0,
+      drawerVis: d ? "visible" : "hidden",
+      drawerX: d ? "0%" : "100%",
+      megaOp: m ? 1 : 0, megaVis: m ? "visible" : "hidden",
+      megaY: m ? "0px" : "-8px", megaRot: m ? "180deg" : "0deg",
+      cartCount: this.props.cartCount == null ? "۲" : this.props.cartCount,
+      cProducts: a === "products" ? on : off,
+      cCategories: a === "categories" ? on : off,
+      cBlog: a === "blog" ? on : off,
+      cAbout: a === "about" ? on : off,
+      cSupport: a === "support" ? on : off
+    };
+  }
+}
+</script>
+</body>
+</html>

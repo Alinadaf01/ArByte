@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-style:normal;font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2122,U+2212;}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/latin-500-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2122,U+2212;}
+@font-face{font-family:'Estedad';font-style:normal;font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2122,U+2212;}
+*{box-sizing:border-box;}
+body{margin:0;background:#F7F7FA;font-family:'Estedad',Tahoma,sans-serif;}
+a{color:#6C4DFF;text-decoration:none;}
+a:hover{color:#4B32C3;}
+</style>
+</helmet>
+<div dir="rtl" style="font-family:'Estedad',Tahoma,sans-serif;background:#F7F7FA;color:#17151F;padding:40px 24px 80px;">
+<div style="max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px;">
+
+<div>
+<h1 style="font-size:32px;font-weight:700;margin:0 0 8px;letter-spacing:-0.01em;">T-D03 — ورق اثبات</h1>
+<p style="font-size:15px;line-height:1.8;color:#5F5B6B;margin:0;">همه‌ی نشان‌ها در اندازه‌ی واقعی رندر شده‌اند. این صفحه تحویل‌دادنی نیست؛ ابزار بازبینی معیار پذیرش است.</p>
+</div>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۱. نشان کامل در اندازه‌ی واقعی</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">معیار پذیرش: خوانا در ۲۴، ۳۲ و ۴۰ پیکسل.</p>
+<div style="display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;">
+<sc-for list="{{ sizes }}" as="s" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="symbol/symbol-purple.svg" alt="" style="width:{{ s.px }};height:{{ s.px }};display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{{ s.label }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۲. نسخه‌ی فشرده — همان اندازه‌ها</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">خطوط ضخیم‌تر و کانتر بزرگ‌تر. زیر ۴۰px این نسخه استفاده می‌شود.</p>
+<div style="display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;">
+<sc-for list="{{ sizes }}" as="s" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="symbol/symbol-compact-purple.svg" alt="" style="width:{{ s.px }};height:{{ s.px }};display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{{ s.label }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۳. تک‌رنگ — بدون گرادیان</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">معیار پذیرش: ساختار A و B بدون کمک گرادیان تشخیص داده شود.</p>
+<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;">
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+<img src="symbol/symbol-purple.svg" alt="" style="width:96px;height:96px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">#6C4DFF</span>
+</div>
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+<img src="symbol/symbol-ink.svg" alt="" style="width:96px;height:96px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">#17151F</span>
+</div>
+<div style="background:#17151F;border:1px solid #17151F;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+<img src="symbol/symbol-white.svg" alt="" style="width:96px;height:96px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#8D8998;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">#FFFFFF</span>
+</div>
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;display:flex;flex-direction:column;align-items:center;gap:16px;">
+<img src="symbol/symbol-duotone.svg" alt="" style="width:96px;height:96px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">duotone</span>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۴. Wordmark — B نباید ۳ خوانده شود</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">در وکتور، ستون عمودی B کامل و صاف است؛ فرم ۳ ممکن نیست.</p>
+<div style="display:flex;flex-direction:column;gap:16px;">
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;">
+<img src="wordmark/wordmark-light-bg.svg" alt="ArByte" style="width:306px;max-width:100%;display:block;" />
+</div>
+<div style="background:#17151F;border-radius:12px;padding:24px;">
+<img src="wordmark/wordmark-dark-bg.svg" alt="ArByte" style="width:306px;max-width:100%;display:block;" />
+</div>
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;">
+<sc-for list="{{ wmSizes }}" as="s" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;align-items:flex-start;gap:12px;">
+<img src="wordmark/wordmark-light-bg.svg" alt="" style="width:{{ s.px }};display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">{{ s.label }}</span>
+</div>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 24px;">۵. قفل‌های ترکیبی</h2>
+<div style="display:flex;flex-direction:column;gap:16px;">
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:24px;">
+<img src="lockup/lockup-horizontal-light-bg.svg" alt="ArByte" style="width:406px;max-width:100%;display:block;" />
+<div dir="ltr" style="font-size:11px;color:#5F5B6B;margin-top:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;text-align:right;">horizontal · 406×94</div>
+</div>
+<div style="background:#17151F;border-radius:12px;padding:32px;">
+<img src="lockup/lockup-horizontal-dark-bg.svg" alt="ArByte" style="width:320px;max-width:100%;display:block;" />
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:32px;display:flex;justify-content:center;">
+<img src="lockup/lockup-vertical-light-bg.svg" alt="ArByte" style="width:220px;max-width:100%;display:block;" />
+</div>
+<div style="background:#FAFAFA;border:1px solid #E8E6EE;border-radius:12px;padding:32px;display:flex;justify-content:center;">
+<img src="lockup/lockup-full-light-bg.svg" alt="ArByte" style="width:220px;max-width:100%;display:block;" />
+</div>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۶. Favicon</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">در ۱۶px تداخل A و B باقی نمی‌ماند، پس favicon فقط نشان A روی کاشی بنفش است.</p>
+<div style="display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap;">
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="favicon/favicon-16.png" alt="" style="width:16px;height:16px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">16px png</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="favicon/favicon-32.png" alt="" style="width:32px;height:32px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">32px png</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="favicon/favicon.svg" alt="" style="width:64px;height:64px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">svg 64px</span>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+<img src="favicon/apple-touch-icon.png" alt="" style="width:180px;height:180px;display:block;" />
+<span dir="ltr" style="font-size:11px;color:#5F5B6B;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;">180px touch</span>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 4px;">۷. کاربرد واقعی — هدر سایت</h2>
+<p style="font-size:13px;color:#5F5B6B;margin:0 0 24px;line-height:1.8;">ارتفاع نشان ۳۲px، نسخه‌ی فشرده، کنار دکمه‌ی بنفش برند. اختلاف رنگ گزارش‌شده در بند ۳ اودیت اینجا برطرف است.</p>
+<div style="border:1px solid #E8E6EE;border-radius:12px;overflow:hidden;">
+<div style="display:flex;align-items:center;gap:24px;padding:16px 24px;background:#FAFAFA;border-bottom:1px solid #E8E6EE;">
+<img src="lockup/lockup-horizontal-light-bg.svg" alt="ArByte" style="height:32px;display:block;" />
+<div style="flex:1;"></div>
+<span style="font-size:14px;color:#5F5B6B;">حساب</span>
+<button style="font-family:inherit;padding:10px 18px;background:#6C4DFF;color:#FFFFFF;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;">سبد · ۲</button>
+</div>
+<div style="display:flex;align-items:center;gap:24px;padding:16px 24px;background:#17151F;">
+<img src="lockup/lockup-horizontal-dark-bg.svg" alt="ArByte" style="height:32px;display:block;" />
+<div style="flex:1;"></div>
+<span style="font-size:14px;color:#8D8998;">حساب</span>
+<button style="font-family:inherit;padding:10px 18px;background:#6C4DFF;color:#FFFFFF;border:none;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;">سبد · ۲</button>
+</div>
+</div>
+</section>
+
+<section style="background:#FFFFFF;border:1px solid #E8E6EE;border-radius:16px;padding:24px;">
+<h2 style="font-size:20px;font-weight:600;margin:0 0 24px;">۸. شبکه‌های اجتماعی</h2>
+<div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
+<img src="social/social-square.png" alt="" style="width:100%;border-radius:12px;display:block;" />
+<img src="social/og-image.png" alt="" style="width:100%;border-radius:12px;display:block;" />
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const mk = (n) => ({ px: n + 'px', label: n + 'px' });
+    return {
+      sizes: [16, 24, 32, 40, 64, 96].map(mk),
+      wmSizes: [80, 120, 180, 260].map(mk)
+    };
+  }
+}
+</script>
+</body>
+</html>

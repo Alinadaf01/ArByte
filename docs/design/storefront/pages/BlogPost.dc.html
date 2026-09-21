@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="BlogPost" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" active="blog" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<div aria-hidden="true" style="position:sticky;top:72px;z-index:20;height:3px;background:#EAE6F4;">
+  <span style="display:block;height:100%;width:{{ progress }};background:linear-gradient(90deg,#6C4DFF,#22D3EE);transition:width .1s linear;"></span>
+</div>
+
+<article ref="{{ artRef }}">
+
+  <header style="padding:clamp(26px,4vh,44px) 5vw clamp(22px,3vh,32px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+    <div style="max-width:760px;margin:0 auto;">
+      <nav aria-label="مسیر" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;margin-bottom:16px;">
+        <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+        <span aria-hidden="true">/</span>
+        <a href="./Blog.dc.html" style="color:#5F5B6B;">بلاگ</a>
+        <span aria-hidden="true">/</span>
+        <span style="color:#17151F;font-weight:600;">بررسی</span>
+      </nav>
+      <h1 style="margin:0;font-size:clamp(27px,3.6vw,46px);font-weight:700;letter-spacing:-.028em;line-height:1.4;text-wrap:pretty;">Titan 18 HX در کار واقعی: سه هفته رندر و بازی</h1>
+      <p style="margin:14px 0 0;font-size:clamp(15px,1.7vw,18px);line-height:1.9;color:#5F5B6B;max-width:60ch;">سنگین است و صدا می‌دهد، و هیچ‌کدام را پنهان نمی‌کند. آنچه در جدول بنچمارک دیده نمی‌شود، رفتار دستگاه در ساعت سوم رندر است.</p>
+      <div style="margin-top:22px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+          <span style="width:44px;height:44px;flex:none;border-radius:50%;background:linear-gradient(135deg,#6C4DFF,#4B32C3);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#FFFFFF;">ن</span>
+          <div style="min-width:0;display:flex;flex-direction:column;gap:3px;">
+            <span style="font-size:14px;font-weight:600;">نیما صادقی</span>
+            <span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;">
+              <span>۲۷ شهریور ۱۴۰۴</span>
+              <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+              <span>۹ دقیقه مطالعه</span>
+            </span>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <button type="button" onClick="{{ onCopy }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ copyBd }};background:{{ copyBg }};color:{{ copyFg }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all .2s ease;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 1 0-5-5l-1 1"></path><path d="M15 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 1 0 5 5l1-1"></path></svg>
+            {{ copyTxt }}
+          </button>
+          <button type="button" onClick="{{ onSave }}" aria-label="ذخیره نوشته" style="width:44px;height:44px;border-radius:12px;border:1px solid {{ saveBd }};background:{{ saveBg }};color:{{ saveFg }};cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="{{ saveFill }}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 4.5h11v15l-5.5-4-5.5 4Z"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(40px,6vh,64px);display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(18px,3vw,40px);">
+
+    <div style="flex:1 1 440px;min-width:0;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(18px,2.5vh,26px);">
+
+      <div style="position:relative;aspect-ratio:16/9;border-radius:24px;overflow:hidden;background:linear-gradient(150deg,#2A2440,#17151F);">
+        <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(56% 48% at 50% 50%,rgba(108,77,255,.4),rgba(23,21,31,0) 70%);"></div>
+        <img alt="MSI Titan 18 HX روی میز کار" src="../../uploads/MSI.webp" style="position:absolute;inset:7%;width:86%;height:86%;object-fit:contain;display:block;filter:drop-shadow(0 22px 34px rgba(0,0,0,.45));" />
+      </div>
+
+      <p style="margin:0;font-size:17px;line-height:2.1;color:#2C2838;text-wrap:pretty;">سه هفته این دستگاه روی میز من بود. نه در آزمایشگاه، نه با نرم‌افزار بنچمارک؛ با همان پروژه‌هایی که هر روز رویشان کار می‌کنم. آنچه می‌خوانید نتیجه همان سه هفته است.</p>
+
+      <h2 id="s-load" style="margin:8px 0 0;font-size:clamp(20px,2.3vw,26px);font-weight:700;letter-spacing:-.02em;line-height:1.55;scroll-margin-top:96px;">زیر بار کامل چه اتفاقی می‌افتد</h2>
+      <p style="margin:0;font-size:16px;line-height:2.1;color:#3D3950;">اکثر لپ‌تاپ‌های این کلاس در دقیقه پنجم رندر، فرکانس پردازنده را پایین می‌آورند تا دما کنترل شود. Titan این کار را نمی‌کند. در یک رندر چهل دقیقه‌ای، فرکانس پایه تقریباً ثابت ماند و افت محسوسی ندیدم. خنک‌کاری فلز مایع کار خودش را انجام می‌دهد.</p>
+      <p style="margin:0;font-size:16px;line-height:2.1;color:#3D3950;">هزینه‌اش صداست. زیر بار کامل، فن‌ها به‌وضوح شنیده می‌شوند و در اتاق ساکت آزاردهنده‌اند. اگر کنار میکروفن کار می‌کنید، این را جدی بگیرید.</p>
+
+      <blockquote style="margin:6px 0;padding:22px 24px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;border-inline-start:3px solid #6C4DFF;">
+        <p style="margin:0;font-size:17px;line-height:2;font-weight:500;color:#17151F;text-wrap:pretty;">در یک رندر چهل دقیقه‌ای، افت فرکانسی که در هم‌رده‌های این دستگاه عادی است، اینجا اتفاق نیفتاد.</p>
+      </blockquote>
+
+      <h2 id="s-panel" style="margin:8px 0 0;font-size:clamp(20px,2.3vw,26px);font-weight:700;letter-spacing:-.02em;line-height:1.55;scroll-margin-top:96px;">نمایشگر</h2>
+      <p style="margin:0;font-size:16px;line-height:2.1;color:#3D3950;">پنل Mini LED چهارکی در محیط روشن هم خوانا می‌ماند؛ چیزی که روی OLEDهای براق همیشه صادق نیست. برای تدوین رنگ قابل اتکاست و پس از کالیبره، اختلاف محسوسی با مانیتور مرجع نداشت. نرخ ۱۲۰ هرتز برای بازی کافی است، هرچند اگر شوتر رقابتی بازی می‌کنید پنل‌های ۲۴۰ هرتزی انتخاب بهتری‌اند.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:6px 0;">
+        <div style="padding:16px 18px;border-radius:16px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:21px;font-weight:700;letter-spacing:-.02em;">۳٫۶ کیلو</span>
+          <span style="font-size:{{ fsLabel }};line-height:1.7;color:#5F5B6B;">با شارژر، نزدیک ۵ کیلوگرم</span>
+        </div>
+        <div style="padding:16px 18px;border-radius:16px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:21px;font-weight:700;letter-spacing:-.02em;">۹۴ دقیقه</span>
+          <span style="font-size:{{ fsLabel }};line-height:1.7;color:#5F5B6B;">باتری در کار سبک اداری</span>
+        </div>
+        <div style="padding:16px 18px;border-radius:16px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+          <span style="font-size:21px;font-weight:700;letter-spacing:-.02em;">۵۲ دسی‌بل</span>
+          <span style="font-size:{{ fsLabel }};line-height:1.7;color:#5F5B6B;">صدای فن زیر بار کامل</span>
+        </div>
+      </div>
+
+      <h2 id="s-keyboard" style="margin:8px 0 0;font-size:clamp(20px,2.3vw,26px);font-weight:700;letter-spacing:-.02em;line-height:1.55;scroll-margin-top:96px;">کیبورد و استفاده روزمره</h2>
+      <p style="margin:0;font-size:16px;line-height:2.1;color:#3D3950;">کیبورد مکانیکی Cherry برای تایپ طولانی راحت است و بازخورد خوبی دارد. اما وزن ۳٫۶ کیلوگرمی یعنی این دستگاه روی میز می‌ماند. باتری در کار سبک کمتر از دو ساعت دوام آورد، پس عملاً همیشه به برق وصل است.</p>
+
+      <h2 id="s-who" style="margin:8px 0 0;font-size:clamp(20px,2.3vw,26px);font-weight:700;letter-spacing:-.02em;line-height:1.55;scroll-margin-top:96px;">برای چه کسی</h2>
+      <p style="margin:0;font-size:16px;line-height:2.1;color:#3D3950;">اگر دنبال دستگاه سفر هستید، این انتخاب شما نیست؛ یک اولترابوک به‌علاوه یک رایانه رومیزی برایتان منطقی‌تر است. اما اگر ورک‌استیشن قابل حملی می‌خواهید که زیر بار کم نیاورد و ترجیح می‌دهید همه‌چیز در یک دستگاه باشد، گزینه بهتری در بازار ایران سراغ نداریم.</p>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;">
+        <a href="./Blog.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:12px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsLabel }};font-weight:500;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">بررسی</a>
+        <a href="./Blog.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:12px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsLabel }};font-weight:500;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">لپ‌تاپ گیمینگ</a>
+        <a href="./Blog.dc.html" style="display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:12px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsLabel }};font-weight:500;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">MSI</a>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:16px;padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;">
+        <span style="width:52px;height:52px;flex:none;border-radius:50%;background:linear-gradient(135deg,#6C4DFF,#4B32C3);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:700;color:#FFFFFF;">ن</span>
+        <div style="min-width:0;flex:1 1 200px;display:flex;flex-direction:column;gap:5px;">
+          <span style="font-size:14.5px;font-weight:700;">نیما صادقی</span>
+          <span style="font-size:{{ fsBody }};line-height:1.85;color:#5F5B6B;">کارشناس سخت‌افزار آربایت. هشت سال است دستگاه‌ها را پیش از رسیدن به دست مشتری تست می‌کند.</span>
+        </div>
+      </div>
+
+    </div>
+
+    <aside style="flex:1 1 220px;max-width:260px;min-width:0;position:sticky;top:104px;display:flex;flex-direction:column;gap:14px;">
+      <nav aria-label="فهرست مطالب" style="padding:18px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+        <p style="margin:0 0 8px;font-size:{{ fsBody }};font-weight:700;">در این نوشته</p>
+        <a href="#s-load" style="display:flex;align-items:center;min-height:44px;padding:0 11px;border-radius:10px;font-size:{{ fsBody }};line-height:1.7;color:#3D3950;transition:background .2s ease;" style-hover="background:#F4F1FD;color:#4B32C3;">زیر بار کامل چه اتفاقی می‌افتد</a>
+        <a href="#s-panel" style="display:flex;align-items:center;min-height:44px;padding:0 11px;border-radius:10px;font-size:{{ fsBody }};line-height:1.7;color:#3D3950;transition:background .2s ease;" style-hover="background:#F4F1FD;color:#4B32C3;">نمایشگر</a>
+        <a href="#s-keyboard" style="display:flex;align-items:center;min-height:44px;padding:0 11px;border-radius:10px;font-size:{{ fsBody }};line-height:1.7;color:#3D3950;transition:background .2s ease;" style-hover="background:#F4F1FD;color:#4B32C3;">کیبورد و استفاده روزمره</a>
+        <a href="#s-who" style="display:flex;align-items:center;min-height:44px;padding:0 11px;border-radius:10px;font-size:{{ fsBody }};line-height:1.7;color:#3D3950;transition:background .2s ease;" style-hover="background:#F4F1FD;color:#4B32C3;">برای چه کسی</a>
+      </nav>
+
+      <div style="padding:18px;border-radius:20px;background:#17151F;color:#FFFFFF;display:flex;flex-direction:column;gap:12px;">
+        <span style="font-size:{{ fsLabel }};font-weight:600;color:#A88CFF;">محصول این بررسی</span>
+        <span style="font-size:14.5px;font-weight:700;line-height:1.6;color:#FFFFFF;">MSI Titan 18 HX A2XWJG</span>
+        <span style="font-size:15px;font-weight:700;letter-spacing:-.02em;color:#FFFFFF;">۲۸۹٫۵۰۰٫۰۰۰ تومان</span>
+        <a href="./Product.dc.html" style="min-height:44px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:{{ fsBody }};font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .25s ease;" style-hover="background:#E9E4FA;color:#17151F;">مشاهده محصول</a>
+      </div>
+    </aside>
+
+  </div>
+</article>
+
+<section style="padding:0 5vw clamp(48px,7vh,80px);">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:clamp(14px,2vh,20px);">
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;">
+      <h2 style="margin:0;font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:-.02em;">خواندن ادامه بدهید</h2>
+      <a href="./Blog.dc.html" style="font-size:14px;font-weight:600;">همه نوشته‌ها</a>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:clamp(14px,2vw,20px);">
+      <sc-for list="{{ more }}" as="m" hint-placeholder-count="3">
+        <article style="display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);">
+          <a href="./BlogPost.dc.html" style="position:relative;aspect-ratio:16/9;background:{{ m.well }};display:block;">
+            <image-slot id="{{ m.slot }}" shape="rect" fit="cover" placeholder="۱۲۰۰×۶۷۵"></image-slot>
+            <span style="position:absolute;top:13px;right:13px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);font-size:{{ fsLabel }};font-weight:600;color:#4B32C3;pointer-events:none;">{{ m.cat }}</span>
+          </a>
+          <div style="padding:18px;display:flex;flex-direction:column;gap:9px;flex:1;">
+            <h3 style="margin:0;font-size:16px;font-weight:700;line-height:1.65;text-wrap:pretty;"><a href="./BlogPost.dc.html" style="color:#17151F;" style-hover="color:#4B32C3;">{{ m.title }}</a></h3>
+            <p style="margin:auto 0 0;padding-top:10px;font-size:{{ fsLabel }};color:#6E6880;">{{ m.meta }}</p>
+          </div>
+        </article>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px" };
+  }
+  state = { mobile: false,  pct: 0, copied: false, saved: false };
+  artRef = React.createRef();
+  MORE = [
+    { id: "panel", cat: "راهنمای خرید", title: "Mini LED یا OLED؛ کدام برای کار شما؟", meta: "نیما صادقی · ۶ دقیقه مطالعه" },
+    { id: "hz", cat: "گیمینگ", title: "تنظیمات درست برای نمایشگر ۲۴۰ هرتز", meta: "نیما صادقی · ۶ دقیقه مطالعه" },
+    { id: "ram", cat: "راهنمای خرید", title: "رم و SSD؛ چقدر واقعاً کافی است", meta: "مریم زارع · ۵ دقیقه مطالعه" }
+  ];
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+    this.onScroll = () => {
+      const el = this.artRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const span = r.height - window.innerHeight;
+      const p = span <= 0 ? 1 : Math.max(0, Math.min(1, -r.top / span));
+      const pct = Math.round(p * 100);
+      if (pct !== this.state.pct) this.setState({ pct });
+    };
+    window.addEventListener("scroll", this.onScroll, { passive: true });
+    window.addEventListener("resize", this.onScroll);
+    this.onScroll();
+  }
+  componentWillUnmount(){
+    window.removeEventListener("scroll", this.onScroll);
+    window.removeEventListener("resize", this.onScroll);
+    clearTimeout(this.t);
+  }
+  onCopy = () => {
+    if (navigator.clipboard) navigator.clipboard.writeText(location.href).catch(() => {});
+    this.setState({ copied: true });
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.setState({ copied: false }), 1800);
+  };
+  onSave = () => this.setState((s) => ({ saved: !s.saved }));
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const st = this.state;
+    return {
+      artRef: this.artRef,
+      progress: st.pct + "%",
+      onCopy: this.onCopy, onSave: this.onSave,
+      copyTxt: st.copied ? "کپی شد ✓" : "کپی لینک",
+      copyBg: st.copied ? "#EDE9FA" : "#FFFFFF",
+      copyFg: st.copied ? "#4B32C3" : "#3D3950",
+      copyBd: st.copied ? "#D6CCF7" : "#E0DBF0",
+      saveBg: st.saved ? "#EDE9FA" : "#FFFFFF",
+      saveFg: st.saved ? "#4B32C3" : "#3D3950",
+      saveBd: st.saved ? "#D6CCF7" : "#E0DBF0",
+      saveFill: st.saved ? "#6C4DFF" : "none",
+      more: this.MORE.map((m, i) => ({
+        cat: m.cat, title: m.title, meta: m.meta,
+        slot: "arb-more-" + m.id,
+        well: i % 2 ? "linear-gradient(150deg,#DFF3F8,#F5FBFD)" : "linear-gradient(150deg,#E6E0FB,#F7F5FD)"
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

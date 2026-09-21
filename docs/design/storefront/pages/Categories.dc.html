@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+a:active{transform:scale(.99);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Categories" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" active="categories" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(28px,4vh,44px) 5vw clamp(22px,3vh,32px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">دسته‌بندی‌ها</span>
+    </nav>
+    <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">از کجا شروع کنیم؟</h1>
+    <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">هفت دسته، هر کدام با محدوده قیمت و تعداد موجودی واقعی. اگر هنوز مطمئن نیستید، پایین صفحه بر اساس کاربری انتخاب کنید.</p>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(22px,3vh,34px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(16px,2.5vh,24px);">
+
+  <a href="./Products.dc.html" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));border-radius:26px;overflow:hidden;background:#17151F;color:#FFFFFF;border:1px solid #17151F;transition:transform .3s ease, box-shadow .3s ease;" style-hover="transform:translateY(-4px);box-shadow:0 22px 50px rgba(23,21,31,.2);color:#FFFFFF;">
+    <div style="position:relative;min-height:clamp(220px,32vh,300px);background:linear-gradient(150deg,#2A2440,#17151F);">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(56% 48% at 50% 50%,rgba(108,77,255,.4),rgba(23,21,31,0) 70%);"></div>
+      <img alt="MSI Titan 18 HX" src="../../uploads/MSI.webp" style="position:absolute;inset:8%;width:84%;height:84%;object-fit:contain;display:block;filter:drop-shadow(0 22px 34px rgba(0,0,0,.45));" />
+    </div>
+    <div style="padding:clamp(24px,3.5vw,44px);display:flex;flex-direction:column;justify-content:center;gap:15px;">
+      <span style="align-self:flex-start;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:12px;font-weight:600;color:#FFFFFF;">پرفروش‌ترین دسته</span>
+      <h2 style="margin:0;font-size:clamp(24px,3vw,36px);font-weight:700;letter-spacing:-.025em;line-height:1.4;color:#FFFFFF;">لپ‌تاپ گیمینگ</h2>
+      <p style="margin:0;font-size:14.5px;line-height:1.95;color:#B9B4C9;max-width:44ch;">از ۱۶ اینچی‌های قابل حمل تا پرچم‌دارهای ۱۸ اینچی با RTX 5090. همه با نمایشگر بالای ۱۴۴ هرتز.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <span style="padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:{{ fsMeta }};color:#E5E2EE;">۲۴ دستگاه</span>
+        <span style="padding:6px 12px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);font-size:{{ fsMeta }};color:#E5E2EE;">از ۹۸ تا ۲۹۰ میلیون</span>
+      </div>
+      <span style="margin-top:4px;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#A88CFF;">مشاهده دسته
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6 8 12l6 6"></path></svg>
+      </span>
+    </div>
+  </a>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:clamp(14px,2vw,20px);">
+    <sc-for list="{{ cats }}" as="c" hint-placeholder-count="6">
+      <a href="./Products.dc.html" style="display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);color:#17151F;">
+        <div style="position:relative;aspect-ratio:16/10;background:{{ c.well }};">
+          <image-slot id="{{ c.slot }}" shape="rect" fit="contain" placeholder="{{ c.ph }}"></image-slot>
+        </div>
+        <div style="padding:19px;display:flex;flex-direction:column;gap:10px;flex:1;">
+          <h2 style="margin:0;font-size:17px;font-weight:700;letter-spacing:-.01em;color:#17151F;">{{ c.name }}</h2>
+          <p style="margin:0;font-size:{{ fsBody }};line-height:1.85;color:#5F5B6B;">{{ c.desc }}</p>
+          <div style="margin-top:auto;padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid #F4F1FB;">
+            <span style="font-size:{{ fsMeta }};color:#5F5B6B;">{{ c.count }}</span>
+            <span style="font-size:{{ fsMeta }};font-weight:600;color:#4B32C3;">{{ c.from }}</span>
+          </div>
+        </div>
+      </a>
+    </sc-for>
+  </div>
+
+  <section style="margin-top:clamp(12px,2vh,20px);padding:clamp(24px,3.5vw,40px);border-radius:24px;background:#FFFFFF;border:1px solid #EAE6F4;display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:clamp(22px,3vw,48px);align-items:center;">
+    <div style="min-width:0;">
+      <h2 style="margin:0;font-size:clamp(20px,2.4vw,28px);font-weight:700;letter-spacing:-.02em;line-height:1.45;">نمی‌دانید کدام دسته؟</h2>
+      <p style="margin:9px 0 0;font-size:14px;line-height:1.95;color:#5F5B6B;max-width:40ch;">بگویید دستگاه را برای چه کاری می‌خواهید تا فهرست را بر همان اساس ببندیم.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button type="button" onClick="{{ onUse0 }}" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid {{ uBd0 }};background:{{ uBg0 }};color:{{ uFg0 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">بازی</button>
+        <button type="button" onClick="{{ onUse1 }}" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid {{ uBd1 }};background:{{ uBg1 }};color:{{ uFg1 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">رندر و تدوین</button>
+        <button type="button" onClick="{{ onUse2 }}" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid {{ uBd2 }};background:{{ uBg2 }};color:{{ uFg2 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">برنامه‌نویسی</button>
+        <button type="button" onClick="{{ onUse3 }}" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid {{ uBd3 }};background:{{ uBg3 }};color:{{ uFg3 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">دانشجویی</button>
+        <button type="button" onClick="{{ onUse4 }}" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid {{ uBd4 }};background:{{ uBg4 }};color:{{ uFg4 }};font-family:inherit;font-size:13.5px;font-weight:500;cursor:pointer;transition:all .2s ease;">سفر و جلسه</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-radius:16px;background:#F6F4FC;border:1px solid #EAE6F4;">
+        <p style="margin:0;font-size:{{ fsBody }};line-height:1.85;color:#3D3950;max-width:40ch;">{{ useTxt }}</p>
+        <a href="./Products.dc.html" style="min-height:42px;padding:0 20px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">{{ useCta }}</a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<dc-import name="MobileNav" active="categories" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { use: 0, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  componentWillUnmount(){
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+  CATS = [
+    { id: "pro", name: "لپ‌تاپ حرفه‌ای", desc: "برای رندر، مدل‌سازی و تدوین چهارکی؛ با نمایشگر کالیبره.", count: "۱۸ دستگاه", from: "از ۱۲۰ میلیون", well: "linear-gradient(150deg,#E6E0FB,#F7F5FD)" },
+    { id: "ultra", name: "اولترابوک", desc: "زیر ۱٫۴ کیلوگرم، باتری یک روز کامل، بدنه فلزی.", count: "۲۲ دستگاه", from: "از ۶۸ میلیون", well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" },
+    { id: "monitor", name: "مانیتور و نمایشگر", desc: "از ۲۷ اینچ ۱۴۴ هرتز تا OLED چهارکی کالیبره‌شده.", count: "۳۱ کالا", from: "از ۱۸ میلیون", well: "linear-gradient(150deg,#E6E0FB,#F7F5FD)" },
+    { id: "parts", name: "قطعات و ارتقا", desc: "رم، SSD، خمیر سیلیکون و پایه خنک‌کننده با نصب رایگان.", count: "۵۶ کالا", from: "از ۲ میلیون", well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" },
+    { id: "acc", name: "لوازم جانبی", desc: "کیبورد مکانیکی، ماوس، هدست و کیف مخصوص ۱۸ اینچ.", count: "۷۴ کالا", from: "از ۹۰۰ هزار", well: "linear-gradient(150deg,#E6E0FB,#F7F5FD)" },
+    { id: "stream", name: "تجهیزات استریم", desc: "کارت کپچر، میکروفن، نور حلقه‌ای و وب‌کم چهارکی.", count: " ۲۹ کالا", from: "از ۳ میلیون", well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" }
+  ];
+  USES = [
+    { t: "لپ‌تاپ گیمینگ با نمایشگر بالای ۱۶۵ هرتز و گرافیک سری ۴۰۷۰ به بالا. بودجه پیشنهادی از ۱۵۰ میلیون.", c: "۲۴ دستگاه گیمینگ" },
+    { t: "نمایشگر کالیبره، رم ۳۲ گیگ به بالا و ذخیره‌سازی دو ترابایتی. تدوین چهارکی بدون افت فریم.", c: "۱۸ دستگاه حرفه‌ای" },
+    { t: "رم زیاد و کیبورد راحت مهم‌تر از گرافیک است. اولترابوک‌های ۱۶ اینچی با ۳۲ گیگ رم گزینه درست‌اند.", c: "۱۴ دستگاه مناسب کد" },
+    { t: "زیر ۶۰ میلیون، با باتری بلند و وزن کم برای بردن به دانشگاه. گارانتی و خدمات پس از فروش کامل.", c: "۱۱ دستگاه دانشجویی" },
+    { t: "زیر ۱٫۳ کیلوگرم، باتری بالای ۱۲ ساعت و شارژ با USB-C. برای جلسه و پرواز طولانی.", c: "۹ اولترابوک سبک" }
+  ];
+  pickUse = (n) => () => this.setState({ use: n });
+  renderVals(){
+    const u = this.state.use;
+    const m = this.state.mobile === true;
+    const o = {
+      fsBody: m ? "15px" : "13.5px",
+      fsMeta: m ? "13px" : "12.5px",
+      cats: this.CATS.map((c) => ({
+        name: c.name, desc: c.desc, count: c.count, from: c.from, well: c.well,
+        slot: "arb-cat-" + c.id, ph: c.name + " — ۱۲۸۰×۸۰۰"
+      })),
+      useTxt: this.USES[u].t,
+      useCta: this.USES[u].c
+    };
+    this.USES.forEach((x, i) => {
+      const on = u === i;
+      o["onUse" + i] = this.pickUse(i);
+      o["uBg" + i] = on ? "#17151F" : "#FFFFFF";
+      o["uFg" + i] = on ? "#FFFFFF" : "#3D3950";
+      o["uBd" + i] = on ? "#17151F" : "#E0DBF0";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

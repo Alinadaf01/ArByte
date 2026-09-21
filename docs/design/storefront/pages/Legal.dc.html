@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input{font-family:inherit;}
+input::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+</helmet>
+
+<div dir="rtl" data-screen-label="Legal" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">قوانین و سوالات</span>
+    </nav>
+    <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">قوانین و سوالات</h1>
+    <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">شرایط خرید، گارانتی، مرجوعی و حریم خصوصی، کنار پاسخ پرسش‌های پرتکرار. آخرین به‌روزرسانی: ۲۹ شهریور ۱۴۰۴.</p>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+  <nav aria-label="بخش‌ها" style="flex:1 1 200px;max-width:{{ navMax }};width:{{ navW }};min-width:0;position:{{ navPos }};top:96px;padding:10px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:{{ navDir }};overflow-x:{{ navOx }};gap:3px;">
+    <button type="button" onClick="{{ onSec0 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ sBg0 }};color:{{ sFg0 }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">سوالات متداول</button>
+    <button type="button" onClick="{{ onSec1 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ sBg1 }};color:{{ sFg1 }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">شرایط گارانتی</button>
+    <button type="button" onClick="{{ onSec2 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ sBg2 }};color:{{ sFg2 }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">مرجوعی و تعویض</button>
+    <button type="button" onClick="{{ onSec3 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ sBg3 }};color:{{ sFg3 }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">قوانین خرید</button>
+    <button type="button" onClick="{{ onSec4 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ sBg4 }};color:{{ sFg4 }};font-family:inherit;font-size:{{ fsBody }};font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">حریم خصوصی</button>
+  </nav>
+
+  <div style="flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,18px);">
+
+    <sc-if value="{{ isFaq }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+        <label style="display:flex;align-items:center;gap:10px;min-height:50px;padding:0 16px;border-radius:15px;border:1px solid #E0DBF0;background:#FFFFFF;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E6880" stroke-width="1.8" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+          <input type="search" value="{{ q }}" onChange="{{ onQuery }}" onInput="{{ onQuery }}" placeholder="جستجو در سوالات" aria-label="جستجو در سوالات" style="flex:1;min-width:0;border:0;background:transparent;font-size:{{ fsInput }};color:#17151F;outline:none;" />
+        </label>
+
+        <sc-if value="{{ noHits }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:clamp(36px,6vh,64px) 24px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;">
+            <p style="margin:0 0 8px;font-size:16.5px;font-weight:700;">پاسخی پیدا نشد</p>
+            <p style="margin:0 0 18px;font-size:14px;line-height:1.9;color:#5F5B6B;">سوال خود را از پشتیبانی بپرسید؛ معمولاً کمتر از دو ساعت کاری جواب می‌دهیم.</p>
+            <a href="./Support.dc.html" style="min-height:46px;padding:0 24px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">پرسیدن از پشتیبانی</a>
+          </div>
+        </sc-if>
+
+        <div style="border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;overflow:hidden;">
+          <sc-for list="{{ faqs }}" as="f" hint-placeholder-count="8">
+            <div role="button" tabindex="0" onClick="{{ f.toggle }}" style="position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:start;gap:14px;padding:18px 20px;cursor:pointer;border-bottom:1px solid #F4F1FB;transition:background .3s ease;" style-hover="background:#FAF9FE;">
+              <span dir="ltr" style="font-size:{{ fsLabel }};font-weight:700;font-family:sans-serif;letter-spacing:.07em;color:#6E6880;padding-top:3px;">{{ f.num }}</span>
+              <div style="min-width:0;">
+                <h2 style="margin:0;font-size:15px;font-weight:600;line-height:1.75;text-wrap:pretty;">{{ f.q }}</h2>
+                <div style="display:grid;grid-template-rows:{{ f.rows }};transition:grid-template-rows .45s cubic-bezier(.3,1,.4,1);">
+                  <div style="overflow:hidden;"><p style="margin:0;padding-top:10px;font-size:{{ fsBody }};line-height:2;color:#5F5B6B;max-width:62ch;transition:opacity .4s ease;opacity:{{ f.op }};">{{ f.a }}</p></div>
+                </div>
+              </div>
+              <span style="width:30px;height:30px;border-radius:50%;background:#F1EEFA;display:flex;align-items:center;justify-content:center;transition:transform .45s cubic-bezier(.3,1,.4,1);transform:rotate({{ f.rot }});">
+                <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><path d="m4.5 7.2 3.793 3.793a1 1 0 0 0 1.414 0L13.5 7.2" stroke="#4B32C3" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </span>
+              <i style="position:absolute;top:14px;bottom:14px;right:0;width:3px;border-radius:2px;background:linear-gradient(#6C4DFF,#22D3EE);transform-origin:top;transform:scaleY({{ f.bar }});transition:transform .45s cubic-bezier(.3,1,.4,1);display:block;"></i>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDoc }}" hint-placeholder-val="{{ false }}">
+      <article style="padding:clamp(20px,3vw,32px);border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:16px;">
+        <h2 style="margin:0;font-size:clamp(19px,2.2vw,25px);font-weight:700;letter-spacing:-.02em;line-height:1.5;">{{ docTitle }}</h2>
+        <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="5">
+          <div style="display:flex;flex-direction:column;gap:8px;max-width:64ch;">
+            <h3 style="margin:0;font-size:15px;font-weight:700;line-height:1.7;">{{ b.h }}</h3>
+            <p style="margin:0;font-size:14px;line-height:2.05;color:#5F5B6B;">{{ b.p }}</p>
+          </div>
+        </sc-for>
+        <div style="margin-top:6px;padding-top:16px;border-top:1px solid #F0EDF8;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+          <p style="margin:0;font-size:{{ fsLabel }};color:#6E6880;">آخرین به‌روزرسانی: ۲۹ شهریور ۱۴۰۴</p>
+          <a href="./Support.dc.html" style="font-size:{{ fsBody }};font-weight:600;">سوالی دارید؟ بپرسید</a>
+        </div>
+      </article>
+    </sc-if>
+
+  </div>
+
+</div>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px",
+      navMax: m ? "none" : "240px", navW: m ? "100%" : "auto", navPos: m ? "static" : "sticky",
+      navDir: m ? "row" : "column", navOx: m ? "auto" : "visible", navBtnFlex: m ? "0 0 auto" : "1 1 auto" };
+  }
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+  }
+  state = { mobile: false,  sec: 0, open: 0, q: "" };
+  FAQ = [
+    { q: "گارانتی محصولات چطور است؟", a: "همه محصولات گارانتی رسمی شرکتی دارند و مدت آن روی صفحه هر محصول نوشته شده است. کارت گارانتی همراه دستگاه ارسال می‌شود و برای پرچم‌دارها تعویض سه‌روزه هم اضافه می‌شود." },
+    { q: "ارسال چقدر طول می‌کشد؟", a: "سفارش‌های ثبت‌شده تا ساعت ۱۴ همان روز ارسال می‌شوند. تهران یک روز کاری و شهرستان دو تا سه روز کاری. ارسال برای خریدهای بالای پنجاه میلیون تومان رایگان است." },
+    { q: "می‌توانم دستگاه را پیش از تحویل تست کنم؟", a: "بله. در تحویل حضوری دستگاه را روشن می‌کنیم تا سلامت پیکسل‌ها، پورت‌ها و کیبورد را ببینید و بعد خرید را تأیید کنید." },
+    { q: "شرایط مرجوعی و تعویض چیست؟", a: "تا هفت روز پس از تحویل، اگر جعبه و لوازم جانبی کامل باشد، مرجوعی بدون نیاز به دلیل پذیرفته می‌شود. هزینه بازگشت کالا با ماست." },
+    { q: "پرداخت اقساطی دارید؟", a: "بله، پرداخت اعتباری تا دوازده ماه از طریق درگاه‌های همکار فعال است. سقف اعتبار شما پس از احراز هویت در پنل کاربری مشخص می‌شود." },
+    { q: "از کجا مطمئن شوم کالا اصل است؟", a: "هر دستگاه پیش از ارسال تست می‌شود و شماره سریالش در پرونده خرید شما ثبت می‌شود. همان سریال را می‌توانید از پنل کاربری استعلام بگیرید." },
+    { q: "ارتقای رم و SSD چطور انجام می‌شود؟", a: "برای دستگاه‌هایی که از آربایت خریده‌اید، نصب رم و SSD پیش از ارسال رایگان است. کافی است پیش از ارسال با پشتیبانی تماس بگیرید." },
+    { q: "فاکتور رسمی صادر می‌کنید؟", a: "بله. هنگام پرداخت، نوع فاکتور را روی «حقوقی» بگذارید و شناسه ملی شرکت را وارد کنید. فاکتور پس از تأیید پرداخت از صفحه سفارش قابل دانلود است." },
+    { q: "اگر قیمت بعد از خرید پایین بیاید چه؟", a: "تا سه روز پس از خرید، اگر قیمت همان پیکربندی کاهش پیدا کند، تفاوت را به حساب شما برمی‌گردانیم. کافی است شماره سفارش را برای پشتیبانی بفرستید." }
+  ];
+  DOCS = [
+    null,
+    { title: "شرایط گارانتی", blocks: [
+      { h: "مدت و نوع گارانتی", p: "مدت گارانتی هر کالا روی صفحه همان محصول نوشته شده و گارانتی رسمی شرکتی است. کارت گارانتی داخل جعبه قرار می‌گیرد و شماره سریال دستگاه در پرونده خرید شما ثبت می‌شود." },
+      { h: "تعویض در ۷۲ ساعت اول", p: "اگر در سه روز نخست پس از تحویل، ایراد سخت‌افزاری تأییدشده‌ای در دستگاه دیده شود، به‌جای تعمیر، دستگاه با نمونه نو تعویض می‌شود." },
+      { h: "مواردی که گارانتی را باطل می‌کند", p: "ضربه و شکستگی فیزیکی، نفوذ مایعات، باز شدن دستگاه توسط مراکز غیرمجاز، و آسیب ناشی از نوسان برق بدون محافظ، خارج از پوشش گارانتی است." },
+      { h: "مدت رسیدگی", p: "بررسی اولیه حداکثر ۴۸ ساعت کاری طول می‌کشد. اگر قطعه نیاز به تأمین داشته باشد، زمان تخمینی را پیش از شروع تعمیر به شما اعلام می‌کنیم." },
+      { h: "دستگاه جایگزین", p: "برای تعمیرهای بیش از ده روز کاری روی لپ‌تاپ‌های حرفه‌ای، در صورت موجود بودن، دستگاه جایگزین موقت تحویل می‌دهیم." }
+    ] },
+    { title: "مرجوعی و تعویض", blocks: [
+      { h: "مهلت هفت روزه", p: "تا هفت روز پس از تحویل می‌توانید کالا را بدون ذکر دلیل مرجوع کنید، به شرط آنکه جعبه، لوازم جانبی و برچسب‌ها کامل باشند." },
+      { h: "هزینه بازگشت", p: "هزینه ارسال کالای مرجوعی بر عهده آربایت است. مأمور پست برای دریافت بسته به آدرس شما مراجعه می‌کند." },
+      { h: "بازگشت وجه", p: "پس از دریافت و بررسی کالا، مبلغ حداکثر تا ۷۲ ساعت کاری به همان حسابی که پرداخت کرده‌اید واریز می‌شود." },
+      { h: "کالاهای مستثنا", p: "کالاهای مصرفی مانند خمیر سیلیکون باز شده، و نرم‌افزارهای دارای کد فعال‌سازی استفاده‌شده، مشمول مرجوعی نیستند." },
+      { h: "تعویض به‌دلیل مغایرت", p: "اگر کالای ارسالی با سفارش شما مغایرت داشته باشد، بدون محدودیت زمانی تعویض می‌شود و اولویت ارسال با ماست." }
+    ] },
+    { title: "قوانین خرید", blocks: [
+      { h: "ثبت سفارش", p: "با ثبت سفارش، قیمت و موجودی کالا تا ۲۴ ساعت برای شما رزرو می‌شود. پس از این مدت، در صورت عدم پرداخت سفارش لغو می‌شود." },
+      { h: "قیمت‌ها", p: "قیمت‌ها روزانه به‌روز می‌شوند و مبلغ نهایی همان است که در صفحه پرداخت می‌بینید. هیچ هزینه پنهانی هنگام تسویه اضافه نمی‌شود." },
+      { h: "روش‌های پرداخت", p: "پرداخت اینترنتی از درگاه بانکی، پرداخت اقساطی تا دوازده ماه، و حواله بانکی برای خریدهای سازمانی پذیرفته می‌شود." },
+      { h: "تحویل و مالکیت", p: "مسئولیت کالا تا لحظه تحویل با آربایت است. در تحویل حضوری، خرید پس از تأیید شما در محل نهایی می‌شود." },
+      { h: "لغو سفارش", p: "تا پیش از تحویل به شرکت پست، لغو سفارش بدون جریمه انجام می‌شود و وجه تا ۷۲ ساعت کاری برمی‌گردد." }
+    ] },
+    { title: "حریم خصوصی", blocks: [
+      { h: "اطلاعاتی که جمع می‌کنیم", p: "نام، شماره موبایل، نشانی تحویل و تاریخچه سفارش‌ها. کد ملی تنها در صورت درخواست فاکتور رسمی دریافت می‌شود." },
+      { h: "اطلاعات پرداخت", p: "اطلاعات کارت بانکی شما فقط در درگاه بانک وارد می‌شود و هیچ‌گاه نزد آربایت ذخیره نمی‌شود." },
+      { h: "استفاده از اطلاعات", p: "از اطلاعات شما برای پردازش سفارش، پشتیبانی و اطلاع‌رسانی وضعیت ارسال استفاده می‌کنیم. پیامک تبلیغاتی فقط با رضایت شما ارسال می‌شود." },
+      { h: "اشتراک با دیگران", p: "نشانی و شماره تماس شما فقط در اختیار شرکت پست برای تحویل مرسوله قرار می‌گیرد. اطلاعات شما به هیچ شخص ثالث دیگری فروخته یا واگذار نمی‌شود." },
+      { h: "حذف حساب", p: "هر زمان بخواهید می‌توانید حذف حساب را درخواست کنید. اطلاعات مربوط به فاکتورهای رسمی طبق الزام قانونی نگهداری می‌شود." }
+    ] }
+  ];
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  pickSec = (n) => () => this.setState({ sec: n });
+  toggle = (i) => () => this.setState((s) => ({ open: s.open === i ? -1 : i }));
+  onQuery = (e) => this.setState({ q: e.target.value, open: -1 });
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const st = this.state;
+    const q = st.q.trim();
+    const hits = this.FAQ.map((f, i) => ({ f, i })).filter((x) => q === "" || (x.f.q + " " + x.f.a).indexOf(q) >= 0);
+    const doc = this.DOCS[st.sec];
+    const o = {
+      isFaq: st.sec === 0, isDoc: st.sec !== 0,
+      q: st.q, onQuery: this.onQuery,
+      noHits: st.sec === 0 && hits.length === 0,
+      faqs: hits.map((x, n) => {
+        const on = st.open === x.i;
+        return {
+          q: x.f.q, a: x.f.a,
+          num: (n + 1 < 10 ? "0" : "") + (n + 1),
+          toggle: this.toggle(x.i),
+          rows: on ? "1fr" : "0fr",
+          op: on ? 1 : 0,
+          rot: on ? "180deg" : "0deg",
+          bar: on ? 1 : 0
+        };
+      }),
+      docTitle: doc ? doc.title : "",
+      blocks: doc ? doc.blocks : []
+    };
+    [0, 1, 2, 3, 4].forEach((i) => {
+      const on = st.sec === i;
+      o["onSec" + i] = this.pickSec(i);
+      o["sBg" + i] = on ? "#17151F" : "transparent";
+      o["sFg" + i] = on ? "#FFFFFF" : "#3D3950";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

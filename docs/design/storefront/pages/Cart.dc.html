@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button:active{transform:scale(.96);}
+@keyframes arbPopA{0%{transform:scale(.72)}60%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes arbPopB{0%{transform:scale(.72)}60%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes arbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes arbShakeB{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Cart" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(28px,4vh,44px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">سبد خرید</span>
+    </nav>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;">
+      <h1 style="margin:0;font-size:clamp(26px,3.2vw,40px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">سبد خرید شما</h1>
+      <p style="margin:0;font-size:13.5px;color:#5F5B6B;">{{ lineCount }} قلم · قیمت‌ها تا ۲۴ ساعت رزرو می‌ماند</p>
+    </div>
+    <ol style="margin:18px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:10px;">
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};font-weight:600;color:#17151F;"><span style="width:24px;height:24px;border-radius:50%;background:#17151F;color:#FFFFFF;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">۱</span>سبد خرید</li>
+      <li aria-hidden="true" style="width:26px;height:1px;background:#DDD8EC;"></li>
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};color:#6E6880;"><span style="width:24px;height:24px;border-radius:50%;border:1px solid #DDD8EC;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">۲</span>پرداخت</li>
+      <li aria-hidden="true" style="width:26px;height:1px;background:#DDD8EC;"></li>
+      <li style="display:flex;align-items:center;gap:8px;font-size:{{ fsStepLabel }};color:#6E6880;"><span style="width:24px;height:24px;border-radius:50%;border:1px solid #DDD8EC;font-size:{{ fsStep }};display:flex;align-items:center;justify-content:center;">۳</span>ثبت سفارش</li>
+    </ol>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+  <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:clamp(40px,7vh,72px) 24px;border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;">
+        <p style="margin:0 0 8px;font-size:18px;font-weight:700;">سبد خرید خالی است</p>
+        <p style="margin:0 0 20px;font-size:14px;line-height:1.9;color:#5F5B6B;">هنوز چیزی اضافه نکرده‌اید. از فروشگاه شروع کنید یا سبد قبلی را برگردانید.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+          <a href="./Products.dc.html" style="min-height:46px;padding:0 24px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">رفتن به فروشگاه</a>
+          <button type="button" onClick="{{ onRestore }}" style="min-height:46px;padding:0 22px;border-radius:999px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">برگرداندن سبد قبلی</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-for list="{{ items }}" as="it" hint-placeholder-count="3">
+      <article style="display:grid;grid-template-columns:{{ thumb }} minmax(0,1fr);gap:{{ cardGap }};padding:{{ cardPad }};border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;">
+        <a href="./Product.dc.html" style="width:{{ thumb }};height:{{ thumb }};border-radius:14px;overflow:hidden;background:{{ it.well }};display:block;">
+          <image-slot id="{{ it.slot }}" shape="rect" fit="contain" placeholder="{{ it.ph }}"></image-slot>
+        </a>
+        <div style="min-width:0;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="min-width:0;">
+              <h2 style="margin:0;font-size:15.5px;font-weight:700;line-height:1.6;text-wrap:pretty;"><a href="./Product.dc.html" style="color:#17151F;" style-hover="color:#4B32C3;">{{ it.name }}</a></h2>
+              <p style="margin:5px 0 0;font-size:{{ fsSm }};color:#5F5B6B;">{{ it.cfg }}</p>
+            </div>
+            <button type="button" onClick="{{ it.remove }}" aria-label="حذف از سبد" style="width:44px;height:44px;flex:none;border-radius:12px;border:0;background:transparent;color:#6E6880;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;" style-hover="background:#FBEEEE;color:#B42318;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"></path><path d="M9.5 7V5.5h5V7"></path><path d="M6.8 7 7.6 19h8.8L17.2 7"></path></svg>
+            </button>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:2px;padding:3px;border-radius:999px;border:1px solid #E0DBF0;background:#FFFFFF;">
+              <button type="button" onClick="{{ it.minus }}" aria-label="کم کردن" style="width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:#3D3950;font-family:inherit;font-size:18px;cursor:pointer;transition:background .2s ease;" style-hover="background:#F2EFFB;">−</button>
+              <span style="min-width:28px;text-align:center;font-size:14.5px;font-weight:600;display:inline-block;animation:{{ it.qtyAnim }} .3s cubic-bezier(.3,1,.4,1);">{{ it.qtyFa }}</span>
+              <button type="button" onClick="{{ it.plus }}" aria-label="اضافه کردن" style="width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:#3D3950;font-family:inherit;font-size:18px;cursor:pointer;transition:background .2s ease;" style-hover="background:#F2EFFB;">+</button>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">
+              <span style="font-size:15.5px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;">{{ it.lineFa }}</span>
+              <span style="font-size:{{ fsSm }};color:#6E6880;white-space:nowrap;">{{ it.unitFa }}</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;">
+      <p style="margin:0;font-size:{{ fsBody }};line-height:1.85;color:#3D3950;">برای ارتقای رم یا SSD پیش از ارسال، با پشتیبانی تماس بگیرید؛ نصب روی دستگاه رایگان انجام می‌شود.</p>
+      <a href="./Support.dc.html" style="font-size:13.5px;font-weight:600;white-space:nowrap;">تماس با پشتیبانی</a>
+    </div>
+
+  </div>
+
+  <aside style="flex:1 1 300px;max-width:{{ asideMax }};min-width:0;position:{{ asidePos }};top:96px;display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+
+    <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:16px;">
+      <p style="margin:0;font-size:14.5px;font-weight:700;">روش ارسال</p>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <button type="button" onClick="{{ onShip0 }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:14px;cursor:pointer;font-family:inherit;text-align:right;background:{{ sBg0 }};border:1.5px solid {{ sBd0 }};transition:all .2s ease;">
+          <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+            <span style="font-size:13.5px;font-weight:600;color:#17151F;">پست پیشتاز</span>
+            <span style="font-size:{{ fsSm }};color:#5F5B6B;">۲ تا ۳ روز کاری</span>
+          </span>
+          <span style="font-size:13px;font-weight:600;color:{{ sAc0 }};white-space:nowrap;">رایگان</span>
+        </button>
+        <button type="button" onClick="{{ onShip1 }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:14px;cursor:pointer;font-family:inherit;text-align:right;background:{{ sBg1 }};border:1.5px solid {{ sBd1 }};transition:all .2s ease;">
+          <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+            <span style="font-size:13.5px;font-weight:600;color:#17151F;">ارسال فوری تهران</span>
+            <span style="font-size:{{ fsSm }};color:#5F5B6B;">همان روز، تا ساعت ۲۱</span>
+          </span>
+          <span style="font-size:13px;font-weight:600;color:{{ sAc1 }};white-space:nowrap;">۴۵۰ هزار</span>
+        </button>
+        <button type="button" onClick="{{ onShip2 }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:14px;cursor:pointer;font-family:inherit;text-align:right;background:{{ sBg2 }};border:1.5px solid {{ sBd2 }};transition:all .2s ease;">
+          <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+            <span style="font-size:13.5px;font-weight:600;color:#17151F;">تحویل حضوری</span>
+            <span style="font-size:{{ fsSm }};color:#5F5B6B;">تست دستگاه جلوی شما</span>
+          </span>
+          <span style="font-size:13px;font-weight:600;color:{{ sAc2 }};white-space:nowrap;">رایگان</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+      <label for="arb-coupon" style="font-size:14.5px;font-weight:700;">کد تخفیف</label>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;animation:{{ shakeAnim }};">
+        <input id="arb-coupon" type="text" value="{{ code }}" onChange="{{ onCode }}" onInput="{{ onCode }}" placeholder="مثلاً ARB10" style="min-height:44px;padding:0 14px;border-radius:12px;border:1px solid {{ codeBd }};background:#FFFFFF;font-family:inherit;font-size:13.5px;color:#17151F;min-width:0;" />
+        <button type="button" onClick="{{ onApply }}" style="min-height:44px;padding:0 18px;border-radius:12px;border:0;background:#17151F;color:#FFFFFF;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:background .25s ease;" style-hover="background:#6C4DFF;">اعمال</button>
+      </div>
+      <p style="margin:0;font-size:12.5px;line-height:1.8;color:{{ noteFg }};">{{ note }}</p>
+    </div>
+
+    <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <span style="font-size:{{ fsBody }};color:#5F5B6B;">جمع کالاها</span>
+        <span style="font-size:14px;font-weight:500;">{{ subFa }}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <span style="font-size:{{ fsBody }};color:#5F5B6B;">تخفیف</span>
+        <span style="font-size:14px;font-weight:500;color:{{ discFg }};">{{ discFa }}</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <span style="font-size:{{ fsBody }};color:#5F5B6B;">هزینه ارسال</span>
+        <span style="font-size:14px;font-weight:500;">{{ shipFa }}</span>
+      </div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid #F0EDF8;">
+        <span style="font-size:14.5px;font-weight:700;">مبلغ قابل پرداخت</span>
+        <span style="font-size:clamp(18px,2.2vw,22px);font-weight:700;letter-spacing:-.025em;white-space:nowrap;">{{ totalFa }}</span>
+      </div>
+      <p style="margin:0;font-size:12px;color:#6E6880;">یا {{ instalFa }} تومان در ۱۲ قسط</p>
+      <a href="./Checkout.dc.html" style="margin-top:4px;min-height:50px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">ادامه و پرداخت</a>
+      <p style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;font-size:12px;color:#5F5B6B;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"></rect><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"></path></svg>
+        پرداخت امن از درگاه بانکی
+      </p>
+    </div>
+
+  </aside>
+
+</div>
+
+<dc-import name="MobileNav" active="cart" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  BASE = [
+    { id: "titan", name: "MSI Titan 18 HX A2XWJG", cfg: "۶۴GB رم · ۲TB SSD · مشکی", price: 289.5, qty: 1, well: "linear-gradient(150deg,#E4DDFB,#F7F5FD)" },
+    { id: "pa32", name: "ASUS ProArt Display OLED 32", cfg: "۴K OLED · کالیبره‌شده", price: 96.5, qty: 1, well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" },
+    { id: "ram", name: "کیت رم ۶۴GB DDR5 5600", cfg: "دو ماژول ۳۲ گیگ · نصب رایگان", price: 12.8, qty: 2, well: "linear-gradient(150deg,#E4DDFB,#F7F5FD)" }
+  ];
+  state = { lines: this.BASE.map((x) => ({ id: x.id, qty: x.qty })), ship: 0, code: "", applied: false, bad: false, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  componentWillUnmount(){
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+  SHIP = [0, 0.45, 0];
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  money(m){ return this.fa(Math.round(m).toLocaleString("en-US").replace(/,/g, "٫")); }
+  step = (id, d) => () => this.setState((s) => ({
+    lines: s.lines.map((l) => l.id === id ? { id: l.id, qty: Math.max(1, Math.min(5, l.qty + d)) } : l),
+    ticks: Object.assign({}, s.ticks, { [id]: ((s.ticks || {})[id] || 0) + 1 })
+  }));
+  remove = (id) => () => this.setState((s) => ({ lines: s.lines.filter((l) => l.id !== id) }));
+  onRestore = () => this.setState({ lines: this.BASE.map((x) => ({ id: x.id, qty: x.qty })) });
+  onCode = (e) => this.setState({ code: e.target.value, bad: false });
+  onApply = () => {
+    const ok = this.state.code.trim().toUpperCase() === "ARB10";
+    this.setState((s) => ({ applied: ok, bad: !ok, shake: ok ? 0 : (s.shake || 0) + 1 }));
+  };
+  pickShip = (n) => () => this.setState({ ship: n });
+
+  renderVals(){
+    const st = this.state;
+    const items = st.lines.map((l) => {
+      const p = this.BASE.filter((b) => b.id === l.id)[0];
+      return {
+        name: p.name, cfg: p.cfg, well: p.well,
+        slot: "arb-cart-" + p.id, ph: "۴۰۰×۴۰۰",
+        qtyFa: this.fa(l.qty),
+        qtyAnim: (((st.ticks || {})[l.id] || 0) % 2) ? "arbPopA" : "arbPopB",
+        lineFa: this.money(p.price * l.qty * 1000000) + " تومان",
+        unitFa: l.qty > 1 ? "واحدی " + this.money(p.price * 1000000) : "قیمت واحد",
+        minus: this.step(p.id, -1), plus: this.step(p.id, 1), remove: this.remove(p.id)
+      };
+    });
+    const sub = st.lines.reduce((a, l) => a + this.BASE.filter((b) => b.id === l.id)[0].price * l.qty, 0);
+    const disc = st.applied ? sub * 0.1 : 0;
+    const ship = items.length ? this.SHIP[st.ship] : 0;
+    const total = sub - disc + ship;
+    const m = st.mobile === true;
+    const o = {
+      thumb: m ? "76px" : "96px",
+      cardGap: m ? "12px" : "16px",
+      cardPad: m ? "14px" : "16px",
+      asideMax: m ? "none" : "380px",
+      asidePos: m ? "static" : "sticky",
+      fsBody: m ? "15px" : "13.5px",
+      fsSm: m ? "13px" : "12.5px",
+      fsStep: m ? "13px" : "12px",
+      fsStepLabel: m ? "14px" : "13px",
+      items, isEmpty: items.length === 0,
+      lineCount: this.fa(items.length),
+      subFa: this.money(sub * 1000000) + " تومان",
+      discFa: disc ? "− " + this.money(disc * 1000000) + " تومان" : "—",
+      discFg: disc ? "#0E7490" : "#17151F",
+      shipFa: ship ? this.money(ship * 1000000) + " تومان" : "رایگان",
+      totalFa: this.money(total * 1000000) + " تومان",
+      instalFa: this.money(total * 1000000 / 12),
+      code: st.code, onCode: this.onCode, onApply: this.onApply, onRestore: this.onRestore,
+      shakeAnim: st.bad && (st.shake || 0) > 0 ? ((st.shake % 2) ? "arbShake .42s ease" : "arbShakeB .42s ease") : "none",
+      codeBd: st.bad ? "#E0A3A3" : (st.applied ? "#7CC9D8" : "#E0DBF0"),
+      note: st.bad ? "این کد معتبر نیست یا منقضی شده." : (st.applied ? "کد ARB10 اعمال شد — ۱۰٪ تخفیف." : "کد ARB10 برای اولین خرید، ۱۰٪ تخفیف می‌دهد."),
+      noteFg: st.bad ? "#B42318" : (st.applied ? "#0E7490" : "#5F5B6B")
+    };
+    [0, 1, 2].forEach((i) => {
+      const on = st.ship === i;
+      o["onShip" + i] = this.pickShip(i);
+      o["sBg" + i] = on ? "#F4F1FD" : "#FFFFFF";
+      o["sBd" + i] = on ? "#6C4DFF" : "#E7E3F3";
+      o["sAc" + i] = on ? "#4B32C3" : "#5F5B6B";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

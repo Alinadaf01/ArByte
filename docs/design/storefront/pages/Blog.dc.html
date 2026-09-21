@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input{font-family:inherit;}
+input::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Blog" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" active="blog" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">بلاگ</span>
+    </nav>
+    <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">بلاگ آربایت</h1>
+    <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">راهنمای خرید و بررسی‌هایی که کارشناس‌های ما بعد از کار کردن با دستگاه‌ها می‌نویسند. بدون کپی از بروشور سازنده.</p>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(18px,2.5vh,26px);">
+
+  <a href="./BlogPost.dc.html" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));border-radius:26px;overflow:hidden;background:#17151F;color:#FFFFFF;border:1px solid #17151F;transition:transform .3s ease, box-shadow .3s ease;" style-hover="transform:translateY(-4px);box-shadow:0 22px 50px rgba(23,21,31,.2);color:#FFFFFF;">
+    <div style="position:relative;min-height:clamp(220px,32vh,300px);background:linear-gradient(150deg,#2A2440,#17151F);">
+      <div aria-hidden="true" style="position:absolute;inset:0;background:radial-gradient(56% 48% at 50% 50%,rgba(108,77,255,.4),rgba(23,21,31,0) 70%);"></div>
+      <img alt="MSI Titan 18 HX" src="../../uploads/MSI.webp" style="position:absolute;inset:8%;width:84%;height:84%;object-fit:contain;display:block;filter:drop-shadow(0 22px 34px rgba(0,0,0,.45));" />
+    </div>
+    <div style="padding:clamp(24px,3.5vw,44px);display:flex;flex-direction:column;justify-content:center;gap:14px;">
+      <span style="align-self:flex-start;padding:6px 13px;border-radius:999px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);font-size:{{ fsLabel }};font-weight:600;color:#FFFFFF;">تازه‌ترین بررسی</span>
+      <h2 style="margin:0;font-size:clamp(22px,2.8vw,33px);font-weight:700;letter-spacing:-.025em;line-height:1.5;color:#FFFFFF;text-wrap:pretty;">Titan 18 HX در کار واقعی: سه هفته رندر و بازی</h2>
+      <p style="margin:0;font-size:14.5px;line-height:1.95;color:#B9B4C9;max-width:46ch;">سنگین است و صدا می‌دهد، ولی زیر بار کامل فرکانس پردازنده را نگه می‌دارد. آنچه در بنچمارک‌ها دیده نمی‌شود.</p>
+      <p style="margin:4px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:9px;font-size:{{ fsLabel }};color:#B9B4C9;">
+        <span>نیما صادقی</span>
+        <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#5C566F;display:block;"></span>
+        <span>۲۷ شهریور ۱۴۰۴</span>
+        <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#5C566F;display:block;"></span>
+        <span>۹ دقیقه مطالعه</span>
+      </p>
+      <span style="margin-top:4px;display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:#A88CFF;">خواندن مقاله
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6 8 12l6 6"></path></svg>
+      </span>
+    </div>
+  </a>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:16px;background:#FFFFFF;border:1px solid #EAE6F4;">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <button type="button" onClick="{{ onCat0 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ cBd0 }};background:{{ cBg0 }};color:{{ cFg0 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">همه</button>
+      <button type="button" onClick="{{ onCat1 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ cBd1 }};background:{{ cBg1 }};color:{{ cFg1 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">راهنمای خرید</button>
+      <button type="button" onClick="{{ onCat2 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ cBd2 }};background:{{ cBg2 }};color:{{ cFg2 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">بررسی</button>
+      <button type="button" onClick="{{ onCat3 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ cBd3 }};background:{{ cBg3 }};color:{{ cFg3 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">نگهداری</button>
+      <button type="button" onClick="{{ onCat4 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ cBd4 }};background:{{ cBg4 }};color:{{ cFg4 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">گیمینگ</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:9px;min-width:210px;flex:0 1 260px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6E6880" stroke-width="1.8" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+      <input type="search" value="{{ q }}" onChange="{{ onQuery }}" onInput="{{ onQuery }}" placeholder="جستجو در نوشته‌ها" aria-label="جستجو در نوشته‌ها" style="flex:1;min-width:0;border:0;background:transparent;font-size:{{ fsInput }};color:#17151F;outline:none;" />
+    </label>
+  </div>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:clamp(40px,7vh,72px) 24px;border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;">
+      <p style="margin:0 0 8px;font-size:17px;font-weight:700;">نوشته‌ای پیدا نشد</p>
+      <p style="margin:0 0 18px;font-size:14px;line-height:1.9;color:#5F5B6B;">عبارت دیگری را امتحان کنید یا دسته را روی «همه» بگذارید.</p>
+      <button type="button" onClick="{{ onReset }}" style="min-height:46px;padding:0 24px;border-radius:999px;border:0;background:#17151F;color:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .25s ease;" style-hover="background:#6C4DFF;">نمایش همه نوشته‌ها</button>
+    </div>
+  </sc-if>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:clamp(14px,2vw,20px);">
+    <sc-for list="{{ posts }}" as="p" hint-placeholder-count="6">
+      <article style="display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);">
+        <a href="./BlogPost.dc.html" style="position:relative;aspect-ratio:16/9;background:{{ p.well }};display:block;">
+          <image-slot id="{{ p.slot }}" shape="rect" fit="cover" placeholder="۱۲۰۰×۶۷۵"></image-slot>
+          <span style="position:absolute;top:13px;right:13px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);font-size:{{ fsLabel }};font-weight:600;color:#4B32C3;pointer-events:none;">{{ p.cat }}</span>
+        </a>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:10px;flex:1;">
+          <h2 style="margin:0;font-size:16.5px;font-weight:700;line-height:1.65;letter-spacing:-.01em;text-wrap:pretty;"><a href="./BlogPost.dc.html" style="color:#17151F;" style-hover="color:#4B32C3;">{{ p.title }}</a></h2>
+          <p style="margin:0;font-size:{{ fsBody }};line-height:1.9;color:#5F5B6B;">{{ p.excerpt }}</p>
+          <p style="margin:auto 0 0;padding-top:12px;border-top:1px solid #F4F1FB;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#6E6880;">
+            <span>{{ p.author }}</span>
+            <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+            <span>{{ p.date }}</span>
+            <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+            <span>{{ p.read }}</span>
+          </p>
+        </div>
+      </article>
+    </sc-for>
+  </div>
+
+  <section style="margin-top:clamp(8px,1.5vh,16px);padding:clamp(22px,3.5vw,38px);border-radius:24px;background:#FFFFFF;border:1px solid #EAE6F4;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:clamp(20px,3vw,44px);align-items:center;">
+    <div style="min-width:0;">
+      <h2 style="margin:0;font-size:clamp(19px,2.2vw,26px);font-weight:700;letter-spacing:-.02em;line-height:1.5;">راهنمای خرید تازه منتشر شد؟</h2>
+      <p style="margin:9px 0 0;font-size:14px;line-height:1.9;color:#5F5B6B;max-width:40ch;">ماهی یک ایمیل، فقط وقتی بررسی یا راهنمای تازه‌ای داریم. بدون تبلیغ.</p>
+    </div>
+    <form onSubmit="{{ onSubscribe }}" noValidate="{{ yes }}" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px;min-width:0;">
+      <input type="email" dir="ltr" value="{{ email }}" onChange="{{ onEmail }}" onInput="{{ onEmail }}" placeholder="name@example.com" aria-label="ایمیل شما" style="min-height:50px;padding:0 15px;border-radius:14px;border:1px solid {{ mailBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+      <button type="submit" style="min-height:50px;padding:0 22px;border-radius:14px;border:0;background:{{ subBg }};color:{{ subFg }};font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .25s ease;">{{ subTxt }}</button>
+      <p style="grid-column:1/-1;margin:0;font-size:{{ fsLabel }};line-height:1.75;color:{{ mailFg }};">{{ mailNote }}</p>
+    </form>
+  </section>
+
+</div>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px" };
+  }
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+  }
+  state = { mobile: false,  cat: "all", q: "", email: "", sent: false, bad: false };
+  CATS = ["all", "guide", "review", "care", "gaming"];
+  POSTS = [
+    { id: "choose", cat: "guide", catFa: "راهنمای خرید", title: "چطور لپ‌تاپ درست را انتخاب کنیم", excerpt: "پیش از نگاه کردن به مدل‌ها، سه سوال را از خودتان بپرسید. این سه جواب نیمی از بازار را کنار می‌گذارد.", author: "مریم زارع", date: "۲۴ شهریور ۱۴۰۴", read: "۷ دقیقه" },
+    { id: "panel", cat: "guide", catFa: "راهنمای خرید", title: "Mini LED یا OLED؛ کدام برای کار شما؟", excerpt: "یکی در اتاق روشن برنده است و دیگری در تاریکی. تفاوت واقعی در سناریوی استفاده است نه در جدول مشخصات.", author: "نیما صادقی", date: "۱۹ شهریور ۱۴۰۴", read: "۶ دقیقه" },
+    { id: "ram", cat: "guide", catFa: "راهنمای خرید", title: "رم و SSD؛ چقدر واقعاً کافی است", excerpt: "۳۲ گیگ برای اکثر کاربران سقف است، نه کف. چه زمانی پول بیشتر دادن منطقی است.", author: "مریم زارع", date: "۱۱ شهریور ۱۴۰۴", read: "۵ دقیقه" },
+    { id: "battery", cat: "care", catFa: "نگهداری", title: "باتری لپ‌تاپ را چطور زنده نگه داریم", excerpt: "شارژ صد درصد همیشه خوب نیست. چند عادت ساده که عمر باتری را دو برابر می‌کند.", author: "سهیل رفیعی", date: "۵ شهریور ۱۴۰۴", read: "۴ دقیقه" },
+    { id: "hz", cat: "gaming", catFa: "گیمینگ", title: "تنظیمات درست برای نمایشگر ۲۴۰ هرتز", excerpt: "خریدن پنل پرنرخ کافی نیست. تا این چند تنظیم را عوض نکنید، تفاوتی حس نمی‌کنید.", author: "نیما صادقی", date: "۲۹ مرداد ۱۴۰۴", read: "۶ دقیقه" },
+    { id: "headset", cat: "review", catFa: "بررسی", title: "هدست‌های بی‌سیم زیر ده میلیون", excerpt: "شش مدل را دو هفته استفاده کردیم. دو تا ارزش پولشان را داشتند، بقیه نه.", author: "سهیل رفیعی", date: "۲۱ مرداد ۱۴۰۴", read: "۸ دقیقه" },
+    { id: "qc", cat: "review", catFa: "بررسی", title: "دستگاه پیش از ارسال از چه مراحلی رد می‌شود", excerpt: "تست پیکسل، پورت، کیبورد و ثبت سریال. چرا این کار را انجام می‌دهیم و چه چیزهایی گیر می‌افتد.", author: "تیم فنی آربایت", date: "۱۴ مرداد ۱۴۰۴", read: "۳ دقیقه" },
+    { id: "monitor", cat: "guide", catFa: "راهنمای خرید", title: "مانیتور دوم برای کار؛ از کجا شروع کنیم", excerpt: "اندازه، ارتفاع چشم و کابل. سه چیزی که بیشتر از رزولوشن روی راحتی روزانه اثر می‌گذارد.", author: "مریم زارع", date: "۷ مرداد ۱۴۰۴", read: "۵ دقیقه" }
+  ];
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  pickCat = (c) => () => this.setState({ cat: c });
+  onQuery = (e) => this.setState({ q: e.target.value });
+  onReset = () => this.setState({ cat: "all", q: "" });
+  onEmail = (e) => this.setState({ email: e.target.value, bad: false, sent: false });
+  onSubscribe = (e) => {
+    e.preventDefault();
+    const ok = /.+@.+\..+/.test(this.state.email);
+    this.setState({ sent: ok, bad: !ok });
+  };
+
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const st = this.state;
+    const q = st.q.trim();
+    const list = this.POSTS.filter((p) =>
+      (st.cat === "all" || p.cat === st.cat) &&
+      (q === "" || (p.title + " " + p.excerpt + " " + p.author).indexOf(q) >= 0)
+    );
+    const o = {
+      yes: true,
+      posts: list.map((p, i) => ({
+        title: p.title, excerpt: p.excerpt, author: p.author, date: p.date,
+        read: p.read + " مطالعه", cat: p.catFa,
+        slot: "arb-post-" + p.id,
+        well: i % 2 ? "linear-gradient(150deg,#DFF3F8,#F5FBFD)" : "linear-gradient(150deg,#E6E0FB,#F7F5FD)"
+      })),
+      isEmpty: list.length === 0,
+      q: st.q, onQuery: this.onQuery, onReset: this.onReset,
+      email: st.email, onEmail: this.onEmail, onSubscribe: this.onSubscribe,
+      subTxt: st.sent ? "ثبت شد ✓" : "عضویت",
+      subBg: st.sent ? "#EDE9FA" : "#17151F",
+      subFg: st.sent ? "#4B32C3" : "#FFFFFF",
+      mailBd: st.bad ? "#E0A3A3" : (st.sent ? "#7CC9D8" : "#E0DBF0"),
+      mailNote: st.bad
+        ? "ایمیل وارد شده درست نیست."
+        : (st.sent ? "ثبت شد. اولین ایمیل با انتشار نوشته بعدی می‌رسد." : "هر زمان بخواهید با یک کلیک لغو می‌شود."),
+      mailFg: st.bad ? "#B42318" : (st.sent ? "#0E7490" : "#6E6880")
+    };
+    this.CATS.forEach((c, i) => {
+      const on = st.cat === c;
+      o["onCat" + i] = this.pickCat(c);
+      o["cBg" + i] = on ? "#17151F" : "#FFFFFF";
+      o["cFg" + i] = on ? "#FFFFFF" : "#3D3950";
+      o["cBd" + i] = on ? "#17151F" : "#E0DBF0";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

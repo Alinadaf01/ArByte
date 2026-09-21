@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@keyframes arbPop{0%{transform:scale(.88)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Wishlist" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <a href="./Account.dc.html" style="color:#5F5B6B;">حساب کاربری</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">علاقه‌مندی‌ها</span>
+    </nav>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;">
+      <div style="min-width:0;">
+        <h1 style="margin:0;font-size:clamp(26px,3.2vw,40px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">علاقه‌مندی‌ها</h1>
+        <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:52ch;">{{ intro }}</p>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:#5F5B6B;white-space:nowrap;"><span style="font-weight:700;color:#17151F;">{{ countFa }}</span> کالا</p>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(14px,2vh,20px);">
+
+  <sc-if value="{{ any }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:16px;background:#FFFFFF;border:1px solid #EAE6F4;">
+      <p style="margin:0;font-size:{{ fsBody }};line-height:1.8;color:#3D3950;">{{ dropNote }}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <button type="button" onClick="{{ onAddAll }}" style="animation:{{ allAnim }};min-height:44px;padding:0 17px;border-radius:12px;border:0;background:{{ allBg }};color:{{ allFg }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .25s ease;">{{ allTxt }}</button>
+        <button type="button" onClick="{{ onClear }}" style="min-height:44px;padding:0 17px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#D99A9A;color:#B42318;">خالی کردن فهرست</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:clamp(44px,8vh,80px) 24px;border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;">
+      <span style="width:62px;height:62px;border-radius:50%;background:#F4F1FD;display:flex;align-items:center;justify-content:center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.4-4.6-7.4-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.4 2.8c0 5-7.4 9.6-7.4 9.6Z"></path></svg>
+      </span>
+      <p style="margin:0;font-size:18px;font-weight:700;">فهرست علاقه‌مندی خالی است</p>
+      <p style="margin:0;font-size:14px;line-height:1.9;color:#5F5B6B;max-width:44ch;">روی قلب کنار هر محصول بزنید تا اینجا ذخیره شود و از تغییر قیمتش باخبر شوید.</p>
+      <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+        <a href="./Products.dc.html" style="min-height:46px;padding:0 24px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">رفتن به فروشگاه</a>
+        <button type="button" onClick="{{ onRestore }}" style="min-height:46px;padding:0 22px;border-radius:999px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">برگرداندن فهرست</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(252px,1fr));gap:clamp(14px,2vw,20px);">
+    <sc-for list="{{ items }}" as="p" hint-placeholder-count="4">
+      <article style="position:relative;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1px solid #EAE6F4;transition:border-color .3s ease, transform .3s ease, box-shadow .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.09);">
+        <a href="./Product.dc.html" style="position:relative;aspect-ratio:16/11;background:{{ p.well }};display:block;">
+          <image-slot id="{{ p.slot }}" shape="rect" fit="contain" placeholder="۱۲۰۰×۸۲۵"></image-slot>
+        </a>
+        <button type="button" onClick="{{ p.drop }}" aria-label="حذف از علاقه‌مندی‌ها" style="position:absolute;top:12px;left:12px;width:44px;height:44px;border-radius:50%;border:1px solid #EAE6F4;background:rgba(255,255,255,.94);backdrop-filter:blur(6px);color:#6C4DFF;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;" style-hover="border-color:#D99A9A;color:#B42318;">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.4-4.6-7.4-9.6A4.4 4.4 0 0 1 12 7.6a4.4 4.4 0 0 1 7.4 2.8c0 5-7.4 9.6-7.4 9.6Z"></path></svg>
+        </button>
+        <div style="padding:18px;display:flex;flex-direction:column;gap:11px;flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <span style="font-size:{{ fsMeta }};font-weight:600;color:#4B32C3;">{{ p.catFa }}</span>
+            <span dir="ltr" style="font-size:{{ fsMeta }};font-weight:600;color:#6E6880;">{{ p.brand }}</span>
+          </div>
+          <h2 style="margin:0;font-size:16px;font-weight:700;line-height:1.6;letter-spacing:-.01em;text-wrap:pretty;"><a href="./Product.dc.html" style="color:#17151F;" style-hover="color:#4B32C3;">{{ p.name }}</a></h2>
+          <p style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:7px;font-size:{{ fsMeta }};color:{{ p.trendFg }};">
+            <span style="font-weight:600;">{{ p.trend }}</span>
+            <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+            <span style="color:{{ p.stockFg }};">{{ p.stock }}</span>
+          </p>
+          <div style="margin-top:auto;padding-top:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+            <span style="font-size:16px;font-weight:700;letter-spacing:-.02em;white-space:nowrap;">{{ p.priceFa }}</span>
+            <button type="button" onClick="{{ p.add }}" style="min-height:44px;padding:0 17px;border-radius:999px;border:1px solid {{ p.btnBd }};background:{{ p.btnBg }};color:{{ p.btnFg }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .25s ease;">{{ p.btnTxt }}</button>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+  </div>
+
+</div>
+
+<dc-import name="MobileNav" active="account" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  BASE = [
+    { id: "scar", name: "ASUS ROG Strix SCAR 18", brand: "ASUS", cat: "گیمینگ", price: 246, was: 259, stock: 9, well: "linear-gradient(150deg,#E4DDFB,#F7F5FD)" },
+    { id: "mbp", name: "Apple MacBook Pro 14 M4 Pro", brand: "Apple", cat: "حرفه‌ای", price: 189, was: 189, stock: 7, well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" },
+    { id: "pa32", name: "ASUS ProArt Display OLED 32", brand: "ASUS", cat: "مانیتور", price: 96.5, was: 92, stock: 3, well: "linear-gradient(150deg,#E4DDFB,#F7F5FD)" },
+    { id: "x1c", name: "Lenovo ThinkPad X1 Carbon", brand: "Lenovo", cat: "اولترابوک", price: 118, was: 124, stock: 0, well: "linear-gradient(150deg,#DFF3F8,#F5FBFD)" }
+  ];
+  state = { ids: this.BASE.map((b) => b.id), cart: [], allAdded: false, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  componentWillUnmount(){
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  money(m){ return this.fa(Math.round(m * 1000000).toLocaleString("en-US").replace(/,/g, "٫")) + " تومان"; }
+  drop = (id) => () => this.setState((s) => ({ ids: s.ids.filter((x) => x !== id), allAdded: false }));
+  add = (id) => () => this.setState((s) => ({ cart: s.cart.indexOf(id) < 0 ? s.cart.concat(id) : s.cart }));
+  onClear = () => this.setState({ ids: [], allAdded: false });
+  onRestore = () => this.setState({ ids: this.BASE.map((b) => b.id), cart: [], allAdded: false });
+  onAddAll = () => this.setState((s) => ({
+    cart: s.ids.filter((id) => this.BASE.filter((b) => b.id === id)[0].stock > 0),
+    allAdded: true
+  }));
+
+  renderVals(){
+    const st = this.state;
+    const list = this.BASE.filter((b) => st.ids.indexOf(b.id) >= 0);
+    const drops = list.filter((p) => p.price < p.was).length;
+    const items = list.map((p) => {
+      const inCart = st.cart.indexOf(p.id) >= 0;
+      const out = p.stock === 0;
+      const down = p.price < p.was;
+      const up = p.price > p.was;
+      return {
+        name: p.name, brand: p.brand, catFa: p.cat, well: p.well,
+        slot: "arb-wish-" + p.id,
+        priceFa: this.money(p.price),
+        trend: down
+          ? "‑" + this.fa(Math.round((1 - p.price / p.was) * 100)) + "٪ نسبت به زمان ذخیره"
+          : (up ? "+" + this.fa(Math.round((p.price / p.was - 1) * 100)) + "٪ گران‌تر شده" : "قیمت بدون تغییر"),
+        trendFg: down ? "#0E7490" : (up ? "#B4530A" : "#6E6880"),
+        stock: out ? "ناموجود" : (p.stock <= 3 ? this.fa(p.stock) + " عدد باقی‌مانده" : "موجود"),
+        stockFg: out ? "#6E6880" : (p.stock <= 3 ? "#B4530A" : "#0E7490"),
+        drop: this.drop(p.id),
+        add: out ? () => {} : this.add(p.id),
+        btnTxt: out ? "اطلاع از موجودی" : (inCart ? "در سبد خرید" : "افزودن به سبد"),
+        btnBg: out ? "#FFFFFF" : (inCart ? "#EDE9FA" : "#17151F"),
+        btnFg: out ? "#5F5B6B" : (inCart ? "#4B32C3" : "#FFFFFF"),
+        btnBd: out ? "#E0DBF0" : (inCart ? "#D6CCF7" : "#17151F")
+      };
+    });
+    const m = st.mobile === true;
+    return {
+      fsMeta: m ? "13px" : "11.5px",
+      fsBody: m ? "15px" : "13.5px",
+      items, any: items.length > 0, isEmpty: items.length === 0,
+      countFa: this.fa(items.length),
+      intro: drops
+        ? "قیمت " + this.fa(drops) + " کالا از زمانی که ذخیره کردید پایین آمده است."
+        : "کالاهایی که ذخیره کرده‌اید، همراه با تغییر قیمت و وضعیت موجودی.",
+      dropNote: "تغییر قیمت هر کالا نسبت به روزی که آن را ذخیره کرده‌اید محاسبه می‌شود.",
+      onClear: this.onClear, onRestore: this.onRestore, onAddAll: this.onAddAll,
+      allTxt: st.allAdded ? "به سبد اضافه شد ✓" : "افزودن همه موجودها به سبد",
+      allAnim: st.allAdded ? "arbPop .34s cubic-bezier(.3,1,.4,1)" : "none",
+      allBg: st.allAdded ? "#EDE9FA" : "#17151F",
+      allFg: st.allAdded ? "#4B32C3" : "#FFFFFF"
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+@keyframes arbLive{0%,100%{opacity:1}50%{opacity:.4}}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input,textarea,select{font-family:inherit;}
+input::placeholder,textarea::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@keyframes arbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes arbShakeB{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes arbPop{0%{transform:scale(.88)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Support" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" active="support" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">پشتیبانی</span>
+    </nav>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;">
+      <div style="min-width:0;">
+        <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">پشتیبانی آربایت</h1>
+        <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">کارشناس‌ها هر روز هفته از ۹ تا ۲۱ در دسترس‌اند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.</p>
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:8px;padding:9px 15px;border-radius:999px;background:#EAF7F9;font-size:{{ fsBody }};font-weight:600;color:#0E7490;white-space:nowrap;"><i style="width:8px;height:8px;border-radius:50%;background:#22D3EE;display:block;animation:arbLive 2s ease-in-out infinite;"></i>هم‌اکنون آنلاین</span>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(18px,3vh,28px);">
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:clamp(14px,2vw,18px);">
+    <a href="#arb-request" style="padding:20px;border-radius:20px;background:#17151F;color:#FFFFFF;display:flex;flex-direction:column;gap:10px;transition:transform .3s ease, box-shadow .3s ease;" style-hover="transform:translateY(-4px);box-shadow:0 18px 44px rgba(23,21,31,.18);color:#FFFFFF;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A88CFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12Z"></path></svg>
+      <span style="font-size:15px;font-weight:700;color:#FFFFFF;">گفت‌وگوی آنلاین</span>
+      <span style="font-size:{{ fsLabel }};line-height:1.8;color:#B9B4C9;">میانگین پاسخ ۴ دقیقه</span>
+    </a>
+    <a href="tel:+982191001000" style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:10px;transition:border-color .3s ease, transform .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);color:#17151F;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.2 2 2 0 0 1 6 3Z"></path></svg>
+      <span style="font-size:15px;font-weight:700;">تماس تلفنی</span>
+      <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">۰۲۱ ۹۱۰۰۱۰۰۰</span>
+    </a>
+    <a href="./TrackOrder.dc.html" style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:10px;transition:border-color .3s ease, transform .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);color:#17151F;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5h10v9h-10z"></path><path d="M12.5 10.5h4l3 3v3h-7z"></path><circle cx="6.5" cy="17.5" r="1.8"></circle><circle cx="16.5" cy="17.5" r="1.8"></circle></svg>
+      <span style="font-size:15px;font-weight:700;">پیگیری سفارش</span>
+      <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">با شماره سفارش</span>
+    </a>
+    <a href="./Legal.dc.html" style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:10px;transition:border-color .3s ease, transform .3s ease;" style-hover="border-color:#C9BEFA;transform:translateY(-4px);color:#17151F;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.4"></path><path d="M12 17.2v.1"></path></svg>
+      <span style="font-size:15px;font-weight:700;">سوالات متداول</span>
+      <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">پاسخ‌های آماده</span>
+    </a>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+    <section id="arb-request" style="flex:1 1 420px;min-width:0;scroll-margin-top:96px;padding:clamp(20px,3vw,28px);border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:18px;">
+      <div>
+        <h2 style="margin:0;font-size:17px;font-weight:700;">ثبت درخواست</h2>
+        <p style="margin:8px 0 0;font-size:{{ fsBody }};line-height:1.9;color:#5F5B6B;">فرم را پر کنید؛ کارشناس مربوطه در ساعات کاری پاسخ می‌دهد.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:9px;">
+        <span style="font-size:{{ fsLabel }};color:#5F5B6B;">موضوع درخواست</span>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;">
+          <button type="button" onClick="{{ onTopic0 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ tBd0 }};background:{{ tBg0 }};color:{{ tFg0 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">پیش از خرید</button>
+          <button type="button" onClick="{{ onTopic1 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ tBd1 }};background:{{ tBg1 }};color:{{ tFg1 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">سفارش و ارسال</button>
+          <button type="button" onClick="{{ onTopic2 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ tBd2 }};background:{{ tBg2 }};color:{{ tFg2 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">گارانتی و خدمات</button>
+          <button type="button" onClick="{{ onTopic3 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ tBd3 }};background:{{ tBg3 }};color:{{ tFg3 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">ارتقای رم و SSD</button>
+          <button type="button" onClick="{{ onTopic4 }}" style="min-height:44px;padding:0 16px;border-radius:12px;border:1px solid {{ tBd4 }};background:{{ tBg4 }};color:{{ tFg4 }};font-family:inherit;font-size:{{ fsBody }};font-weight:500;cursor:pointer;transition:all .2s ease;">خرید سازمانی</button>
+        </div>
+        <p style="margin:2px 0 0;font-size:{{ fsLabel }};line-height:1.8;color:#4B32C3;">{{ topicHint }}</p>
+      </div>
+
+      <form onSubmit="{{ onSubmit }}" noValidate="{{ yes }}" style="display:flex;flex-direction:column;gap:14px;animation:{{ formAnim }};">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">نام و نام خانوادگی
+            <input type="text" value="{{ name }}" onChange="{{ onName }}" onInput="{{ onName }}" placeholder="مثلاً سارا محمودی" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid {{ nameBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره موبایل
+            <input type="tel" dir="ltr" value="{{ phone }}" onChange="{{ onPhone }}" onInput="{{ onPhone }}" placeholder="09120000000" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid {{ phoneBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+          </label>
+        </div>
+        <sc-if value="{{ needsOrder }}" hint-placeholder-val="{{ false }}">
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره سفارش
+            <input type="text" dir="ltr" placeholder="ARB-14042738" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+          </label>
+        </sc-if>
+        <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شرح درخواست
+          <textarea rows="4" value="{{ msg }}" onChange="{{ onMsg }}" onInput="{{ onMsg }}" placeholder="{{ msgPh }}" style="padding:13px 15px;border-radius:13px;border:1px solid {{ msgBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;line-height:1.9;resize:vertical;min-width:0;"></textarea>
+        </label>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;">
+          <button type="submit" style="animation:{{ subAnim }};min-height:50px;padding:0 26px;border-radius:999px;border:0;background:{{ subBg }};color:{{ subFg }};font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;transition:all .25s ease;">{{ subTxt }}</button>
+          <p style="margin:0;font-size:{{ fsLabel }};line-height:1.8;color:{{ noteFg }};">{{ note }}</p>
+        </div>
+      </form>
+    </section>
+
+    <aside style="flex:1 1 280px;max-width:360px;min-width:0;display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+      <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+        <h2 style="margin:0;font-size:14.5px;font-weight:700;">ساعات پاسخ‌گویی</h2>
+        <div style="display:flex;flex-direction:column;gap:11px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span style="font-size:{{ fsBody }};color:#5F5B6B;">شنبه تا چهارشنبه</span>
+            <span style="font-size:{{ fsBody }};font-weight:600;">۹ تا ۲۱</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span style="font-size:{{ fsBody }};color:#5F5B6B;">پنجشنبه</span>
+            <span style="font-size:{{ fsBody }};font-weight:600;">۹ تا ۱۷</span>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span style="font-size:{{ fsBody }};color:#5F5B6B;">جمعه</span>
+            <span style="font-size:{{ fsBody }};font-weight:600;">۱۴ تا ۲۰</span>
+          </div>
+        </div>
+        <p style="margin:0;padding-top:13px;border-top:1px solid #F0EDF8;font-size:{{ fsLabel }};line-height:1.85;color:#5F5B6B;">خارج از این ساعات پیام بگذارید؛ اول وقت کاری بعد پاسخ می‌دهیم.</p>
+      </div>
+
+      <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:13px;">
+        <h2 style="margin:0;font-size:14.5px;font-weight:700;">حضوری</h2>
+        <p style="margin:0;font-size:{{ fsBody }};line-height:1.95;color:#5F5B6B;">تهران، خیابان ولیعصر، برج فناوری، طبقه ۵، واحد ۵۰۳</p>
+        <p style="margin:0;font-size:{{ fsLabel }};line-height:1.85;color:#3D3950;">برای تحویل حضوری و تست دستگاه، از قبل وقت بگیرید تا دستگاه آماده باشد.</p>
+        <div style="aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:linear-gradient(150deg,#E6E0FB,#F7F5FD);border:1px solid #EAE6F4;">
+          <image-slot id="arb-support-map" shape="rect" fit="cover" placeholder="نقشه دفتر — ۱۶۰۰×۱۰۰۰"></image-slot>
+        </div>
+      </div>
+
+      <div style="padding:20px;border-radius:20px;background:#17151F;color:#FFFFFF;display:flex;flex-direction:column;gap:11px;">
+        <h2 style="margin:0;font-size:14.5px;font-weight:700;color:#FFFFFF;">خرید سازمانی</h2>
+        <p style="margin:0;font-size:{{ fsBody }};line-height:1.95;color:#B9B4C9;">برای سفارش‌های بالای پنج دستگاه، قیمت و شرایط پرداخت جداگانه تعریف می‌شود.</p>
+        <a href="mailto:b2b@arbyte.ir" dir="ltr" style="min-height:44px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:{{ fsBody }};font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .25s ease;" style-hover="background:#E9E4FA;color:#17151F;">b2b@arbyte.ir</a>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px" };
+  }
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+  }
+  state = { mobile: false,  topic: 0, name: "", phone: "", msg: "", sent: false, bad: false };
+  TOPICS = [
+    { hint: "پیش از خرید مشاوره می‌خواهید؟ بنویسید با دستگاه چه کاری می‌کنید و بودجه‌تان چقدر است.", ph: "مثلاً: برای تدوین ۴K بودجه ۲۰۰ میلیون دارم، کدام دستگاه؟", order: false },
+    { hint: "برای پیگیری سریع‌تر، شماره سفارش را وارد کنید.", ph: "مثلاً: سفارشم سه روز است در وضعیت آماده‌سازی مانده.", order: true },
+    { hint: "سریال دستگاه در پنل کاربری شما ثبت شده است.", ph: "مثلاً: کیبورد دستگاه از دیروز یک کلید نمی‌زند.", order: true },
+    { hint: "نصب رم و SSD روی دستگاه خریداری‌شده رایگان انجام می‌شود.", ph: "مثلاً: می‌خواهم رم Titan را به ۱۲۸ گیگ برسانم.", order: true },
+    { hint: "برای سفارش بالای پنج دستگاه، پیش‌فاکتور رسمی صادر می‌کنیم.", ph: "مثلاً: ۸ لپ‌تاپ حرفه‌ای برای تیم طراحی نیاز داریم.", order: false }
+  ];
+  pick = (n) => () => this.setState({ topic: n, sent: false, bad: false });
+  onName = (e) => this.setState({ name: e.target.value, bad: false, sent: false });
+  onPhone = (e) => this.setState({ phone: e.target.value, bad: false, sent: false });
+  onMsg = (e) => this.setState({ msg: e.target.value, bad: false, sent: false });
+  onSubmit = (e) => {
+    e.preventDefault();
+    const ok = this.state.name.trim() !== "" &&
+      /^0?9\d{9}$/.test(this.state.phone.replace(/[^0-9]/g, "")) &&
+      this.state.msg.trim().length >= 10;
+    this.setState((s) => ({ sent: ok, bad: !ok, shake: ok ? 0 : (s.shake || 0) + 1 }));
+  };
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const st = this.state;
+    const t = this.TOPICS[st.topic];
+    const badName = st.bad && st.name.trim() === "";
+    const badPhone = st.bad && !/^0?9\d{9}$/.test(st.phone.replace(/[^0-9]/g, ""));
+    const badMsg = st.bad && st.msg.trim().length < 10;
+    const o = {
+      yes: true,
+      name: st.name, phone: st.phone, msg: st.msg,
+      onName: this.onName, onPhone: this.onPhone, onMsg: this.onMsg, onSubmit: this.onSubmit,
+      topicHint: t.hint, msgPh: t.ph, needsOrder: t.order,
+      nameBd: badName ? "#E0A3A3" : "#E0DBF0",
+      phoneBd: badPhone ? "#E0A3A3" : "#E0DBF0",
+      msgBd: badMsg ? "#E0A3A3" : "#E0DBF0",
+      formAnim: st.bad && (st.shake || 0) > 0 ? ((st.shake % 2) ? "arbShake .42s ease" : "arbShakeB .42s ease") : "none",
+      subAnim: st.sent ? "arbPop .34s cubic-bezier(.3,1,.4,1)" : "none",
+      subTxt: st.sent ? "درخواست ثبت شد ✓" : "ارسال درخواست",
+      subBg: st.sent ? "#EDE9FA" : "#17151F",
+      subFg: st.sent ? "#4B32C3" : "#FFFFFF",
+      note: st.sent
+        ? "شماره پیگیری با پیامک برایتان ارسال شد."
+        : (st.bad ? "نام، شماره موبایل معتبر و شرح حداقل ۱۰ حرفی لازم است." : "پاسخ معمولاً کمتر از دو ساعت کاری."),
+      noteFg: st.sent ? "#0E7490" : (st.bad ? "#B42318" : "#6E6880")
+    };
+    this.TOPICS.forEach((x, i) => {
+      const on = st.topic === i;
+      o["onTopic" + i] = this.pick(i);
+      o["tBg" + i] = on ? "#17151F" : "#FFFFFF";
+      o["tFg" + i] = on ? "#FFFFFF" : "#3D3950";
+      o["tBd" + i] = on ? "#17151F" : "#E0DBF0";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

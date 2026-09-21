@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+@keyframes bob{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(-2px);opacity:.55}}
+footer a{text-decoration:none;color:inherit;}
+</style>
+</helmet>
+
+<sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+<footer dir="rtl" data-screen-label="Footer" style="position:relative;overflow:hidden;background:#17151F;color:#FFFFFF;border-radius:28px 28px 0 0;padding:clamp(48px,7vh,84px) 5vw clamp(24px,3vh,34px);font-family:'Estedad',Tahoma,sans-serif;">
+  <div aria-hidden="true" style="position:absolute;top:-180px;left:-120px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(108,77,255,.34),rgba(23,21,31,0) 68%);"></div>
+  <div aria-hidden="true" style="position:absolute;bottom:-220px;right:-100px;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,.16),rgba(23,21,31,0) 68%);"></div>
+
+  <div style="position:relative;max-width:1240px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:clamp(24px,3vw,52px);">
+
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <img alt="آربایت" src="../../brand/logo/lockup/lockup-horizontal-dark-bg.svg" style="height:34px;width:auto;align-self:flex-start;display:block;" />
+      <p style="margin:0;font-size:14px;line-height:2;color:#A8A3BA;max-width:38ch;">فروشگاه لپ‌تاپ و سخت‌افزار حرفه‌ای. هر دستگاه پیش از ارسال تست می‌شود و با گارانتی رسمی به دست شما می‌رسد.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <a href="#" aria-label="اینستاگرام" style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;" style-hover="background:rgba(108,77,255,.3);border-color:#8B6BFF;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1.1" fill="#FFFFFF" stroke="none"></circle></svg>
+        </a>
+        <a href="#" aria-label="تلگرام" style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;" style-hover="background:rgba(108,77,255,.3);border-color:#8B6BFF;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"><path d="M21 4 3 11l5 2 2 6 3-4 5 4z"></path><path d="m8 13 9-6-5 8"></path></svg>
+        </a>
+        <a href="#" aria-label="واتساپ" style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;" style-hover="background:rgba(108,77,255,.3);border-color:#8B6BFF;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12Z"></path><path d="M9.3 8.6h1.2l.9 2-.9.8a6.4 6.4 0 0 0 3.1 3.1l.8-.9 2 .9v1.2a1 1 0 0 1-1.1 1 8.4 8.4 0 0 1-7-7 1 1 0 0 1 1-1.1Z"></path></svg>
+        </a>
+        <a href="#" aria-label="یوتیوب" style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;transition:background .25s ease,border-color .25s ease;" style-hover="background:rgba(108,77,255,.3);border-color:#8B6BFF;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="m10.5 9.5 4.5 2.5-4.5 2.5z" fill="#FFFFFF" stroke="none"></path></svg>
+        </a>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:18px;">
+      <p style="margin:0;font-size:15px;font-weight:600;color:#FFFFFF;">خرید</p>
+      <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;">
+        <li><a href="./Products.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">لپ‌تاپ گیمینگ</a></li>
+        <li><a href="./Products.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">لپ‌تاپ حرفه‌ای</a></li>
+        <li><a href="./Products.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">مانیتور و نمایشگر</a></li>
+        <li><a href="./Products.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">لوازم جانبی</a></li>
+      </ul>
+    </nav>
+
+    <nav style="display:flex;flex-direction:column;gap:18px;">
+      <p style="margin:0;font-size:15px;font-weight:600;color:#FFFFFF;">پشتیبانی</p>
+      <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;">
+        <li><a href="./Legal.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">سوالات متداول</a></li>
+        <li><a href="./TrackOrder.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">پیگیری سفارش</a></li>
+        <li><a href="./Legal.dc.html" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">شرایط گارانتی</a></li>
+        <li><a href="./Support.dc.html" style="display:inline-flex;align-items:center;gap:7px;font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">گفت‌وگوی آنلاین<i style="width:7px;height:7px;border-radius:50%;background:#22D3EE;display:block;animation:bob 2.4s ease-in-out infinite;"></i></a></li>
+      </ul>
+    </nav>
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <p style="margin:0;font-size:15px;font-weight:600;color:#FFFFFF;">تماس با ما</p>
+      <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px;">
+        <li style="display:flex;align-items:flex-start;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px;"><rect x="2.5" y="5" width="19" height="14" rx="3"></rect><path d="m3 7 9 6 9-6"></path></svg>
+          <a dir="ltr" href="mailto:hello@arbyte.ir" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">hello@arbyte.ir</a>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px;"><path d="M6 3h3l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.2 2 2 0 0 1 6 3Z"></path></svg>
+          <a href="tel:+982191001000" style="font-size:14px;color:#A8A3BA;transition:color .25s ease;" style-hover="color:#FFFFFF;">۰۲۱ ۹۱۰۰۱۰۰۰</a>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:3px;"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.6"></circle></svg>
+          <address style="font-size:14px;line-height:1.85;color:#A8A3BA;font-style:normal;">تهران، خیابان ولیعصر، برج فناوری، طبقه ۵</address>
+        </li>
+      </ul>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
+        <div style="width:64px;height:64px;border-radius:12px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:10.5px;line-height:1.5;color:#9B96AE;">نماد<br />اعتماد</div>
+        <div style="width:80px;height:38px;border-radius:9px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#9B96AE;">درگاه پرداخت</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="position:relative;max-width:1240px;margin:clamp(26px,4vh,44px) auto 0;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;">
+    <div style="display:flex;flex-wrap:wrap;gap:18px;">
+      <a href="./Legal.dc.html" style="font-size:13px;color:#9B96AE;transition:color .25s ease;" style-hover="color:#FFFFFF;">قوانین و مقررات</a>
+      <a href="./Legal.dc.html" style="font-size:13px;color:#9B96AE;transition:color .25s ease;" style-hover="color:#FFFFFF;">حریم خصوصی</a>
+    </div>
+    <p style="margin:0;font-size:13px;color:#9B96AE;">© ۱۴۰۴ آربایت. تمام حقوق محفوظ است.</p>
+  </div>
+</footer>
+</sc-if>
+
+<sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+<footer dir="rtl" data-screen-label="Footer — موبایل" style="position:relative;overflow:hidden;background:#17151F;color:#FFFFFF;border-radius:24px 24px 0 0;padding:34px 20px calc(104px + env(safe-area-inset-bottom));font-family:'Estedad',Tahoma,sans-serif;">
+  <div aria-hidden="true" style="position:absolute;top:-150px;left:-110px;width:380px;height:380px;border-radius:50%;background:radial-gradient(circle,rgba(108,77,255,.32),rgba(23,21,31,0) 68%);"></div>
+
+  <div style="position:relative;display:flex;flex-direction:column;gap:22px;">
+    <img alt="آربایت" src="../../brand/logo/lockup/lockup-horizontal-dark-bg.svg" style="height:30px;width:auto;align-self:flex-start;display:block;" />
+    <p style="margin:0;font-size:15px;line-height:1.95;color:#A8A3BA;">فروشگاه لپ‌تاپ و سخت‌افزار حرفه‌ای. هر دستگاه پیش از ارسال تست می‌شود و با گارانتی رسمی به دست شما می‌رسد.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <a href="tel:+982191001000" style="min-height:52px;border-radius:16px;background:#6C4DFF;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;color:#FFFFFF;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l2 5-2.5 1.5a12 12 0 0 0 6 6L16 13l5 2v3a2 2 0 0 1-2.2 2A17 17 0 0 1 4 5.2 2 2 0 0 1 6 3Z"></path></svg>
+        تماس
+      </a>
+      <a href="./Support.dc.html" style="min-height:52px;border-radius:16px;border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:600;color:#FFFFFF;">
+        گفت‌وگوی آنلاین
+        <i style="width:7px;height:7px;border-radius:50%;background:#22D3EE;display:block;animation:bob 2.4s ease-in-out infinite;"></i>
+      </a>
+    </div>
+
+    <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.1);">
+      <button type="button" onClick="{{ toggleShop }}" aria-expanded="{{ shopOpen }}" style="min-height:54px;background:none;border:none;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;padding:0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">
+        خرید
+        <span style="display:block;font-size:20px;line-height:1;color:#8B6BFF;transform:{{ shopIcon }};transition:transform .2s ease;">+</span>
+      </button>
+      <sc-if value="{{ shopOpen }}" hint-placeholder-val="{{ false }}">
+      <ul style="margin:0;padding:12px 0 16px;list-style:none;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <li><a href="./Products.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">لپ‌تاپ گیمینگ</a></li>
+        <li><a href="./Products.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">لپ‌تاپ حرفه‌ای</a></li>
+        <li><a href="./Products.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">مانیتور و نمایشگر</a></li>
+        <li><a href="./Products.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">لوازم جانبی</a></li>
+      </ul>
+      </sc-if>
+
+      <button type="button" onClick="{{ toggleSupport }}" aria-expanded="{{ supportOpen }}" style="min-height:54px;background:none;border:none;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;padding:0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">
+        پشتیبانی
+        <span style="display:block;font-size:20px;line-height:1;color:#8B6BFF;transform:{{ supportIcon }};transition:transform .2s ease;">+</span>
+      </button>
+      <sc-if value="{{ supportOpen }}" hint-placeholder-val="{{ false }}">
+      <ul style="margin:0;padding:12px 0 16px;list-style:none;display:flex;flex-direction:column;gap:2px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <li><a href="./Legal.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">سوالات متداول</a></li>
+        <li><a href="./TrackOrder.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">پیگیری سفارش</a></li>
+        <li><a href="./Legal.dc.html" style="display:flex;align-items:center;min-height:44px;font-size:15px;color:#A8A3BA;">شرایط گارانتی</a></li>
+      </ul>
+      </sc-if>
+
+      <button type="button" onClick="{{ toggleContact }}" aria-expanded="{{ contactOpen }}" style="min-height:54px;background:none;border:none;border-bottom:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:space-between;padding:0;color:#FFFFFF;font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;">
+        تماس با ما
+        <span style="display:block;font-size:20px;line-height:1;color:#8B6BFF;transform:{{ contactIcon }};transition:transform .2s ease;">+</span>
+      </button>
+      <sc-if value="{{ contactOpen }}" hint-placeholder-val="{{ false }}">
+      <ul style="margin:0;padding:14px 0 16px;list-style:none;display:flex;flex-direction:column;gap:14px;border-bottom:1px solid rgba(255,255,255,.1);">
+        <li style="display:flex;align-items:flex-start;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:4px;"><rect x="2.5" y="5" width="19" height="14" rx="3"></rect><path d="m3 7 9 6 9-6"></path></svg>
+          <a dir="ltr" href="mailto:hello@arbyte.ir" style="font-size:15px;color:#A8A3BA;">hello@arbyte.ir</a>
+        </li>
+        <li style="display:flex;align-items:flex-start;gap:10px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8B6BFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;margin-top:4px;"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.6"></circle></svg>
+          <address style="font-size:15px;line-height:1.9;color:#A8A3BA;font-style:normal;">تهران، خیابان ولیعصر، برج فناوری، طبقه ۵</address>
+        </li>
+      </ul>
+      </sc-if>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <a href="#" aria-label="اینستاگرام" style="width:44px;height:44px;border-radius:13px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1.1" fill="#FFFFFF" stroke="none"></circle></svg>
+      </a>
+      <a href="#" aria-label="تلگرام" style="width:44px;height:44px;border-radius:13px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"><path d="M21 4 3 11l5 2 2 6 3-4 5 4z"></path><path d="m8 13 9-6-5 8"></path></svg>
+      </a>
+      <a href="#" aria-label="واتساپ" style="width:44px;height:44px;border-radius:13px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12Z"></path><path d="M9.3 8.6h1.2l.9 2-.9.8a6.4 6.4 0 0 0 3.1 3.1l.8-.9 2 .9v1.2a1 1 0 0 1-1.1 1 8.4 8.4 0 0 1-7-7 1 1 0 0 1 1-1.1Z"></path></svg>
+      </a>
+      <a href="#" aria-label="یوتیوب" style="width:44px;height:44px;border-radius:13px;border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="4"></rect><path d="m10.5 9.5 4.5 2.5-4.5 2.5z" fill="#FFFFFF" stroke="none"></path></svg>
+      </a>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:60px;height:60px;border-radius:12px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;text-align:center;padding:6px;font-size:10.5px;line-height:1.5;color:#9B96AE;">نماد<br />اعتماد</div>
+      <div style="width:80px;height:38px;border-radius:9px;border:1px dashed rgba(255,255,255,.22);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#9B96AE;">درگاه پرداخت</div>
+    </div>
+
+    <div style="padding-top:18px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;gap:18px;">
+        <a href="./Legal.dc.html" style="font-size:14px;color:#9B96AE;">قوانین و مقررات</a>
+        <a href="./Legal.dc.html" style="font-size:14px;color:#9B96AE;">حریم خصوصی</a>
+      </div>
+      <p style="margin:0;font-size:13px;color:#9B96AE;">© ۱۴۰۴ آربایت. تمام حقوق محفوظ است.</p>
+    </div>
+  </div>
+</footer>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:470}}">
+class Component extends DCLogic {
+  state = { mobile: null, shop: false, support: false, contact: true };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  componentWillUnmount(){
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+  toggle = (k) => this.setState((s) => ({ [k]: !s[k] }));
+  renderVals(){
+    const mob = this.state.mobile === true;
+    const rot = (on) => (on ? "rotate(45deg)" : "rotate(0deg)");
+    return {
+      isMobile: mob, isDesktop: !mob,
+      shopOpen: this.state.shop, supportOpen: this.state.support, contactOpen: this.state.contact,
+      shopIcon: rot(this.state.shop), supportIcon: rot(this.state.support), contactIcon: rot(this.state.contact),
+      toggleShop: () => this.toggle("shop"),
+      toggleSupport: () => this.toggle("support"),
+      toggleContact: () => this.toggle("contact")
+    };
+  }
+}
+</script>
+</body>
+</html>

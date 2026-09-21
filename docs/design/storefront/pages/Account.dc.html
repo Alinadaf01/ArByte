@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input{font-family:inherit;}
+input::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@keyframes arbPop{0%{transform:scale(.88)}55%{transform:scale(1.05)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+</helmet>
+
+<div dir="rtl" data-screen-label="Account" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,40px) 5vw clamp(20px,3vh,28px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:clamp(14px,2vw,22px);">
+    <span style="width:60px;height:60px;flex:none;border-radius:20px;background:linear-gradient(135deg,#6C4DFF,#4B32C3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#FFFFFF;">س</span>
+    <div style="min-width:0;flex:1 1 220px;">
+      <h1 style="margin:0;font-size:clamp(21px,2.6vw,30px);font-weight:700;letter-spacing:-.025em;line-height:1.45;">سمیه احمدی</h1>
+      <p style="margin:5px 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:#5F5B6B;">
+        <span dir="ltr">۰۹۱۲۳۴۵۶۷۸۹</span>
+        <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+        <span>عضو از مهر ۱۴۰۲</span>
+      </p>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <a href="./Wishlist.dc.html" style="min-height:44px;padding:0 18px;border-radius:12px;border:1px solid #E0DBF0;color:#3D3950;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">علاقه‌مندی‌ها</a>
+      <a href="./Login.dc.html" style="min-height:44px;padding:0 18px;border-radius:12px;border:1px solid #E0DBF0;color:#3D3950;font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;transition:all .2s ease;" style-hover="border-color:#D99A9A;color:#B42318;">خروج از حساب</a>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+  <nav aria-label="بخش‌های حساب" style="flex:1 1 210px;max-width:{{ navMax }};min-width:0;width:{{ navW }};position:{{ navPos }};top:96px;padding:10px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:{{ navDir }};overflow-x:{{ navOx }};gap:4px;">
+    <button type="button" onClick="{{ onTab0 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ nBg0 }};color:{{ nFg0 }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">سفارش‌ها<span style="font-size:{{ fsLabel }};font-weight:600;color:{{ nCn0 }};">۴</span></button>
+    <button type="button" onClick="{{ onTab1 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ nBg1 }};color:{{ nFg1 }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">آدرس‌ها<span style="font-size:{{ fsLabel }};font-weight:600;color:{{ nCn1 }};">۲</span></button>
+    <button type="button" onClick="{{ onTab2 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ nBg2 }};color:{{ nFg2 }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">دستگاه‌های من<span style="font-size:{{ fsLabel }};font-weight:600;color:{{ nCn2 }};">۲</span></button>
+    <button type="button" onClick="{{ onTab3 }}" style="flex:{{ navBtnFlex }};white-space:nowrap;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:46px;padding:0 14px;border-radius:13px;border:0;background:{{ nBg3 }};color:{{ nFg3 }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:right;transition:all .2s ease;">اطلاعات حساب</button>
+  </nav>
+
+  <div style="flex:1 1 440px;min-width:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,18px);">
+
+    <sc-if value="{{ isOrders }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:clamp(12px,2vw,16px);">
+          <div style="padding:16px 18px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-.02em;">۴</span>
+            <span style="font-size:{{ fsLabel }};color:#5F5B6B;">سفارش ثبت‌شده</span>
+          </div>
+          <div style="padding:16px 18px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-.02em;">۱</span>
+            <span style="font-size:{{ fsLabel }};color:#5F5B6B;">در حال آماده‌سازی</span>
+          </div>
+          <div style="padding:16px 18px;border-radius:18px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:22px;font-weight:700;letter-spacing:-.02em;">۶۹۸ م</span>
+            <span style="font-size:{{ fsLabel }};color:#5F5B6B;">مجموع خرید</span>
+          </div>
+        </div>
+
+        <sc-for list="{{ orders }}" as="o" hint-placeholder-count="4">
+          <article style="padding:18px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;min-width:0;">
+                <span dir="ltr" style="font-size:14px;font-weight:700;letter-spacing:.02em;">{{ o.id }}</span>
+                <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+                <span style="font-size:{{ fsLabel }};color:#5F5B6B;">{{ o.date }}</span>
+              </div>
+              <span style="padding:6px 13px;border-radius:999px;background:{{ o.tagBg }};font-size:{{ fsLabel }};font-weight:600;color:{{ o.tagFg }};white-space:nowrap;">{{ o.status }}</span>
+            </div>
+            <p style="margin:0;font-size:{{ fsBody }};line-height:1.85;color:#3D3950;">{{ o.items }}</p>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-top:14px;border-top:1px solid #F0EDF8;">
+              <span style="font-size:15px;font-weight:700;letter-spacing:-.02em;">{{ o.total }}</span>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <a href="./OrderStatus.dc.html" style="min-height:44px;padding:0 17px;border-radius:12px;border:1px solid #E0DBF0;color:#3D3950;font-size:13px;font-weight:600;display:inline-flex;align-items:center;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">جزئیات سفارش</a>
+                <a href="./OrderStatus.dc.html" style="min-height:44px;padding:0 17px;border-radius:12px;background:#17151F;color:#FFFFFF;font-size:13px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">دانلود فاکتور</a>
+              </div>
+            </div>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isAddr }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:clamp(12px,2vw,16px);">
+          <article style="padding:18px;border-radius:20px;background:#FFFFFF;border:1.5px solid #6C4DFF;display:flex;flex-direction:column;gap:9px;">
+            <span style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;">خانه<span style="padding:3px 9px;border-radius:8px;background:#EDE9FA;font-size:{{ fsLabel }};font-weight:600;color:#4B32C3;">پیش‌فرض</span></span>
+            <p style="margin:0;font-size:{{ fsBody }};line-height:1.9;color:#5F5B6B;">تهران، سعادت‌آباد، بلوار دریا، کوچه ششم، پلاک ۱۲، واحد ۴</p>
+            <p style="margin:0;font-size:{{ fsLabel }};color:#6E6880;">سمیه احمدی · ۰۹۱۲۳۴۵۶۷۸۹</p>
+            <div style="margin-top:4px;display:flex;gap:8px;">
+              <button type="button" style="min-height:44px;padding:0 17px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">ویرایش</button>
+            </div>
+          </article>
+          <article style="padding:18px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:9px;">
+            <span style="font-size:14px;font-weight:700;">محل کار</span>
+            <p style="margin:0;font-size:{{ fsBody }};line-height:1.9;color:#5F5B6B;">تهران، ونک، خیابان ملاصدرا، برج آبی، طبقه ۹</p>
+            <p style="margin:0;font-size:{{ fsLabel }};color:#6E6880;">سمیه احمدی · ۰۲۱۸۸۷۷۶۶۵۵</p>
+            <div style="margin-top:4px;display:flex;gap:8px;">
+              <button type="button" style="min-height:44px;padding:0 17px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">ویرایش</button>
+              <button type="button" style="min-height:44px;padding:0 17px;border-radius:12px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">پیش‌فرض کن</button>
+            </div>
+          </article>
+        </div>
+        <button type="button" style="min-height:54px;border-radius:18px;border:1.5px dashed #D8D2EC;background:#FBFAFE;color:#4B32C3;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;background:#F6F3FE;">افزودن آدرس جدید</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDevices }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+        <p style="margin:0;font-size:13.5px;line-height:1.9;color:#5F5B6B;">دستگاه‌هایی که از آربایت خریده‌اید، با سریال ثبت‌شده و تاریخ پایان گارانتی.</p>
+        <sc-for list="{{ devices }}" as="d" hint-placeholder-count="2">
+          <article style="padding:18px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+            <div style="min-width:0;flex:1 1 220px;display:flex;flex-direction:column;gap:5px;">
+              <h2 style="margin:0;font-size:15px;font-weight:700;line-height:1.6;">{{ d.name }}</h2>
+              <p style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:#5F5B6B;">
+                <span dir="ltr">{{ d.serial }}</span>
+                <span aria-hidden="true" style="width:3px;height:3px;border-radius:50%;background:#C6C0D8;display:block;"></span>
+                <span>خرید {{ d.bought }}</span>
+              </p>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <span style="font-size:{{ fsLabel }};color:#5F5B6B;">گارانتی تا</span>
+              <span style="font-size:13.5px;font-weight:700;color:{{ d.wFg }};">{{ d.warranty }}</span>
+            </div>
+            <a href="./Support.dc.html" style="min-height:42px;padding:0 16px;border-radius:12px;border:1px solid #E0DBF0;color:#3D3950;font-size:13px;font-weight:600;display:inline-flex;align-items:center;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">ثبت درخواست خدمات</a>
+          </article>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isInfo }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:clamp(18px,3vw,24px);border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:16px;">
+        <h2 style="margin:0;font-size:16px;font-weight:700;">اطلاعات حساب</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;">
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">نام و نام خانوادگی
+            <input type="text" value="{{ name }}" onChange="{{ onName }}" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره موبایل
+            <input type="tel" dir="ltr" value="۰۹۱۲۳۴۵۶۷۸۹" readOnly="{{ yes }}" aria-describedby="arb-phone-lock" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid #EFECF7;background:#F8F7FC;font-size:{{ fsInput }};color:#6E6880;min-width:0;text-align:right;" />
+          </label>
+          <span id="arb-phone-lock" style="display:none;">شماره موبایل قابل ویرایش نیست</span>
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">ایمیل
+            <input type="email" dir="ltr" placeholder="name@example.com" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">کد ملی
+            <input type="text" placeholder="برای فاکتور رسمی" style="min-height:48px;padding:0 15px;border-radius:13px;border:1px solid #E0DBF0;background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;" />
+          </label>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid #F0EDF8;">
+          <label style="display:flex;align-items:center;gap:11px;min-height:44px;font-size:13.5px;color:#3D3950;cursor:pointer;">
+            <input type="checkbox" checked="{{ sms }}" onChange="{{ onSms }}" style="width:17px;height:17px;accent-color:#6C4DFF;cursor:pointer;" />
+            <span>پیامک وضعیت سفارش</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:11px;min-height:44px;font-size:13.5px;color:#3D3950;cursor:pointer;">
+            <input type="checkbox" checked="{{ news }}" onChange="{{ onNews }}" style="width:17px;height:17px;accent-color:#6C4DFF;cursor:pointer;" />
+            <span>خبرنامه تخفیف‌ها و محصولات جدید</span>
+          </label>
+        </div>
+        <button type="button" onClick="{{ onSave }}" style="align-self:flex-start;min-height:48px;padding:0 26px;border-radius:999px;border:0;background:{{ saveBg }};color:{{ saveFg }};font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;animation:{{ saveAnim }};transition:all .25s ease;">{{ saveTxt }}</button>
+      </div>
+    </sc-if>
+
+  </div>
+
+</div>
+
+<dc-import name="MobileNav" active="account" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  state = { tab: 0, saved: false, name: "سمیه احمدی", sms: true, news: false, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  onName = (e) => this.setState({ name: e.target.value, saved: false });
+  onSms = () => this.setState((s) => ({ sms: !s.sms, saved: false }));
+  onNews = () => this.setState((s) => ({ news: !s.news, saved: false }));
+  ORDERS = [
+    { id: "ARB-۱۴۰۴۲۷۳۸", date: "۲۹ شهریور ۱۴۰۴", items: "MSI Titan 18 HX · ASUS ProArt Display OLED 32 · کیت رم ۶۴GB", total: "۳۷۰٫۴۴۰٫۰۰۰ تومان", status: "در حال آماده‌سازی", tagBg: "#FEF6E7", tagFg: "#8A5300" },
+    { id: "ARB-۱۴۰۴۲۱۰۵", date: "۱۲ مرداد ۱۴۰۴", items: "Lenovo ThinkPad X1 Carbon", total: "۱۱۸٫۰۰۰٫۰۰۰ تومان", status: "تحویل شده", tagBg: "#EAF7F9", tagFg: "#0E7490" },
+    { id: "ARB-۱۴۰۴۱۶۴۲", date: "۳ خرداد ۱۴۰۴", items: "کیبورد مکانیکی Cherry MX · پایه خنک‌کننده", total: "۹٫۴۰۰٫۰۰۰ تومان", status: "تحویل شده", tagBg: "#EAF7F9", tagFg: "#0E7490" },
+    { id: "ARB-۱۴۰۳۹۸۷۰", date: "۲۱ بهمن ۱۴۰۳", items: "SSD ۲TB NVMe Gen4", total: "۱۲٫۸۰۰٫۰۰۰ تومان", status: "مرجوع شده", tagBg: "#F3F1F8", tagFg: "#5F5B6B" }
+  ];
+  DEVICES = [
+    { name: "Lenovo ThinkPad X1 Carbon Gen 12", serial: "SN-PF4K82QX", bought: "مرداد ۱۴۰۴", warranty: "مرداد ۱۴۰۶", wFg: "#0E7490" },
+    { name: "MSI Titan 18 HX A2XWJG", serial: "SN-K2L90TTM", bought: "شهریور ۱۴۰۴", warranty: "شهریور ۱۴۰۶", wFg: "#0E7490" }
+  ];
+  pick = (n) => () => this.setState({ tab: n, saved: false });
+  onSave = () => {
+    this.setState({ saved: true });
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.setState({ saved: false }), 2200);
+  };
+  componentWillUnmount(){
+    clearTimeout(this.t);
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+  renderVals(){
+    const st = this.state;
+    const m = st.mobile === true;
+    const o = {
+      navMax: m ? "none" : "250px",
+      navW: m ? "100%" : "auto",
+      navPos: m ? "static" : "sticky",
+      navDir: m ? "row" : "column",
+      navOx: m ? "auto" : "visible",
+      navBtnFlex: m ? "0 0 auto" : "1 1 auto",
+      fsInput: m ? "16px" : "14px",
+      fsLabel: m ? "13px" : "12.5px",
+      fsBody: m ? "15px" : "13.5px",
+      yes: true,
+      name: st.name, onName: this.onName,
+      sms: st.sms, onSms: this.onSms,
+      news: st.news, onNews: this.onNews,
+      orders: this.ORDERS, devices: this.DEVICES,
+      isOrders: st.tab === 0, isAddr: st.tab === 1, isDevices: st.tab === 2, isInfo: st.tab === 3,
+      onSave: this.onSave,
+      saveTxt: st.saved ? "ذخیره شد ✓" : "ذخیره تغییرات",
+      saveAnim: st.saved ? "arbPop .34s cubic-bezier(.3,1,.4,1)" : "none",
+      saveBg: st.saved ? "#EDE9FA" : "#17151F",
+      saveFg: st.saved ? "#4B32C3" : "#FFFFFF"
+    };
+    [0, 1, 2, 3].forEach((i) => {
+      const on = st.tab === i;
+      o["onTab" + i] = this.pick(i);
+      o["nBg" + i] = on ? "#17151F" : "transparent";
+      o["nFg" + i] = on ? "#FFFFFF" : "#3D3950";
+      o["nCn" + i] = on ? "rgba(255,255,255,.7)" : "#6E6880";
+    });
+    return o;
+  }
+}
+</script>
+</body>
+</html>

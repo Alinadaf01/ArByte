@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+@keyframes arbNow{0%,100%{box-shadow:0 0 0 0 rgba(108,77,255,.4)}50%{box-shadow:0 0 0 8px rgba(108,77,255,0)}}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input{font-family:inherit;}
+input::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@keyframes arbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes arbShakeB{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes arbRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+</helmet>
+
+<div dir="rtl" data-screen-label="TrackOrder" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <a href="./Support.dc.html" style="color:#5F5B6B;">پشتیبانی</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">پیگیری سفارش</span>
+    </nav>
+    <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">پیگیری سفارش</h1>
+    <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">شماره سفارش و شماره موبایل ثبت‌شده را وارد کنید. بدون ورود به حساب هم می‌توانید وضعیت را ببینید.</p>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(16px,2.5vh,24px);">
+
+  <form onSubmit="{{ onSubmit }}" noValidate="{{ yes }}" style="padding:clamp(18px,3vw,26px);border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:14px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;align-items:end;animation:{{ shakeAnim }};">
+      <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره سفارش
+        <input type="text" dir="ltr" value="{{ code }}" onChange="{{ onCode }}" onInput="{{ onCode }}" placeholder="ARB-14042738" style="min-height:50px;padding:0 15px;border-radius:14px;border:1px solid {{ codeBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+      </label>
+      <label style="display:flex;flex-direction:column;gap:7px;font-size:{{ fsLabel }};color:#5F5B6B;">شماره موبایل
+        <input type="tel" dir="ltr" value="{{ phone }}" onChange="{{ onPhone }}" onInput="{{ onPhone }}" placeholder="09120000000" style="min-height:50px;padding:0 15px;border-radius:14px;border:1px solid {{ phoneBd }};background:#FFFFFF;font-size:{{ fsInput }};color:#17151F;min-width:0;text-align:right;" />
+      </label>
+      <button type="submit" style="min-height:50px;padding:0 26px;border-radius:999px;border:0;background:#17151F;color:#FFFFFF;font-family:inherit;font-size:14.5px;font-weight:600;cursor:pointer;transition:background .25s ease;" style-hover="background:#6C4DFF;">پیگیری</button>
+    </div>
+    <p style="margin:0;font-size:{{ fsLabel }};line-height:1.85;color:{{ noteFg }};">{{ note }}</p>
+  </form>
+
+  <sc-if value="{{ found }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:clamp(16px,2.5vw,26px);">
+
+      <div style="flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:clamp(14px,2vh,18px);">
+
+        <div style="padding:clamp(18px,3vw,24px);border-radius:22px;background:#F0FAFB;border:1px solid #C8E9EE;display:flex;flex-wrap:wrap;align-items:center;gap:16px;">
+          <span style="width:50px;height:50px;flex:none;border-radius:50%;background:#D6F1F5;display:flex;align-items:center;justify-content:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0E7490" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5h10v9h-10z"></path><path d="M12.5 10.5h4l3 3v3h-7z"></path><circle cx="6.5" cy="17.5" r="1.8"></circle><circle cx="16.5" cy="17.5" r="1.8"></circle></svg>
+          </span>
+          <div style="min-width:0;flex:1 1 200px;display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:16px;font-weight:700;">در مسیر تحویل</span>
+            <span style="font-size:{{ fsBody }};line-height:1.8;color:#5F5B6B;">تحویل برآوردی: پنجشنبه ۲ مهر، بازه ۹ تا ۱۴</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <span style="font-size:{{ fsLabel }};color:#5F5B6B;">کد مرسوله پستی</span>
+            <span dir="ltr" style="font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.05em;">۲۴۰۱۹۸۷۷۳۱۰۰۵</span>
+          </div>
+        </div>
+
+        <section style="padding:clamp(18px,3vw,24px);border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:6px;">
+          <h2 style="margin:0 0 12px;font-size:16px;font-weight:700;">مسیر سفارش</h2>
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="5">
+            <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;">
+              <div style="display:flex;flex-direction:column;align-items:center;">
+                <span style="width:28px;height:28px;flex:none;border-radius:50%;background:{{ s.dotBg }};border:1.5px solid {{ s.dotBd }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:{{ s.dotFg }};animation:{{ s.anim }};">{{ s.mark }}</span>
+                <span style="width:1.5px;flex:1;min-height:{{ s.lineH }};background:{{ s.lineBg }};display:block;"></span>
+              </div>
+              <div style="padding-bottom:{{ s.pad }};display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px;min-width:0;">
+                <span style="min-width:0;display:flex;flex-direction:column;gap:3px;">
+                  <span style="font-size:14.5px;font-weight:600;color:{{ s.titleFg }};">{{ s.title }}</span>
+                  <span style="font-size:{{ fsLabel }};line-height:1.8;color:#5F5B6B;">{{ s.note }}</span>
+                </span>
+                <span style="font-size:{{ fsLabel }};color:#6E6880;white-space:nowrap;">{{ s.time }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </section>
+
+        <section style="padding:clamp(18px,3vw,24px);border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:13px;">
+          <h2 style="margin:0;font-size:16px;font-weight:700;">اقلام سفارش</h2>
+          <sc-for list="{{ items }}" as="it" hint-placeholder-count="3">
+            <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px solid #F4F1FB;">
+              <span style="font-size:{{ fsBody }};line-height:1.8;color:#3D3950;min-width:0;">{{ it.name }}</span>
+              <span style="font-size:13.5px;font-weight:600;white-space:nowrap;">{{ it.sum }}</span>
+            </div>
+          </sc-for>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-bottom:11px;border-bottom:1px solid #F4F1FB;">
+            <span style="font-size:{{ fsBody }};color:#5F5B6B;">تخفیف ARB10</span>
+            <span style="font-size:13.5px;font-weight:600;color:#0E7490;white-space:nowrap;">− ۴۱٫۱۶۰٫۰۰۰ تومان</span>
+          </div>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
+            <span style="font-size:14px;font-weight:700;">مبلغ پرداخت‌شده</span>
+            <span style="font-size:17px;font-weight:700;letter-spacing:-.025em;">۳۷۰٫۴۴۰٫۰۰۰ تومان</span>
+          </div>
+        </section>
+
+      </div>
+
+      <aside style="flex:1 1 280px;max-width:360px;min-width:0;display:flex;flex-direction:column;gap:clamp(12px,2vh,16px);">
+        <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:11px;">
+          <h2 style="margin:0;font-size:14.5px;font-weight:700;">نشانی تحویل</h2>
+          <p style="margin:0;font-size:{{ fsBody }};line-height:1.95;color:#5F5B6B;">سمیه احمدی<br />تهران، سعادت‌آباد، بلوار دریا، کوچه ششم، پلاک ۱۲، واحد ۴<br />۰۹۱۲۳۴۵۶۷۸۹</p>
+          <p style="margin:4px 0 0;font-size:{{ fsLabel }};line-height:1.85;color:#3D3950;">تا پیش از تحویل به پست، نشانی را می‌توانید عوض کنید.</p>
+        </div>
+
+        <div style="padding:20px;border-radius:20px;background:#FFFFFF;border:1px solid #EAE6F4;display:flex;flex-direction:column;gap:12px;">
+          <h2 style="margin:0;font-size:14.5px;font-weight:700;">مدارک سفارش</h2>
+          <button type="button" onClick="{{ onInvoice }}" style="min-height:46px;border-radius:999px;border:0;background:{{ invBg }};color:{{ invFg }};font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;transition:all .25s ease;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v10"></path><path d="m8 10.5 4 4 4-4"></path><path d="M4.5 16v2.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V16"></path></svg>
+            {{ invTxt }}
+          </button>
+          <a href="./OrderStatus.dc.html" style="min-height:46px;border-radius:999px;border:1px solid #E0DBF0;color:#3D3950;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">صفحه کامل سفارش</a>
+        </div>
+
+        <div style="padding:20px;border-radius:20px;background:#17151F;color:#FFFFFF;display:flex;flex-direction:column;gap:11px;">
+          <h2 style="margin:0;font-size:14.5px;font-weight:700;color:#FFFFFF;">مشکلی در ارسال هست؟</h2>
+          <p style="margin:0;font-size:{{ fsBody }};line-height:1.95;color:#B9B4C9;">اگر مرسوله بیش از دو روز در یک وضعیت مانده، به ما بگویید تا پیگیری کنیم.</p>
+          <a href="./Support.dc.html" style="min-height:44px;border-radius:999px;background:#FFFFFF;color:#17151F;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .25s ease;" style-hover="background:#E9E4FA;color:#17151F;">گفت‌وگو با پشتیبانی</a>
+        </div>
+      </aside>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ notFound }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:clamp(40px,7vh,72px) 24px;border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;animation:arbRise .36s cubic-bezier(.3,1,.4,1);">
+      <p style="margin:0;font-size:17.5px;font-weight:700;">سفارشی با این مشخصات پیدا نشد</p>
+      <p style="margin:0;font-size:14px;line-height:1.9;color:#5F5B6B;max-width:46ch;">شماره سفارش با ARB شروع می‌شود و در پیامک تأیید برایتان ارسال شده است. شماره موبایل هم باید همان شماره ثبت سفارش باشد.</p>
+      <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">
+        <button type="button" onClick="{{ onDemo }}" style="min-height:46px;padding:0 22px;border-radius:999px;border:1px solid #E0DBF0;background:#FFFFFF;color:#3D3950;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">وارد کردن نمونه</button>
+        <a href="./Support.dc.html" style="min-height:46px;padding:0 22px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">پرسیدن از پشتیبانی</a>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  DEMO = { code: "ARB-14042738", phone: "09123456789" };
+  state = { code: "ARB-14042738", phone: "09123456789", status: "found", bad: false, mobile: false };
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.sync = () => this.setState({ mobile: this.mq.matches });
+    this.sync();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.sync);
+    else this.mq.addListener(this.sync);
+  }
+  ITEMS = [
+    { name: "MSI Titan 18 HX A2XWJG · ۶۴GB/۲TB", sum: "۲۸۹٫۵۰۰٫۰۰۰" },
+    { name: "ASUS ProArt Display OLED 32", sum: "۹۶٫۵۰۰٫۰۰۰" },
+    { name: "کیت رم ۶۴GB DDR5 · ۲ عدد", sum: "۲۵٫۶۰۰٫۰۰۰" }
+  ];
+  STEPS = [
+    { t: "سفارش ثبت شد", n: "پرداخت اینترنتی تأیید شد", time: "۲۹ شهریور · ۱۶:۳۸" },
+    { t: "آماده‌سازی و تست دستگاه", n: "تست پیکسل، پورت‌ها و کیبورد؛ ثبت سریال", time: "۳۰ شهریور · ۱۰:۱۲" },
+    { t: "تحویل به پست", n: "پست پیشتاز · کد مرسوله صادر شد", time: "۳۱ شهریور · ۱۴:۰۵" },
+    { t: "در مسیر تحویل", n: "مرسوله در مرکز توزیع تهران است", time: "۱ مهر · ۰۸:۲۰" },
+    { t: "تحویل به شما", n: "برآورد: پنجشنبه ۲ مهر، بازه ۹ تا ۱۴", time: "—" }
+  ];
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]); }
+  onCode = (e) => this.setState({ code: e.target.value, bad: false });
+  onPhone = (e) => this.setState({ phone: e.target.value, bad: false });
+  onDemo = () => this.setState({ code: this.DEMO.code, phone: this.DEMO.phone, status: "found", bad: false });
+  onSubmit = (e) => {
+    e.preventDefault();
+    const c = this.state.code.trim().toUpperCase().replace(/\s/g, "");
+    const p = this.state.phone.replace(/[^0-9]/g, "");
+    if (c === "" || p === "") { this.setState((s) => ({ bad: true, status: "idle", shake: (s.shake || 0) + 1 })); return; }
+    const ok = c === this.DEMO.code && p === this.DEMO.phone;
+    this.setState({ status: ok ? "found" : "missing", bad: false });
+  };
+  onInvoice = () => {
+    this.setState({ inv: 1 });
+    clearTimeout(this.t);
+    this.t = setTimeout(() => this.setState({ inv: 2 }), 800);
+    this.t2 = setTimeout(() => this.setState({ inv: 0 }), 3000);
+  };
+  componentWillUnmount(){
+    clearTimeout(this.t); clearTimeout(this.t2);
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener("change", this.sync);
+    else this.mq.removeListener(this.sync);
+  }
+
+  renderVals(){
+    const st = this.state;
+    const done = 3;
+    const m = st.mobile === true;
+    return {
+      yes: true,
+      fsInput: m ? "16px" : "14.5px",
+      fsLabel: m ? "13px" : "12.5px",
+      fsBody: m ? "15px" : "13.5px",
+      code: st.code, phone: st.phone,
+      onCode: this.onCode, onPhone: this.onPhone, onSubmit: this.onSubmit, onDemo: this.onDemo,
+      shakeAnim: st.bad && (st.shake || 0) > 0 ? ((st.shake % 2) ? "arbShake .42s ease" : "arbShakeB .42s ease") : "none",
+      codeBd: st.bad && st.code.trim() === "" ? "#E0A3A3" : "#E0DBF0",
+      phoneBd: st.bad && st.phone.trim() === "" ? "#E0A3A3" : "#E0DBF0",
+      note: st.bad
+        ? "هر دو فیلد لازم است."
+        : (st.status === "found"
+          ? "سفارش ARB-۱۴۰۴۲۷۳۸ پیدا شد."
+          : (st.status === "missing" ? "سفارشی با این مشخصات پیدا نشد." : "شماره سفارش در پیامک تأیید برای شما ارسال شده است.")),
+      noteFg: st.bad || st.status === "missing" ? "#B42318" : (st.status === "found" ? "#0E7490" : "#6E6880"),
+      found: st.status === "found",
+      notFound: st.status === "missing",
+      items: this.ITEMS,
+      steps: this.STEPS.map((s, i) => {
+        const isDone = i < done, isNow = i === done, last = i === this.STEPS.length - 1;
+        return {
+          title: s.t, note: s.n, time: s.time,
+          mark: isDone ? "✓" : this.fa(i + 1),
+          dotBg: isDone ? "#6C4DFF" : "#FFFFFF",
+          dotBd: isDone || isNow ? "#6C4DFF" : "#DDD8EC",
+          dotFg: isDone ? "#FFFFFF" : (isNow ? "#4B32C3" : "#6E6880"),
+          titleFg: isDone || isNow ? "#17151F" : "#6E6880",
+          lineBg: isDone ? "#6C4DFF" : "#ECE8F7",
+          lineH: last ? "0px" : "14px",
+          pad: last ? "0px" : "22px",
+          anim: isNow ? "arbNow 2.2s ease-in-out infinite" : "none"
+        };
+      }),
+      onInvoice: this.onInvoice,
+      invTxt: st.inv === 1 ? "در حال آماده‌سازی…" : (st.inv === 2 ? "دانلود شد ✓" : "دانلود فاکتور PDF"),
+      invBg: st.inv === 2 ? "#EDE9FA" : "#17151F",
+      invFg: st.inv === 2 ? "#4B32C3" : "#FFFFFF"
+    };
+  }
+}
+</script>
+</body>
+</html>

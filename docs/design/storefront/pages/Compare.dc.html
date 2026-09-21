@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important;}}
+</style>
+<script src="./image-slot.js"></script>
+</helmet>
+
+<div dir="rtl" data-screen-label="Compare" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;">
+
+<dc-import name="SiteHeader" active="products" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<section style="padding:clamp(26px,4vh,42px) 5vw clamp(20px,3vh,30px);background:#FFFFFF;border-bottom:1px solid #EAE6F4;">
+  <div style="max-width:1240px;margin:0 auto;">
+    <nav aria-label="مسیر" style="display:flex;align-items:center;gap:8px;font-size:{{ fsLabel }};color:#5F5B6B;margin-bottom:14px;">
+      <a href="./Home.dc.html" style="color:#5F5B6B;">خانه</a>
+      <span aria-hidden="true">/</span>
+      <a href="./Products.dc.html" style="color:#5F5B6B;">فروشگاه</a>
+      <span aria-hidden="true">/</span>
+      <span style="color:#17151F;font-weight:600;">مقایسه</span>
+    </nav>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px;">
+      <div style="min-width:0;">
+        <h1 style="margin:0;font-size:clamp(28px,3.4vw,44px);font-weight:700;letter-spacing:-.025em;line-height:1.35;">مقایسه دستگاه‌ها</h1>
+        <p style="margin:8px 0 0;font-size:14.5px;line-height:1.9;color:#5F5B6B;max-width:56ch;">تا سه دستگاه را کنار هم بگذارید. در هر ردیف، مقدار بهتر با نشان بنفش مشخص می‌شود.</p>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 15px;border-radius:12px;background:#F6F4FC;border:1px solid #EAE6F4;font-size:{{ fsBody }};color:#3D3950;cursor:pointer;white-space:nowrap;">
+        <input type="checkbox" checked="{{ diffOnly }}" onChange="{{ onDiff }}" style="width:17px;height:17px;accent-color:#6C4DFF;cursor:pointer;" />
+        <span>فقط تفاوت‌ها</span>
+      </label>
+    </div>
+  </div>
+</section>
+
+<div style="max-width:1240px;margin:0 auto;padding:clamp(20px,3vh,32px) 5vw clamp(48px,7vh,80px);display:flex;flex-direction:column;gap:clamp(16px,2.5vh,22px);">
+
+  <div style="overflow-x:auto;padding-bottom:4px;">
+  <div style="min-width:{{ minW }};display:flex;flex-direction:column;gap:clamp(16px,2.5vh,22px);">
+  <div style="display:grid;grid-template-columns:{{ grid }};gap:12px;align-items:stretch;">
+    <div aria-hidden="true"></div>
+    <sc-for list="{{ cards }}" as="c" hint-placeholder-count="3">
+      <article style="position:relative;display:flex;flex-direction:column;border-radius:22px;overflow:hidden;background:#FFFFFF;border:1.5px solid {{ c.bd }};transition:border-color .3s ease;">
+        <div style="position:relative;aspect-ratio:4/3;background:{{ c.well }};">
+          <image-slot id="{{ c.slot }}" shape="rect" fit="contain" placeholder="۱۲۰۰×۹۰۰"></image-slot>
+          <sc-if value="{{ c.best }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:12px;right:12px;padding:5px 12px;border-radius:999px;background:#17151F;font-size:{{ fsLabel }};font-weight:600;color:#FFFFFF;pointer-events:none;">ارزش خرید بهتر</span>
+          </sc-if>
+        </div>
+        <button type="button" onClick="{{ c.remove }}" aria-label="حذف از مقایسه" style="position:absolute;top:12px;left:12px;width:44px;height:44px;border-radius:50%;border:1px solid #EAE6F4;background:rgba(255,255,255,.94);color:#6E6880;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s ease;" style-hover="border-color:#D99A9A;color:#B42318;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="m7 7 10 10M17 7 7 17"></path></svg>
+        </button>
+        <div style="padding:17px;display:flex;flex-direction:column;gap:10px;flex:1;">
+          <span dir="ltr" style="font-size:{{ fsLabel }};font-weight:600;color:#6E6880;text-align:right;">{{ c.brand }}</span>
+          <h2 style="margin:0;font-size:15.5px;font-weight:700;line-height:1.6;text-wrap:pretty;"><a href="./Product.dc.html" style="color:#17151F;" style-hover="color:#4B32C3;">{{ c.name }}</a></h2>
+          <span style="font-size:16px;font-weight:700;letter-spacing:-.02em;">{{ c.price }}</span>
+          <a href="./Product.dc.html" style="margin-top:auto;min-height:44px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:{{ fsBody }};font-weight:600;display:flex;align-items:center;justify-content:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">مشاهده و خرید</a>
+        </div>
+      </article>
+    </sc-for>
+
+    <sc-if value="{{ hasSlot }}" hint-placeholder-val="{{ false }}">
+      <button type="button" onClick="{{ onAdd }}" style="min-height:100%;border-radius:22px;border:1.5px dashed #D8D2EC;background:#FBFAFE;color:#4B32C3;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:all .2s ease;" style-hover="border-color:#6C4DFF;background:#F6F3FE;">
+        <span style="width:44px;height:44px;border-radius:50%;background:#EDE9FA;display:flex;align-items:center;justify-content:center;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="2" stroke-linecap="round"><path d="M12 6v12M6 12h12"></path></svg>
+        </span>
+        افزودن دستگاه سوم
+      </button>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:clamp(40px,7vh,72px) 24px;border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;text-align:center;">
+      <p style="margin:0 0 8px;font-size:17px;font-weight:700;">چیزی برای مقایسه نمانده</p>
+      <p style="margin:0 0 18px;font-size:14px;line-height:1.9;color:#5F5B6B;">از فروشگاه دو یا سه دستگاه انتخاب کنید تا کنار هم ببینید.</p>
+      <button type="button" onClick="{{ onReset }}" style="min-height:46px;padding:0 24px;border-radius:999px;border:0;background:#17151F;color:#FFFFFF;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .25s ease;" style-hover="background:#6C4DFF;">برگرداندن مقایسه</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ true }}">
+    <div style="border-radius:22px;background:#FFFFFF;border:1px solid #EAE6F4;overflow:hidden;">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="10">
+        <div style="display:grid;grid-template-columns:{{ r.grid }};gap:12px;padding:15px 0;border-bottom:1px solid #F4F1FB;background:{{ r.bg }};">
+          <span style="font-size:{{ fsBody }};line-height:1.7;color:#5F5B6B;padding-inline-start:18px;">{{ r.key }}</span>
+          <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="3">
+            <span style="display:flex;align-items:center;gap:7px;font-size:{{ fsBody }};line-height:1.7;font-weight:{{ c.w }};color:{{ c.fg }};min-width:0;">
+              <sc-if value="{{ c.best }}" hint-placeholder-val="{{ false }}">
+                <i style="width:6px;height:6px;flex:none;border-radius:50%;background:#6C4DFF;display:block;"></i>
+              </sc-if>
+              {{ c.v }}
+            </span>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  </div>
+  </div>
+
+  <p style="margin:0;font-size:{{ fsLabel }};line-height:1.85;color:#6E6880;">اعداد از تست‌های داخلی آربایت روی همان پیکربندی موجود در انبار به‌دست آمده‌اند، نه از برگه مشخصات سازنده.</p>
+
+</div>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px" };
+  }
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+  }
+  DEVICES = [
+    { id: "titan", brand: "MSI", name: "Titan 18 HX A2XWJG", price: 289.5, best: false,
+      v: { cpu: "Core Ultra 9 275HX", gpu: "RTX 5090 · ۲۴GB", ram: 64, ssd: 2, screen: "۱۸ اینچ Mini LED ۴K", hz: 120, weight: 3.6, battery: 94, noise: 52, ports: "۲× TB5 · HDMI 2.1", warranty: 24 } },
+    { id: "scar", brand: "ASUS", name: "ROG Strix SCAR 18", price: 246, best: true,
+      v: { cpu: "Ryzen 9 9955HX", gpu: "RTX 5080 · ۱۶GB", ram: 32, ssd: 2, screen: "۱۸ اینچ Mini LED QHD+", hz: 240, weight: 3.1, battery: 118, noise: 49, ports: "۱× TB4 · HDMI 2.1", warranty: 24 } }
+  ];
+  THIRD = { id: "legion", brand: "Lenovo", name: "Legion Pro 7i Gen 10", price: 164, best: false,
+    v: { cpu: "Core i9 14900HX", gpu: "RTX 4080 · ۱۲GB", ram: 32, ssd: 1, screen: "۱۶ اینچ IPS QHD+", hz: 240, weight: 2.7, battery: 132, noise: 47, ports: "۱× TB4 · HDMI 2.1", warranty: 18 } };
+  ROWS = [
+    { k: "پردازنده", f: "cpu" },
+    { k: "گرافیک", f: "gpu" },
+    { k: "رم", f: "ram", unit: " گیگابایت", hi: "max" },
+    { k: "حافظه SSD", f: "ssd", unit: " ترابایت", hi: "max" },
+    { k: "نمایشگر", f: "screen" },
+    { k: "نرخ نوسازی", f: "hz", unit: " هرتز", hi: "max" },
+    { k: "وزن", f: "weight", unit: " کیلوگرم", hi: "min" },
+    { k: "باتری در کار سبک", f: "battery", unit: " دقیقه", hi: "max" },
+    { k: "صدای فن زیر بار", f: "noise", unit: " دسی‌بل", hi: "min" },
+    { k: "پورت‌ها", f: "ports" },
+    { k: "گارانتی", f: "warranty", unit: " ماه", hi: "max" }
+  ];
+  state = { mobile: false,  ids: this.DEVICES.map((d) => d.id), diff: false };
+  fa(n){ return String(n).replace(/[0-9]/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[d]).replace(".", "٫"); }
+  money(m){ return this.fa(Math.round(m * 1000000).toLocaleString("en-US").replace(/,/g, "٫")) + " تومان"; }
+  all(){ return this.DEVICES.concat([this.THIRD]); }
+  remove = (id) => () => this.setState((s) => ({ ids: s.ids.filter((x) => x !== id) }));
+  onAdd = () => this.setState((s) => ({ ids: s.ids.concat("legion") }));
+  onReset = () => this.setState({ ids: this.DEVICES.map((d) => d.id) });
+  onDiff = () => this.setState((s) => ({ diff: !s.diff }));
+
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const st = this.state;
+    const list = this.all().filter((d) => st.ids.indexOf(d.id) >= 0);
+    const n = list.length;
+    const grid = "minmax(104px,0.85fr) repeat(3,minmax(0,1fr))";
+
+    const rows = this.ROWS.map((r, ri) => {
+      const raw = list.map((d) => d.v[r.f]);
+      const same = raw.every((x) => x === raw[0]);
+      if (st.diff && same) return null;
+      let bestVal = null;
+      if (r.hi && !same) {
+        const nums = raw.filter((x) => typeof x === "number");
+        if (nums.length) bestVal = r.hi === "max" ? Math.max.apply(null, nums) : Math.min.apply(null, nums);
+      }
+      return {
+        key: r.k, grid,
+        bg: ri % 2 ? "#FBFAFE" : "#FFFFFF",
+        cells: list.map((d) => {
+          const val = d.v[r.f];
+          const isBest = bestVal !== null && val === bestVal;
+          return {
+            v: typeof val === "number" ? this.fa(val) + (r.unit || "") : val,
+            best: isBest,
+            w: isBest ? 700 : 500,
+            fg: isBest ? "#17151F" : "#3D3950"
+          };
+        })
+      };
+    }).filter(Boolean);
+
+    return {
+      cards: list.map((d, i) => ({
+        brand: d.brand, name: d.name, best: d.best,
+        price: this.money(d.price),
+        slot: "arb-cmp-" + d.id,
+        well: i % 2 ? "linear-gradient(150deg,#DFF3F8,#F5FBFD)" : "linear-gradient(150deg,#E6E0FB,#F7F5FD)",
+        bd: d.best ? "#6C4DFF" : "#EAE6F4",
+        remove: this.remove(d.id)
+      })),
+      grid, minW: n > 0 ? "760px" : "auto",
+      rows, hasRows: rows.length > 0 && n > 0,
+      hasSlot: n > 0 && n < 3 && st.ids.indexOf("legion") < 0,
+      isEmpty: n === 0,
+      diffOnly: st.diff,
+      onDiff: this.onDiff, onAdd: this.onAdd, onReset: this.onReset
+    };
+  }
+}
+</script>
+</body>
+</html>

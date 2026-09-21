@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+@font-face{font-family:'Estedad';font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-400-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:500;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-500-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:600;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-600-normal.woff2) format('woff2');}
+@font-face{font-family:'Estedad';font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/fontsource/fonts/estedad@latest/arabic-700-normal.woff2) format('woff2');}
+@keyframes arbFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-14px) rotate(-1deg)}}
+@keyframes arbGlow{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.06)}}
+*{box-sizing:border-box;}
+body{margin:0;background:#F6F4FC;}
+a{text-decoration:none;color:#4B32C3;}
+a:hover{color:#6C4DFF;}
+input{font-family:inherit;}
+input::placeholder{color:#9A95AC;}
+:focus-visible{outline:2px solid #6C4DFF;outline-offset:2px;}
+button,a{-webkit-tap-highlight-color:transparent;}
+button{transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s cubic-bezier(.3,1,.4,1);}
+button:active{transform:scale(.96);}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;}}
+</style>
+</helmet>
+
+<div dir="rtl" data-screen-label="NotFound" style="min-height:100vh;background:#F6F4FC;color:#17151F;font-family:'Estedad',Tahoma,sans-serif;display:flex;flex-direction:column;">
+
+<dc-import name="SiteHeader" style="position:sticky;top:0;z-index:30;display:block;" hint-size="100%,72px"></dc-import>
+
+<main style="flex:1;display:flex;align-items:center;justify-content:center;padding:clamp(32px,7vh,80px) 5vw;">
+  <div style="width:100%;max-width:1040px;display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:clamp(24px,5vw,64px);align-items:center;">
+
+    <div style="min-width:0;display:flex;flex-direction:column;gap:18px;">
+      <span style="align-self:flex-start;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsLabel }};font-weight:600;color:#4B32C3;">
+        <i style="width:6px;height:6px;border-radius:50%;background:#6C4DFF;display:block;"></i>
+        خطای ۴۰۴
+      </span>
+      <h1 style="margin:0;font-size:clamp(26px,3.4vw,42px);font-weight:700;letter-spacing:-.028em;line-height:1.4;max-width:18ch;text-wrap:pretty;">این صفحه را پیدا نکردیم</h1>
+      <p style="margin:0;font-size:15px;line-height:2;color:#5F5B6B;max-width:46ch;">شاید نشانی را اشتباه وارد کرده‌اید، یا محصولی که دنبالش بودید از فهرست خارج شده است. از اینجا ادامه بدهید:</p>
+
+      <label style="display:flex;align-items:center;gap:11px;min-height:54px;padding:0 17px;border-radius:16px;border:1px solid #E0DBF0;background:#FFFFFF;max-width:440px;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6E6880" stroke-width="1.8" stroke-linecap="round" style="flex:none;"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+        <input type="search" value="{{ q }}" onChange="{{ onQ }}" onInput="{{ onQ }}" placeholder="جستجوی محصول یا راهنما" aria-label="جستجو در آربایت" style="flex:1;min-width:0;border:0;background:transparent;font-size:{{ fsInput }};color:#17151F;outline:none;" />
+        <a href="{{ searchHref }}" style="min-height:44px;padding:0 18px;border-radius:12px;background:#17151F;color:#FFFFFF;font-size:{{ fsBody }};font-weight:600;display:inline-flex;align-items:center;white-space:nowrap;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">جستجو</a>
+      </label>
+
+      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+        <a href="./Home.dc.html" style="min-height:48px;padding:0 24px;border-radius:999px;background:#17151F;color:#FFFFFF;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;transition:background .25s ease;" style-hover="background:#6C4DFF;color:#FFFFFF;">بازگشت به خانه</a>
+        <a href="./Products.dc.html" style="min-height:48px;padding:0 22px;border-radius:999px;border:1px solid #E0DBF0;color:#3D3950;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;transition:all .2s ease;" style-hover="border-color:#6C4DFF;color:#4B32C3;">رفتن به فروشگاه</a>
+      </div>
+
+      <div style="margin-top:6px;padding-top:20px;border-top:1px solid #EAE6F4;display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:10px;max-width:520px;">
+        <a href="./Categories.dc.html" style="display:flex;align-items:center;gap:9px;min-height:46px;padding:0 14px;border-radius:13px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsBody }};font-weight:600;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg>
+          دسته‌بندی‌ها
+        </a>
+        <a href="./TrackOrder.dc.html" style="display:flex;align-items:center;gap:9px;min-height:46px;padding:0 14px;border-radius:13px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsBody }};font-weight:600;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M2.5 7.5h10v9h-10z"></path><path d="M12.5 10.5h4l3 3v3h-7z"></path><circle cx="6.5" cy="17.5" r="1.8"></circle><circle cx="16.5" cy="17.5" r="1.8"></circle></svg>
+          پیگیری سفارش
+        </a>
+        <a href="./Blog.dc.html" style="display:flex;align-items:center;gap:9px;min-height:46px;padding:0 14px;border-radius:13px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsBody }};font-weight:600;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M6.5 4h11v16l-5.5-4-5.5 4Z"></path></svg>
+          بلاگ
+        </a>
+        <a href="./Support.dc.html" style="display:flex;align-items:center;gap:9px;min-height:46px;padding:0 14px;border-radius:13px;background:#FFFFFF;border:1px solid #EAE6F4;font-size:{{ fsBody }};font-weight:600;color:#3D3950;transition:all .2s ease;" style-hover="border-color:#C9BEFA;color:#4B32C3;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C4DFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex:none;"><path d="M21 12a9 9 0 0 1-13.2 7.9L3 21l1.2-4.6A9 9 0 1 1 21 12Z"></path></svg>
+          پشتیبانی
+        </a>
+      </div>
+    </div>
+
+    <div style="min-width:0;position:relative;aspect-ratio:1;max-width:400px;justify-self:center;width:100%;display:flex;align-items:center;justify-content:center;">
+      <span aria-hidden="true" style="position:absolute;width:76%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(108,77,255,.22),rgba(246,244,252,0) 70%);animation:arbGlow 6s ease-in-out infinite;display:block;"></span>
+      <span aria-hidden="true" style="position:absolute;inset:0;border-radius:50%;border:1px dashed #DCD5F2;display:block;"></span>
+      <div aria-hidden="true" style="position:relative;display:flex;align-items:center;justify-content:center;animation:arbFloat 7s ease-in-out infinite;">
+        <svg width="74%" viewBox="0 0 220 150" fill="none" style="overflow:visible;">
+          <rect x="24" y="16" width="172" height="104" rx="11" fill="#FFFFFF" stroke="#DCD5F2" stroke-width="2"></rect>
+          <rect x="34" y="26" width="152" height="84" rx="6" fill="#17151F"></rect>
+          <text x="110" y="78" text-anchor="middle" font-family="sans-serif" font-size="42" font-weight="700" fill="#8B6BFF" letter-spacing="2">404</text>
+          <path d="M14 120h192a10 10 0 0 1-10 12H24a10 10 0 0 1-10-12Z" fill="#EDE9FA" stroke="#DCD5F2" stroke-width="2" stroke-linejoin="round"></path>
+          <circle cx="110" cy="126" r="2.6" fill="#B6ACDE"></circle>
+        </svg>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<dc-import name="MobileNav" active="" hint-size="100%,72px"></dc-import>
+
+<dc-import name="SiteFooter" hint-size="100%,470px"></dc-import>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">class Component extends DCLogic {
+  mobileVals(){
+    const m = this.state && this.state.mobile === true;
+    return { fsLabel: m ? "13px" : "12.5px", fsBody: m ? "15px" : "13.5px", fsInput: m ? "16px" : "14px" };
+  }
+  componentDidMount(){
+    this.mq = window.matchMedia("(max-width: 767px)");
+    this.syncMq = () => this.setState({ mobile: this.mq.matches });
+    this.syncMq();
+    if (this.mq.addEventListener) this.mq.addEventListener("change", this.syncMq);
+    else this.mq.addListener(this.syncMq);
+  }
+  state = { mobile: false,  q: "" };
+  onQ = (e) => this.setState({ q: e.target.value });
+  renderVals(){ return Object.assign(this.mobileVals(), this.baseVals()); }
+  baseVals(){
+    const q = this.state.q.trim();
+    return {
+      q: this.state.q,
+      onQ: this.onQ,
+      searchHref: q ? "./Search.dc.html?q=" + encodeURIComponent(q) : "./Search.dc.html"
+    };
+  }
+}</script>
+</body>
+</html>
