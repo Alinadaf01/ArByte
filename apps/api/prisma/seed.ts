@@ -148,9 +148,9 @@ async function seedGlobalPriceRule() {
   });
   if (existing) return existing;
   // تصمیم د — Global Default: ۱۰٪ سود پیش‌فرض وقتی هیچ قانون اختصاصی‌تری
-  // (محصول/همکار/دسته‌بندی) ست نشده باشد.
+  // (محصول/همکار/دسته‌بندی) ست نشده باشد. ۱۰٪ = ۱۰۰۰ Basis Point.
   return prisma.priceRule.create({
-    data: { profitType: "PERCENT", profitValue: "10" },
+    data: { profitType: "PERCENT", profitPercentBasisPoints: 1000 },
   });
 }
 

@@ -40,6 +40,14 @@ module.exports = [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // قانون پایه‌ی JS الگوی رایج `export const X = {...}; export type X = ...`
+      // (همان چیزی که خودِ Prisma برای enumهایش تولید می‌کند) را redeclare
+      // اشتباه می‌گیرد، چون namespace جدای type/value تایپ‌اسکریپت را
+      // نمی‌شناسد. نسخه‌ی TS-aware هم به‌صورت پیش‌فرض این الگو را رد می‌کند —
+      // `ignoreDeclarationMerge` باید صریح فعال شود تا const+type هم‌نام را
+      // بشناسد.
+      "no-redeclare": "off",
+      "@typescript-eslint/no-redeclare": ["error", { ignoreDeclarationMerge: true }],
     },
   },
   {

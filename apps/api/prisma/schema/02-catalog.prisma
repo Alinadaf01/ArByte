@@ -131,31 +131,36 @@ model Product {
 /// الحاقیه‌ی T-003، بخش ۱ — هر Product حداقل یک Variant دارد (محصول بدون
 /// پیکربندی = یک واریانت پیش‌فرض، تا کد شاخه‌ی «دارد/ندارد» نداشته باشد).
 model ProductVariant {
-  id                  String      @id @default(cuid())
-  productId           String
-  sku                 String
+  id                       String      @id @default(cuid())
+  productId                String
+  sku                      String
   /// نام قابل‌نمایش پیکربندی، مثلاً «۶۴GB · ۲TB» — دقیقاً همین رشته در
   /// OrderItem اسنپ‌شات می‌شود (الحاقیه، بند ۱، هشدار).
-  name                String?
-  isDefault           Boolean     @default(false)
-  priceModel          PriceModel  @default(FIXED)
-  supplierPrice       BigInt?
-  profitType          ProfitType?
-  /// دوگانه: تومان (AMOUNT) یا درصد (PERCENT) — به همین دلیل Decimal است نه
-  /// BigInt؛ Decimal روی Postgres NUMERIC دقیق است (بدون خطای float)، پس
-  /// قاعده‌ی #۷ («هرگز float») نقض نمی‌شود، فقط این یک فیلد لزوماً BigInt
-  /// نیست چون معنای دوگانه دارد. توضیح کامل در docs/data-model.md.
-  profitValue         Decimal?    @db.Decimal(12, 2)
+  name                     String?
+  isDefault                Boolean     @default(false)
+  priceModel               PriceModel  @default(FIXED)
+  supplierPrice            BigInt?
+  profitType               ProfitType?
+  /// تصمیم T-003-DECISION: یک ستون دوگانه (Decimal که معنایش به profitType
+  /// وابسته بود) قبلاً همین‌جا بود — مشکل واقعی‌اش دقت‌نداشتن Decimal نبود،
+  /// این بود که معنا به ستون دیگری وابسته بود و هیچ CHECK معناداری
+  /// نمی‌شد رویش گذاشت. حالا دو ستون تک‌معنا + CHECK (در migration) —
+  /// دقیقاً یکی از این دو (یا هیچ‌کدام، اگر profitType هم null باشد) باید
+  /// ست باشد. واحد Toman است (نه Rial) — همان‌طور که در کل اسکیما استفاده
+  /// می‌شود، ر.ک. docs/data-model.md.
+  profitAmountToman        BigInt?
+  /// ۸٪ = 800 (بدون اعشار) — نه ٪ خام، تا هیچ ابهامی در دقت نباشد.
+  profitPercentBasisPoints Int?
   /// §۸.۴۰ — ذخیره‌شده، نه محاسبه‌ی لحظه‌ای (فید ترب + ایندکس جستجو).
-  finalPrice          BigInt
+  finalPrice               BigInt
   /// §۷.۱۰ «قیمت قبلی» — برای نمایش تخفیف خط‌خورده.
-  compareAtPrice      BigInt?
+  compareAtPrice           BigInt?
   /// §۱۱.۵۵/۱۲.۸۸ اقساط — فقط شکل داده، بدون منطق (الحاقیه بخش ۲).
-  installmentEligible Boolean     @default(false)
-  maxInstallments     Int?
-  deletedAt           DateTime?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  installmentEligible      Boolean     @default(false)
+  maxInstallments          Int?
+  deletedAt                DateTime?
+  createdAt                DateTime    @default(now())
+  updatedAt                DateTime    @updatedAt
 
   product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
   inventory             Inventory[]
@@ -221,6 +226,9 @@ model ProductSpecification {
   specificationDefinitionId String
   specificationValueId      String?
   customValue               String?
+  /// تک‌معناست (همیشه «عدد خام مشخصه»، نه دوگانه به یک ستون دیگر وابسته)،
+  /// پس طبق T-003-DECISION در استثنای Decimal می‌ماند — نیاز واقعی به
+  /// اعشار دارد (مثلاً اندازه‌ی صفحه‌نمایش ۱۶٫۱ اینچ).
   numericValue              Decimal? @db.Decimal(14, 4)
   productId                 String?
   variantId                 String?

@@ -12,9 +12,10 @@ model Coupon {
   id                    String     @id @default(cuid())
   code                  String     @unique
   type                  CouponType
-  /// دوگانه (درصد یا مبلغ) — همان دلیل Decimal-نه-BigInت که در
-  /// ProductVariant.profitValue توضیح داده شد.
-  value                 Decimal    @db.Decimal(12, 2)
+  /// تصمیم T-003-DECISION — همان الگوی PriceRule (type الزامی، پس CHECK
+  /// دو حالت دارد، نه سه).
+  amountToman           BigInt?
+  percentBasisPoints    Int?
   minimumOrderAmount    BigInt?
   maximumDiscountAmount BigInt?
   usageLimit            Int?

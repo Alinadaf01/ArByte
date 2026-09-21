@@ -52,14 +52,19 @@ model SupplierProduct {
 /// یک ردیف Global فعال باید وجود داشته باشد؛ این با seed تضمین می‌شود، نه
 /// یک Constraint دیتابیسی (قاعده‌ی کسب‌وکار سطح اپلیکیشن).
 model PriceRule {
-  id          String     @id @default(cuid())
-  supplierId  String?
-  categoryId  String?
-  profitType  ProfitType
-  profitValue Decimal    @db.Decimal(12, 2)
-  isActive    Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                       String     @id @default(cuid())
+  supplierId               String?
+  categoryId               String?
+  profitType               ProfitType
+  /// تصمیم T-003-DECISION — همان شکافِ ProductVariant.profitAmountToman/
+  /// profitPercentBasisPoints؛ profitType اینجا الزامی است، پس CHECK فقط
+  /// دو حالت دارد (نه سه — بدون حالت «هیچ‌کدام»، چون PriceRule بدون نوع
+  /// سود بی‌معناست).
+  profitAmountToman        BigInt?
+  profitPercentBasisPoints Int?
+  isActive                 Boolean    @default(true)
+  createdAt                DateTime   @default(now())
+  updatedAt                DateTime   @updatedAt
 
   supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)

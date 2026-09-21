@@ -41,6 +41,20 @@ export const returnStatus = {
 
 export type ReturnStatusKey = keyof typeof returnStatus;
 
+/**
+ * وضعیت پرداخت — مستقل از وضعیت سفارش (§۷.۴۹، تصمیم ب در T-003:
+ * Order.status هرگز مستقیم از این مشتق نمی‌شود). دقیقاً با `PaymentStatus`
+ * در schema.prisma منطبق است.
+ */
+export const paymentStatus = {
+  unpaid: "در انتظار پرداخت",
+  receiptUploaded: "رسید ارسال شده",
+  underReview: "در حال بررسی",
+  confirmed: "تأیید شده",
+} as const;
+
+export type PaymentStatusKey = keyof typeof paymentStatus;
+
 export const orderConfirmation = {
   title: "سفارش شما با موفقیت ثبت شد.",
   orderCodeLabel: "کد سفارش:",
