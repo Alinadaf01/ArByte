@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AdminShell } from "@/components/layout/AdminShell";
 import { estedad } from "@/lib/fonts";
 import "./globals.css";
 
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           crossOrigin="anonymous"
         />
       </head>
-      <body>{children}</body>
+      <body className="bg-paper text-primary">
+        <AdminShell>{children}</AdminShell>
+      </body>
     </html>
   );
 }

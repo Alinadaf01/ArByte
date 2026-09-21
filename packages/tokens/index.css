@@ -51,6 +51,9 @@
   --palette-warn-text: #b4530a;
   /* رزرو — apps/web مصرف نمی‌کند مگر جایی که طراحی صراحتاً بخواهد (ADR-004) */
   --palette-status-success: #16a34a;
+  /* روی #F6F4FC کنتراست --palette-status-success فقط ۳.۰۲ است — برای متن رد
+     می‌شود (نیاز AA متن عادی: ۴.۵). این مقدار برای متن است، ۴.۵۶ (T-100). */
+  --palette-status-success-text: #11813a;
   --palette-status-info: #2563eb;
 
   /* ---- روی پس‌زمینه‌ی تیره / صفحه‌ی ورود ---- */
@@ -70,6 +73,8 @@
   /* ============ رنگ ============ */
   --color-paper: var(--palette-paper);
   --color-surface: var(--palette-surface);
+  /* سطح خنثی برای تفکیک ملایم (نه بردر، نه کارت سفید) — بند ۷ ADR-004، پنل ادمین */
+  --color-surface-muted: var(--palette-line-3);
   --color-surface-dark: var(--palette-ink);
   --color-login-canvas: var(--palette-login-canvas);
 
@@ -103,8 +108,11 @@
   --color-danger-border: var(--palette-danger-border);
   --color-danger-tint: var(--palette-danger-tint);
   --color-warning: var(--palette-warn-text);
-  /* رزرو — ر.ک. ADR-004، بخش «سؤال باز» */
+  /* رزرو — ر.ک. ADR-004، بخش «سؤال باز». --color-success برای پس‌زمینه/آیکون/
+     حاشیه (آستانه ۳:۱ کافی است)؛ برای متن حتماً --color-success-text
+     (کنتراست ۴.۵۶، AA برای متن عادی) — T-100. */
   --color-success: var(--palette-status-success);
+  --color-success-text: var(--palette-status-success-text);
   --color-info: var(--palette-status-info);
 
   --color-focus-ring: var(--palette-violet);

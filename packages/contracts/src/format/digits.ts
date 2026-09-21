@@ -10,8 +10,12 @@ const PERSIAN_DIGITS = [
   "۸",
   "۹",
 ] as const;
-const LATIN_TO_PERSIAN = new Map(PERSIAN_DIGITS.map((d, i) => [String(i), d]));
-const PERSIAN_TO_LATIN = new Map(PERSIAN_DIGITS.map((d, i) => [d, String(i)]));
+const LATIN_TO_PERSIAN = new Map<string, string>(
+  PERSIAN_DIGITS.map((d, i) => [String(i), d]),
+);
+const PERSIAN_TO_LATIN = new Map<string, string>(
+  PERSIAN_DIGITS.map((d, i) => [d, String(i)]),
+);
 
 /**
  * ارقام لاتین را به فارسی تبدیل می‌کند — فقط برای لایه‌ی نمایش (قاعده‌ی

@@ -15,7 +15,7 @@
 
 از آن به بعد کلاس‌های Tailwind زیر خودکار در دسترس‌اند (نمونه، نه لیست کامل):
 
-- رنگ: `bg-paper`, `bg-surface`, `text-primary`, `text-secondary`, `border-border`, `bg-brand`, `text-brand-active`, `bg-brand-tint-1`, `text-accent`, `text-danger`, `text-warning`
+- رنگ: `bg-paper`, `bg-surface`, `bg-surface-muted`, `text-primary`, `text-secondary`, `border-border`, `bg-brand`, `text-brand-active`, `bg-brand-tint-1`, `text-accent`, `text-danger`, `text-warning`, `text-success-text` (متن)، `bg-success` (پس‌زمینه/آیکون، فقط ۳:۱)
 - شعاع: `rounded-card`, `rounded-card-lg`, `rounded-panel`, `rounded-chip`, `rounded-pill`, `rounded-icon-button`
 - سایه: `shadow-card`, `shadow-popover`, `shadow-drawer`, `shadow-sheet`, `shadow-bottom-nav`, `shadow-button-accent`
 - تایپوگرافی: `font-sans` (Estedad)، `text-hero`, `text-h2`, `text-subhead`, `text-card-title`, `text-body`, `text-caption`, `text-micro`, `text-input`
@@ -34,6 +34,6 @@
 
 ## چیزهایی که عمداً اینجا نیست
 
-- `--color-success` و `--color-info` تعریف شده‌اند اما در ۱۹ صفحه‌ی فروشگاه مصرف نمی‌شوند — رزرو برای پنل ادمین/Backend طبق بند ۴.۲۰ برند بوک (ر.ک. ADR-004، بخش «سؤال باز»).
+- `--color-success`/`--color-success-text` و `--color-info` در ۱۹ صفحه‌ی فروشگاه مصرف نمی‌شوند — برای پنل ادمین/Backend طبق بند ۴.۲۰ برند بوک (ر.ک. ADR-004). توجه: `--color-success` (`#16A34A`) فقط کنتراست ۳:۱ دارد — برای متن از `--color-success-text` (`#11813A`، کنتراست ۴.۵۶) استفاده کن.
 - انیمیشن‌های محیطی صفحه‌ی Login (`arbOrb1-3`, `arbMesh`, `arbRing`, `arbHalo`, `arbDraw`) اینجا نیستند — مخصوص همان یک صفحه‌اند، در `apps/web` محلی تعریف می‌شوند.
 - فرمت قیمت (`money()`) اینجا نیست — منطق است نه توکن؛ در `packages/contracts/src/format/` است. توجه: نمونه‌ی طراحی از `٫` (U+066B) به‌جای `٬` (U+066C) به‌عنوان جداکننده‌ی هزارگان استفاده کرده — این باگ در فرمتر واقعی تکرار نمی‌شود (ر.ک. ADR-004).
