@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>پنل مدیریت</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body class="min-h-screen overflow-x-hidden pb-safe">
+    <div class="ambient" aria-hidden="true">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="app-layout relative z-10 mx-auto min-h-screen w-full max-w-[1600px] pt-4 sm:pt-6 lg:px-6 lg:pb-6 lg:pt-12">
+    <aside id="sidebar" class="sidebar-drawer sidebar-panel lg:self-start" aria-label="منو">
+        <div class="sidebar-head relative z-[1] mb-5 flex items-center justify-between gap-3 sm:mb-6">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="logo-box shrink-0" id="icon-logo"></div>
+            <div class="min-w-0">
+              <p class="truncate text-[15px] font-bold text-ink sm:text-base">پنل مدیریت</p>
+              <p class="text-[11px] text-ink-faint">نسخه لایت</p>
+            </div>
+          </div>
+          <button id="close-btn" type="button" class="btn-ghost shrink-0 lg:hidden" aria-label="بستن"><span id="icon-close"></span></button>
+        </div>
+
+        <p class="relative z-[1] mb-2 px-2 text-[10px] font-semibold text-ink-faint">منوی اصلی</p>
+        <nav class="relative z-[1] flex flex-col gap-1">
+          <a href="#" data-nav="dashboard" class="nav-link nav-link-active">
+            <span class="nav-pill" aria-hidden="true"></span>
+            <span class="nav-ico"><span data-icon="dashboard" data-icon-size="md"></span></span>
+            <span>داشبورد</span>
+          </a>
+          <a href="#" data-nav="users" class="nav-link">
+            <span class="nav-ico"><span data-icon="users" data-icon-size="md"></span></span>
+            <span>کاربران</span>
+          </a>
+          <a href="#" data-nav="transactions" class="nav-link">
+            <span class="nav-ico"><span data-icon="transactions" data-icon-size="md"></span></span>
+            <span>تراکنش‌ها</span>
+          </a>
+          <a href="#" data-nav="analytics" class="nav-link">
+            <span class="nav-ico"><span data-icon="analytics" data-icon-size="md"></span></span>
+            <span>تحلیل‌ها</span>
+          </a>
+          <a href="#" data-nav="settings" class="nav-link">
+            <span class="nav-ico"><span data-icon="settings" data-icon-size="md"></span></span>
+            <span>تنظیمات</span>
+          </a>
+        </nav>
+
+        <div class="status-box relative z-[1]">
+          <div class="flex items-center gap-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-soft" id="icon-server"></div>
+            <div class="min-w-0">
+              <p class="text-[11px] text-emerald-700/70">وضعیت سرور</p>
+              <p class="text-[13px] font-bold text-emerald-700">آنلاین ۹۹.۹٪</p>
+            </div>
+          </div>
+        </div>
+    </aside>
+
+      <div class="main-column flex min-w-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-5 lg:p-6">
+        <header class="header-bar enter-header">
+          <div class="header-inner relative z-[1] flex w-full flex-wrap items-center gap-2 sm:gap-3">
+            <button id="menu-btn" type="button" class="btn-ghost shrink-0 lg:hidden" aria-expanded="false" aria-controls="sidebar">
+              <span id="icon-menu"></span>
+            </button>
+            <div class="min-w-0 flex-1">
+              <h1 class="truncate text-lg font-bold text-ink sm:text-xl" data-page-title>داشبورد</h1>
+              <p class="truncate text-[11px] text-ink-faint sm:text-[12px]" data-page-subtitle>خوش آمدید، مدیر سیستم</p>
+            </div>
+
+            <div class="header-btns flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <div class="dropdown-wrap search-dropdown-wrap">
+                <button type="button" id="btn-search" class="btn-ghost shrink-0" aria-label="جستجو" aria-expanded="false" aria-controls="search-panel">
+                  <span data-icon="search" data-icon-size="sm"></span>
+                </button>
+                <div id="search-panel" class="search-panel hidden" role="search">
+                  <label class="search-panel-field" for="search-input">
+                    <span class="search-panel-ico" data-icon="search" data-icon-size="sm" aria-hidden="true"></span>
+                    <input id="search-input" type="search" class="search-panel-input" placeholder="جستجو در صفحه..." autocomplete="off" />
+                    <button type="button" id="btn-search-clear" class="search-panel-clear hidden" aria-label="پاک کردن">
+                      <span data-icon="close" data-icon-size="xs"></span>
+                    </button>
+                  </label>
+                  <p class="search-panel-hint">کاربران، تراکنش‌ها و کارت‌ها</p>
+                </div>
+              </div>
+              <button type="button" id="btn-new-tx" class="btn-fill btn-new-tx shrink-0">
+                <span data-icon="plus" data-icon-size="sm"></span>
+                <span class="btn-label">تراکنش جدید</span>
+              </button>
+              <div class="dropdown-wrap">
+                <button type="button" id="btn-notify" class="btn-ghost shrink-0" aria-label="اعلان" aria-expanded="false">
+                  <span id="icon-bell"></span>
+                  <span class="notify-badge" id="notify-count">۳</span>
+                </button>
+                <div id="dropdown-notify" class="dropdown-panel dropdown-panel--notify hidden" role="menu"></div>
+              </div>
+              <div class="dropdown-wrap">
+                <button type="button" id="btn-profile" class="profile-btn shrink-0" aria-expanded="false">
+                  <div class="profile-text hidden text-end xs:block sm:block">
+                    <p class="max-w-[100px] truncate text-[13px] font-semibold text-ink sm:max-w-none">علی محمدی</p>
+                    <p class="text-[11px] text-ink-faint">مدیر ارشد</p>
+                  </div>
+                  <div class="avatar">ع</div>
+                </button>
+                <div id="dropdown-profile" class="dropdown-panel hidden" role="menu"></div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main id="page-root" class="page-root flex min-w-0 flex-1 flex-col gap-3 sm:gap-4 lg:gap-5"></main>
+      </div>
+    </div>
+
+    <button type="button" id="fab-new-tx" class="fab lg:hidden" aria-label="تراکنش جدید">
+      <span data-icon="plus" data-icon-size="md"></span>
+    </button>
+
+    <div id="modal-backdrop" class="modal-backdrop hidden" aria-hidden="true">
+      <div id="modal-tx" class="modal hidden" role="dialog" aria-labelledby="modal-tx-title" aria-modal="true">
+        <div class="modal-head">
+          <h2 id="modal-tx-title" class="text-lg font-bold text-ink">تراکنش جدید</h2>
+          <button type="button" id="modal-close" class="btn-ghost" aria-label="بستن"><span data-icon="close" data-icon-size="sm"></span></button>
+        </div>
+        <form id="form-tx" class="modal-body space-y-3">
+          <label class="block"><span class="mb-1 block text-[12px] text-ink-faint">نام کاربر</span><input class="input-field" name="user" required placeholder="مثلاً سارا احمدی" /></label>
+          <label class="block"><span class="mb-1 block text-[12px] text-ink-faint">مبلغ (تومان)</span><input class="input-field" name="amount" type="number" required placeholder="1000000" dir="ltr" inputmode="numeric" /></label>
+          <label class="block"><span class="mb-1 block text-[12px] text-ink-faint">وضعیت</span>
+            <select class="input-field" name="status"><option value="success">موفق</option><option value="pending">در انتظار</option><option value="failed">ناموفق</option></select>
+          </label>
+          <button type="submit" class="btn-fill w-full justify-center">ثبت تراکنش</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
