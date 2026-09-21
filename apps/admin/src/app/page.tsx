@@ -2,6 +2,7 @@
 
 import { Eye, Percent, ShoppingBag, Users, Wallet } from "lucide-react";
 import { formatMoney, toPersianDigits } from "@arbyte/contracts";
+import { formatDateFa } from "@arbyte/contracts/date";
 import { usePageSearch } from "@/components/layout/SearchContext";
 import { KpiTile } from "@/components/kpi/KpiTile";
 import {
@@ -131,8 +132,10 @@ const ORDER_COLUMNS: DataTableColumn<DemoOrder>[] = [
   {
     key: "date",
     header: dictionary.table.columns.date,
-    sortValue: (row) => row.dateLabel,
-    render: (row) => <span className="text-caption">{row.dateLabel}</span>,
+    sortValue: (row) => row.date.getTime(),
+    render: (row) => (
+      <span className="text-caption">{formatDateFa(row.date)}</span>
+    ),
   },
   {
     key: "status",

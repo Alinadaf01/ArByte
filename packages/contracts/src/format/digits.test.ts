@@ -25,4 +25,12 @@ describe("toLatinDigits", () => {
     const original = "09123456789";
     expect(toLatinDigits(toPersianDigits(original))).toBe(original);
   });
+
+  it("converts Arabic-Indic digits (U+0660-0669) as well as Persian", () => {
+    expect(toLatinDigits("٠١٢٣٤٥٦٧٨٩")).toBe("0123456789");
+  });
+
+  it("handles a mix of Persian and Arabic digits in the same string", () => {
+    expect(toLatinDigits("۰۹١٢٣۴۵۶٧٨٩")).toBe("09123456789");
+  });
 });

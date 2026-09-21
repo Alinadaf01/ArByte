@@ -58,7 +58,7 @@ export default function SettingsPage() {
             </span>
             <input
               type="text"
-              defaultValue="علی محمدی"
+              defaultValue={dictionary.header.profileName}
               className="border-border focus:border-brand focus:ring-brand/15 w-full rounded-tile border bg-transparent px-4 py-2.5 text-body outline-none transition-colors duration-200 focus:ring-4"
             />
           </label>

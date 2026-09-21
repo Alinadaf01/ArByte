@@ -1,3 +1,4 @@
+import { errorMessages } from "@arbyte/contracts";
 import {
   ArgumentsHost,
   Catch,
@@ -50,8 +51,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     this.logger.error(exception instanceof Error ? exception.stack : exception);
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       code: "INTERNAL_ERROR",
-      message:
-        "خطای غیرمنتظره‌ای رخ داد. تیم فنی مطلع شد؛ لطفاً کمی بعد دوباره تلاش کن.",
+      message: errorMessages.unexpectedServerError,
       requestId,
     });
   }
@@ -70,11 +70,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const b = body as StructuredErrorBody;
       return {
         code: b.code ?? fallbackCode,
-        message: b.message ?? "خطایی رخ داد.",
+        message: b.message ?? errorMessages.generic,
         ...(b.fieldErrors ? { fieldErrors: b.fieldErrors } : {}),
       };
     }
 
-    return { code: fallbackCode, message: "خطایی رخ داد." };
+    return { code: fallbackCode, message: errorMessages.generic };
   }
 }

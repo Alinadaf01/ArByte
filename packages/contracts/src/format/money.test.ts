@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, THOUSANDS_SEPARATOR } from "./money";
+import { formatMoney, formatPrice, THOUSANDS_SEPARATOR } from "./money";
 
 describe("THOUSANDS_SEPARATOR", () => {
   it("is the Arabic thousands separator U+066C, not the decimal separator U+066B", () => {
@@ -32,5 +32,18 @@ describe("formatMoney", () => {
 
   it("never contains the wrong (decimal) separator U+066B", () => {
     expect(formatMoney(289_500_000n)).not.toContain("٫");
+  });
+});
+
+describe("formatPrice (T-005 acceptance criterion alias)", () => {
+  it("is the same function as formatMoney", () => {
+    expect(formatPrice).toBe(formatMoney);
+  });
+
+  it("matches the T-005 example value using the correct U+066C separator", () => {
+    // متن T-005 این مقدار را با «,» لاتین نوشته؛ طبق ADR-004 جداکننده‌ی
+    // درست «٬» (U+066C) است — همان استدلالی که باگ money() طراحی را هم
+    // اصلاح کرد.
+    expect(formatPrice(79_900_000n)).toBe("۷۹٬۹۰۰٬۰۰۰ تومان");
   });
 });

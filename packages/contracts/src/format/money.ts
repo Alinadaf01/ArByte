@@ -10,7 +10,7 @@ import { toPersianDigits } from "./digits";
  */
 export const THOUSANDS_SEPARATOR = "٬";
 
-function groupThousands(digits: string): string {
+export function groupThousands(digits: string): string {
   const negative = digits.startsWith("-");
   const absDigits = negative ? digits.slice(1) : digits;
 
@@ -36,3 +36,11 @@ export function formatMoney(
   const withDigits = toPersianDigits(grouped);
   return suffix ? `${withDigits} ${suffix}` : withDigits;
 }
+
+/**
+ * نام مستعار formatMoney — T-005 آن را با این نام در معیار پذیرش خواسته.
+ * مثال متن T-005 («۷۹,۹۰۰,۰۰۰ تومان») از ویرگول لاتین معمولی استفاده کرده،
+ * اما این همان محدودیت رونویسیِ فایل markdown است که در money() طراحی هم
+ * دیده شد (ر.ک. ADR-004) — جداکننده‌ی درست همچنان `٬` (U+066C) است، نه `,`.
+ */
+export const formatPrice = formatMoney;

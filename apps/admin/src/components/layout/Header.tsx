@@ -5,22 +5,9 @@ import { usePathname } from "next/navigation";
 import { Bell, Menu, Search, X } from "lucide-react";
 import { toPersianDigits } from "@arbyte/contracts";
 import { dictionary } from "@/lib/dictionary";
+import { DEMO_NOTIFICATIONS } from "@/lib/demo-data";
 import { getPageMeta } from "@/lib/page-meta";
 import { usePageSearch } from "./SearchContext";
-
-// داده‌ی نمایشی — معادل ردیف‌های واقعی که بعداً از API اعلان‌ها می‌آید، نه رشته‌ی رابط کاربری.
-const DEMO_NOTIFICATIONS = [
-  {
-    title: "سفارش جدید",
-    detail: "سفارش #ARB-14042738 ثبت شد",
-    time: "۲ دقیقه پیش",
-  },
-  {
-    title: "هشدار موجودی",
-    detail: "موجودی «MSI Titan 18 HX» کم شد",
-    time: "۱ ساعت پیش",
-  },
-];
 
 interface HeaderProps {
   onMenuClick: () => void;

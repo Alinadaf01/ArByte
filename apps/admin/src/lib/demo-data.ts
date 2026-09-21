@@ -9,9 +9,29 @@ export interface DemoOrder {
   customerName: string;
   customerInitial: string;
   amountToman: bigint;
-  dateLabel: string;
+  /** تاریخ میلادی خام — نمایش شمسی با formatDateFa در محل رندر انجام می‌شود. */
+  date: Date;
   status: "paid" | "pending" | "shipped" | "cancelled";
 }
+
+export interface DemoNotification {
+  title: string;
+  detail: string;
+  time: string;
+}
+
+export const DEMO_NOTIFICATIONS: DemoNotification[] = [
+  {
+    title: "سفارش جدید",
+    detail: "سفارش #ARB-14042738 ثبت شد",
+    time: "۲ دقیقه پیش",
+  },
+  {
+    title: "هشدار موجودی",
+    detail: "موجودی «MSI Titan 18 HX» کم شد",
+    time: "۱ ساعت پیش",
+  },
+];
 
 export const DEMO_ORDERS: DemoOrder[] = [
   {
@@ -20,7 +40,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "سارا احمدی",
     customerInitial: "س",
     amountToman: 2_450_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۵",
+    date: new Date(2025, 5, 5, 12, 0, 0),
     status: "paid",
   },
   {
@@ -29,7 +49,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "محمد رضایی",
     customerInitial: "م",
     amountToman: 890_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۵",
+    date: new Date(2025, 5, 5, 12, 0, 0),
     status: "pending",
   },
   {
@@ -38,7 +58,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "نیما کریمی",
     customerInitial: "ن",
     amountToman: 5_120_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۴",
+    date: new Date(2025, 5, 4, 12, 0, 0),
     status: "shipped",
   },
   {
@@ -47,7 +67,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "زهرا موسوی",
     customerInitial: "ز",
     amountToman: 1_200_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۴",
+    date: new Date(2025, 5, 4, 12, 0, 0),
     status: "cancelled",
   },
   {
@@ -56,7 +76,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "امیر حسینی",
     customerInitial: "ا",
     amountToman: 3_750_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۳",
+    date: new Date(2025, 5, 3, 12, 0, 0),
     status: "paid",
   },
   {
@@ -65,7 +85,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "فاطمه نوری",
     customerInitial: "ف",
     amountToman: 640_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۳",
+    date: new Date(2025, 5, 3, 12, 0, 0),
     status: "shipped",
   },
   {
@@ -74,7 +94,7 @@ export const DEMO_ORDERS: DemoOrder[] = [
     customerName: "رضا اکبری",
     customerInitial: "ر",
     amountToman: 12_300_000n,
-    dateLabel: "۱۴۰۴/۰۳/۱۲",
+    date: new Date(2025, 5, 2, 12, 0, 0),
     status: "paid",
   },
 ];
