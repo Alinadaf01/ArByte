@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "@arbyte/tokens";
 
+/* Tailwind v4 کلاس‌های استفاده‌شده در workspace packages را خودکار اسکن
+   نمی‌کند (شبیه .gitignore، node_modules نادیده گرفته می‌شود) — T-002،
+   packages/ui کلاس‌ها را با ابزار سمنتیک همین توکن‌ها می‌نویسد. */
+@source "../../../../packages/ui/src";
+
 body {
   font-family: var(--font-estedad), sans-serif;
 }

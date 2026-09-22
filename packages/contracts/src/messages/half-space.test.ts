@@ -3,6 +3,7 @@ import * as admin from "./admin";
 import * as auth from "./auth";
 import * as cart from "./cart";
 import * as common from "./common";
+import * as devShowcase from "./dev-showcase";
 import * as errors from "./errors";
 import * as order from "./order";
 import * as product from "./product";
@@ -15,6 +16,7 @@ const ALL_MESSAGE_MODULES = {
   auth,
   cart,
   common,
+  devShowcase,
   errors,
   order,
   product,
