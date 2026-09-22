@@ -1,0 +1,199 @@
+/**
+ * نقشه‌ی مجوزها — T-004 §۶ (بندهای ۱۱.۱۹، ۱۱.۸۶). هر endpoint دقیقاً یکی
+ * از این سه حالت را دارد (T-004 محدودیت‌ها، مورد آخر): `"public"` (بدون
+ * ورود)، `"authenticated"` (فقط ورود، بدون مجوز خاص)، یا کلید(های)
+ * Permission (بند ۸.۱۱ — `domain.action`). این جدول بعداً مبنای Guardهای
+ * واقعی می‌شود (T-004-next).
+ *
+ * `users.impersonate` (الحاقیه §۱۱) به‌صورت پیش‌فرض فقط روی نقش «مدیر
+ * ارشد» seed می‌شود (T-003 seed.ts) — یعنی حتی یک مجوز معتبر دیگر هم آن
+ * را جایگزین نمی‌کند مگر صریحاً به نقشی داده شود.
+ */
+
+export type EndpointAccess = "public" | "authenticated" | string | string[];
+
+export interface PermissionMapEntry {
+  method: "GET" | "POST" | "PATCH" | "DELETE";
+  path: string;
+  access: EndpointAccess;
+}
+
+export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
+  // ---------- auth ----------
+  { method: "POST", path: "/auth/otp/request", access: "public" },
+  { method: "POST", path: "/auth/otp/verify", access: "public" },
+  { method: "POST", path: "/auth/refresh", access: "public" },
+  { method: "POST", path: "/auth/logout", access: "authenticated" },
+  { method: "GET", path: "/auth/me", access: "authenticated" },
+  /** بلیت‌محور، نه مجوزمحور — ر.ک. auth/index.ts. */
+  { method: "POST", path: "/auth/impersonate/exchange", access: "public" },
+
+  // ---------- catalog (عمومی) ----------
+  { method: "GET", path: "/catalog/categories", access: "public" },
+  { method: "GET", path: "/catalog/categories/:slug", access: "public" },
+  { method: "GET", path: "/catalog/products", access: "public" },
+  { method: "GET", path: "/catalog/products/:slug", access: "public" },
+  { method: "GET", path: "/catalog/search", access: "public" },
+  { method: "GET", path: "/catalog/filters", access: "public" },
+
+  // ---------- cart ----------
+  { method: "GET", path: "/cart", access: "authenticated" },
+  { method: "POST", path: "/cart/items", access: "authenticated" },
+  { method: "PATCH", path: "/cart/items/:id", access: "authenticated" },
+  { method: "DELETE", path: "/cart/items/:id", access: "authenticated" },
+
+  // ---------- order ----------
+  /** الحاقیه §۶ — سشن جعل‌هویت این را رد می‌کند (orders.create مسدود است). */
+  { method: "POST", path: "/orders", access: "authenticated" },
+  { method: "GET", path: "/orders", access: "authenticated" },
+  { method: "GET", path: "/orders/:orderNumber", access: "authenticated" },
+  {
+    method: "POST",
+    path: "/orders/:orderNumber/receipt",
+    access: "authenticated",
+  },
+  {
+    method: "POST",
+    path: "/orders/:orderNumber/payment/initiate",
+    access: "authenticated",
+  },
+
+  // ---------- payment (درگاه) ----------
+  /** وب‌هوک درگاه — بدون کاربر، اما باید با امضا/HMAC تأیید شود (منطق سرویس). */
+  { method: "POST", path: "/payments/callback/:provider", access: "public" },
+  { method: "GET", path: "/payments/return/:provider", access: "public" },
+
+  // ---------- account ----------
+  { method: "GET", path: "/account/profile", access: "authenticated" },
+  { method: "PATCH", path: "/account/profile", access: "authenticated" },
+  { method: "GET", path: "/account/addresses", access: "authenticated" },
+  { method: "POST", path: "/account/addresses", access: "authenticated" },
+  { method: "PATCH", path: "/account/addresses/:id", access: "authenticated" },
+  { method: "DELETE", path: "/account/addresses/:id", access: "authenticated" },
+  { method: "GET", path: "/account/wishlist", access: "authenticated" },
+  { method: "POST", path: "/account/wishlist", access: "authenticated" },
+  { method: "DELETE", path: "/account/wishlist/:id", access: "authenticated" },
+
+  // ---------- content (عمومی) ----------
+  { method: "GET", path: "/content/homepage", access: "public" },
+
+  // ---------- admin: محصولات/برندها/دسته‌بندی/مشخصات ----------
+  { method: "GET", path: "/admin/products", access: "products.view" },
+  { method: "POST", path: "/admin/products", access: "products.create" },
+  { method: "GET", path: "/admin/products/:id", access: "products.view" },
+  { method: "PATCH", path: "/admin/products/:id", access: "products.update" },
+  { method: "DELETE", path: "/admin/products/:id", access: "products.delete" },
+
+  { method: "GET", path: "/admin/brands", access: "brands.view" },
+  { method: "POST", path: "/admin/brands", access: "brands.create" },
+  { method: "PATCH", path: "/admin/brands/:id", access: "brands.update" },
+  { method: "DELETE", path: "/admin/brands/:id", access: "brands.delete" },
+
+  { method: "GET", path: "/admin/categories", access: "categories.view" },
+  { method: "POST", path: "/admin/categories", access: "categories.create" },
+  {
+    method: "PATCH",
+    path: "/admin/categories/:id",
+    access: "categories.update",
+  },
+  {
+    method: "DELETE",
+    path: "/admin/categories/:id",
+    access: "categories.delete",
+  },
+
+  {
+    method: "GET",
+    path: "/admin/specifications",
+    access: "specifications.view",
+  },
+  {
+    method: "POST",
+    path: "/admin/specifications",
+    access: "specifications.create",
+  },
+  {
+    method: "PATCH",
+    path: "/admin/specifications/:id",
+    access: "specifications.update",
+  },
+  {
+    method: "DELETE",
+    path: "/admin/specifications/:id",
+    access: "specifications.delete",
+  },
+
+  // ---------- admin: موجودی ----------
+  { method: "GET", path: "/admin/inventory", access: "inventory.view" },
+  {
+    method: "POST",
+    path: "/admin/inventory/:variantId/adjust",
+    access: "inventory.update",
+  },
+
+  // ---------- admin: سفارش‌ها ----------
+  { method: "GET", path: "/admin/orders", access: "orders.view" },
+  { method: "GET", path: "/admin/orders/:orderNumber", access: "orders.view" },
+  {
+    method: "GET",
+    path: "/admin/orders/:orderNumber/history",
+    access: "orders.view",
+  },
+  /** transitionTo (order-status.service.ts) پشت این Guard صدا زده می‌شود. */
+  {
+    method: "PATCH",
+    path: "/admin/orders/:orderNumber/status",
+    access: "orders.update",
+  },
+
+  // ---------- admin: پرداخت‌ها ----------
+  { method: "GET", path: "/admin/payments", access: "payments.view" },
+  { method: "GET", path: "/admin/payments/receipts", access: "payments.view" },
+  {
+    method: "PATCH",
+    path: "/admin/payments/receipts/:id",
+    access: "payments.update",
+  },
+
+  // ---------- admin: کاربران و نقش‌ها ----------
+  { method: "GET", path: "/admin/users", access: "users.view" },
+  { method: "POST", path: "/admin/users", access: "users.create" },
+  { method: "PATCH", path: "/admin/users/:id", access: "users.update" },
+  /** الحاقیه §۱۱ — پیش‌فرض فقط سوپرادمین (seed). */
+  {
+    method: "POST",
+    path: "/admin/users/:id/impersonate",
+    access: "users.impersonate",
+  },
+
+  { method: "GET", path: "/admin/roles", access: "roles.view" },
+  { method: "POST", path: "/admin/roles", access: "roles.create" },
+  { method: "PATCH", path: "/admin/roles/:id", access: "roles.update" },
+  { method: "DELETE", path: "/admin/roles/:id", access: "roles.delete" },
+
+  // ---------- admin: تنظیمات ----------
+  { method: "GET", path: "/admin/settings", access: "settings.view" },
+  { method: "PATCH", path: "/admin/settings/:key", access: "settings.update" },
+
+  // ---------- admin: Audit Log (فقط خواندنی — تریگر DB نوشتن را مسدود می‌کند) ----------
+  { method: "GET", path: "/admin/audit-log", access: "logs.view" },
+
+  // ---------- admin: صفحه‌ی اصلی (سند مقایسه‌ی وایب‌شاپ + الحاقیه §۸) ----------
+  { method: "GET", path: "/admin/homepage/blocks", access: "content.view" },
+  { method: "POST", path: "/admin/homepage/blocks", access: "content.create" },
+  {
+    method: "PATCH",
+    path: "/admin/homepage/blocks/:id",
+    access: "content.update",
+  },
+  {
+    method: "PATCH",
+    path: "/admin/homepage/blocks/reorder",
+    access: "content.update",
+  },
+  {
+    method: "DELETE",
+    path: "/admin/homepage/blocks/:id",
+    access: "content.delete",
+  },
+] as const;

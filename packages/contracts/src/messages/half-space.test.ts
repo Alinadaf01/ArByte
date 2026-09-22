@@ -6,6 +6,7 @@ import * as common from "./common";
 import * as errors from "./errors";
 import * as order from "./order";
 import * as product from "./product";
+import { ERROR_MESSAGES } from "../common/error-codes";
 import { collectStrings } from "./collect-strings";
 import { findHalfSpaceIssues } from "./half-space";
 
@@ -17,6 +18,7 @@ const ALL_MESSAGE_MODULES = {
   errors,
   order,
   product,
+  apiErrorMessages: { ERROR_MESSAGES },
 };
 
 describe("half-space (نیم‌فاصله)", () => {

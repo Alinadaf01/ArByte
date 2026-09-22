@@ -6,9 +6,15 @@ import * as common from "./common";
 import * as errors from "./errors";
 import * as order from "./order";
 import * as product from "./product";
+import { ERROR_MESSAGES } from "../common/error-codes";
 import { collectStrings } from "./collect-strings";
 import { findForbiddenWords } from "./forbidden-words";
 
+// توجه: فقط ERROR_MESSAGES (Record<string,string> ساده) اسکن می‌شود، نه کل
+// ماژول common/error-codes — آن ماژول اسکیمای Zod هم صادر می‌کند
+// (ErrorCodeSchema/ApiErrorSchema) که یک instance کلاس است، نه داده‌ی ساده؛
+// عبورش از collectStrings (که Object.values بازگشتی می‌زند) بی‌فایده و
+// پرخطر است (ساختار داخلی Zod، نه متن برند).
 const ALL_MESSAGE_MODULES = {
   admin,
   auth,
@@ -17,6 +23,7 @@ const ALL_MESSAGE_MODULES = {
   errors,
   order,
   product,
+  apiErrorMessages: { ERROR_MESSAGES },
 };
 
 describe("forbidden words", () => {

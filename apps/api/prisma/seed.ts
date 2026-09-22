@@ -36,6 +36,8 @@ const PERMISSION_DOMAINS: Record<string, readonly string[]> = {
   settings: ["view", "update"],
   notifications: ["view"],
   logs: ["view"],
+  /** صفحه‌ی اصلی (HomepageBlock) — سند مقایسه‌ی وایب‌شاپ + الحاقیه T-004 §۸. */
+  content: ["view", "create", "update", "delete"],
 };
 
 async function seedPermissionsAndSuperAdminRole() {
