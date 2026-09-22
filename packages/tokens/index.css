@@ -169,6 +169,20 @@
   --shadow-bottom-nav: 0 -6px 24px rgba(23, 21, 31, 0.06);
   --shadow-button-accent: 0 10px 34px rgba(108, 77, 255, 0.34);
 
+  /* ============ Decorative radial glows — بخش‌های تیره (Footer، About) ============ */
+  /* T-200: یک alpha ثابت برای هر رنگ (طراحی بین ۰.۳۲ تا ۰.۳۶ نوسان دارد؛
+     تفاوت با چشم قابل‌تشخیص نیست) — تا رنگ خام در کامپوننت تکرار نشود. */
+  --background-image-glow-violet: radial-gradient(
+    circle,
+    rgba(108, 77, 255, 0.34),
+    rgba(23, 21, 31, 0) 68%
+  );
+  --background-image-glow-cyan: radial-gradient(
+    circle,
+    rgba(34, 211, 238, 0.16),
+    rgba(23, 21, 31, 0) 68%
+  );
+
   /* ============ Easing / Duration ============ */
   --ease-standard: cubic-bezier(0.3, 1, 0.4, 1);
   --duration-press: 160ms;

@@ -10,6 +10,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { CategoryModule } from "./modules/category/category.module";
 import { BrandModule } from "./modules/brand/brand.module";
 import { SpecificationModule } from "./modules/specification/specification.module";
+import { CatalogModule } from "./modules/catalog/catalog.module";
 
 @Module({
   imports: [
@@ -26,6 +27,8 @@ import { SpecificationModule } from "./modules/specification/specification.modul
     CategoryModule,
     BrandModule,
     SpecificationModule,
+    // T-200 — اولین ماژول عمومی (بدون PermissionGuard)، مصرف‌شده توسط apps/web.
+    CatalogModule,
     // بقیه‌ی ماژول‌های کسب‌وکاری (Product, Order, ...) در تسک‌های بعدی فاز ۱.
   ],
 })
