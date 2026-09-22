@@ -9,7 +9,7 @@
 01-access.prisma      کاربر، آدرس، نقش، مجوز، OTP، Session
 02-catalog.prisma     دسته‌بندی، برند، محصول، Variant، مشخصات
 03-pricing.prisma     تأمین‌کننده، قانون سود، تاریخچه‌ی قیمت
-04-inventory.prisma   انبار، موجودی، تراکنش موجودی
+04-inventory.prisma   موجودی، تراکنش موجودی
 05-order.prisma       سبد، سفارش، پرداخت، ارسال، مرجوعی
 06-marketing.prisma   کوپن، کمپین، HomepageBlock
 07-content.prisma     نظر، علاقه‌مندی، پیام، بلاگ، SEO
@@ -155,15 +155,26 @@ PriceRule با هر دو null     → Global Default (دقیقاً یک ردیف
   `InventoryTransaction`، `CartItem`، `OrderItem`، `SupplierProduct`،
   `PriceHistory` همه روی `variantId`. `OrderItem.variantNameSnapshot` نام
   پیکربندی را در لحظه‌ی خرید اسنپ‌شات می‌کند.
-- **اقساط**: `ProductVariant.installmentEligible/maxInstallments` +
-  `Setting` کلیدهای `installments.*` — فقط شکل داده، بدون منطق محاسبه.
-- **انبار مکان‌دار**: `Warehouse` + `Inventory` روی کلید مرکب
-  `variantId+warehouseId`. برای لانچ یک `Warehouse` با `isDefault: true`
-  (seed می‌سازدش).
 - **انتزاع درگاه پرداخت**: `PaymentMethod`/`PaymentProvider` enum +
   `Payment.providerRef`/`providerPayload`. هیچ منطق بله‌پی نوشته نشده.
   ⚠️ اسکراب `providerPayload` از داده‌ی حساس (شماره کارت/CVV/توکن) پیش از
   ذخیره، مسئولیت لایه‌ی سرویس T-004 است.
+
+## حذف‌شده در T-149
+
+دو قابلیت الحاقیه‌ی T-003 که مدیر پروژه هیچ‌وقت درخواست نکرده بود، حذف شدند
+(هر دو از تفسیر بیش‌ازحد فایل‌های طراحی آمده بودند، نه از نیاز واقعی):
+
+- **روش پرداخت چندمرحله‌ای روی محصول** (دو فیلد روی `ProductVariant` + یک
+  دسته‌ی کلید در `Setting`) — آربایت این روش پرداخت را نمی‌فروشد. اگر در آینده
+  از درگاهی استفاده شود که خودش این را دارد، از سمت درگاه می‌آید، نه از مدل
+  داده‌ی ما.
+- **بُعد مکانی موجودی** (موجودیت مکان + `Inventory`/`InventoryTransaction` روی
+  کلید مرکب `variantId`+مکان) — در طراحی فقط یک برچسب متنی بود، نه نیاز واقعی.
+  `Inventory` حالا مستقیماً روی `variantId` است؛ `InventoryTransaction` (دفتر
+  کل موجودی) دست‌نخورده مانده.
+
+جزئیات کامل و تصمیم در `docs/design/storefront/DEVIATIONS.md`.
 
 ## فهرست وایب‌شاپ — اجرا شده
 
@@ -292,8 +303,7 @@ Idempotent (upsert/findFirst-then-create روی هر جا). می‌سازد:
 - ~۸۰ مجوز (الگوی `domain.action` طبق §۸.۱۱) + نقش «مدیر ارشد» با همه‌ی
   مجوزها.
 - سوپرادمین (`09120000000`) با نقش «مدیر ارشد».
-- `Setting`های اقساط + آستانه‌ی سراسری موجودی کم.
-- یک `Warehouse` پیش‌فرض («انبار تهران»).
+- آستانه‌ی سراسری موجودی کم (`Setting`).
 - یک `PriceRule` سراسری (۱۰٪ سود پیش‌فرض).
 - ۳ دسته‌بندی (لپ‌تاپ، لپ‌تاپ گیمینگ به‌عنوان زیردسته، کیبورد و موس)، ۳ برند
   (ASUS، Lenovo، Logitech)، ۵ محصول — یکی‌شان (ASUS ROG Strix G16) دو
@@ -309,7 +319,7 @@ Idempotent (upsert/findFirst-then-create روی هر جا). می‌سازد:
 -- خواندن نسخه‌ی فعلی، سپس:
 UPDATE "Inventory"
 SET "reservedQuantity" = "reservedQuantity" + $1, version = version + 1
-WHERE "variantId" = $2 AND "warehouseId" = $3 AND version = $4
+WHERE "variantId" = $2 AND version = $3
   AND "quantity" - "reservedQuantity" >= $1; -- کافی بودن موجودی
 -- اگر ۰ ردیف اثر گرفت: یا موجودی کافی نبود، یا رقیب زودتر برد → retry/fail
 ```

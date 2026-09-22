@@ -31,8 +31,6 @@ export const AdminProductVariantSchema = z.object({
   profitPercentBasisPoints: z.number().int().nonnegative().nullable(),
   finalPrice: MoneyAmountSchema,
   compareAtPrice: MoneyAmountSchema.nullable(),
-  installmentEligible: z.boolean(),
-  maxInstallments: z.number().int().positive().nullable(),
   deletedAt: z.string().datetime().nullable(),
 });
 export type AdminProductVariant = z.infer<typeof AdminProductVariantSchema>;

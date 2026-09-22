@@ -5,17 +5,11 @@ import {
 } from "../common/response";
 import { PaginationQuerySchema } from "../common/pagination";
 
-/**
- * الحاقیه §۹ — برای لانچ یک انبار پیش‌فرض، بدون UI انتخابگر؛ اما
- * `warehouseName` همیشه در پاسخ می‌آید (طراحی «موجود در انبار تهران» را
- * نشان می‌دهد). اندپوینت مدیریت خودِ انبار در این فاز لازم نیست.
- */
+/** T-149 — بدون بُعد مکان؛ موجودی مستقیماً روی variantId است. */
 export const AdminInventorySchema = z.object({
   variantId: z.string(),
   variantSku: z.string(),
   productName: z.string(),
-  warehouseId: z.string(),
-  warehouseName: z.string(),
   quantity: z.number().int().nonnegative(),
   reservedQuantity: z.number().int().nonnegative(),
   /** ستون محاسباتی دیتابیس (§۸.۳۱، T-003-DECISION) — همیشه خواندنی. */

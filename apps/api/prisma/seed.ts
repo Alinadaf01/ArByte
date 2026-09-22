@@ -105,17 +105,8 @@ async function seedSuperAdminUser(superAdminRoleId: string) {
 }
 
 async function seedSettings() {
-  // §الحاقیه بخش ۲ — اقساط: فیلدها الان، منطق بعداً. §سند مقایسه‌ی وایب‌شاپ
-  // ۲.۴ — آستانه‌ی سراسری موجودی کم (پیش‌فرض هر ردیف Inventory).
+  // §سند مقایسه‌ی وایب‌شاپ ۲.۴ — آستانه‌ی سراسری موجودی کم (پیش‌فرض هر ردیف Inventory).
   const entries: { key: string; value: unknown; category: string }[] = [
-    { key: "installments.enabled", value: false, category: "installments" },
-    { key: "installments.maxCount", value: 12, category: "installments" },
-    {
-      key: "installments.minAmount",
-      value: "50000000",
-      category: "installments",
-    },
-    { key: "installments.provider", value: null, category: "installments" },
     { key: "inventory.lowStockThreshold", value: 3, category: "inventory" },
   ];
 
@@ -132,16 +123,6 @@ async function seedSettings() {
       }),
     ),
   );
-}
-
-async function seedWarehouse() {
-  const existing = await prisma.warehouse.findFirst({
-    where: { isDefault: true },
-  });
-  if (existing) return existing;
-  return prisma.warehouse.create({
-    data: { name: "انبار تهران", city: "تهران", isDefault: true },
-  });
 }
 
 async function seedGlobalPriceRule() {
@@ -174,7 +155,7 @@ async function findOrCreateCategory(data: {
   return existing ?? prisma.category.create({ data });
 }
 
-async function seedCatalog(warehouseId: string) {
+async function seedCatalog() {
   const laptopCategory = await findOrCreateCategory({
     name: "لپ‌تاپ",
     slug: "laptop",
@@ -285,12 +266,9 @@ async function seedCatalog(warehouseId: string) {
         }));
 
       await prisma.inventory.upsert({
-        where: {
-          variantId_warehouseId: { variantId: variant.id, warehouseId },
-        },
+        where: { variantId: variant.id },
         create: {
           variantId: variant.id,
-          warehouseId,
           quantity: 10,
           reservedQuantity: 0,
         },
@@ -431,9 +409,8 @@ async function main() {
   const superAdminRole = await seedPermissionsAndSuperAdminRole();
   await seedSuperAdminUser(superAdminRole.id);
   await seedSettings();
-  const warehouse = await seedWarehouse();
   await seedGlobalPriceRule();
-  await seedCatalog(warehouse.id);
+  await seedCatalog();
 }
 
 main()

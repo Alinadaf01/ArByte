@@ -156,9 +156,6 @@ model ProductVariant {
   finalPrice               BigInt
   /// §۷.۱۰ «قیمت قبلی» — برای نمایش تخفیف خط‌خورده.
   compareAtPrice           BigInt?
-  /// §۱۱.۵۵/۱۲.۸۸ اقساط — فقط شکل داده، بدون منطق (الحاقیه بخش ۲).
-  installmentEligible      Boolean     @default(false)
-  maxInstallments          Int?
   deletedAt                DateTime?
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt

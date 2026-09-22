@@ -7,31 +7,23 @@ import { MoneyAmountSchema } from "../validators";
  * اختیاری با کامنت، چون تایپ‌اسکریپت خودش این قاعده را در زمان کامپایل
  * Enforce می‌کند — دقیقاً همان الگوی exhaustive-map که در T-003-DECISION
  * برای enum-labels استفاده شد.
+ *
+ * T-149: بدون نام مکان — مدل ما بدون بُعد مکانی برای موجودی است، فقط وضعیت.
  */
 export const AvailabilitySchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("IN_STOCK"), warehouseName: z.string() }),
+  z.object({ status: z.literal("IN_STOCK") }),
   z.object({
     status: z.literal("LOW_STOCK"),
     quantity: z.number().int().positive(),
-    warehouseName: z.string(),
   }),
-  z.object({ status: z.literal("OUT_OF_STOCK"), warehouseName: z.string() }),
-  z.object({ status: z.literal("PREORDER"), warehouseName: z.string() }),
+  z.object({ status: z.literal("OUT_OF_STOCK") }),
+  z.object({ status: z.literal("PREORDER") }),
 ]);
 export type Availability = z.infer<typeof AvailabilitySchema>;
 
 export const PriceSchema = z.object({
   final: MoneyAmountSchema,
   compareAt: MoneyAmountSchema.nullable(),
-});
-
-/**
- * الحاقیه §۱ — سرور حساب می‌کند؛ اگر اقساط خاموش است یا مبلغ زیر
- * minAmount است، این فیلد در پاسخ اصلاً نمی‌آید (نه null).
- */
-export const InstallmentSchema = z.object({
-  maxCount: z.number().int().positive(),
-  monthlyAmount: MoneyAmountSchema,
 });
 
 /** کدام مشخصات، پیکربندی‌ها را از هم جدا می‌کنند (§۸.۲۶ Custom Value هم ممکن است بین values باشد). */
@@ -53,7 +45,6 @@ export const PublicVariantSchema = z.object({
   axisValues: z.record(z.string(), z.string()),
   price: PriceSchema,
   availability: AvailabilitySchema,
-  installment: InstallmentSchema.optional(),
 });
 export type PublicVariant = z.infer<typeof PublicVariantSchema>;
 

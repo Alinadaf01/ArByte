@@ -79,15 +79,12 @@ erDiagram
     decimal profitValue
   }
 
-  %% ---------- موجودی و انبار ----------
-  Warehouse ||--o{ Inventory : "stocks"
-  ProductVariant ||--o{ Inventory : "stocked as"
+  %% ---------- موجودی ----------
+  ProductVariant ||--o| Inventory : "stocked as"
   ProductVariant ||--o{ InventoryTransaction : "kardex"
-  Warehouse ||--o{ InventoryTransaction : "at"
 
   Inventory {
     string variantId PK_FK
-    string warehouseId PK_FK
     int quantity
     int reservedQuantity
     int availableQuantity "GENERATED ALWAYS AS quantity-reservedQuantity"

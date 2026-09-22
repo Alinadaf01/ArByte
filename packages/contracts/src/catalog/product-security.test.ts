@@ -30,7 +30,7 @@ describe("PublicProductDetailSchema — هرگز فیلد حساس لو نمی�
         label: "",
         axisValues: {},
         price: { final: 289_500_000, compareAt: null },
-        availability: { status: "IN_STOCK", warehouseName: "انبار تهران" },
+        availability: { status: "IN_STOCK" },
         // ⚠️ فیلدهای ادمین که نباید سر از پاسخ عمومی دربیاورند:
         supplierPrice: 245_000_000,
         profitType: "PERCENT",

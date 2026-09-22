@@ -20,10 +20,4 @@ export const UpdateSettingBodySchema = z.object({
  * کلیدهای شناخته‌شده‌ی این فاز (T-003 seed) — برای مستندسازی/اعتبارسنجی
  * فرانت، نه یک enum بسته (کلید تنظیمات باز و رو به رشد است).
  */
-export const KNOWN_SETTING_KEYS = [
-  "installments.enabled",
-  "installments.maxCount",
-  "installments.minAmount",
-  "installments.provider",
-  "inventory.lowStockThreshold",
-] as const;
+export const KNOWN_SETTING_KEYS = ["inventory.lowStockThreshold"] as const;

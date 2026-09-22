@@ -140,13 +140,9 @@ describe("رزرو همزمان موجودی — Optimistic Locking (§۸.۸۳،
         finalPrice: 1_000_000n,
       },
     });
-    const warehouse = await prisma.warehouse.create({
-      data: { name: `Concurrency Warehouse ${randomUUID()}` },
-    });
     await prisma.inventory.create({
       data: {
         variantId: variant.id,
-        warehouseId: warehouse.id,
         quantity: 1,
         reservedQuantity: 0,
       },
@@ -155,20 +151,14 @@ describe("رزرو همزمان موجودی — Optimistic Locking (§۸.۸۳،
     // الگوی مستند در docs/data-model.md — CAS با version، رزرو ۱ عدد.
     async function tryReserve(): Promise<number> {
       const current = await prisma.inventory.findUniqueOrThrow({
-        where: {
-          variantId_warehouseId: {
-            variantId: variant.id,
-            warehouseId: warehouse.id,
-          },
-        },
+        where: { variantId: variant.id },
       });
       const affected = await prisma.$executeRawUnsafe(
         `UPDATE "Inventory"
          SET "reservedQuantity" = "reservedQuantity" + 1, version = version + 1
-         WHERE "variantId" = $1 AND "warehouseId" = $2 AND version = $3
+         WHERE "variantId" = $1 AND version = $2
            AND "quantity" - "reservedQuantity" >= 1`,
         variant.id,
-        warehouse.id,
         current.version,
       );
       return affected as number;
@@ -180,12 +170,7 @@ describe("رزرو همزمان موجودی — Optimistic Locking (§۸.۸۳،
     expect(successCount).toBe(1);
 
     const finalInventory = await prisma.inventory.findUniqueOrThrow({
-      where: {
-        variantId_warehouseId: {
-          variantId: variant.id,
-          warehouseId: warehouse.id,
-        },
-      },
+      where: { variantId: variant.id },
     });
     expect(finalInventory.reservedQuantity).toBe(1);
     expect(finalInventory.availableQuantity).toBe(0);

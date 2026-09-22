@@ -13,7 +13,7 @@ function makeVariant(
     label: Object.values(axisValues).join(" · "),
     axisValues,
     price: { final, compareAt: null },
-    availability: { status: "IN_STOCK", warehouseName: "انبار تهران" },
+    availability: { status: "IN_STOCK" },
   };
 }
 

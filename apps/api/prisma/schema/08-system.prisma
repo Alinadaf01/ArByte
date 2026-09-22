@@ -50,9 +50,9 @@ model Integration {
   updatedAt DateTime @updatedAt
 }
 
-/// §۸.۷۶ — Key-Value ساختارمند؛ گروه‌بندی با `category`. کلیدهای اقساط
-/// الحاقیه (installments.enabled/maxCount/minAmount/provider) و آستانه‌ی
-/// سراسری موجودی کم (سند مقایسه‌ی وایب‌شاپ) اینجا زندگی می‌کنند.
+/// §۸.۷۶ — Key-Value ساختارمند؛ گروه‌بندی با `category`. آستانه‌ی سراسری
+/// موجودی کم (سند مقایسه‌ی وایب‌شاپ) اینجا زندگی می‌کند. یک دسته‌ی کلید که
+/// اینجا بود در T-149 حذف شد — ر.ک. docs/design/storefront/DEVIATIONS.md.
 model Setting {
   key       String   @id
   value     Json

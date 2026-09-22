@@ -120,8 +120,7 @@ Profile، Address (CRUD + `isDefault`)، Wishlist (CRUD)
 `variants[]` است؛ هر وریانت `label`ی دارد که سمت سرور با `buildVariantLabel()`
 (`catalog/variant-label.ts`) از `variantAxes` ساخته می‌شود (نه ترتیب کلید
 آبجکت)، مثلاً `"۶۴GB · ۲TB"`. فیلد `quantity` فقط وقتی وضعیت `LOW_STOCK`
-است حاضر است؛ `installment` وقتی غیرفعال/زیر آستانه است اصلاً در پاسخ
-نیست (نه `null`).
+است حاضر است.
 
 **کارت محصول در فهرست/جست‌وجو.** `ProductCardSchema` طبق تصمیم الحاقیه:
 `defaultVariant` (یک وریانت، برای نمایش قیمت/موجودی) + `hasMultipleVariants`
