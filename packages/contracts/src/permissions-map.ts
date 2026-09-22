@@ -122,6 +122,22 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
     path: "/admin/specifications/:id",
     access: "specifications.delete",
   },
+  /** مدیریت مقادیر یک مشخصه بخشی از مدیریت خودِ مشخصه است — مجوز جدا ندارد (T-101). */
+  {
+    method: "POST",
+    path: "/admin/specifications/:id/values",
+    access: "specifications.update",
+  },
+  {
+    method: "PATCH",
+    path: "/admin/specifications/:id/values/:valueId",
+    access: "specifications.update",
+  },
+  {
+    method: "DELETE",
+    path: "/admin/specifications/:id/values/:valueId",
+    access: "specifications.update",
+  },
 
   // ---------- admin: موجودی ----------
   { method: "GET", path: "/admin/inventory", access: "inventory.view" },

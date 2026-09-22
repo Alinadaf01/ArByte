@@ -15,6 +15,11 @@ async function bootstrap() {
   // بند ۸.۹۴ / ۱۱.۶ — پیشوند سراسری Versioning.
   app.setGlobalPrefix("api/v1");
 
+  // فقط مبداهای اول‌شخص خودمان (apps/web، apps/admin) — نه یک allowlist باز.
+  app.enableCors({
+    origin: configService.get("CORS_ORIGINS", { infer: true }),
+  });
+
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(new AllExceptionsFilter());
 

@@ -109,8 +109,10 @@ model BlogPost {
   @@index([categoryId])
 }
 
-/// §۸.۶۸ — یک شکل مشترک، سه مالک ممکن (Category/Product/BlogPost)، دقیقاً
-/// یکی از سه FK ست است (هر سه @unique تا رابطه‌ی یک‌به‌یک باشد).
+/// §۸.۶۸ — یک شکل مشترک، چهار مالک ممکن (Category/Brand/Product/BlogPost)، دقیقاً
+/// یکی از چهار FK ست است (هر چهار @unique تا رابطه‌ی یک‌به‌یک باشد).
+/// brandId در T-101 اضافه شد — سند فاز ۱ برای Brand صریحاً «فیلدهای سئو»
+/// خواسته بود ولی این مدل تا این تسک آن را نداشت (شکاف واقعی، نه تصمیم).
 model SeoMetadata {
   id              String  @id @default(cuid())
   metaTitle       String?
@@ -121,10 +123,12 @@ model SeoMetadata {
   ogDescription   String?
   ogImage         String?
   categoryId      String? @unique
+  brandId         String? @unique
   productId       String? @unique
   blogPostId      String? @unique
 
   category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  brand    Brand?    @relation(fields: [brandId], references: [id], onDelete: Cascade)
   product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
   blogPost BlogPost? @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
 }

@@ -41,8 +41,11 @@ export class NoopOrderNotifier implements OrderNotifier {
  */
 @Injectable()
 export class OrderStatusService {
+  // Inject صریح روی prisma هم لازم شد (T-101) — esbuild (موتور tsx، سرویس
+  // اجرای واقعی apps/api) emitDecoratorMetadata را پیاده نمی‌کند؛ بدون
+  // توکن صریح این وابستگی در runtime واقعاً undefined می‌ماند.
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     @Optional()
     @Inject(ORDER_NOTIFIER)
     private readonly notifier: OrderNotifier = new NoopOrderNotifier(),

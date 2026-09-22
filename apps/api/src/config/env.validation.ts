@@ -64,6 +64,12 @@ export const envSchema = z.object({
     .superRefine(notAPlaceholder("KAVENEGAR_API_KEY")),
 
   FEATURE_FLAGS_SOURCE: z.enum(["memory", "database"]).default("memory"),
+
+  /** بند ۸ (بدون درخواست به دامنه‌ی خارجی) دربردارنده‌ی این نیست — این فقط مبداهای اول‌شخص خودمان (apps/web، apps/admin) هستند. */
+  CORS_ORIGINS: z
+    .string()
+    .default("http://localhost:3000,http://localhost:3001")
+    .transform((value) => value.split(",").map((origin) => origin.trim())),
 });
 
 export type Env = z.infer<typeof envSchema>;

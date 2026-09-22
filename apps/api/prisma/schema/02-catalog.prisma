@@ -75,6 +75,7 @@ model Brand {
   updatedAt   DateTime  @updatedAt
 
   products Product[]
+  seo      SeoMetadata?
 
   @@index([slug])
 }

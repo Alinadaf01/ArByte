@@ -16,6 +16,18 @@ const pageMetaByPath: Record<string, PageMeta> = {
     title: dictionary.settings.title,
     subtitle: dictionary.settings.subtitle,
   },
+  "/categories": {
+    title: dictionary.categories.title,
+    subtitle: dictionary.categories.subtitle,
+  },
+  "/brands": {
+    title: dictionary.brands.title,
+    subtitle: dictionary.brands.subtitle,
+  },
+  "/specifications": {
+    title: dictionary.specifications.title,
+    subtitle: dictionary.specifications.subtitle,
+  },
 };
 
 export function getPageMeta(pathname: string): PageMeta {

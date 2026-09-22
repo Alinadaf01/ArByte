@@ -40,6 +40,15 @@ import {
   IssueImpersonationTicketResponseSchema,
   ImpersonateExchangeBodySchema,
   ImpersonateExchangeResponseSchema,
+  AdminCategoryListResponseSchema,
+  AdminCategoryDetailResponseSchema,
+  CreateCategoryBodySchema,
+  AdminBrandListResponseSchema,
+  AdminBrandDetailResponseSchema,
+  CreateBrandBodySchema,
+  AdminSpecificationListResponseSchema,
+  AdminSpecificationDetailResponseSchema,
+  CreateSpecificationDefinitionBodySchema,
 } from "@arbyte/contracts";
 
 /**
@@ -534,6 +543,129 @@ export function buildOpenApiDocument(): OpenAPIObject {
         },
       },
       403: errorResponse,
+    },
+  });
+
+  // ---------- admin: تاکسونومی (T-101) ----------
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/admin/categories",
+    tags: ["admin:categories"],
+    summary: "فهرست دسته‌بندی‌ها — نمای ادمین (تخت، UI فقط دو سطح نشان می‌دهد)",
+    security: [{ bearerAuth: [] }],
+    responses: {
+      200: {
+        description: "فهرست دسته‌بندی‌ها",
+        content: {
+          "application/json": { schema: AdminCategoryListResponseSchema },
+        },
+      },
+      403: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "post",
+    path: "/api/v1/admin/categories",
+    tags: ["admin:categories"],
+    summary: "ساخت دسته‌بندی",
+    security: [{ bearerAuth: [] }],
+    request: {
+      body: {
+        content: { "application/json": { schema: CreateCategoryBodySchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "دسته‌بندی ساخته شد",
+        content: {
+          "application/json": { schema: AdminCategoryDetailResponseSchema },
+        },
+      },
+      403: errorResponse,
+      409: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/admin/brands",
+    tags: ["admin:brands"],
+    summary: "فهرست برندها — نمای ادمین",
+    security: [{ bearerAuth: [] }],
+    responses: {
+      200: {
+        description: "فهرست برندها",
+        content: {
+          "application/json": { schema: AdminBrandListResponseSchema },
+        },
+      },
+      403: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "post",
+    path: "/api/v1/admin/brands",
+    tags: ["admin:brands"],
+    summary: "ساخت برند",
+    security: [{ bearerAuth: [] }],
+    request: {
+      body: {
+        content: { "application/json": { schema: CreateBrandBodySchema } },
+      },
+    },
+    responses: {
+      201: {
+        description: "برند ساخته شد",
+        content: {
+          "application/json": { schema: AdminBrandDetailResponseSchema },
+        },
+      },
+      403: errorResponse,
+      409: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/admin/specifications",
+    tags: ["admin:specifications"],
+    summary: "فهرست مشخصات — نمای ادمین (با مقادیر تودرتو)",
+    security: [{ bearerAuth: [] }],
+    responses: {
+      200: {
+        description: "فهرست مشخصات",
+        content: {
+          "application/json": { schema: AdminSpecificationListResponseSchema },
+        },
+      },
+      403: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "post",
+    path: "/api/v1/admin/specifications",
+    tags: ["admin:specifications"],
+    summary:
+      "ساخت مشخصه (isVariantAxis تعیین می‌کند واریانت‌ساز است یا نه — الحاقیه‌ی T-003)",
+    security: [{ bearerAuth: [] }],
+    request: {
+      body: {
+        content: {
+          "application/json": {
+            schema: CreateSpecificationDefinitionBodySchema,
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: "مشخصه ساخته شد",
+        content: {
+          "application/json": {
+            schema: AdminSpecificationDetailResponseSchema,
+          },
+        },
+      },
+      403: errorResponse,
+      409: errorResponse,
     },
   });
 

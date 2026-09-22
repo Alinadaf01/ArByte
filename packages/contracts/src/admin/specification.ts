@@ -27,6 +27,9 @@ export const AdminSpecificationDefinitionSchema = z.object({
 export const AdminSpecificationListResponseSchema = successResponseSchema(
   z.array(AdminSpecificationDefinitionSchema),
 );
+export const AdminSpecificationDetailResponseSchema = successResponseSchema(
+  AdminSpecificationDefinitionSchema,
+);
 
 export const CreateSpecificationDefinitionBodySchema = z.object({
   key: z.string().min(1),
@@ -49,3 +52,21 @@ export const CreateSpecificationValueBodySchema = z.object({
   swatchHex: z.string().optional(),
   sortOrder: z.number().int().default(0),
 });
+export const UpdateSpecificationValueBodySchema =
+  CreateSpecificationValueBodySchema.partial();
+
+export type CreateSpecificationDefinitionBody = z.infer<
+  typeof CreateSpecificationDefinitionBodySchema
+>;
+export type UpdateSpecificationDefinitionBody = z.infer<
+  typeof UpdateSpecificationDefinitionBodySchema
+>;
+export type CreateSpecificationValueBody = z.infer<
+  typeof CreateSpecificationValueBodySchema
+>;
+export type UpdateSpecificationValueBody = z.infer<
+  typeof UpdateSpecificationValueBodySchema
+>;
+export type AdminSpecificationDefinition = z.infer<
+  typeof AdminSpecificationDefinitionSchema
+>;
