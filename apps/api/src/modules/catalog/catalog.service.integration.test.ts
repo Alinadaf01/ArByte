@@ -75,11 +75,14 @@ describe("CatalogService — الحاقیه §۳: فیلتر مشخصه‌ی م�
 
     // واریانت پیش‌فرض واقعی این محصول ۶۴GB/۲TB (۲۸۹۵۰۰۰۰۰) است — سند تسک
     // دقیقاً همین مثال را زده: کاربر روی «۳۲GB» کلیک می‌کند و نباید صفحه با
-    // قیمت ۶۴GB باز شود.
+    // قیمت ۶۴GB باز شود. فیلتر category تا محصولات fixture تست‌های دیگر
+    // (که createdAt جدیدتری دارند و صفحه‌ی اول sort=newest را پر می‌کنند)
+    // نتیجه را رقیق نکنند.
     const { items: withoutFilter } = await catalogService.listProducts({
       page: 1,
       perPage: 24,
       sort: "newest",
+      category: "gaming-laptop",
     });
     const cardWithoutFilter = withoutFilter.find(
       (c) => c.slug === "msi-titan-18-hx",
@@ -90,6 +93,7 @@ describe("CatalogService — الحاقیه §۳: فیلتر مشخصه‌ی م�
       page: 1,
       perPage: 24,
       sort: "newest",
+      category: "gaming-laptop",
       spec: { [ramSpec.id]: "۳۲GB" },
     });
     const cardWithFilter = withFilter.find((c) => c.slug === "msi-titan-18-hx");
@@ -196,5 +200,64 @@ describe("CatalogService — هرگز فیلد سود/قیمت همکار را �
     expect(json).not.toContain("profitType");
     expect(json).not.toContain("profitAmountToman");
     expect(json).not.toContain("profitPercentBasisPoints");
+  });
+});
+
+describe("CatalogService.getCategoryBySlug — T-202 §۱.۲", () => {
+  it("والد (breadcrumb) و زیردسته‌ها به‌صورت کارت (با productCount) برمی‌گرداند", async () => {
+    const detail = await catalogService.getCategoryBySlug("gaming-laptop");
+    expect(detail.slug).toBe("gaming-laptop");
+    expect(detail.parent).toBeNull();
+    // gaming-laptop زیردسته ندارد در seed فعلی — آرایه‌ی خالی، نه خطا.
+    expect(Array.isArray(detail.children)).toBe(true);
+  });
+
+  it("slug نامعتبر NotFoundException می‌دهد", async () => {
+    await expect(
+      catalogService.getCategoryBySlug(`does-not-exist-${randomUUID()}`),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
+describe("CatalogService.getTopLevelCategoryCards / getCategoryCardsByIds — T-202 §۱.۱", () => {
+  it("فقط دسته‌های سطح یک را با productCount درست برمی‌گرداند", async () => {
+    const cards = await catalogService.getTopLevelCategoryCards();
+    const gaming = cards.find((c) => c.slug === "gaming-laptop");
+    expect(gaming).toBeDefined();
+    expect(gaming?.productCount).toBeGreaterThanOrEqual(6);
+    expect(gaming?.image).not.toBeNull();
+  });
+
+  it("productCount فقط محصولات عمومی/فعال را می‌شمارد", async () => {
+    const category = await prisma.category.findFirstOrThrow({
+      where: { slug: "keyboard-mouse" },
+    });
+    const brand = await prisma.brand.findFirstOrThrow({
+      where: { slug: "keychron" },
+    });
+    const before = await catalogService.getCategoryCardsByIds([category.id]);
+    const countBefore = before[0]?.productCount ?? 0;
+
+    await prisma.product.create({
+      data: {
+        name: "Hidden Count Test Product",
+        slug: `hidden-count-test-${randomUUID()}`,
+        brandId: brand.id,
+        categoryId: category.id,
+        condition: "NEW",
+        status: "INACTIVE",
+        variants: {
+          create: {
+            sku: `SKU-${randomUUID()}`,
+            isDefault: true,
+            priceModel: "FIXED",
+            finalPrice: 1_000_000,
+          },
+        },
+      },
+    });
+
+    const after = await catalogService.getCategoryCardsByIds([category.id]);
+    expect(after[0]?.productCount).toBe(countBefore);
   });
 });

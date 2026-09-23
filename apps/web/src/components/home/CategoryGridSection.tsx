@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { homePage } from "@arbyte/contracts";
 import type { PublicHomepageBlock } from "@arbyte/contracts";
@@ -6,11 +7,7 @@ interface CategoryGridSectionProps {
   block: Extract<PublicHomepageBlock, { type: "CATEGORY_GRID" }>;
 }
 
-// T-201 §۴ — CategoryRefSchema فقط id/name/slug دارد، بدون تصویر (Category
-// مدل `imageMain` دارد اما رزولوشن CATEGORY_GRID فعلاً آن را برنمی‌گرداند
-// — ر.ک. گزارش برای فهرست تصاویر لازم). تا رسیدن عکس واقعی، هر کاشی یک
-// گرادیان بنفش ثابت دارد، نه رنگ تصادفی — تفاوت بصری بین دسته‌ها فقط از
-// طریق نام است.
+/** T-202 §۱.۱ — حالا `CategoryCardSchema` است، با تصویر واقعی. */
 export function CategoryGridSection({ block }: CategoryGridSectionProps) {
   if (block.categories.length === 0) return null;
 
@@ -32,10 +29,25 @@ export function CategoryGridSection({ block }: CategoryGridSectionProps) {
         {block.categories.map((category) => (
           <Link
             key={category.id}
-            href={`/categories/${category.slug}`}
-            className="from-brand-tint-2 to-brand-tint-4 relative flex aspect-[3/4] items-end overflow-hidden rounded-panel bg-gradient-to-br p-4 transition-transform duration-200 hover:-translate-y-0.5"
+            // T-201 اشتباهاً "/categories/:slug" ساخته بود — URL درست طبق
+            // T-004/T-202 §۳ همین «/category/:slug» مفرد است.
+            href={`/category/${category.slug}`}
+            className="from-brand-tint-2 to-brand-tint-4 relative flex aspect-[3/4] items-end overflow-hidden rounded-panel bg-gradient-to-br transition-transform duration-200 hover:-translate-y-0.5"
           >
-            <span className="text-card-title font-heading text-primary">
+            {category.image ? (
+              <Image
+                src={category.image.url}
+                alt={category.image.alt ?? category.name}
+                fill
+                sizes="(max-width: 768px) 50vw, 20vw"
+                className="object-cover"
+              />
+            ) : null}
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-t from-surface-dark/85 via-surface-dark/20 to-transparent"
+            />
+            <span className="text-card-title font-heading text-on-dark relative p-4">
               {category.name}
             </span>
           </Link>

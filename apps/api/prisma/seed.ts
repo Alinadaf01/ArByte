@@ -148,11 +148,24 @@ async function findOrCreateCategory(data: {
   name: string;
   slug: string;
   parentId?: string;
+  imageMain?: string;
 }) {
   const existing = await prisma.category.findFirst({
     where: { slug: data.slug },
   });
-  return existing ?? prisma.category.create({ data });
+  if (existing) {
+    // T-202 §۱.۱ — دسته‌های اجرای seed قبل از این تسک بدون تصویر ساخته
+    // شده بودند؛ idempotent یعنی این هم باید دوباره اجرا با تصویر جدید را
+    // به‌روزرسانی کند، نه فقط رد شود.
+    if (data.imageMain && existing.imageMain !== data.imageMain) {
+      return prisma.category.update({
+        where: { id: existing.id },
+        data: { imageMain: data.imageMain },
+      });
+    }
+    return existing;
+  }
+  return prisma.category.create({ data });
 }
 
 /** بند ۷ سند T-150 — یک تعریف مشخصه (بدون SpecificationValue؛ آن جدا مدیریت می‌شود). */
@@ -355,14 +368,17 @@ async function seedCatalog() {
   const gamingCategory = await findOrCreateCategory({
     name: "لپ‌تاپ گیمینگ",
     slug: "gaming-laptop",
+    imageMain: "/seed-images/category-gaming-laptop.svg",
   });
   const workstationCategory = await findOrCreateCategory({
     name: "سرفیس و ورک‌استیشن",
     slug: "surface-workstation",
+    imageMain: "/seed-images/category-surface-workstation.svg",
   });
   const peripheralsCategory = await findOrCreateCategory({
     name: "کیبورد و موس",
     slug: "keyboard-mouse",
+    imageMain: "/seed-images/category-keyboard-mouse.svg",
   });
 
   const brand = async (name: string, slug: string) =>

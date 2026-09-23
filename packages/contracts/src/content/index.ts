@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { successResponseSchema } from "../common/response";
-import { CategoryRefSchema } from "../catalog/common";
+import { CategoryCardSchema } from "../catalog/category";
 import { ProductCardSchema } from "../catalog/product";
 
 /**
@@ -31,7 +31,8 @@ export const PublicHomepageBlockSchema = z.discriminatedUnion("type", [
   HomepageBlockBaseSchema.extend({ type: z.literal("HERO") }),
   HomepageBlockBaseSchema.extend({
     type: z.literal("CATEGORY_GRID"),
-    categories: z.array(CategoryRefSchema),
+    // T-202 §۱.۱ — قبلاً CategoryRefSchema بود (بدون تصویر)؛ حالا کارت واقعی.
+    categories: z.array(CategoryCardSchema),
   }),
   HomepageBlockBaseSchema.extend({
     type: z.literal("PRODUCT_RAIL"),

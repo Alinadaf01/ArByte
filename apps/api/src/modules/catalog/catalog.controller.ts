@@ -32,6 +32,20 @@ export class CatalogController {
     return successResponse(data, req.requestId);
   }
 
+  // T-202 §۱.۱ — باید قبل از "categories/:slug" ثبت شود؛ وگرنه Express این
+  // مسیر ادبی را با :slug تطبیق می‌دهد ("top-level" را به‌عنوان slug می‌خواند).
+  @Get("categories/top-level")
+  async topLevelCategories(@Req() req: RequestWithId) {
+    const data = await this.catalogService.getTopLevelCategoryCards();
+    return successResponse(data, req.requestId);
+  }
+
+  @Get("categories/:slug")
+  async categoryDetail(@Param("slug") slug: string, @Req() req: RequestWithId) {
+    const data = await this.catalogService.getCategoryBySlug(slug);
+    return successResponse(data, req.requestId);
+  }
+
   @Get("products")
   async products(
     @Query(new ZodValidationPipe(ProductListQuerySchema))

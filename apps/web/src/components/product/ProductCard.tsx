@@ -13,6 +13,8 @@ interface ProductCardProps {
   product: ProductCardData;
   /** اندازه‌ی responsive تصویر — بسته به بافت (گرید فروشگاه، ریل صفحه اصلی و ...) فرق می‌کند. */
   imageSizes?: string;
+  /** T-202 §۴ — فقط ردیف اول گرید محصولات؛ بقیه lazy (پیش‌فرض next/image). */
+  priority?: boolean;
 }
 
 /**
@@ -24,7 +26,11 @@ interface ProductCardProps {
  * CTA لایه‌ی بالاتر (`z-10`) خودش را دارد تا در آینده بدون شکستن ساختار
  * بتواند منطق واقعی سبد خرید بگیرد بدون تو در تو شدن `<button>` داخل `<a>`.
  */
-export function ProductCard({ product, imageSizes }: ProductCardProps) {
+export function ProductCard({
+  product,
+  imageSizes,
+  priority,
+}: ProductCardProps) {
   const href = `/products/${product.slug}`;
   const priceLabel = formatPrice(BigInt(product.defaultVariant.price));
   const availability = product.defaultVariant.availability;
@@ -48,6 +54,7 @@ export function ProductCard({ product, imageSizes }: ProductCardProps) {
             src={product.image.url}
             alt={product.image.alt ?? product.name}
             fill
+            priority={priority}
             sizes={imageSizes ?? "(max-width: 768px) 50vw, 25vw"}
             className="object-contain p-4"
           />

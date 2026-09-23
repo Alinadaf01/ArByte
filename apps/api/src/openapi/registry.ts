@@ -25,6 +25,8 @@ import {
   CatalogFiltersResponseSchema,
   SearchQuerySchema,
   SearchResponseSchema,
+  CategoryTopLevelResponseSchema,
+  CategoryDetailResponseSchema,
   ProfileResponseSchema,
   UpdateProfileBodySchema,
   AddressListResponseSchema,
@@ -212,6 +214,38 @@ export function buildOpenApiDocument(): OpenAPIObject {
         description: "نتایج جستجو (صفحه‌بندی‌شده)",
         content: { "application/json": { schema: SearchResponseSchema } },
       },
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/catalog/categories/top-level",
+    tags: ["catalog"],
+    summary:
+      "دسته‌بندی‌های سطح یک به‌صورت کارت (تصویر + productCount) — صفحه‌ی /categories",
+    responses: {
+      200: {
+        description: "فهرست کارت دسته‌بندی",
+        content: {
+          "application/json": { schema: CategoryTopLevelResponseSchema },
+        },
+      },
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/catalog/categories/{slug}",
+    tags: ["catalog"],
+    summary:
+      "جزئیات دسته‌بندی — والد (breadcrumb)، زیردسته‌ها به‌صورت کارت، سئو (T-202 §۱.۲)",
+    request: { params: z.object({ slug: z.string() }) },
+    responses: {
+      200: {
+        description: "دسته‌بندی",
+        content: {
+          "application/json": { schema: CategoryDetailResponseSchema },
+        },
+      },
+      404: errorResponse,
     },
   });
   // `GET /catalog/categories` عمداً اینجا ثبت *نشده*: پاسخش

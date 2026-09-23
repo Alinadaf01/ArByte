@@ -31,7 +31,27 @@ export const CategoryTreeResponseSchema = successResponseSchema(
   z.array(CategoryTreeNodeSchema),
 );
 
-// GET /catalog/categories/:slug
+/**
+ * T-202 §۱.۱ — `CategoryRefSchema` عمداً سبک می‌ماند (در پاسخ محصول ده‌ها
+ * بار تکرار می‌شود). این یکی جدا است، فقط برای جایی که دسته‌بندی به‌صورت
+ * کارت نمایش داده می‌شود: گرید دسته‌بندی صفحه اصلی، فهرست زیردسته‌ها
+ * (`GET /catalog/categories/:slug`)، صفحه‌ی `/categories`
+ * (`GET /catalog/categories/top-level`).
+ */
+export const CategoryCardSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: SlugSchema,
+  image: z.object({ url: z.string(), alt: z.string().nullable() }).nullable(),
+  /** با `_count` روی رابطه‌ی products، نه کوئری جدا (§۱.۱ هشدار). */
+  productCount: z.number().int().nonnegative(),
+});
+export type CategoryCard = z.infer<typeof CategoryCardSchema>;
+export const CategoryTopLevelResponseSchema = successResponseSchema(
+  z.array(CategoryCardSchema),
+);
+
+// GET /catalog/categories/:slug — T-202 §۱.۲، عمداً در T-150 ساخته نشده بود.
 export const CategoryDetailSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -39,10 +59,13 @@ export const CategoryDetailSchema = z.object({
   description: z.string().nullable(),
   imageMain: z.string().nullable(),
   imageBanner: z.string().nullable(),
+  /** برای breadcrumb — ارجاع سبک کافی است. */
   parent: CategoryRefSchema.nullable(),
-  children: z.array(CategoryRefSchema),
+  /** زیردسته‌ها به‌صورت کارت (§۱.۱) — نه ارجاع سبک. */
+  children: z.array(CategoryCardSchema),
   seo: SeoSchema,
 });
+export type CategoryDetail = z.infer<typeof CategoryDetailSchema>;
 export const CategoryDetailResponseSchema =
   successResponseSchema(CategoryDetailSchema);
 

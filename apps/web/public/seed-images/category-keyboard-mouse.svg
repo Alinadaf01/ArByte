@@ -1,0 +1,7 @@
+<svg width="900" height="1200" viewBox="0 0 900 1200" xmlns="http://www.w3.org/2000/svg">
+  <rect width="900" height="1200" fill="#ECE8F9"/>
+  <circle cx="450" cy="456" r="264" fill="#6C4DFF" opacity="0.14"/>
+  <circle cx="180" cy="960" r="216" fill="#6C4DFF" opacity="0.08"/>
+  <text x="450" y="660" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="48" font-weight="700" fill="#17151F">کیبورد و موس</text>
+  <text x="450" y="720" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="22" fill="#5F5B6B">تصویر نمونه — عکس واقعی جایگزین می‌شود</text>
+</svg>

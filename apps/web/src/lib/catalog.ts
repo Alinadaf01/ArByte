@@ -1,4 +1,11 @@
-import type { CategoryTreeNode } from "@arbyte/contracts";
+import type {
+  CategoryCard,
+  CategoryDetail,
+  CategoryTreeNode,
+  PaginationMeta,
+  ProductCard,
+  ProductSort,
+} from "@arbyte/contracts";
 
 /**
  * فقط سمت سرور (RSC) صدا زده می‌شود — بدون مرورگر، پس نیازی به CORS/rewrite
@@ -18,5 +25,82 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
     return body.data ?? [];
   } catch {
     return [];
+  }
+}
+
+/** T-202 §۱.۱ — صفحه‌ی `/categories`. */
+export async function getTopLevelCategories(): Promise<CategoryCard[]> {
+  try {
+    const res = await fetch(
+      `${API_INTERNAL_BASE}/catalog/categories/top-level`,
+      { next: { revalidate: 60 } },
+    );
+    if (!res.ok) return [];
+    const body = (await res.json()) as { data?: CategoryCard[] };
+    return body.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * T-202 §۱.۲ — صفحه‌ی `/category/[slug]`. برخلاف بقیه‌ی توابع این فایل،
+ * عمداً خطا را قورت نمی‌دهد به `[]`/`null` ساکت — تفاوت بین «۴۰۴ واقعی» و
+ * «API موقتاً در دسترس نیست» برای `notFound()` صفحه مهم است؛ فراخوان با
+ * try/catch خودش تصمیم می‌گیرد.
+ */
+export async function getCategoryBySlug(
+  slug: string,
+): Promise<CategoryDetail | null> {
+  const res = await fetch(
+    `${API_INTERNAL_BASE}/catalog/categories/${encodeURIComponent(slug)}`,
+    { next: { revalidate: 60 } },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok)
+    throw new Error(`GET /catalog/categories/${slug} → ${res.status}`);
+  const body = (await res.json()) as { data: CategoryDetail };
+  return body.data;
+}
+
+export interface ProductListParams {
+  category?: string;
+  sort?: ProductSort;
+  page?: number;
+  perPage?: number;
+}
+
+const EMPTY_PAGINATION: PaginationMeta = {
+  page: 1,
+  perPage: 24,
+  total: 0,
+  totalPages: 0,
+};
+
+/** T-202 §۲.۲ — گرید محصولات صفحه‌ی دسته‌بندی، sort/page از URL. */
+export async function getProducts(
+  params: ProductListParams,
+): Promise<{ items: ProductCard[]; pagination: PaginationMeta }> {
+  const qs = new URLSearchParams();
+  if (params.category) qs.set("category", params.category);
+  if (params.sort) qs.set("sort", params.sort);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.perPage) qs.set("perPage", String(params.perPage));
+
+  try {
+    const res = await fetch(`${API_INTERNAL_BASE}/catalog/products?${qs}`, {
+      next: { revalidate: 30 },
+    });
+    if (!res.ok) return { items: [], pagination: EMPTY_PAGINATION };
+    const body = (await res.json()) as {
+      data?: ProductCard[];
+      meta?: { pagination?: PaginationMeta };
+    };
+    return {
+      items: body.data ?? [],
+      pagination: body.meta?.pagination ?? EMPTY_PAGINATION,
+    };
+  } catch {
+    return { items: [], pagination: EMPTY_PAGINATION };
   }
 }

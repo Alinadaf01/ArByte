@@ -2,6 +2,8 @@ import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   buildVariantLabel,
   selectCardVariant,
+  type CategoryCard,
+  type CategoryDetail,
   type CategoryTreeNode,
   type ProductCard,
   type ProductConditionValue,
@@ -253,6 +255,131 @@ export class CatalogService {
       }));
 
     return build(null);
+  }
+
+  /** همان معیار عمومی/فعال `listProducts` — یک‌بار تعریف، جای دیگر تکرار نمی‌شود. */
+  private static readonly PUBLIC_CATEGORY_PRODUCT_WHERE = {
+    status: "ACTIVE" as const,
+    deletedAt: null,
+    isVisibleOnSite: true,
+    isVisibleInCategory: true,
+  };
+
+  private toCategoryCard(row: {
+    id: string;
+    name: string;
+    slug: string;
+    imageMain: string | null;
+    _count: { products: number };
+  }): CategoryCard {
+    return {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      image: row.imageMain ? { url: row.imageMain, alt: row.name } : null,
+      productCount: row._count.products,
+    };
+  }
+
+  /** T-202 §۱.۱ — `GET /catalog/categories/top-level`، برای صفحه‌ی `/categories`. */
+  async getTopLevelCategoryCards(): Promise<CategoryCard[]> {
+    const rows = await this.prisma.category.findMany({
+      where: { isActive: true, deletedAt: null, parentId: null },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageMain: true,
+        _count: {
+          select: {
+            products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
+          },
+        },
+      },
+    });
+    return rows.map((row) => this.toCategoryCard(row));
+  }
+
+  /** T-201/T-150 — رزولوشن بلوک CATEGORY_GRID صفحه اصلی، حالا با کارت واقعی. */
+  async getCategoryCardsByIds(ids: string[]): Promise<CategoryCard[]> {
+    if (ids.length === 0) return [];
+    const rows = await this.prisma.category.findMany({
+      where: { id: { in: ids }, isActive: true, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageMain: true,
+        _count: {
+          select: {
+            products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
+          },
+        },
+      },
+    });
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .map((row) => this.toCategoryCard(row));
+  }
+
+  /** T-202 §۱.۲ — `GET /catalog/categories/:slug`، عمداً در T-150 ساخته نشده بود. */
+  async getCategoryBySlug(slug: string): Promise<CategoryDetail> {
+    const category = await this.prisma.category.findFirst({
+      where: { slug, isActive: true, deletedAt: null },
+      include: {
+        parent: { select: { id: true, name: true, slug: true } },
+        children: {
+          where: { isActive: true, deletedAt: null },
+          orderBy: { sortOrder: "asc" },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            imageMain: true,
+            _count: {
+              select: {
+                products: {
+                  where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE,
+                },
+              },
+            },
+          },
+        },
+        seo: true,
+      },
+    });
+
+    if (!category) {
+      throw new NotFoundException({
+        code: "NOT_FOUND",
+        message: "دسته‌بندی پیدا نشد.",
+      });
+    }
+
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      imageMain: category.imageMain,
+      imageBanner: category.imageBanner,
+      parent: category.parent
+        ? {
+            id: category.parent.id,
+            name: category.parent.name,
+            slug: category.parent.slug,
+          }
+        : null,
+      children: category.children.map((child) => this.toCategoryCard(child)),
+      seo: {
+        title: category.seo?.metaTitle ?? null,
+        description: category.seo?.metaDescription ?? null,
+        canonical: category.seo?.canonical ?? null,
+      },
+    };
   }
 
   /**

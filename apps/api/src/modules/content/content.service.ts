@@ -62,18 +62,9 @@ export class ContentService {
 
     if (row.type === "CATEGORY_GRID") {
       const categoryIds = this.readIdArray(row.config, "categoryIds");
-      const categories = await this.prisma.category.findMany({
-        where: { id: { in: categoryIds }, isActive: true, deletedAt: null },
-        select: { id: true, name: true, slug: true },
-      });
-      const byId = new Map(categories.map((c) => [c.id, c]));
-      return {
-        ...base,
-        type: "CATEGORY_GRID",
-        categories: categoryIds
-          .map((id) => byId.get(id))
-          .filter((c): c is NonNullable<typeof c> => Boolean(c)),
-      };
+      const categories =
+        await this.catalogService.getCategoryCardsByIds(categoryIds);
+      return { ...base, type: "CATEGORY_GRID", categories };
     }
 
     if (row.type === "PRODUCT_RAIL") {

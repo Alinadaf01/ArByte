@@ -3,6 +3,7 @@
  * (`docs/design/storefront/pages/{SiteHeader,MobileNav,SiteFooter,About,
  * Support,Legal,NotFound}.dc.html`). بازنویسی یا ترجمه‌ی مجدد ممنوع (قاعده‌ی #۲).
  */
+import { toPersianDigits } from "../format/digits";
 
 export const siteHeader = {
   logoAlt: "آربایت",
@@ -477,6 +478,35 @@ export const homePage = {
     emptyTitle: "هنوز مطلبی منتشر نشده",
     emptyDescription: "به‌زودی راهنما و مقایسه محصولات را اینجا می‌بینید.",
   },
+} as const;
+
+/**
+ * T-202 §۲.۱ — صفحه‌ی `/categories`. متن `Categories.dc.html` عدد ثابت
+ * («هفت دسته») در خودش دارد که با داده‌ی واقعی هم‌خوان نیست — این نسخه
+ * بدون عدد است، نه رونویسی نادرست از طراحی.
+ */
+export const categoriesPage = {
+  breadcrumb: { home: "خانه", current: "دسته‌بندی‌ها" },
+  title: "از کجا شروع کنیم؟",
+  subtitle: "دسته‌ی مورد نظرتان را انتخاب کنید تا محصولات را ببینید.",
+  /** «۶ محصول» — بند ۲.۱۵، عدد فارسی چون متن نمایشی عمومی است. */
+  productCount: (count: number) => `${toPersianDigits(count)} محصول`,
+} as const;
+
+/** T-202 §۲.۲ — صفحه‌ی `/category/[slug]`. */
+export const categoryDetailPage = {
+  breadcrumbHome: "خانه",
+  breadcrumbCategories: "دسته‌بندی‌ها",
+  resultCount: (count: number) => `${toPersianDigits(count)} نتیجه`,
+  sortLabel: "مرتب‌سازی",
+  sortOptions: {
+    newest: "جدیدترین",
+    price_asc: "ارزان‌ترین",
+    price_desc: "گران‌ترین",
+    popular: "محبوب‌ترین",
+  },
+  paginationPrevious: "قبلی",
+  paginationNext: "بعدی",
 } as const;
 
 export const notFoundPage = {
