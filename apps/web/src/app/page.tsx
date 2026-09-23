@@ -1,33 +1,24 @@
 import type { PublicHomepageBlock } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { getHomepage } from "@/lib/content";
-import { HeroSection } from "@/components/home/HeroSection";
-import { CategoryGridSection } from "@/components/home/CategoryGridSection";
-import { ProductRailSection } from "@/components/home/ProductRailSection";
-import { CampaignSection } from "@/components/home/CampaignSection";
-import { BenefitsSection } from "@/components/home/BenefitsSection";
-import { BlogRailSection } from "@/components/home/BlogRailSection";
+import { HeroSection } from "@/components/home/hero/HeroSection";
+import { CategoriesAccordion } from "@/components/home/categories/CategoriesAccordion";
+import { FlagshipDuel } from "@/components/home/flagships/FlagshipDuel";
 
 /**
- * T-201 §۲ — ترتیب و فعال‌بودن بخش‌ها از `HomepageBlock` می‌آید (سرور، از
- * قبل مرتب/فیلترشده توسط ContentService بر اساس isActive/startsAt/endsAt)،
- * نه هاردکد اینجا. نوعی که این سوییچ نمی‌شناسد (یا API چیزی برنگرداند)
- * ساکت رد می‌شود — صفحه نباید بشکند.
+ * T-211 §۰ — صفحه از روی ساختار واقعی `Home.dc.html` بازنویسی شد، نه فهرست
+ * بخش‌های برندبوک (اشتباه T-201). این تسک فقط سه بخش اول را می‌سازد؛
+ * بقیه (Featured/Journal/FAQ/Community/Guarantees) عمداً برای T-212 خالی
+ * می‌ماند — بلوکی که این سوییچ نمی‌شناسد ساکت رد می‌شود، صفحه نمی‌شکند.
  */
 function renderBlock(block: PublicHomepageBlock) {
   switch (block.type) {
     case "HERO":
       return <HeroSection key={block.id} block={block} />;
     case "CATEGORY_GRID":
-      return <CategoryGridSection key={block.id} block={block} />;
-    case "PRODUCT_RAIL":
-      return <ProductRailSection key={block.id} block={block} />;
-    case "CAMPAIGN":
-      return <CampaignSection key={block.id} block={block} />;
-    case "BENEFITS":
-      return <BenefitsSection key={block.id} block={block} />;
-    case "BLOG_RAIL":
-      return <BlogRailSection key={block.id} block={block} />;
+      return <CategoriesAccordion key={block.id} block={block} />;
+    case "FLAGSHIP_DUEL":
+      return <FlagshipDuel key={block.id} block={block} />;
     default:
       return null;
   }

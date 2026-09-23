@@ -270,6 +270,7 @@ export class CatalogService {
     name: string;
     slug: string;
     imageMain: string | null;
+    description: string | null;
     _count: { products: number };
   }): CategoryCard {
     return {
@@ -278,6 +279,7 @@ export class CatalogService {
       slug: row.slug,
       image: row.imageMain ? { url: row.imageMain, alt: row.name } : null,
       productCount: row._count.products,
+      description: row.description,
     };
   }
 
@@ -291,6 +293,7 @@ export class CatalogService {
         name: true,
         slug: true,
         imageMain: true,
+        description: true,
         _count: {
           select: {
             products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
@@ -311,6 +314,7 @@ export class CatalogService {
         name: true,
         slug: true,
         imageMain: true,
+        description: true,
         _count: {
           select: {
             products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
@@ -335,6 +339,7 @@ export class CatalogService {
         name: true,
         slug: true,
         imageMain: true,
+        description: true,
         _count: {
           select: {
             products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
@@ -363,6 +368,7 @@ export class CatalogService {
             name: true,
             slug: true,
             imageMain: true,
+            description: true,
             _count: {
               select: {
                 products: {

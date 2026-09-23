@@ -451,6 +451,70 @@ export const legalPage = {
  * `docs/design/storefront/pages/Home.dc.html` بخش Guarantees رونویسی
  * شده‌اند.
  */
+/**
+ * T-211 §۲ — هیروی اسکرولی صفحه اصلی، عیناً از `Home.dc.html`.
+ * ⚠️ یک اصلاح عمدی (§۲، هشدار صریح تسک): زیرمتن طراحی «...و سریالش ثبت
+ * می‌شود» می‌گفت؛ سیستم سریال نداریم، پس حذف شد — نه رونویسی نادرست.
+ */
+export const homeHero = {
+  badgeNew: "جدید",
+  badgeText: "چهار مدل تازه",
+  title: "تکنولوژی با ظرافت",
+  subtitle:
+    "چهار لپ‌تاپ که کارشناسان آربایت انتخاب کرده‌اند. هر دستگاه پیش از ارسال تست می‌شود.",
+  scrollHint: "اسکرول کنید",
+  loadingLabel: (percent: string) => `بارگذاری ${percent}٪`,
+  readyLabel: "آماده",
+  expertPickLabel: "انتخاب کارشناسان آربایت",
+  modelOf: (current: string, total: string) => `مدل ${current} از ${total}`,
+  viewModelsCta: "مشاهده مدل‌ها",
+  consultCta: "مشاوره انتخاب",
+  steps: [
+    {
+      title: "کالای اصل، با گارانتی رسمی",
+      label: "اصالت",
+    },
+    {
+      title: "قدرت پردازش، بی‌صدا",
+      label: "عملکرد",
+    },
+    {
+      title: "نمایشگری که چشم را خسته نمی‌کند",
+      label: "نمایشگر",
+    },
+    {
+      title: "ارسال سریع، پشتیبانی واقعی",
+      label: "خرید",
+    },
+  ],
+} as const;
+
+/**
+ * T-211 §۳ — بخش دسته‌ها (آکاردئون پنج‌کاشی)، Home.dc.html خط ~۱۷۵.
+ * برای شمارش محصول از `categoriesPage.productCount` استفاده می‌شود، نه
+ * تکرار همان رشته اینجا.
+ */
+export const homeCategories = {
+  title: "دسته‌بندی محصولات",
+  subtitle: "نشانگر را روی هر دسته ببرید تا باز شود.",
+  viewAll: "همه دسته‌ها",
+  viewCategoryCta: "مشاهده دسته",
+} as const;
+
+/**
+ * T-211 §۴ — دو پرچم‌دار، Home.dc.html خط ~۲۶۸. `taglines` به‌ترتیب همان
+ * `productSlugs` بلوک FLAGSHIP_DUEL است (seed.ts: [MSI, ASUS]) — تاپل، نه
+ * آبجکت با کلید محصول، چون تگ‌لاین‌ها خودشان به محصول خاص وابسته نیستند
+ * (اگر محصول عوض شود، این متن‌ها هم باید دستی بازبینی شوند).
+ */
+export const homeFlagships = {
+  title: "دو پرچم‌دار، یک انتخاب",
+  switchHint: "با دکمه‌های پایین جابه‌جا کنید",
+  taglines: ["سلطه کامل، بی‌صدا", "پیروزی، شتاب‌گرفته"] as [string, string],
+  viewAndBuyCta: "مشاهده و خرید",
+  fullSpecsCta: "مشخصات کامل",
+} as const;
+
 export const homePage = {
   categoriesTitle: "دسته‌بندی محصولات",
   categoriesViewAll: "همه دسته‌ها",

@@ -45,6 +45,8 @@ export const CategoryCardSchema = z.object({
   image: z.object({ url: z.string(), alt: z.string().nullable() }).nullable(),
   /** با `_count` روی رابطه‌ی products، نه کوئری جدا (§۱.۱ هشدار). */
   productCount: z.number().int().nonnegative(),
+  /** T-211 §۳ — زیرمتن کاشی آکاردئون صفحه اصلی؛ همان description دسته. */
+  description: z.string().nullable(),
 });
 export type CategoryCard = z.infer<typeof CategoryCardSchema>;
 export const CategoryTopLevelResponseSchema = successResponseSchema(
