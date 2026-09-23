@@ -17,15 +17,13 @@ import {
   type UpdateBrandBody,
 } from "@arbyte/contracts";
 import type { RequestWithId } from "../../common/middleware/request-id.middleware";
-import { createZodDto } from "../../common/zod/create-zod-dto";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { PermissionGuard } from "../../common/guards/permission.guard";
 import { RequirePermission } from "../../common/guards/require-permission.decorator";
 import { successResponse } from "../../common/http/success-response";
 import { BrandService } from "./brand.service";
 
-class CreateBrandDto extends createZodDto(CreateBrandBodySchema) {}
-class UpdateBrandDto extends createZodDto(UpdateBrandBodySchema) {}
-
+/** T-201 §۰ — schema صریح به pipe؛ ر.ک. یادداشت کامل در category.controller.ts. */
 @Controller("admin/brands")
 @UseGuards(PermissionGuard)
 export class BrandController {
@@ -43,8 +41,11 @@ export class BrandController {
 
   @Post()
   @RequirePermission("brands.create")
-  async create(@Body() body: CreateBrandDto, @Req() req: RequestWithId) {
-    const data = await this.brandService.create(null, body as CreateBrandBody);
+  async create(
+    @Body(new ZodValidationPipe(CreateBrandBodySchema)) body: CreateBrandBody,
+    @Req() req: RequestWithId,
+  ) {
+    const data = await this.brandService.create(null, body);
     return successResponse(data, req.requestId);
   }
 
@@ -52,14 +53,10 @@ export class BrandController {
   @RequirePermission("brands.update")
   async update(
     @Param("id") id: string,
-    @Body() body: UpdateBrandDto,
+    @Body(new ZodValidationPipe(UpdateBrandBodySchema)) body: UpdateBrandBody,
     @Req() req: RequestWithId,
   ) {
-    const data = await this.brandService.update(
-      null,
-      id,
-      body as UpdateBrandBody,
-    );
+    const data = await this.brandService.update(null, id, body);
     return successResponse(data, req.requestId);
   }
 

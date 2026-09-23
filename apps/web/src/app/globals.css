@@ -9,3 +9,13 @@
 body {
   font-family: var(--font-estedad), sans-serif;
 }
+
+/* T-201 — ریل‌های افقی (محصولات منتخب): اسکرول‌بار مرورگر پنهان می‌شود، نه
+   حذف عملکرد آن؛ کیبورد/تاچ‌پد همچنان کار می‌کنند. */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

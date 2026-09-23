@@ -1,3 +1,5 @@
+"use client";
+
 import * as Dialog from "@radix-ui/react-dialog";
 import { ui as uiText } from "@arbyte/contracts";
 import { X } from "lucide-react";

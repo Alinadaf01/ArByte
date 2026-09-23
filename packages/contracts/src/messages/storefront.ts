@@ -444,6 +444,41 @@ export const legalPage = {
   },
 } as const;
 
+/**
+ * T-201 — صفحه اصلی. مزیت‌های خرید («Guarantees») چهار مورد ثابت‌اند
+ * (واقعیت برند، نه محتوای HomepageBlock تک‌به‌تک قابل‌ویرایش)، عیناً از
+ * `docs/design/storefront/pages/Home.dc.html` بخش Guarantees رونویسی
+ * شده‌اند.
+ */
+export const homePage = {
+  categoriesTitle: "دسته‌بندی محصولات",
+  categoriesViewAll: "همه دسته‌ها",
+  featuredTitle: "محصولات منتخب",
+  benefits: {
+    warranty: {
+      title: "گارانتی رسمی",
+      description: "کارت گارانتی همراه دستگاه",
+    },
+    freeShipping: {
+      title: "ارسال رایگان",
+      description: "خرید بالای ۵۰ میلیون تومان",
+    },
+    sevenDayReturn: {
+      title: "هفت روز مرجوعی",
+      description: "هزینه بازگشت با ماست",
+    },
+    testedBeforeShipping: {
+      title: "تست پیش از ارسال",
+      description: "سریال در پرونده خرید شما",
+    },
+  },
+  blog: {
+    title: "از وبلاگ آربایت",
+    emptyTitle: "هنوز مطلبی منتشر نشده",
+    emptyDescription: "به‌زودی راهنما و مقایسه محصولات را اینجا می‌بینید.",
+  },
+} as const;
+
 export const notFoundPage = {
   badge: "خطای ۴۰۴",
   title: "این صفحه را پیدا نکردیم",

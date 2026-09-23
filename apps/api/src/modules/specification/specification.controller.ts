@@ -21,25 +21,13 @@ import {
   type UpdateSpecificationValueBody,
 } from "@arbyte/contracts";
 import type { RequestWithId } from "../../common/middleware/request-id.middleware";
-import { createZodDto } from "../../common/zod/create-zod-dto";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { PermissionGuard } from "../../common/guards/permission.guard";
 import { RequirePermission } from "../../common/guards/require-permission.decorator";
 import { successResponse } from "../../common/http/success-response";
 import { SpecificationService } from "./specification.service";
 
-class CreateSpecificationDefinitionDto extends createZodDto(
-  CreateSpecificationDefinitionBodySchema,
-) {}
-class UpdateSpecificationDefinitionDto extends createZodDto(
-  UpdateSpecificationDefinitionBodySchema,
-) {}
-class CreateSpecificationValueDto extends createZodDto(
-  CreateSpecificationValueBodySchema,
-) {}
-class UpdateSpecificationValueDto extends createZodDto(
-  UpdateSpecificationValueBodySchema,
-) {}
-
+/** T-201 §۰ — schema صریح به pipe؛ ر.ک. یادداشت کامل در category.controller.ts. */
 @Controller("admin/specifications")
 @UseGuards(PermissionGuard)
 export class SpecificationController {
@@ -59,13 +47,11 @@ export class SpecificationController {
   @Post()
   @RequirePermission("specifications.create")
   async create(
-    @Body() body: CreateSpecificationDefinitionDto,
+    @Body(new ZodValidationPipe(CreateSpecificationDefinitionBodySchema))
+    body: CreateSpecificationDefinitionBody,
     @Req() req: RequestWithId,
   ) {
-    const data = await this.specificationService.create(
-      null,
-      body as CreateSpecificationDefinitionBody,
-    );
+    const data = await this.specificationService.create(null, body);
     return successResponse(data, req.requestId);
   }
 
@@ -73,14 +59,11 @@ export class SpecificationController {
   @RequirePermission("specifications.update")
   async update(
     @Param("id") id: string,
-    @Body() body: UpdateSpecificationDefinitionDto,
+    @Body(new ZodValidationPipe(UpdateSpecificationDefinitionBodySchema))
+    body: UpdateSpecificationDefinitionBody,
     @Req() req: RequestWithId,
   ) {
-    const data = await this.specificationService.update(
-      null,
-      id,
-      body as UpdateSpecificationDefinitionBody,
-    );
+    const data = await this.specificationService.update(null, id, body);
     return successResponse(data, req.requestId);
   }
 
@@ -95,14 +78,11 @@ export class SpecificationController {
   @RequirePermission("specifications.update")
   async addValue(
     @Param("id") id: string,
-    @Body() body: CreateSpecificationValueDto,
+    @Body(new ZodValidationPipe(CreateSpecificationValueBodySchema))
+    body: CreateSpecificationValueBody,
     @Req() req: RequestWithId,
   ) {
-    const data = await this.specificationService.addValue(
-      null,
-      id,
-      body as CreateSpecificationValueBody,
-    );
+    const data = await this.specificationService.addValue(null, id, body);
     return successResponse(data, req.requestId);
   }
 
@@ -111,14 +91,15 @@ export class SpecificationController {
   async updateValue(
     @Param("id") id: string,
     @Param("valueId") valueId: string,
-    @Body() body: UpdateSpecificationValueDto,
+    @Body(new ZodValidationPipe(UpdateSpecificationValueBodySchema))
+    body: UpdateSpecificationValueBody,
     @Req() req: RequestWithId,
   ) {
     const data = await this.specificationService.updateValue(
       null,
       id,
       valueId,
-      body as UpdateSpecificationValueBody,
+      body,
     );
     return successResponse(data, req.requestId);
   }

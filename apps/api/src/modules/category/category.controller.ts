@@ -17,16 +17,18 @@ import {
   type UpdateCategoryBody,
 } from "@arbyte/contracts";
 import type { RequestWithId } from "../../common/middleware/request-id.middleware";
-import { createZodDto } from "../../common/zod/create-zod-dto";
+import { ZodValidationPipe } from "../../common/pipes/zod-validation.pipe";
 import { PermissionGuard } from "../../common/guards/permission.guard";
 import { RequirePermission } from "../../common/guards/require-permission.decorator";
 import { successResponse } from "../../common/http/success-response";
 import { CategoryService } from "./category.service";
 
-class CreateCategoryDto extends createZodDto(CreateCategoryBodySchema) {}
-class UpdateCategoryDto extends createZodDto(UpdateCategoryBodySchema) {}
-
-/** بند ۸.۱۸–۸.۲۸، T-101. actorId فعلاً همیشه null است — ر.ک. توضیح PermissionGuard. */
+/**
+ * T-201 §۰ — `@Body() body: SomeZodDto` روی متاتایپ تکیه می‌کند که زیر
+ * `tsx` هرگز درست resolve نمی‌شود (ر.ک. یادداشت کامل در
+ * zod-validation.pipe.ts، کشف T-150). schema صریح به خودِ pipe داده
+ * می‌شود، نه تکیه بر تشخیص خودکار کلاس.
+ */
 @Controller("admin/categories")
 @UseGuards(PermissionGuard)
 export class CategoryController {
@@ -45,11 +47,12 @@ export class CategoryController {
 
   @Post()
   @RequirePermission("categories.create")
-  async create(@Body() body: CreateCategoryDto, @Req() req: RequestWithId) {
-    const data = await this.categoryService.create(
-      null,
-      body as CreateCategoryBody,
-    );
+  async create(
+    @Body(new ZodValidationPipe(CreateCategoryBodySchema))
+    body: CreateCategoryBody,
+    @Req() req: RequestWithId,
+  ) {
+    const data = await this.categoryService.create(null, body);
     return successResponse(data, req.requestId);
   }
 
@@ -57,14 +60,11 @@ export class CategoryController {
   @RequirePermission("categories.update")
   async update(
     @Param("id") id: string,
-    @Body() body: UpdateCategoryDto,
+    @Body(new ZodValidationPipe(UpdateCategoryBodySchema))
+    body: UpdateCategoryBody,
     @Req() req: RequestWithId,
   ) {
-    const data = await this.categoryService.update(
-      null,
-      id,
-      body as UpdateCategoryBody,
-    );
+    const data = await this.categoryService.update(null, id, body);
     return successResponse(data, req.requestId);
   }
 

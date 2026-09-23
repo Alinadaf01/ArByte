@@ -1104,6 +1104,9 @@ async function seedHomepage(categoryIds: {
     subtitle?: string;
     ctaLabel?: string;
     ctaUrl?: string;
+    imageDesktop?: string;
+    imageMobile?: string;
+    imageAlt?: string;
     config?: Record<string, unknown>;
   }[] = [
     {
@@ -1113,6 +1116,11 @@ async function seedHomepage(categoryIds: {
       subtitle: "لپ‌تاپ، ورک‌استیشن و لوازم جانبی — تست‌شده پیش از ارسال",
       ctaLabel: "مشاهده‌ی فروشگاه",
       ctaUrl: "/products",
+      // T-201 — placeholder مثل seed-images محصول T-150؛ عکس واقعی هیرو
+      // هنوز نرسیده (ر.ک. گزارش T-201 برای ابعاد لازم).
+      imageDesktop: "/seed-images/hero-desktop.svg",
+      imageMobile: "/seed-images/hero-mobile.svg",
+      imageAlt: "لپ‌تاپ‌های منتخب آربایت روی میز کار",
     },
     {
       type: "CATEGORY_GRID",
@@ -1139,13 +1147,32 @@ async function seedHomepage(categoryIds: {
       subtitle:
         "هر دستگاه پیش از ارسال تست می‌شود و با گارانتی رسمی به دست شما می‌رسد.",
     },
+    {
+      // T-201 — API وبلاگ هنوز نیست (T-207)؛ این بلوک فقط عنوان/جایگاه را
+      // نگه می‌دارد، فرانت با حالت خالی رندرش می‌کند.
+      type: "BLOG_RAIL",
+      sortOrder: 4,
+      title: "از وبلاگ آربایت",
+    },
   ];
 
   for (const block of blocks) {
     const existing = await prisma.homepageBlock.findFirst({
       where: { type: block.type, sortOrder: block.sortOrder },
     });
-    if (existing) continue;
+    if (existing) {
+      // T-201 — همان ردیف قبلی seed اجرای T-150 بدون تصویر هیرو بود؛ فقط
+      // فیلدهای تصویر را به‌روزرسانی کن، بقیه دست‌نخورده (idempotent).
+      await prisma.homepageBlock.update({
+        where: { id: existing.id },
+        data: {
+          imageDesktop: block.imageDesktop,
+          imageMobile: block.imageMobile,
+          imageAlt: block.imageAlt,
+        },
+      });
+      continue;
+    }
     await prisma.homepageBlock.create({
       data: {
         type: block.type,
@@ -1154,6 +1181,9 @@ async function seedHomepage(categoryIds: {
         subtitle: block.subtitle,
         ctaLabel: block.ctaLabel,
         ctaUrl: block.ctaUrl,
+        imageDesktop: block.imageDesktop,
+        imageMobile: block.imageMobile,
+        imageAlt: block.imageAlt,
         config: block.config as never,
       },
     });

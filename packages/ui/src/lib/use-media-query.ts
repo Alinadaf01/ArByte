@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
 /** برای تفاوت رفتار موبایل/دسکتاپ (بند «Responsive System» طراحی) — نه CSS، فقط رفتار (مثل Select → Bottom Sheet). */

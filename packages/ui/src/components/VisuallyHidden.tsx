@@ -1,3 +1,5 @@
+"use client";
+
 import { forwardRef } from "react";
 import * as RadixVisuallyHidden from "@radix-ui/react-visually-hidden";
 

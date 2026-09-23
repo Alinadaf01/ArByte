@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
   images: {
     // بهینه‌سازی خودمیزبان با sharp (بدون سرویس ابری Vercel) — بند ۷.۱۶ و ۱۰.۵۶ برند بوک.
     formats: ["image/avif", "image/webp"],
+    // T-201 — placeholderهای seed (T-150) خودشان SVG اند، اولین‌شخص و
+    // خودمان تولیدشان کرده‌ایم (نه آپلود کاربر) — امن برای فعال‌سازی.
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
   },
   async headers() {
     return [

@@ -1,0 +1,7 @@
+<svg width="750" height="900" viewBox="0 0 750 900" xmlns="http://www.w3.org/2000/svg">
+  <rect width="750" height="900" fill="#F4F1FD"/>
+  <circle cx="540" cy="288" r="360" fill="#6C4DFF" opacity="0.14"/>
+  <circle cx="135" cy="675" r="288" fill="#6C4DFF" opacity="0.08"/>
+  <text x="375" y="450" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="63" font-weight="700" fill="#17151F">تصویر هیرو نمونه</text>
+  <text x="375" y="540" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="32" fill="#5F5B6B">عکس واقعی جایگزین می‌شود</text>
+</svg>

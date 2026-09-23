@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useRef, useState } from "react";
 import * as RadixSelect from "@radix-ui/react-select";
 import * as Popover from "@radix-ui/react-popover";
