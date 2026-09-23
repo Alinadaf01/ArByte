@@ -68,6 +68,7 @@ export const FilterDefinitionSchema = z.object({
 });
 
 export const CatalogFiltersQuerySchema = z.object({ category: SlugSchema });
+export type CatalogFiltersQuery = z.infer<typeof CatalogFiltersQuerySchema>;
 export const CatalogFiltersResponseSchema = successResponseSchema(
   z.object({
     specs: z.array(FilterDefinitionSchema),

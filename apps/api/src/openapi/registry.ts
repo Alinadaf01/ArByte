@@ -21,6 +21,10 @@ import {
   ProductDetailResponseSchema,
   ProductListQuerySchema,
   ProductListResponseSchema,
+  CatalogFiltersQuerySchema,
+  CatalogFiltersResponseSchema,
+  SearchQuerySchema,
+  SearchResponseSchema,
   ProfileResponseSchema,
   UpdateProfileBodySchema,
   AddressListResponseSchema,
@@ -178,6 +182,36 @@ export function buildOpenApiDocument(): OpenAPIObject {
         },
       },
       404: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/catalog/filters",
+    tags: ["catalog"],
+    summary:
+      "فیلترهای پویای یک دسته (مشخصات SELECT/NUMBER، بازه‌ی قیمت، برند، شرایط کالا)",
+    request: { query: CatalogFiltersQuerySchema },
+    responses: {
+      200: {
+        description: "فیلترهای دسته",
+        content: {
+          "application/json": { schema: CatalogFiltersResponseSchema },
+        },
+      },
+      404: errorResponse,
+    },
+  });
+  registry.registerPath({
+    method: "get",
+    path: "/api/v1/catalog/search",
+    tags: ["catalog"],
+    summary: "جستجوی متنی محصولات",
+    request: { query: SearchQuerySchema },
+    responses: {
+      200: {
+        description: "نتایج جستجو (صفحه‌بندی‌شده)",
+        content: { "application/json": { schema: SearchResponseSchema } },
+      },
     },
   });
   // `GET /catalog/categories` عمداً اینجا ثبت *نشده*: پاسخش

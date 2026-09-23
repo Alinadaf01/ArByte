@@ -11,6 +11,7 @@ import { CategoryModule } from "./modules/category/category.module";
 import { BrandModule } from "./modules/brand/brand.module";
 import { SpecificationModule } from "./modules/specification/specification.module";
 import { CatalogModule } from "./modules/catalog/catalog.module";
+import { ContentModule } from "./modules/content/content.module";
 
 @Module({
   imports: [
@@ -29,6 +30,8 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
     SpecificationModule,
     // T-200 — اولین ماژول عمومی (بدون PermissionGuard)، مصرف‌شده توسط apps/web.
     CatalogModule,
+    // T-150 — بلوک‌های صفحه‌ی اصلی، عمومی، از CatalogModule برای PRODUCT_RAIL استفاده می‌کند.
+    ContentModule,
     // بقیه‌ی ماژول‌های کسب‌وکاری (Product, Order, ...) در تسک‌های بعدی فاز ۱.
   ],
 })

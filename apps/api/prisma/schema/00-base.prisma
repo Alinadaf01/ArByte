@@ -5,8 +5,11 @@
 // اینجا (قرارداد Prisma 7).
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider        = "prisma-client"
+  output          = "../generated/prisma"
+  // T-150 §۶ — برای collapse کردن include تودرتوی فهرست کاتالوگ به یک JOIN
+  // به‌جای چند کوئری batched جدا (relationLoadStrategy: "join" در سرویس).
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

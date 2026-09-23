@@ -27,10 +27,12 @@ export const SpecificationItemSchema = z.object({
   name: z.string(),
   value: z.string(),
 });
+export type SpecificationItem = z.infer<typeof SpecificationItemSchema>;
 export const SpecificationGroupSchema = z.object({
   groupName: z.string(),
   items: z.array(SpecificationItemSchema),
 });
+export type SpecificationGroup = z.infer<typeof SpecificationGroupSchema>;
 
 export const PublicProductDetailSchema = z.object({
   id: z.string(),
@@ -79,6 +81,9 @@ export const ProductCardSchema = z.object({
   category: CategoryRefSchema,
   condition: ProductConditionSchema,
   image: ProductImageSchema.nullable(),
+  /** T-150 — گپ سند تسک/قرارداد: کارت طراحی حداکثر چهار مشخصه نشان می‌دهد؛
+   * قرارداد اولیه‌ی T-004 این فیلد را نداشت (تصمیم مدیر پروژه: اضافه شود). */
+  keySpecs: z.array(SpecificationItemSchema).max(4),
   defaultVariant: ProductCardVariantSchema,
   hasMultipleVariants: z.boolean(),
   variantCount: z.number().int().positive(),
@@ -92,7 +97,11 @@ export type ProductCard = z.infer<typeof ProductCardSchema>;
  * `spec` کلیدهای پویا دارد (`spec[<specDefId>]=value`)؛ Query string با
  * این شکل به `{ spec: { "<id>": "value" } }` parse می‌شود.
  */
+/** T-150 §۶ — سقف perPage اینجا ۶۰ است (سختگیرانه‌تر از ۱۰۰ عمومیِ
+ * PaginationQuerySchema)، فقط برای فهرست کاتالوگ عمومی — پرفورمنس صریح
+ * سند تسک. اسکیمای مشترک برای دامنه‌های ادمین دست‌نخورده می‌ماند. */
 export const ProductListQuerySchema = PaginationQuerySchema.extend({
+  perPage: z.coerce.number().int().positive().max(60).default(24),
   category: SlugSchema.optional(),
   brand: SlugSchema.optional(),
   condition: ProductConditionSchema.optional(),
@@ -109,6 +118,8 @@ export const ProductListResponseSchema =
 
 // GET /catalog/search?q=
 export const SearchQuerySchema = PaginationQuerySchema.extend({
+  perPage: z.coerce.number().int().positive().max(60).default(24),
   q: z.string().min(1),
 });
+export type SearchQuery = z.infer<typeof SearchQuerySchema>;
 export const SearchResponseSchema = paginatedResponseSchema(ProductCardSchema);

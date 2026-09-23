@@ -1,8 +1,223 @@
-import { Inject, Injectable } from "@nestjs/common";
-import type { CategoryTreeNode } from "@arbyte/contracts";
+import { Inject, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  buildVariantLabel,
+  selectCardVariant,
+  type CategoryTreeNode,
+  type ProductCard,
+  type ProductConditionValue,
+  type ProductListQuery,
+  type PublicProductDetail,
+  type PublicVariant,
+  type SearchQuery,
+  type SpecificationItem,
+  type VariantAxis,
+} from "@arbyte/contracts";
 import { PrismaService } from "../../prisma/prisma.service";
+import { computeAvailability } from "./availability";
 
-/** §۸.۱۸، T-200. عمومی — بدون احراز هویت، فقط دسته‌بندی‌های فعال و حذف‌نشده. */
+/**
+ * T-150 §۶ — شامل تودرتوی محصول: برند/دسته (join تک‌به‌یک)، تصاویر،
+ * مشخصات سطح‌محصول، و واریانت‌ها با موجودی/مشخصات‌شان — همه در همین یک
+ * `include` تا فهرست ۲۴ محصولی به‌جای N+۱، حداکثر چند کوئری batched بزند
+ * (بدون `include` تودرتو، هر محصول یک کوئری جدا برای واریانت و یکی برای
+ * تصویر می‌زد؛ ر.ک. گزارش تسک برای عدد واقعی اندازه‌گیری‌شده).
+ */
+const PRODUCT_INCLUDE = {
+  brand: true,
+  category: true,
+  images: { orderBy: { sortOrder: "asc" as const } },
+  specifications: { include: { definition: true, value: true } },
+  variants: {
+    where: { deletedAt: null },
+    orderBy: { createdAt: "asc" as const },
+    include: {
+      inventory: true,
+      specifications: { include: { definition: true, value: true } },
+    },
+  },
+};
+
+type ProductRow = Awaited<
+  ReturnType<PrismaService["product"]["findFirstOrThrow"]>
+> & {
+  brand: { id: string; name: string; slug: string };
+  category: { id: string; name: string; slug: string };
+  images: {
+    url: string;
+    altText: string | null;
+    sortOrder: number;
+    isPrimary: boolean;
+  }[];
+  specifications: SpecRow[];
+  variants: VariantRow[];
+};
+
+interface SpecRow {
+  specificationDefinitionId: string;
+  customValue: string | null;
+  numericValue: unknown;
+  definition: { nameFa: string; isVariantAxis: boolean };
+  value: { value: string } | null;
+}
+
+interface VariantRow {
+  id: string;
+  sku: string;
+  isDefault: boolean;
+  finalPrice: bigint;
+  compareAtPrice: bigint | null;
+  isPreorder: boolean;
+  inventory: {
+    quantity: number;
+    reservedQuantity: number;
+    availableQuantity: number | null;
+    lowStockThreshold: number | null;
+  } | null;
+  specifications: SpecRow[];
+}
+
+function specValueOf(spec: SpecRow): string {
+  if (spec.value?.value) return spec.value.value;
+  if (spec.customValue) return spec.customValue;
+  if (spec.numericValue != null) return String(spec.numericValue);
+  return "";
+}
+
+/** الحاقیه §۱ — محورهای پیکربندی و واریانت‌های عمومی یک محصول را با هم می‌سازد. */
+function buildAxesAndVariants(
+  variantRows: VariantRow[],
+  globalThreshold: number,
+): { variants: PublicVariant[]; variantAxes: VariantAxis[] } {
+  const axisOrder: string[] = [];
+  const axisMeta = new Map<string, { name: string; values: Set<string> }>();
+
+  for (const v of variantRows) {
+    for (const spec of v.specifications) {
+      if (!spec.definition.isVariantAxis) continue;
+      const value = specValueOf(spec);
+      if (!value) continue;
+      if (!axisMeta.has(spec.specificationDefinitionId)) {
+        axisOrder.push(spec.specificationDefinitionId);
+        axisMeta.set(spec.specificationDefinitionId, {
+          name: spec.definition.nameFa,
+          values: new Set(),
+        });
+      }
+      axisMeta.get(spec.specificationDefinitionId)!.values.add(value);
+    }
+  }
+
+  const axisRefsForLabel = axisOrder.map((specDefId) => ({ specDefId }));
+
+  const variants: PublicVariant[] = variantRows.map((v) => {
+    const axisValues: Record<string, string> = {};
+    for (const spec of v.specifications) {
+      if (!spec.definition.isVariantAxis) continue;
+      const value = specValueOf(spec);
+      if (value) axisValues[spec.specificationDefinitionId] = value;
+    }
+    return {
+      id: v.id,
+      sku: v.sku,
+      label: buildVariantLabel(axisValues, axisRefsForLabel),
+      axisValues,
+      price: {
+        final: Number(v.finalPrice),
+        compareAt: v.compareAtPrice != null ? Number(v.compareAtPrice) : null,
+      },
+      availability: computeAvailability(
+        v.inventory,
+        v.isPreorder,
+        globalThreshold,
+      ),
+    };
+  });
+
+  const variantAxes: VariantAxis[] = axisOrder.map((specDefId) => ({
+    specDefId,
+    name: axisMeta.get(specDefId)!.name,
+    values: Array.from(axisMeta.get(specDefId)!.values),
+  }));
+
+  return { variants, variantAxes };
+}
+
+/** حداکثر چهار مشخصه — همان‌هایی که در کارت طراحی دیده می‌شوند (سند §۳، هشدار). */
+function buildKeySpecs(specs: SpecRow[]): SpecificationItem[] {
+  return specs
+    .slice(0, 4)
+    .map((spec) => ({ name: spec.definition.nameFa, value: specValueOf(spec) }))
+    .filter((item) => item.value);
+}
+
+/**
+ * تصمیم پیاده‌سازی T-150 — `SpecificationGroupSchema.groupName` در قرارداد
+ * هست اما مدل داده هیچ فیلد گروه‌بندی ندارد؛ طبق طراحی واقعی صفحه‌ی محصول
+ * (`Product.dc.html`) مشخصات یک آرایه‌ی تخت‌اند، پس یک گروه عمومی کافی است.
+ */
+function buildSpecGroups(specs: SpecRow[]) {
+  const items = specs
+    .map((spec) => ({ name: spec.definition.nameFa, value: specValueOf(spec) }))
+    .filter((item) => item.value);
+  if (items.length === 0) return [];
+  return [{ groupName: "مشخصات فنی", items }];
+}
+
+function toBrandRef(product: ProductRow) {
+  return {
+    id: product.brand.id,
+    name: product.brand.name,
+    slug: product.brand.slug,
+  };
+}
+function toCategoryRef(product: ProductRow) {
+  return {
+    id: product.category.id,
+    name: product.category.name,
+    slug: product.category.slug,
+  };
+}
+
+/** الحاقیه §۲/§۳ — کارت فهرست؛ specFilters فعال یعنی defaultVariant باید اولین واریانت *منطبق* باشد. */
+function buildProductCard(
+  product: ProductRow,
+  globalThreshold: number,
+  specFilters?: Record<string, string>,
+): ProductCard {
+  const { variants } = buildAxesAndVariants(product.variants, globalThreshold);
+  const actualDefaultId =
+    product.variants.find((v) => v.isDefault)?.id ?? variants[0]!.id;
+  const chosen = selectCardVariant(variants, actualDefaultId, specFilters);
+  const primaryImage =
+    product.images.find((img) => img.isPrimary) ?? product.images[0] ?? null;
+
+  return {
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    brand: toBrandRef(product),
+    category: toCategoryRef(product),
+    condition: product.condition as ProductConditionValue,
+    image: primaryImage
+      ? {
+          url: primaryImage.url,
+          alt: primaryImage.altText,
+          order: primaryImage.sortOrder,
+        }
+      : null,
+    keySpecs: buildKeySpecs(product.specifications),
+    defaultVariant: {
+      id: chosen.id,
+      label: chosen.label,
+      price: chosen.price.final,
+      availability: chosen.availability,
+    },
+    hasMultipleVariants: variants.length > 1,
+    variantCount: variants.length,
+  };
+}
+
+/** §۸.۱۸، T-200/T-150. عمومی — بدون احراز هویت، فقط داده‌ی فعال/عمومی/حذف‌نشده. */
 @Injectable()
 export class CatalogService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
@@ -38,5 +253,360 @@ export class CatalogService {
       }));
 
     return build(null);
+  }
+
+  /**
+   * T-150 §۸ — الحاقیه §۸: پاسخ `GET /content/homepage` باید محتوای حل‌شده
+   * بدهد، نه ارجاع؛ PRODUCT_RAIL خودِ کارت‌ها را لازم دارد، پس ContentService
+   * از همین متد (نه پیاده‌سازی جدا) استفاده می‌کند تا شکل کارت یکسان بماند.
+   */
+  async getProductCardsByIds(ids: string[]): Promise<ProductCard[]> {
+    if (ids.length === 0) return [];
+    const globalThreshold = await this.getGlobalLowStockThreshold();
+    const products = (await this.prisma.product.findMany({
+      where: {
+        id: { in: ids },
+        status: "ACTIVE",
+        deletedAt: null,
+        isVisibleOnSite: true,
+      },
+      include: PRODUCT_INCLUDE,
+      relationLoadStrategy: "join",
+    })) as unknown as ProductRow[];
+
+    const byId = new Map(products.map((p) => [p.id, p]));
+    return ids
+      .map((id) => byId.get(id))
+      .filter((p): p is ProductRow => Boolean(p))
+      .map((p) => buildProductCard(p, globalThreshold));
+  }
+
+  private async getGlobalLowStockThreshold(): Promise<number> {
+    const setting = await this.prisma.setting.findUnique({
+      where: { key: "inventory.lowStockThreshold" },
+    });
+    const value = setting?.value;
+    return typeof value === "number" ? value : 3;
+  }
+
+  /** §۴ — فیلتر/مرتب‌سازی/صفحه‌بندی. قیمت روی واریانت اعمال می‌شود (حداقل یک واریانت در بازه). */
+  async listProducts(
+    query: ProductListQuery,
+  ): Promise<{ items: ProductCard[]; total: number }> {
+    const globalThreshold = await this.getGlobalLowStockThreshold();
+
+    const variantConditions: Record<string, unknown>[] = [{ deletedAt: null }];
+    if (query.minPrice !== undefined || query.maxPrice !== undefined) {
+      variantConditions.push({
+        finalPrice: {
+          ...(query.minPrice !== undefined && {
+            gte: BigInt(query.minPrice),
+          }),
+          ...(query.maxPrice !== undefined && {
+            lte: BigInt(query.maxPrice),
+          }),
+        },
+      });
+    }
+    if (query.spec) {
+      for (const [specDefId, value] of Object.entries(query.spec)) {
+        variantConditions.push({
+          specifications: {
+            some: { specificationDefinitionId: specDefId, value: { value } },
+          },
+        });
+      }
+    }
+    if (query.availability === "PREORDER") {
+      variantConditions.push({ isPreorder: true });
+    } else if (query.availability === "IN_STOCK") {
+      variantConditions.push({
+        isPreorder: false,
+        inventory: { availableQuantity: { gt: 0 } },
+      });
+    }
+
+    const where = {
+      status: "ACTIVE" as const,
+      deletedAt: null,
+      isVisibleOnSite: true,
+      isVisibleInCategory: true,
+      ...(query.category && { category: { slug: query.category } }),
+      ...(query.brand && { brand: { slug: query.brand } }),
+      ...(query.condition && { condition: query.condition }),
+      variants: { some: { AND: variantConditions } },
+    };
+
+    const products = (await this.prisma.product.findMany({
+      where,
+      include: PRODUCT_INCLUDE,
+      relationLoadStrategy: "join",
+    })) as unknown as ProductRow[];
+
+    const rows = products.map((p) => ({
+      card: buildProductCard(p, globalThreshold, query.spec),
+      priority: p.priority,
+      createdAt: p.createdAt,
+    }));
+
+    rows.sort((a, b) => {
+      switch (query.sort) {
+        case "price_asc":
+          return a.card.defaultVariant.price - b.card.defaultVariant.price;
+        case "price_desc":
+          return b.card.defaultVariant.price - a.card.defaultVariant.price;
+        case "popular":
+          return (
+            b.priority - a.priority ||
+            b.createdAt.getTime() - a.createdAt.getTime()
+          );
+        case "newest":
+        default:
+          return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+    });
+
+    const total = rows.length;
+    const start = (query.page - 1) * query.perPage;
+    const items = rows.slice(start, start + query.perPage).map((r) => r.card);
+
+    return { items, total };
+  }
+
+  async getProductBySlug(slug: string): Promise<PublicProductDetail> {
+    const globalThreshold = await this.getGlobalLowStockThreshold();
+
+    const product = (await this.prisma.product.findFirst({
+      where: {
+        slug,
+        status: "ACTIVE",
+        deletedAt: null,
+        isVisibleOnSite: true,
+      },
+      include: { ...PRODUCT_INCLUDE, seo: true },
+      relationLoadStrategy: "join",
+    })) as unknown as
+      | (ProductRow & {
+          seo: {
+            metaTitle: string | null;
+            metaDescription: string | null;
+            canonical: string | null;
+          } | null;
+        })
+      | null;
+
+    if (!product) {
+      throw new NotFoundException({
+        code: "NOT_FOUND",
+        message: "محصول پیدا نشد.",
+      });
+    }
+
+    const { variants, variantAxes } = buildAxesAndVariants(
+      product.variants,
+      globalThreshold,
+    );
+    const defaultVariantId =
+      product.variants.find((v) => v.isDefault)?.id ?? variants[0]!.id;
+
+    return {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      brand: toBrandRef(product),
+      category: toCategoryRef(product),
+      condition: product.condition as ProductConditionValue,
+      images: product.images.map((img) => ({
+        url: img.url,
+        alt: img.altText,
+        order: img.sortOrder,
+      })),
+      description: product.description,
+      defaultVariantId,
+      variantAxes,
+      variants,
+      specifications: buildSpecGroups(product.specifications),
+      seo: {
+        title: product.seo?.metaTitle ?? null,
+        description: product.seo?.metaDescription ?? null,
+        canonical: product.seo?.canonical ?? null,
+      },
+    };
+  }
+
+  /** §۶.۱۱ — فیلترهای پویای یک دسته: مشخصات SELECT/NUMBER، بازه‌ی قیمت، برند، شرایط کالا. */
+  async getFilters(categorySlug: string) {
+    const category = await this.prisma.category.findFirst({
+      where: { slug: categorySlug, isActive: true, deletedAt: null },
+    });
+    if (!category) {
+      throw new NotFoundException({
+        code: "NOT_FOUND",
+        message: "دسته‌بندی پیدا نشد.",
+      });
+    }
+
+    const baseWhere = {
+      status: "ACTIVE" as const,
+      deletedAt: null,
+      isVisibleOnSite: true,
+      isVisibleInCategory: true,
+      categoryId: category.id,
+    };
+
+    const [definitions, products] = await Promise.all([
+      this.prisma.specificationDefinition.findMany({
+        where: { categoryId: category.id, isFilterable: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      this.prisma.product.findMany({
+        where: baseWhere,
+        select: {
+          id: true,
+          condition: true,
+          brand: { select: { id: true, name: true, slug: true } },
+          specifications: {
+            select: {
+              specificationDefinitionId: true,
+              customValue: true,
+              numericValue: true,
+              value: { select: { value: true } },
+            },
+          },
+          variants: {
+            where: { deletedAt: null },
+            select: {
+              finalPrice: true,
+              specifications: {
+                select: {
+                  specificationDefinitionId: true,
+                  customValue: true,
+                  numericValue: true,
+                  value: { select: { value: true } },
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    let min = Infinity;
+    let max = -Infinity;
+    const brandMap = new Map<
+      string,
+      { id: string; name: string; slug: string }
+    >();
+    const conditionSet = new Set<string>();
+    const specValues = new Map<string, Map<string, Set<string>>>();
+    const specNumericRange = new Map<string, { min: number; max: number }>();
+
+    for (const p of products) {
+      conditionSet.add(p.condition);
+      brandMap.set(p.brand.id, p.brand);
+
+      const allSpecs = [...p.specifications];
+      for (const v of p.variants) {
+        const price = Number(v.finalPrice);
+        if (price < min) min = price;
+        if (price > max) max = price;
+        allSpecs.push(...v.specifications);
+      }
+
+      for (const spec of allSpecs) {
+        if (spec.value?.value) {
+          const byValue =
+            specValues.get(spec.specificationDefinitionId) ??
+            new Map<string, Set<string>>();
+          specValues.set(spec.specificationDefinitionId, byValue);
+          const productIds = byValue.get(spec.value.value) ?? new Set<string>();
+          byValue.set(spec.value.value, productIds);
+          productIds.add(p.id);
+        }
+        if (spec.numericValue != null) {
+          const n = Number(spec.numericValue);
+          const current = specNumericRange.get(spec.specificationDefinitionId);
+          if (!current) {
+            specNumericRange.set(spec.specificationDefinitionId, {
+              min: n,
+              max: n,
+            });
+          } else {
+            current.min = Math.min(current.min, n);
+            current.max = Math.max(current.max, n);
+          }
+        }
+      }
+    }
+
+    const specs = definitions.map((def) => {
+      if (def.type === "NUMBER") {
+        const range = specNumericRange.get(def.id);
+        return {
+          specDefId: def.id,
+          name: def.nameFa,
+          type: def.type,
+          unit: def.unit,
+          numericRange: range,
+        };
+      }
+      const byValue = specValues.get(def.id);
+      const options = byValue
+        ? Array.from(byValue.entries()).map(([value, ids]) => ({
+            value,
+            count: ids.size,
+          }))
+        : [];
+      return {
+        specDefId: def.id,
+        name: def.nameFa,
+        type: def.type,
+        unit: def.unit,
+        options,
+      };
+    });
+
+    return {
+      specs,
+      priceRange: {
+        min: Number.isFinite(min) ? min : 0,
+        max: Number.isFinite(max) ? max : 0,
+      },
+      brands: Array.from(brandMap.values()),
+      conditions: Array.from(conditionSet) as ProductConditionValue[],
+    };
+  }
+
+  /** جستجوی متنی ساده روی نام محصول/برند — بدون زیرساخت جستجوی رتبه‌بندی‌شده (کش/ایندکس پیچیده لازم نیست، سند §۸). */
+  async search(
+    query: SearchQuery,
+  ): Promise<{ items: ProductCard[]; total: number }> {
+    const globalThreshold = await this.getGlobalLowStockThreshold();
+
+    const where = {
+      status: "ACTIVE" as const,
+      deletedAt: null,
+      isVisibleOnSite: true,
+      isVisibleInSearch: true,
+      OR: [
+        { name: { contains: query.q, mode: "insensitive" as const } },
+        {
+          brand: { name: { contains: query.q, mode: "insensitive" as const } },
+        },
+      ],
+    };
+
+    const products = (await this.prisma.product.findMany({
+      where,
+      include: PRODUCT_INCLUDE,
+      orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
+    })) as unknown as ProductRow[];
+
+    const cards = products.map((p) => buildProductCard(p, globalThreshold));
+    const total = cards.length;
+    const start = (query.page - 1) * query.perPage;
+    const items = cards.slice(start, start + query.perPage);
+
+    return { items, total };
   }
 }

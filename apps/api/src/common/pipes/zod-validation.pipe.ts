@@ -12,18 +12,31 @@ interface MaybeZodDto {
 
 /**
  * Pipe سراسری اعتبارسنجی — بند ۱۱.۹۹.
- * فقط وقتی متاتایپ پارامتر یک ZodDto باشد (از createZodDto ساخته شده) اعتبارسنجی
- * می‌کند؛ در غیر این صورت مقدار را بدون تغییر عبور می‌دهد (مثلاً برای primitive ها).
+ *
+ * T-150 — کشف مهم: تشخیص متاتایپ از `ArgumentMetadata.metatype` به
+ * `emitDecoratorMetadata` وابسته است، که `tsx` (موتور dev/start این پروژه،
+ * ر.ک. یادداشت SKILL درباره‌ی DI) اصلاً پیاده نمی‌کند — یعنی این مسیر
+ * (پیش‌فرض سراسری، بدون schema صریح) در عمل **هرگز چیزی را اعتبارسنجی
+ * نمی‌کرد**، نه فقط برای Query جدید این تسک، برای همه‌ی `@Body()` قبلی هم
+ * (تأیید شد: POST /admin/categories با بدنه‌ی خالی به‌جای ۴۰۰
+ * VALIDATION_ERROR، ۵۰۰ INTERNAL_ERROR داد). راه‌حل: `schema` را می‌شود
+ * مستقیم به سازنده‌ی pipe داد (`new ZodValidationPipe(Schema)` روی
+ * پارامتر) — دیگر به متاتایپ وابسته نیست. فال‌بک روی متاتایپ برای سازگاری
+ * عقب‌رو حفظ شده. اصلاح تمام Endpointهای قدیمی خارج از محدوده‌ی این تسک
+ * است (نه CRUD ادمین) — در گزارش پرچم زده شده.
  */
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
+  constructor(private readonly explicitSchema?: ZodType) {}
+
   transform(value: unknown, metadata: ArgumentMetadata) {
     const metatype = metadata.metatype as unknown as MaybeZodDto | undefined;
-    if (!metatype?.schema) {
+    const schema = this.explicitSchema ?? metatype?.schema;
+    if (!schema) {
       return value;
     }
 
-    const result = metatype.schema.safeParse(value);
+    const result = schema.safeParse(value);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
       for (const issue of result.error.issues) {

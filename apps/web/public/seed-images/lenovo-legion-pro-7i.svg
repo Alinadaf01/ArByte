@@ -1,0 +1,8 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#F4F1FD"/>
+  <circle cx="400" cy="230" r="90" fill="#6C4DFF" opacity="0.12"/>
+  <rect x="280" y="180" width="240" height="150" rx="16" fill="none" stroke="#6C4DFF" stroke-width="3" opacity="0.5"/>
+  <text x="400" y="410" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="28" font-weight="700" fill="#17151F">Lenovo Legion</text>
+  <text x="400" y="448" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="28" font-weight="700" fill="#17151F">Pro 7i</text>
+  <text x="400" y="490" text-anchor="middle" font-family="Tahoma, sans-serif" font-size="15" fill="#5F5B6B">تصویر نمونه — عکس واقعی جایگزین می‌شود</text>
+</svg>

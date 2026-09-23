@@ -156,12 +156,19 @@ model ProductVariant {
   finalPrice               BigInt
   /// §۷.۱۰ «قیمت قبلی» — برای نمایش تخفیف خط‌خورده.
   compareAtPrice           BigInt?
+  /// T-150 — گپ قرارداد/مدل: `AvailabilitySchema`/`StockStatus` مقدار
+  /// PREORDER دارند اما هیچ فیلدی برایش نبود (فقط quantity/threshold که
+  /// IN_STOCK/LOW_STOCK/OUT_OF_STOCK را می‌سازند). تصمیم مدیر پروژه: این
+  /// فلگ اضافه شود؛ وقتی true است، صرف‌نظر از quantity، وضعیت PREORDER است.
+  isPreorder                Boolean     @default(false)
   deletedAt                DateTime?
   createdAt                DateTime    @default(now())
   updatedAt                DateTime    @updatedAt
 
-  product               Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
-  inventory             Inventory[]
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// T-150 — واقعاً ۱:۱ از وقتی T-149 warehouseId را از کلید Inventory حذف
+  /// کرد (حالا variantId تنها @id است)؛ قبلاً به‌اشتباه [] مانده بود.
+  inventory             Inventory?
   inventoryTransactions InventoryTransaction[]
   cartItems             CartItem[]
   orderItems            OrderItem[]
