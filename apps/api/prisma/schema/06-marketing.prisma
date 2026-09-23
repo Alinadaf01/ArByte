@@ -85,6 +85,8 @@ model CampaignProduct {
 enum HomepageBlockType {
   HERO
   CATEGORY_GRID
+  /// T-210 §۴ — دوئل دو پرچم‌دار (بخش صفحه اصلی طراحی که قبلاً بلوکی برایش نبود).
+  FLAGSHIP_DUEL
   PRODUCT_RAIL
   CAMPAIGN
   BENEFITS

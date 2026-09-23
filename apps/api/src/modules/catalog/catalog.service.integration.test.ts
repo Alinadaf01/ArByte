@@ -82,7 +82,7 @@ describe("CatalogService — الحاقیه §۳: فیلتر مشخصه‌ی م�
       page: 1,
       perPage: 24,
       sort: "newest",
-      category: "gaming-laptop",
+      category: "laptop-new",
     });
     const cardWithoutFilter = withoutFilter.find(
       (c) => c.slug === "msi-titan-18-hx",
@@ -93,7 +93,7 @@ describe("CatalogService — الحاقیه §۳: فیلتر مشخصه‌ی م�
       page: 1,
       perPage: 24,
       sort: "newest",
-      category: "gaming-laptop",
+      category: "laptop-new",
       spec: { [ramSpec.id]: "۳۲GB" },
     });
     const cardWithFilter = withFilter.find((c) => c.slug === "msi-titan-18-hx");
@@ -105,10 +105,10 @@ describe("CatalogService — الحاقیه §۳: فیلتر مشخصه‌ی م�
 describe("CatalogService — دید عمومی: محصول غیرفعال/حذف‌شده نمایش داده نمی‌شود", () => {
   it("محصول status=INACTIVE در فهرست و جزئیات نمی‌آید", async () => {
     const category = await prisma.category.findFirstOrThrow({
-      where: { slug: "keyboard-mouse" },
+      where: { slug: "laptop-stock" },
     });
     const brand = await prisma.brand.findFirstOrThrow({
-      where: { slug: "keychron" },
+      where: { slug: "lenovo" },
     });
     const slug = `inactive-test-${randomUUID()}`;
     const product = await prisma.product.create({
@@ -144,10 +144,10 @@ describe("CatalogService — دید عمومی: محصول غیرفعال/حذف
 
   it("محصول deletedAt پرشده در فهرست نمی‌آید", async () => {
     const category = await prisma.category.findFirstOrThrow({
-      where: { slug: "keyboard-mouse" },
+      where: { slug: "laptop-stock" },
     });
     const brand = await prisma.brand.findFirstOrThrow({
-      where: { slug: "keychron" },
+      where: { slug: "lenovo" },
     });
     const slug = `deleted-test-${randomUUID()}`;
     const product = await prisma.product.create({
@@ -205,10 +205,10 @@ describe("CatalogService — هرگز فیلد سود/قیمت همکار را �
 
 describe("CatalogService.getCategoryBySlug — T-202 §۱.۲", () => {
   it("والد (breadcrumb) و زیردسته‌ها به‌صورت کارت (با productCount) برمی‌گرداند", async () => {
-    const detail = await catalogService.getCategoryBySlug("gaming-laptop");
-    expect(detail.slug).toBe("gaming-laptop");
+    const detail = await catalogService.getCategoryBySlug("laptop-new");
+    expect(detail.slug).toBe("laptop-new");
     expect(detail.parent).toBeNull();
-    // gaming-laptop زیردسته ندارد در seed فعلی — آرایه‌ی خالی، نه خطا.
+    // laptop-new زیردسته ندارد در seed فعلی — آرایه‌ی خالی، نه خطا.
     expect(Array.isArray(detail.children)).toBe(true);
   });
 
@@ -222,7 +222,7 @@ describe("CatalogService.getCategoryBySlug — T-202 §۱.۲", () => {
 describe("CatalogService.getTopLevelCategoryCards / getCategoryCardsByIds — T-202 §۱.۱", () => {
   it("فقط دسته‌های سطح یک را با productCount درست برمی‌گرداند", async () => {
     const cards = await catalogService.getTopLevelCategoryCards();
-    const gaming = cards.find((c) => c.slug === "gaming-laptop");
+    const gaming = cards.find((c) => c.slug === "laptop-new");
     expect(gaming).toBeDefined();
     expect(gaming?.productCount).toBeGreaterThanOrEqual(6);
     expect(gaming?.image).not.toBeNull();
@@ -230,10 +230,10 @@ describe("CatalogService.getTopLevelCategoryCards / getCategoryCardsByIds — T-
 
   it("productCount فقط محصولات عمومی/فعال را می‌شمارد", async () => {
     const category = await prisma.category.findFirstOrThrow({
-      where: { slug: "keyboard-mouse" },
+      where: { slug: "laptop-stock" },
     });
     const brand = await prisma.brand.findFirstOrThrow({
-      where: { slug: "keychron" },
+      where: { slug: "lenovo" },
     });
     const before = await catalogService.getCategoryCardsByIds([category.id]);
     const countBefore = before[0]?.productCount ?? 0;

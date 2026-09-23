@@ -3,6 +3,8 @@ import { successResponseSchema } from "../common/response";
 import { CategoryCardSchema } from "../catalog/category";
 import { ProductCardSchema } from "../catalog/product";
 
+export * from "./block-config";
+
 /**
  * `GET /content/homepage` — عمومی. الحاقیه T-004 §۸، هشدار: پاسخ باید
  * **محتوای حل‌شده** بدهد، نه ارجاع — اگر بلوک PRODUCT_RAIL است، خود
@@ -27,12 +29,27 @@ const HomepageBlockBaseSchema = z.object({
   imageAlt: z.string().nullable(),
 });
 
+/** T-210 §۴ — یک مشخصه‌ی حل‌شده برای دوئل پرچم‌دار (مثلاً «توان کل: ۲۷۰W»). */
+const FlagshipMetricSchema = z.object({
+  label: z.string(),
+  values: z.tuple([z.string(), z.string()]),
+});
+
 export const PublicHomepageBlockSchema = z.discriminatedUnion("type", [
-  HomepageBlockBaseSchema.extend({ type: z.literal("HERO") }),
+  HomepageBlockBaseSchema.extend({
+    type: z.literal("HERO"),
+    /** T-211 — مانیفست فریم‌های هیروی اسکرولی (رزولوشن/رندر با T-211). */
+    framesManifest: z.string().nullable(),
+  }),
   HomepageBlockBaseSchema.extend({
     type: z.literal("CATEGORY_GRID"),
     // T-202 §۱.۱ — قبلاً CategoryRefSchema بود (بدون تصویر)؛ حالا کارت واقعی.
     categories: z.array(CategoryCardSchema),
+  }),
+  HomepageBlockBaseSchema.extend({
+    type: z.literal("FLAGSHIP_DUEL"),
+    products: z.tuple([ProductCardSchema, ProductCardSchema]),
+    metrics: z.array(FlagshipMetricSchema),
   }),
   HomepageBlockBaseSchema.extend({
     type: z.literal("PRODUCT_RAIL"),

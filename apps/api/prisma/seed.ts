@@ -149,23 +149,61 @@ async function findOrCreateCategory(data: {
   slug: string;
   parentId?: string;
   imageMain?: string;
+  imageThumbnail?: string;
+  description?: string;
+  sortOrder?: number;
 }) {
   const existing = await prisma.category.findFirst({
     where: { slug: data.slug },
   });
   if (existing) {
-    // T-202 §۱.۱ — دسته‌های اجرای seed قبل از این تسک بدون تصویر ساخته
-    // شده بودند؛ idempotent یعنی این هم باید دوباره اجرا با تصویر جدید را
-    // به‌روزرسانی کند، نه فقط رد شود.
-    if (data.imageMain && existing.imageMain !== data.imageMain) {
+    // idempotent یعنی اجرای دوباره باید تصویر/توضیح/ترتیب جدید را هم
+    // به‌روزرسانی کند، نه فقط رد شود (T-202 §۱.۱، توسعه‌یافته در T-210 §۲).
+    const needsUpdate =
+      (data.imageMain && existing.imageMain !== data.imageMain) ||
+      (data.imageThumbnail &&
+        existing.imageThumbnail !== data.imageThumbnail) ||
+      (data.description !== undefined &&
+        existing.description !== data.description) ||
+      (data.sortOrder !== undefined && existing.sortOrder !== data.sortOrder);
+    if (needsUpdate) {
       return prisma.category.update({
         where: { id: existing.id },
-        data: { imageMain: data.imageMain },
+        data: {
+          imageMain: data.imageMain,
+          imageThumbnail: data.imageThumbnail,
+          description: data.description,
+          sortOrder: data.sortOrder,
+        },
       });
     }
     return existing;
   }
   return prisma.category.create({ data });
+}
+
+/**
+ * T-210 §۲ — اعتبارسنجی seed: محصول دسته‌ی لپ‌تاپ باید condition هم‌خوان با
+ * همان دسته داشته باشد (NEW→آکبند، OPEN_BOX/LIKE_NEW→اپن‌باکس، STOCK→استوک).
+ */
+const LAPTOP_CATEGORY_CONDITIONS: Record<string, readonly string[]> = {
+  "laptop-new": ["NEW"],
+  "laptop-open-box": ["OPEN_BOX", "LIKE_NEW"],
+  "laptop-stock": ["STOCK"],
+};
+
+function assertConditionMatchesCategory(input: {
+  productName: string;
+  condition: string;
+  categorySlug: string;
+}) {
+  const allowed = LAPTOP_CATEGORY_CONDITIONS[input.categorySlug];
+  if (!allowed) return; // فقط دسته‌های لپ‌تاپ این قاعده را دارند.
+  if (!allowed.includes(input.condition)) {
+    throw new Error(
+      `seed: «${input.productName}» با condition=${input.condition} در دسته‌ی «${input.categorySlug}» ناسازگار است (مجاز: ${allowed.join("/")}).`,
+    );
+  }
 }
 
 /** بند ۷ سند T-150 — یک تعریف مشخصه (بدون SpecificationValue؛ آن جدا مدیریت می‌شود). */
@@ -227,6 +265,8 @@ interface ProductSeedInput {
   name: string;
   brandId: string;
   categoryId: string;
+  /** T-210 §۲ — برای اعتبارسنجی condition↔دسته؛ فقط دسته‌های لپ‌تاپ اثر دارند. */
+  categorySlug?: string;
   modelNumber: string;
   condition: "NEW" | "OPEN_BOX" | "STOCK" | "LIKE_NEW";
   shortDescription: string;
@@ -240,6 +280,12 @@ interface ProductSeedInput {
   /** مشخصات مشترک NUMBER با `numericValue` واقعی (برای فیلتر بازه‌ای). */
   numericSpecs?: { definitionId: string; value: number }[];
   variants: VariantSeedInput[];
+  /**
+   * T-210 §۳ — مشخصات «توان کل»/«روشنایی» برای دوئل پرچم‌دار؛ برخلاف
+   * `specs`، همیشه sync می‌شود (حتی روی محصول از قبل موجود) چون هدفش
+   * دقیقاً یک اجرای دوم روی محصول قدیمی‌تر است.
+   */
+  metricSpecs?: { definitionId: string; value: string }[];
 }
 
 /**
@@ -247,6 +293,12 @@ interface ProductSeedInput {
  * SEO پایه. idempotent (findFirst+create روی slug/sku، همان الگوی موجود).
  */
 async function seedProduct(input: ProductSeedInput) {
+  assertConditionMatchesCategory({
+    productName: input.name,
+    condition: input.condition,
+    categorySlug: input.categorySlug,
+  });
+
   const existingProduct = await prisma.product.findFirst({
     where: { slug: input.slug },
   });
@@ -266,6 +318,60 @@ async function seedProduct(input: ProductSeedInput) {
         description: input.description,
       },
     }));
+
+  // T-210 §۲/§۳ — بازآرایی دسته‌ها و به‌روزرسانی نام پرچم‌دارها: محصولی که
+  // از اجرای قبلی seed دسته/نام متفاوتی دارد باید همگام شود، نه ساکت رد شود.
+  if (
+    existingProduct &&
+    (existingProduct.categoryId !== input.categoryId ||
+      existingProduct.name !== input.name)
+  ) {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { categoryId: input.categoryId, name: input.name },
+    });
+  }
+
+  if (existingProduct) {
+    const primaryImage = await prisma.productImage.findFirst({
+      where: { productId: product.id, isPrimary: true },
+    });
+    const newUrl = `/seed-images/${input.image}.svg`;
+    if (primaryImage && primaryImage.url !== newUrl) {
+      await prisma.productImage.update({
+        where: { id: primaryImage.id },
+        data: {
+          url: newUrl,
+          altText: `تصویر نمونه‌ی ${input.name} — عکس واقعی جایگزین می‌شود`,
+        },
+      });
+    }
+  }
+
+  for (const metric of input.metricSpecs ?? []) {
+    const existingMetric = await prisma.productSpecification.findFirst({
+      where: {
+        productId: product.id,
+        specificationDefinitionId: metric.definitionId,
+      },
+    });
+    if (existingMetric) {
+      if (existingMetric.customValue !== metric.value) {
+        await prisma.productSpecification.update({
+          where: { id: existingMetric.id },
+          data: { customValue: metric.value },
+        });
+      }
+    } else {
+      await prisma.productSpecification.create({
+        data: {
+          productId: product.id,
+          specificationDefinitionId: metric.definitionId,
+          customValue: metric.value,
+        },
+      });
+    }
+  }
 
   if (!existingProduct) {
     await prisma.productImage.create({
@@ -364,22 +470,139 @@ async function seedProduct(input: ProductSeedInput) {
 }
 
 /** بند ۷ سند T-150 — سه دسته، پنج برند، ۱۸ محصول (پنج تا با پیکربندی). */
+/**
+ * T-210 §۲ — دسته‌ی قدیمی (`legacySlug`) را در جای همان ردیف بازآرایی
+ * می‌کند (نام/slug/تصویر/ترتیب/توضیح جدید) تا FK محصولات و مشخصات موجود
+ * دست‌نخورده بماند؛ اگر ردیف قدیمی نبود (مثلاً دیتابیس تست تازه) عادی
+ * find-or-create می‌شود.
+ */
+async function repurposeOrCreateCategory(input: {
+  legacySlug?: string;
+  name: string;
+  slug: string;
+  sortOrder: number;
+  description: string;
+  imageMain: string;
+  imageThumbnail: string;
+}) {
+  if (input.legacySlug) {
+    const legacy = await prisma.category.findFirst({
+      where: { slug: input.legacySlug },
+    });
+    if (legacy) {
+      return prisma.category.update({
+        where: { id: legacy.id },
+        data: {
+          name: input.name,
+          slug: input.slug,
+          sortOrder: input.sortOrder,
+          description: input.description,
+          imageMain: input.imageMain,
+          imageThumbnail: input.imageThumbnail,
+        },
+      });
+    }
+  }
+  return findOrCreateCategory({
+    name: input.name,
+    slug: input.slug,
+    sortOrder: input.sortOrder,
+    description: input.description,
+    imageMain: input.imageMain,
+    imageThumbnail: input.imageThumbnail,
+  });
+}
+
+/**
+ * بند ۷ سند T-210 — پنج دسته‌ی واقعی آربایت، دقیقاً به همین ترتیب و املا.
+ * سه‌تای اول از سه دسته‌ی قدیمی T-150 (gaming-laptop/surface-workstation/
+ * keyboard-mouse) بازآرایی می‌شوند؛ دو دسته‌ی لپ‌تاپ اپن‌باکس/استوک تازه‌اند.
+ */
 async function seedCatalog() {
-  const gamingCategory = await findOrCreateCategory({
-    name: "لپ‌تاپ گیمینگ",
-    slug: "gaming-laptop",
-    imageMain: "/seed-images/category-gaming-laptop.svg",
+  const laptopNewCategory = await repurposeOrCreateCategory({
+    legacySlug: "gaming-laptop",
+    name: "لپ‌تاپ آکبند",
+    slug: "laptop-new",
+    sortOrder: 1,
+    description: "کارتن پلمب، دست‌نخورده",
+    imageMain: "/categories/category-1.webp",
+    imageThumbnail: "/categories/category-1-thumb.webp",
   });
-  const workstationCategory = await findOrCreateCategory({
-    name: "سرفیس و ورک‌استیشن",
-    slug: "surface-workstation",
-    imageMain: "/seed-images/category-surface-workstation.svg",
+  const laptopOpenBoxCategory = await findOrCreateCategory({
+    name: "لپ‌تاپ اپن باکس",
+    slug: "laptop-open-box",
+    sortOrder: 2,
+    description: "جعبه باز شده، در حد نو",
+    imageMain: "/categories/category-2.webp",
+    imageThumbnail: "/categories/category-2-thumb.webp",
   });
-  const peripheralsCategory = await findOrCreateCategory({
-    name: "کیبورد و موس",
-    slug: "keyboard-mouse",
-    imageMain: "/seed-images/category-keyboard-mouse.svg",
+  const laptopStockCategory = await findOrCreateCategory({
+    name: "لپ‌تاپ استوک",
+    slug: "laptop-stock",
+    sortOrder: 3,
+    description: "کارکرده و تست‌شده",
+    imageMain: "/categories/category-3.webp",
+    imageThumbnail: "/categories/category-3-thumb.webp",
   });
+  const surfaceCategory = await repurposeOrCreateCategory({
+    legacySlug: "surface-workstation",
+    name: "سرفیس",
+    slug: "surface",
+    sortOrder: 4,
+    description: "Surface Pro و Surface Laptop",
+    imageMain: "/categories/category-4.webp",
+    imageThumbnail: "/categories/category-4-thumb.webp",
+  });
+  const gamingPcCategory = await repurposeOrCreateCategory({
+    legacySlug: "keyboard-mouse",
+    name: "کیس گیمینگ",
+    slug: "gaming-pc",
+    sortOrder: 5,
+    description: "سیستم آماده برای بازی و رندر",
+    imageMain: "/categories/category-5.webp",
+    imageThumbnail: "/categories/category-5-thumb.webp",
+  });
+
+  // ---- حذف Keychron و محصولات کیبورد/موس قدیمی از seed (§۲) ----
+  // gamingPcCategory همان ردیفِ بازآرایی‌شده‌ی keyboard-mouse است؛ محصولات
+  // Keychron قدیمی‌اش (اگر از اجرای قبلی seed مانده باشند) باید قبل از
+  // ساخت محصولات جدید این دسته پاک شوند — cascade مدل خودِ Product تا
+  // ProductVariant/Inventory/ProductSpecification را هم جارو می‌کند.
+  const legacyKeychronProducts = await prisma.product.findMany({
+    where: {
+      categoryId: gamingPcCategory.id,
+      slug: { startsWith: "keychron-" },
+    },
+    select: { id: true },
+  });
+  if (legacyKeychronProducts.length > 0) {
+    await prisma.product.deleteMany({
+      where: { id: { in: legacyKeychronProducts.map((p) => p.id) } },
+    });
+  }
+  const legacyPeripheralSpecs = await prisma.specificationDefinition.findMany({
+    where: {
+      categoryId: gamingPcCategory.id,
+      key: { in: ["switch-type", "connectivity", "layout", "battery", "dpi"] },
+    },
+    select: { id: true },
+  });
+  if (legacyPeripheralSpecs.length > 0) {
+    await prisma.specificationDefinition.deleteMany({
+      where: { id: { in: legacyPeripheralSpecs.map((s) => s.id) } },
+    });
+  }
+  const keychronBrand = await prisma.brand.findFirst({
+    where: { slug: "keychron" },
+  });
+  if (keychronBrand) {
+    // هر محصولی که هنوز به این برند اشاره دارد را هم پاک کن — نه فقط
+    // محصولات keychron-* — چون fixtureهای بعضی تست‌های یکپارچگی قدیمی‌تر
+    // (قبل از T-210) این برند را به‌عنوان یک برند seed-شده‌ی موجود، برای
+    // fixtureهای بی‌ربط خودشان قرض گرفته بودند.
+    await prisma.product.deleteMany({ where: { brandId: keychronBrand.id } });
+    await prisma.brand.delete({ where: { id: keychronBrand.id } });
+  }
 
   const brand = async (name: string, slug: string) =>
     prisma.brand.upsert({
@@ -391,134 +614,145 @@ async function seedCatalog() {
   const asus = await brand("ASUS", "asus");
   const lenovo = await brand("Lenovo", "lenovo");
   const microsoft = await brand("Microsoft", "microsoft");
-  const keychron = await brand("Keychron", "keychron");
 
-  // ---- مشخصات: لپ‌تاپ گیمینگ ----
+  // ---- مشخصات: لپ‌تاپ (مشترک هر سه دسته‌ی لپ‌تاپ — روی laptop-new
+  // scope شده؛ ر.ک. docs/QUESTIONS.md برای محدودیت فیلتر روی دو دسته‌ی
+  // دیگر، که T-213 برطرفش می‌کند) ----
   const cpuGaming = await defineSpec({
     key: "cpu-gaming",
     nameFa: "پردازنده",
     type: "TEXT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
   });
   const gpuGaming = await defineSpec({
     key: "gpu-gaming",
     nameFa: "گرافیک",
     type: "TEXT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
   });
   const displayGaming = await defineSpec({
     key: "display-gaming",
     nameFa: "نمایشگر",
     type: "TEXT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
   });
   const weightGaming = await defineSpec({
     key: "weight-gaming",
     nameFa: "وزن",
     type: "TEXT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
   });
   const ramGaming = await defineSpec({
     key: "ram-gaming",
     nameFa: "حافظه رم",
     type: "SELECT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
     isVariantAxis: true,
   });
   const storageGaming = await defineSpec({
     key: "storage-gaming",
     nameFa: "فضای ذخیره‌سازی",
     type: "SELECT",
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
     isVariantAxis: true,
   });
+  // T-210 §۳ — متریک‌های دوئل پرچم‌دار (Home.dc.html، بخش Flagships).
+  const totalPower = await defineSpec({
+    key: "total-power",
+    nameFa: "توان کل",
+    type: "TEXT",
+    categoryId: laptopNewCategory.id,
+  });
+  const brightness = await defineSpec({
+    key: "brightness",
+    nameFa: "روشنایی",
+    type: "TEXT",
+    categoryId: laptopNewCategory.id,
+  });
 
-  // ---- مشخصات: سرفیس و ورک‌استیشن ----
+  // ---- مشخصات: سرفیس ----
   const cpuWs = await defineSpec({
     key: "cpu-ws",
     nameFa: "پردازنده",
     type: "TEXT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
   });
   const gpuWs = await defineSpec({
     key: "gpu-ws",
     nameFa: "گرافیک",
     type: "TEXT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
   });
   const displayWs = await defineSpec({
     key: "display-ws",
     nameFa: "نمایشگر",
     type: "TEXT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
   });
   const weightWs = await defineSpec({
     key: "weight-ws",
     nameFa: "وزن",
     type: "TEXT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
   });
   const ramWs = await defineSpec({
     key: "ram-ws",
     nameFa: "حافظه رم",
     type: "SELECT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
     isVariantAxis: true,
   });
   const storageWs = await defineSpec({
     key: "storage-ws",
     nameFa: "فضای ذخیره‌سازی",
     type: "SELECT",
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
     isVariantAxis: true,
   });
 
-  // ---- مشخصات: کیبورد و موس ----
-  const switchType = await defineSpec({
-    key: "switch-type",
-    nameFa: "نوع سوییچ",
-    type: "SELECT",
-    categoryId: peripheralsCategory.id,
-  });
-  const connectivity = await defineSpec({
-    key: "connectivity",
-    nameFa: "نوع اتصال",
-    type: "SELECT",
-    categoryId: peripheralsCategory.id,
-  });
-  const layout = await defineSpec({
-    key: "layout",
-    nameFa: "چیدمان کلید",
+  // ---- مشخصات: کیس گیمینگ ----
+  const cpuPc = await defineSpec({
+    key: "cpu-pc",
+    nameFa: "پردازنده",
     type: "TEXT",
-    categoryId: peripheralsCategory.id,
+    categoryId: gamingPcCategory.id,
   });
-  const battery = await defineSpec({
-    key: "battery",
-    nameFa: "عمر باتری",
+  const gpuPc = await defineSpec({
+    key: "gpu-pc",
+    nameFa: "گرافیک",
     type: "TEXT",
-    categoryId: peripheralsCategory.id,
+    categoryId: gamingPcCategory.id,
   });
-  const dpi = await defineSpec({
-    key: "dpi",
-    nameFa: "دقت سنسور",
-    type: "NUMBER",
-    unit: "DPI",
-    categoryId: peripheralsCategory.id,
+  const psuPc = await defineSpec({
+    key: "psu-pc",
+    nameFa: "منبع تغذیه",
+    type: "TEXT",
+    categoryId: gamingPcCategory.id,
   });
-  // مقادیر از پیش تعریف‌شده‌ی سوییچ/اتصال (برای فیلتر با شمارش گزینه‌ها).
-  await specValue(switchType.id, "مکانیکی — قرمز");
-  await specValue(switchType.id, "مکانیکی — قهوه‌ای");
-  await specValue(switchType.id, "اپتیکال");
-  await specValue(connectivity.id, "بی‌سیم");
-  await specValue(connectivity.id, "سیمی");
-  await specValue(connectivity.id, "بی‌سیم و سیمی");
+  const ramPc = await defineSpec({
+    key: "ram-pc",
+    nameFa: "حافظه رم",
+    type: "SELECT",
+    categoryId: gamingPcCategory.id,
+    isVariantAxis: true,
+  });
+  const storagePc = await defineSpec({
+    key: "storage-pc",
+    nameFa: "فضای ذخیره‌سازی",
+    type: "SELECT",
+    categoryId: gamingPcCategory.id,
+    isVariantAxis: true,
+  });
 
   // ==================== لپ‌تاپ گیمینگ (۶ محصول) ====================
   await seedProduct({
     slug: "msi-titan-18-hx",
-    name: "MSI Titan 18 HX A2XWJG",
+    // T-210 §۳ — دقیقاً «Titan 18 HX A2W» طبق Home.dc.html بخش Flagships
+    // (نه «A2XWJG» — الگوی generic خودِ Product.dc.html؛ ر.ک. docs/QUESTIONS.md Q-5).
+    name: "MSI Titan 18 HX A2W",
     brandId: msi.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
     modelNumber: "A2XWJG",
     condition: "NEW",
     priority: 100,
@@ -531,9 +765,13 @@ async function seedCatalog() {
       { definitionId: gpuGaming.id, value: "GeForce RTX 5090 Laptop ۲۴GB" },
       {
         definitionId: displayGaming.id,
-        value: "۱۸ اینچ Mini LED ۳۸۴۰×۲۴۰۰ ۱۲۰Hz",
+        value: "۱۸ اینچ Mini LED ۲۴۰Hz",
       },
       { definitionId: weightGaming.id, value: "۳٫۶ کیلوگرم" },
+    ],
+    metricSpecs: [
+      { definitionId: totalPower.id, value: "۲۷۰W" },
+      { definitionId: brightness.id, value: "۱۰۰۰ nits" },
     ],
     variants: [
       {
@@ -569,11 +807,70 @@ async function seedCatalog() {
     ],
   });
 
+  // T-210 §۳ — پرچم‌دار دوم دوئل (Home.dc.html، بخش Flagships).
+  await seedProduct({
+    slug: "asus-rog-strix-scar-18",
+    name: "ASUS ROG Strix SCAR 18 (2026)",
+    brandId: asus.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
+    modelNumber: "SCAR18-2026",
+    condition: "NEW",
+    priority: 95,
+    image: "asus-rog-strix-scar-18",
+    shortDescription: "پیروزی، شتاب‌گرفته — رده‌ی بالای ROG با ۱۲۸GB رم",
+    description:
+      "Strix SCAR 18 (2026) رده‌ی بالای خط تولید ROG است؛ برای رقابتی‌ترین بازی‌ها روی نمایشگر ۴K Mini LED با نرخ فریم بالا ساخته شده. سقف رم تا ۱۲۸GB برای رندر و استریم همزمان جا دارد.",
+    specs: [
+      { definitionId: cpuGaming.id, value: "Intel Core Ultra 9 275HX" },
+      { definitionId: gpuGaming.id, value: "GeForce RTX 5090 Laptop ۱۷۵W" },
+      { definitionId: displayGaming.id, value: "۴K Mini LED ۲۴۰Hz" },
+      { definitionId: weightGaming.id, value: "۳٫۳ کیلوگرم" },
+    ],
+    metricSpecs: [
+      { definitionId: totalPower.id, value: "۳۲۰W" },
+      { definitionId: brightness.id, value: "۱۶۰۰ nits" },
+    ],
+    variants: [
+      {
+        sku: "ARB-ASUS-SCAR18-32-1TB",
+        isDefault: false,
+        finalPrice: 279_000_000n,
+        axes: [
+          { definitionId: ramGaming.id, value: "۳۲GB" },
+          { definitionId: storageGaming.id, value: "۱TB" },
+        ],
+        stock: { quantity: 6 },
+      },
+      {
+        sku: "ARB-ASUS-SCAR18-64-2TB",
+        isDefault: true,
+        finalPrice: 312_000_000n,
+        axes: [
+          { definitionId: ramGaming.id, value: "۶۴GB" },
+          { definitionId: storageGaming.id, value: "۲TB" },
+        ],
+        stock: { quantity: 4 },
+      },
+      {
+        sku: "ARB-ASUS-SCAR18-128-4TB",
+        isDefault: false,
+        finalPrice: 359_000_000n,
+        axes: [
+          { definitionId: ramGaming.id, value: "۱۲۸GB" },
+          { definitionId: storageGaming.id, value: "۴TB" },
+        ],
+        stock: { quantity: 2 },
+      },
+    ],
+  });
+
   await seedProduct({
     slug: "msi-raider-ge78-hx",
     name: "MSI Raider GE78 HX",
     brandId: msi.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
     modelNumber: "GE78HX",
     condition: "NEW",
     priority: 60,
@@ -601,7 +898,8 @@ async function seedCatalog() {
     slug: "asus-rog-strix-g16",
     name: "ASUS ROG Strix G16",
     brandId: asus.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
     modelNumber: "G16",
     condition: "NEW",
     priority: 70,
@@ -637,7 +935,8 @@ async function seedCatalog() {
     slug: "asus-rog-zephyrus-g14",
     name: "ASUS ROG Zephyrus G14",
     brandId: asus.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopOpenBoxCategory.id,
+    categorySlug: "laptop-open-box",
     modelNumber: "G14",
     condition: "LIKE_NEW",
     priority: 40,
@@ -666,7 +965,8 @@ async function seedCatalog() {
     slug: "lenovo-legion-pro-7i",
     name: "Lenovo Legion Pro 7i",
     brandId: lenovo.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopOpenBoxCategory.id,
+    categorySlug: "laptop-open-box",
     modelNumber: "Pro7i",
     condition: "OPEN_BOX",
     priority: 30,
@@ -694,7 +994,8 @@ async function seedCatalog() {
     slug: "lenovo-loq-15",
     name: "Lenovo LOQ 15",
     brandId: lenovo.id,
-    categoryId: gamingCategory.id,
+    categoryId: laptopStockCategory.id,
+    categorySlug: "laptop-stock",
     modelNumber: "LOQ15",
     condition: "STOCK",
     priority: 20,
@@ -723,7 +1024,7 @@ async function seedCatalog() {
     slug: "microsoft-surface-laptop-studio-2",
     name: "Microsoft Surface Laptop Studio 2",
     brandId: microsoft.id,
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
     modelNumber: "LaptopStudio2",
     condition: "NEW",
     priority: 90,
@@ -759,7 +1060,7 @@ async function seedCatalog() {
     slug: "microsoft-surface-pro-10",
     name: "Microsoft Surface Pro 10",
     brandId: microsoft.id,
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
     modelNumber: "Pro10",
     condition: "NEW",
     priority: 55,
@@ -795,7 +1096,7 @@ async function seedCatalog() {
     slug: "microsoft-surface-laptop-6",
     name: "Microsoft Surface Laptop 6",
     brandId: microsoft.id,
-    categoryId: workstationCategory.id,
+    categoryId: surfaceCategory.id,
     modelNumber: "Laptop6",
     condition: "NEW",
     priority: 35,
@@ -823,7 +1124,8 @@ async function seedCatalog() {
     slug: "lenovo-thinkpad-p1-gen7",
     name: "Lenovo ThinkPad P1 Gen 7",
     brandId: lenovo.id,
-    categoryId: workstationCategory.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
     modelNumber: "P1Gen7",
     condition: "NEW",
     priority: 65,
@@ -859,7 +1161,8 @@ async function seedCatalog() {
     slug: "asus-proart-studiobook-16",
     name: "ASUS ProArt Studiobook 16",
     brandId: asus.id,
-    categoryId: workstationCategory.id,
+    categoryId: laptopNewCategory.id,
+    categorySlug: "laptop-new",
     modelNumber: "Studiobook16",
     condition: "NEW",
     priority: 25,
@@ -887,7 +1190,8 @@ async function seedCatalog() {
     slug: "msi-ws66",
     name: "MSI WS66 Workstation",
     brandId: msi.id,
-    categoryId: workstationCategory.id,
+    categoryId: laptopOpenBoxCategory.id,
+    categorySlug: "laptop-open-box",
     modelNumber: "WS66",
     condition: "LIKE_NEW",
     priority: 15,
@@ -911,208 +1215,194 @@ async function seedCatalog() {
     ],
   });
 
-  // ==================== کیبورد و موس (۶ محصول) ====================
+  // ==================== لپ‌تاپ استوک — تکمیل به حداقل ۳ محصول ====================
   await seedProduct({
-    slug: "keychron-k8-pro",
-    name: "Keychron K8 Pro",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "K8Pro",
-    condition: "NEW",
-    priority: 50,
-    image: "keychron-k8-pro",
-    shortDescription: "کیبورد مکانیکی TKL با کلیدهای قابل‌تعویض",
-    description:
-      "K8 Pro از Keychron Q-series ارزان‌تر است اما همان سوییچ‌های قابل‌تعویض داغ (Hot-swap) را دارد. هم با بلوتوث و هم سیمی کار می‌کند.",
-    specs: [
-      { definitionId: layout.id, value: "TKL (بدون Numpad)" },
-      { definitionId: battery.id, value: "تا ۸۰۰ ساعت (بدون روشنایی)" },
-    ],
-    selectSpecs: [
-      { definitionId: switchType.id, value: "مکانیکی — قهوه‌ای" },
-      { definitionId: connectivity.id, value: "بی‌سیم و سیمی" },
-    ],
-    variants: [
-      {
-        sku: "ARB-KC-K8PRO-DEFAULT",
-        isDefault: true,
-        finalPrice: 4_200_000n,
-        stock: { quantity: 20 },
-      },
-    ],
-  });
-
-  await seedProduct({
-    slug: "keychron-q1-pro",
-    name: "Keychron Q1 Pro",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "Q1Pro",
-    condition: "NEW",
-    priority: 45,
-    image: "keychron-q1-pro",
-    shortDescription: "بدنه‌ی آلومینیومی تمام‌CNC — رده‌ی بالای Keychron",
-    description:
-      "Q1 Pro بدنه‌ی آلومینیومی گسکت‌دار دارد که صدای تایپ را نرم‌تر می‌کند. برای کسی که هم ظاهر و هم حس تایپ برایش مهم است، رده‌ی بالای خط تولید Keychron است.",
-    specs: [
-      { definitionId: layout.id, value: "۷۵٪ (فشرده با Numpad کوچک)" },
-      { definitionId: battery.id, value: "سیمی — بدون باتری" },
-    ],
-    selectSpecs: [
-      { definitionId: switchType.id, value: "مکانیکی — قرمز" },
-      { definitionId: connectivity.id, value: "سیمی" },
-    ],
-    variants: [
-      {
-        sku: "ARB-KC-Q1PRO-DEFAULT",
-        isDefault: true,
-        finalPrice: 7_800_000n,
-        stock: { quantity: 12 },
-      },
-    ],
-  });
-
-  await seedProduct({
-    slug: "keychron-k2-he",
-    name: "Keychron K2 HE",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "K2HE",
-    condition: "NEW",
-    priority: 42,
-    image: "keychron-k2-he",
-    shortDescription: "سوییچ مغناطیسی برای بازی‌های رقابتی",
-    description:
-      "K2 HE از سوییچ‌های مغناطیسی (Hall Effect) استفاده می‌کند که نقطه‌ی فعال‌سازی هر کلید قابل‌تنظیم است — مناسب بازی‌های رقابتی که واکنش سریع مهم است.",
-    specs: [
-      { definitionId: layout.id, value: "۷۵٪ (فشرده با Numpad کوچک)" },
-      { definitionId: battery.id, value: "تا ۱۰۰ ساعت (بدون روشنایی)" },
-    ],
-    selectSpecs: [
-      { definitionId: switchType.id, value: "اپتیکال" },
-      { definitionId: connectivity.id, value: "سیمی" },
-    ],
-    variants: [
-      {
-        sku: "ARB-KC-K2HE-DEFAULT",
-        isDefault: true,
-        finalPrice: 6_500_000n,
-        stock: { quantity: 3, reserved: 1 },
-      },
-    ],
-  });
-
-  await seedProduct({
-    slug: "keychron-m6",
-    name: "Keychron M6",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "M6",
-    condition: "NEW",
-    priority: 38,
-    image: "keychron-m6",
-    shortDescription: "موس سبک برای گیمینگ حرفه‌ای",
-    description:
-      "M6 با وزن سبک و سنسور دقیق برای گیمینگ رقابتی طراحی شده. اتصال بی‌سیم ۱٫۱ میلی‌ثانیه‌ای عملاً هیچ تأخیر محسوسی نسبت به سیمی ندارد.",
-    specs: [{ definitionId: battery.id, value: "تا ۷۰ ساعت" }],
-    selectSpecs: [{ definitionId: connectivity.id, value: "بی‌سیم" }],
-    numericSpecs: [{ definitionId: dpi.id, value: 26000 }],
-    variants: [
-      {
-        sku: "ARB-KC-M6-DEFAULT",
-        isDefault: true,
-        finalPrice: 2_900_000n,
-        stock: { quantity: 15 },
-      },
-    ],
-  });
-
-  await seedProduct({
-    slug: "keychron-m3-mini",
-    name: "Keychron M3 Mini",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "M3Mini",
+    slug: "msi-katana-15",
+    name: "MSI Katana 15",
+    brandId: msi.id,
+    categoryId: laptopStockCategory.id,
+    categorySlug: "laptop-stock",
+    modelNumber: "Katana15",
     condition: "STOCK",
-    priority: 18,
-    image: "keychron-m3-mini",
-    shortDescription: "موس کوچک برای دست‌های کوچک‌تر — فعلاً ناموجود",
+    priority: 16,
+    image: "msi-katana-15",
+    shortDescription: "گیمینگ اقتصادی — کارکرده و تست‌شده",
     description:
-      "M3 Mini همان طراحی M3 را در بدنه‌ای کوچک‌تر ارائه می‌دهد؛ برای کسانی که دست کوچک‌تری دارند یا گرفتن Claw/Fingertip را ترجیح می‌دهند.",
-    specs: [{ definitionId: battery.id, value: "تا ۵۰ ساعت" }],
-    selectSpecs: [{ definitionId: connectivity.id, value: "بی‌سیم" }],
-    numericSpecs: [{ definitionId: dpi.id, value: 8000 }],
+      "Katana 15 یک دستگاه دست‌دوم تست‌شده است؛ باتری و صفحه‌کلید قبل از عرضه بازبینی شده‌اند. برای شروع گیمینگ با بودجه‌ی محدودتر مناسب است.",
+    specs: [
+      { definitionId: cpuGaming.id, value: "Intel Core i7-13620H" },
+      { definitionId: gpuGaming.id, value: "GeForce RTX 4060 Laptop ۸GB" },
+      { definitionId: displayGaming.id, value: "۱۵٫۶ اینچ FHD ۱۴۴Hz" },
+      { definitionId: weightGaming.id, value: "۲٫۲۵ کیلوگرم" },
+    ],
     variants: [
       {
-        sku: "ARB-KC-M3MINI-DEFAULT",
+        sku: "ARB-MSI-KATANA15-DEFAULT",
         isDefault: true,
-        finalPrice: 2_200_000n,
-        stock: "OUT_OF_STOCK",
+        finalPrice: 98_000_000n,
+        compareAtPrice: 112_000_000n,
+        stock: { quantity: 2 },
       },
     ],
   });
 
   await seedProduct({
-    slug: "keychron-v1",
-    name: "Keychron V1",
-    brandId: keychron.id,
-    categoryId: peripheralsCategory.id,
-    modelNumber: "V1",
-    condition: "NEW",
-    priority: 22,
-    image: "keychron-v1",
-    shortDescription: "کیبورد سیمی ارزان‌تر برای شروع — محموله‌ی بعدی",
+    slug: "asus-tuf-gaming-a15",
+    name: "ASUS TUF Gaming A15",
+    brandId: asus.id,
+    categoryId: laptopStockCategory.id,
+    categorySlug: "laptop-stock",
+    modelNumber: "TUFA15",
+    condition: "STOCK",
+    priority: 14,
+    image: "asus-tuf-gaming-a15",
+    shortDescription: "بدنه‌ی مقاوم نظامی — کارکرده و تست‌شده",
     description:
-      "V1 نسخه‌ی سیمی‌فقط و ارزان‌تر خط Q است، برای کسی که می‌خواهد بدون هزینه‌ی بی‌سیم وارد دنیای کیبوردهای مکانیکی سفارشی شود. محموله‌ی فعلی پیش‌فروش است.",
+      "TUF Gaming A15 با استاندارد مقاومت نظامی MIL-STD-810H ساخته شده. این نسخه کارکرده، پیش از عرضه از نظر سلامت باتری و بدنه بازبینی و تست شده.",
     specs: [
-      { definitionId: layout.id, value: "۷۵٪ (فشرده با Numpad کوچک)" },
-      { definitionId: battery.id, value: "سیمی — بدون باتری" },
-    ],
-    selectSpecs: [
-      { definitionId: switchType.id, value: "مکانیکی — قرمز" },
-      { definitionId: connectivity.id, value: "سیمی" },
+      { definitionId: cpuGaming.id, value: "AMD Ryzen 7 7735HS" },
+      { definitionId: gpuGaming.id, value: "GeForce RTX 4050 Laptop ۶GB" },
+      { definitionId: displayGaming.id, value: "۱۵٫۶ اینچ FHD ۱۴۴Hz" },
+      { definitionId: weightGaming.id, value: "۲٫۲ کیلوگرم" },
     ],
     variants: [
       {
-        sku: "ARB-KC-V1-DEFAULT",
+        sku: "ARB-ASUS-TUFA15-DEFAULT",
         isDefault: true,
-        finalPrice: 5_400_000n,
-        stock: "PREORDER",
+        finalPrice: 86_000_000n,
+        stock: { quantity: 3 },
+      },
+    ],
+  });
+
+  // ==================== کیس گیمینگ (۳ محصول) ====================
+  await seedProduct({
+    slug: "msi-aegis-rs-2026",
+    name: "MSI Aegis RS 2026",
+    brandId: msi.id,
+    categoryId: gamingPcCategory.id,
+    modelNumber: "AegisRS2026",
+    condition: "NEW",
+    priority: 48,
+    image: "msi-aegis-rs-2026",
+    shortDescription: "کیس آماده‌ی رده‌ی بالا برای بازی و رندر",
+    description:
+      "Aegis RS از پیش با کابل‌کشی مرتب و خنک‌کاری مایع مونتاژ و تست شده — نیازی به بستن قطعات نیست. برای بازی روی رزولوشن بالا و رندر همزمان مناسب است.",
+    specs: [
+      { definitionId: cpuPc.id, value: "Intel Core Ultra 9 285K" },
+      { definitionId: gpuPc.id, value: "GeForce RTX 5080 ۱۶GB" },
+      { definitionId: psuPc.id, value: "۸۵۰ وات — ۸۰+ Gold" },
+    ],
+    variants: [
+      {
+        sku: "ARB-MSI-AEGISRS-32-1TB",
+        isDefault: false,
+        finalPrice: 185_000_000n,
+        axes: [
+          { definitionId: ramPc.id, value: "۳۲GB" },
+          { definitionId: storagePc.id, value: "۱TB" },
+        ],
+        stock: { quantity: 4 },
+      },
+      {
+        sku: "ARB-MSI-AEGISRS-64-2TB",
+        isDefault: true,
+        finalPrice: 215_000_000n,
+        axes: [
+          { definitionId: ramPc.id, value: "۶۴GB" },
+          { definitionId: storagePc.id, value: "۲TB" },
+        ],
+        stock: { quantity: 2 },
+      },
+    ],
+  });
+
+  await seedProduct({
+    slug: "asus-rog-strix-ga35",
+    name: "ASUS ROG Strix GA35",
+    brandId: asus.id,
+    categoryId: gamingPcCategory.id,
+    modelNumber: "GA35",
+    condition: "NEW",
+    priority: 44,
+    image: "asus-rog-strix-ga35",
+    shortDescription: "پلتفرم AMD رده‌ی بالا برای گیمینگ رقابتی",
+    description:
+      "ROG Strix GA35 با پردازنده‌ی ۱۶ هسته‌ای AMD و گرافیک RTX 5070 Ti برای بازی‌های رقابتی روی نرخ فریم بالا ساخته شده. کیس با پنل شیشه‌ای و نورپردازی Aura Sync عرضه می‌شود.",
+    specs: [
+      { definitionId: cpuPc.id, value: "AMD Ryzen 9 9950X" },
+      { definitionId: gpuPc.id, value: "GeForce RTX 5070 Ti ۱۶GB" },
+      { definitionId: psuPc.id, value: "۸۵۰ وات — ۸۰+ Gold" },
+    ],
+    variants: [
+      {
+        sku: "ARB-ASUS-GA35-DEFAULT",
+        isDefault: true,
+        finalPrice: 165_000_000n,
+        axes: [
+          { definitionId: ramPc.id, value: "۳۲GB" },
+          { definitionId: storagePc.id, value: "۲TB" },
+        ],
+        stock: { quantity: 3 },
+      },
+    ],
+  });
+
+  await seedProduct({
+    slug: "msi-codex-r2",
+    name: "MSI Codex R2",
+    brandId: msi.id,
+    categoryId: gamingPcCategory.id,
+    modelNumber: "CodexR2",
+    condition: "OPEN_BOX",
+    priority: 36,
+    image: "msi-codex-r2",
+    shortDescription: "ورودی گیمینگ باقیمت مناسب — جعبه باز شده",
+    description:
+      "Codex R2 برای شروع گیمینگ روی FHD/QHD کافی است. این نسخه جعبه‌اش یک‌بار باز شده و دستگاه پیش از عرضه روشن و تست شده.",
+    specs: [
+      { definitionId: cpuPc.id, value: "Intel Core i7-14700F" },
+      { definitionId: gpuPc.id, value: "GeForce RTX 4070 SUPER ۱۲GB" },
+      { definitionId: psuPc.id, value: "۶۵۰ وات — ۸۰+ Bronze" },
+    ],
+    variants: [
+      {
+        sku: "ARB-MSI-CODEXR2-DEFAULT",
+        isDefault: true,
+        finalPrice: 96_000_000n,
+        stock: { quantity: 5 },
       },
     ],
   });
 
   return {
-    gamingCategory: gamingCategory.id,
-    workstationCategory: workstationCategory.id,
-    peripheralsCategory: peripheralsCategory.id,
+    laptopNewCategory: laptopNewCategory.id,
+    laptopOpenBoxCategory: laptopOpenBoxCategory.id,
+    laptopStockCategory: laptopStockCategory.id,
+    surfaceCategory: surfaceCategory.id,
+    gamingPcCategory: gamingPcCategory.id,
+    totalPower: totalPower.id,
+    brightness: brightness.id,
   };
 }
 
 /**
- * بند ۷ سند T-150 — بلوک‌های صفحه‌ی اصلی (`HomepageBlock.config` شکل آزاد
- * دارد؛ این پروژه تصمیم گرفته `config` شناسه‌های خام نگه دارد و لایه‌ی
- * سرویس آن‌ها را حل کند — دقیقاً همان‌طور که docs/api/README.md برای پاسخ
- * PRODUCT_RAIL/CATEGORY_GRID توضیح داده).
+ * بند ۷ سند T-150، توسعه‌یافته در T-210 §۴ — بلوک‌های صفحه‌ی اصلی.
+ * `config` حالا اسکیمای Zod جدا به‌ازای هر نوع دارد
+ * (`HomepageBlockConfigSchema`، `packages/contracts/src/content/block-config.ts`)
+ * و شناسه‌ها همه slug هستند، نه id خام — `ContentService` آن‌ها را حل می‌کند.
+ * ترتیب بخش‌ها ثابتِ طراحی است (§۴، هشدار)؛ همین ترتیب این‌جا seed می‌شود.
  */
-async function seedHomepage(categoryIds: {
-  gamingCategory: string;
-  workstationCategory: string;
-  peripheralsCategory: string;
+async function seedHomepage(metricDefIds: {
+  totalPower: string;
+  brightness: string;
 }) {
-  const railProducts = await prisma.product.findMany({
-    where: { priority: { gte: 50 }, status: "ACTIVE" },
-    orderBy: { priority: "desc" },
-    take: 8,
-    select: { id: true },
-  });
-
   const blocks: {
     type:
       | "HERO"
       | "CATEGORY_GRID"
+      | "FLAGSHIP_DUEL"
       | "PRODUCT_RAIL"
-      | "CAMPAIGN"
       | "BENEFITS"
       | "BLOG_RAIL";
     sortOrder: number;
@@ -1129,7 +1419,7 @@ async function seedHomepage(categoryIds: {
       type: "HERO",
       sortOrder: 0,
       title: "تکنولوژی با ظرافت",
-      subtitle: "لپ‌تاپ، ورک‌استیشن و لوازم جانبی — تست‌شده پیش از ارسال",
+      subtitle: "لپ‌تاپ، سرفیس و کیس گیمینگ — تست‌شده پیش از ارسال",
       ctaLabel: "مشاهده‌ی فروشگاه",
       ctaUrl: "/products",
       // T-201 — placeholder مثل seed-images محصول T-150؛ عکس واقعی هیرو
@@ -1137,28 +1427,50 @@ async function seedHomepage(categoryIds: {
       imageDesktop: "/seed-images/hero-desktop.svg",
       imageMobile: "/seed-images/hero-mobile.svg",
       imageAlt: "لپ‌تاپ‌های منتخب آربایت روی میز کار",
+      // T-211 — هیروی اسکرولی؛ فریم‌های واقعی هنوز نساخته شده، فقط شکل
+      // قرارداد اینجا seed می‌شود.
+      config: { framesManifest: "/hero/manifest.json" },
     },
     {
       type: "CATEGORY_GRID",
       sortOrder: 1,
       title: "دسته‌بندی‌ها",
       config: {
-        categoryIds: [
-          categoryIds.gamingCategory,
-          categoryIds.workstationCategory,
-          categoryIds.peripheralsCategory,
+        categorySlugs: [
+          "laptop-new",
+          "laptop-open-box",
+          "laptop-stock",
+          "surface",
+          "gaming-pc",
         ],
       },
     },
     {
-      type: "PRODUCT_RAIL",
+      type: "FLAGSHIP_DUEL",
       sortOrder: 2,
+      title: "دو پرچم‌دار، یک انتخاب",
+      subtitle: "هر دو با RTX 5090. تفاوت در توان پایدار و نمایشگر است.",
+      config: {
+        productSlugs: ["msi-titan-18-hx", "asus-rog-strix-scar-18"],
+        metrics: [metricDefIds.totalPower, metricDefIds.brightness],
+      },
+    },
+    {
+      type: "PRODUCT_RAIL",
+      sortOrder: 3,
       title: "محصولات منتخب",
-      config: { productIds: railProducts.map((p) => p.id) },
+      // یکی بزرگ + دو کوچک (Featured) — بدون تکرار دو پرچم‌دار بالا.
+      config: {
+        productSlugs: [
+          "asus-rog-strix-g16",
+          "lenovo-legion-pro-7i",
+          "microsoft-surface-laptop-studio-2",
+        ],
+      },
     },
     {
       type: "BENEFITS",
-      sortOrder: 3,
+      sortOrder: 4,
       title: "چرا آربایت",
       subtitle:
         "هر دستگاه پیش از ارسال تست می‌شود و با گارانتی رسمی به دست شما می‌رسد.",
@@ -1167,28 +1479,17 @@ async function seedHomepage(categoryIds: {
       // T-201 — API وبلاگ هنوز نیست (T-207)؛ این بلوک فقط عنوان/جایگاه را
       // نگه می‌دارد، فرانت با حالت خالی رندرش می‌کند.
       type: "BLOG_RAIL",
-      sortOrder: 4,
+      sortOrder: 5,
       title: "از وبلاگ آربایت",
     },
   ];
 
+  // T-210 §۴ — بلوک‌های قدیمی (CATEGORY_GRID@1/PRODUCT_RAIL@2 از T-150،
+  // با شکل config پیشین) دیگر با ترتیب/نوع جدید یکی نیستند؛ پاک‌سازی و
+  // ساخت دوباره ساده‌تر از migrate-in-place روی هر ترکیب type+sortOrder است.
+  await prisma.homepageBlock.deleteMany({});
+
   for (const block of blocks) {
-    const existing = await prisma.homepageBlock.findFirst({
-      where: { type: block.type, sortOrder: block.sortOrder },
-    });
-    if (existing) {
-      // T-201 — همان ردیف قبلی seed اجرای T-150 بدون تصویر هیرو بود؛ فقط
-      // فیلدهای تصویر را به‌روزرسانی کن، بقیه دست‌نخورده (idempotent).
-      await prisma.homepageBlock.update({
-        where: { id: existing.id },
-        data: {
-          imageDesktop: block.imageDesktop,
-          imageMobile: block.imageMobile,
-          imageAlt: block.imageAlt,
-        },
-      });
-      continue;
-    }
     await prisma.homepageBlock.create({
       data: {
         type: block.type,
@@ -1211,8 +1512,11 @@ async function main() {
   await seedSuperAdminUser(superAdminRole.id);
   await seedSettings();
   await seedGlobalPriceRule();
-  const categoryIds = await seedCatalog();
-  await seedHomepage(categoryIds);
+  const catalogIds = await seedCatalog();
+  await seedHomepage({
+    totalPower: catalogIds.totalPower,
+    brightness: catalogIds.brightness,
+  });
 }
 
 main()

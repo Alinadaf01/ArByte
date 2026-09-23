@@ -325,6 +325,30 @@ export class CatalogService {
       .map((row) => this.toCategoryCard(row));
   }
 
+  /** T-210 §۴ — رزولوشن CATEGORY_GRID حالا با categorySlugs، نه categoryIds. */
+  async getCategoryCardsBySlugs(slugs: string[]): Promise<CategoryCard[]> {
+    if (slugs.length === 0) return [];
+    const rows = await this.prisma.category.findMany({
+      where: { slug: { in: slugs }, isActive: true, deletedAt: null },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        imageMain: true,
+        _count: {
+          select: {
+            products: { where: CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE },
+          },
+        },
+      },
+    });
+    const bySlug = new Map(rows.map((row) => [row.slug, row]));
+    return slugs
+      .map((slug) => bySlug.get(slug))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+      .map((row) => this.toCategoryCard(row));
+  }
+
   /** T-202 §۱.۲ — `GET /catalog/categories/:slug`، عمداً در T-150 ساخته نشده بود. */
   async getCategoryBySlug(slug: string): Promise<CategoryDetail> {
     const category = await this.prisma.category.findFirst({
@@ -404,6 +428,28 @@ export class CatalogService {
     const byId = new Map(products.map((p) => [p.id, p]));
     return ids
       .map((id) => byId.get(id))
+      .filter((p): p is ProductRow => Boolean(p))
+      .map((p) => buildProductCard(p, globalThreshold));
+  }
+
+  /** T-210 §۴ — رزولوشن PRODUCT_RAIL/FLAGSHIP_DUEL حالا با productSlugs. */
+  async getProductCardsBySlugs(slugs: string[]): Promise<ProductCard[]> {
+    if (slugs.length === 0) return [];
+    const globalThreshold = await this.getGlobalLowStockThreshold();
+    const products = (await this.prisma.product.findMany({
+      where: {
+        slug: { in: slugs },
+        status: "ACTIVE",
+        deletedAt: null,
+        isVisibleOnSite: true,
+      },
+      include: PRODUCT_INCLUDE,
+      relationLoadStrategy: "join",
+    })) as unknown as ProductRow[];
+
+    const bySlug = new Map(products.map((p) => [p.slug, p]));
+    return slugs
+      .map((slug) => bySlug.get(slug))
       .filter((p): p is ProductRow => Boolean(p))
       .map((p) => buildProductCard(p, globalThreshold));
   }

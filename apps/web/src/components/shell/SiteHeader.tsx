@@ -4,26 +4,24 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CategoryTreeNode } from "@arbyte/contracts";
-import { siteHeader } from "@arbyte/contracts";
+import { siteHeader, toPersianDigits } from "@arbyte/contracts";
+import { useCartStore } from "@/lib/stores/cart-store";
 
 export type SiteHeaderActive =
   "" | "products" | "categories" | "blog" | "about" | "support";
 
 interface SiteHeaderProps {
   active?: SiteHeaderActive;
-  cartCount?: string;
   categories: CategoryTreeNode[];
 }
 
 const navLinkColor = (isActive: boolean) =>
   isActive ? "text-brand-active" : "text-secondary-2";
 
-export function SiteHeader({
-  active = "",
-  cartCount = "۲",
-  categories,
-}: SiteHeaderProps) {
+export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { totalQty } = useCartStore();
+  const cartCount = toPersianDigits(totalQty);
 
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? "hidden" : "";

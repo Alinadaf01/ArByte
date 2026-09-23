@@ -119,6 +119,8 @@ export type UserStatus = z.infer<typeof UserStatusSchema>;
 export const HOMEPAGE_BLOCK_TYPE_VALUES = [
   "HERO",
   "CATEGORY_GRID",
+  /** T-210 §۴ — دوئل دو پرچم‌دار. */
+  "FLAGSHIP_DUEL",
   "PRODUCT_RAIL",
   "CAMPAIGN",
   "BENEFITS",

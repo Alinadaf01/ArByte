@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Badge, Card } from "@arbyte/ui";
-import { cta as ctaText, formatPrice } from "@arbyte/contracts";
+import { formatPrice } from "@arbyte/contracts";
 import type { ProductCard as ProductCardData } from "@arbyte/contracts";
 import {
   availabilityLabel,
   availabilityTone,
   CONDITION_LABEL,
 } from "@/lib/labels";
+import { AddToCartButton } from "./AddToCartButton";
 
 interface ProductCardProps {
   product: ProductCardData;
@@ -96,13 +97,11 @@ export function ProductCard({
               {availabilityLabel(availability)}
             </Badge>
 
-            <button
-              type="button"
-              disabled={outOfStock}
-              className="relative z-10 rounded-pill bg-primary text-on-dark disabled:pointer-events-none disabled:opacity-50 hover:opacity-90 px-4 py-2 text-caption font-emphasis whitespace-nowrap transition-opacity duration-200"
-            >
-              {ctaText.addToCart}
-            </button>
+            <AddToCartButton
+              variantId={product.defaultVariant.id}
+              productSlug={product.slug}
+              outOfStock={outOfStock}
+            />
           </div>
         </div>
       </div>

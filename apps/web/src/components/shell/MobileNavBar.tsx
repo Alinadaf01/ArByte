@@ -1,12 +1,14 @@
+"use client";
+
 import Link from "next/link";
-import { mobileNavBar } from "@arbyte/contracts";
+import { mobileNavBar, toPersianDigits } from "@arbyte/contracts";
+import { useCartStore } from "@/lib/stores/cart-store";
 
 export type MobileNavActive =
   "" | "home" | "categories" | "search" | "cart" | "account";
 
 interface MobileNavBarProps {
   active?: MobileNavActive;
-  cartCount?: string;
 }
 
 interface NavItem {
@@ -104,7 +106,10 @@ const items = (cartCount: string): NavItem[] => [
           <circle cx="9.5" cy="19" r="1.5" />
           <circle cx="17" cy="19" r="1.5" />
         </svg>
-        <span className="bg-accent text-accent-badge-ink animate-badge-pop absolute -top-1 start-[calc(50%-11px)] flex h-4 min-w-4 items-center justify-center rounded-pill px-1 text-[10.5px] font-heading">
+        <span
+          key={cartCount}
+          className="bg-accent text-accent-badge-ink animate-badge-pop absolute -top-1 start-[calc(50%-11px)] flex h-4 min-w-4 items-center justify-center rounded-pill px-1 text-[10.5px] font-heading"
+        >
           {cartCount}
         </span>
       </span>
@@ -133,10 +138,10 @@ const items = (cartCount: string): NavItem[] => [
   },
 ];
 
-export function MobileNavBar({
-  active = "",
-  cartCount = "۲",
-}: MobileNavBarProps) {
+export function MobileNavBar({ active = "" }: MobileNavBarProps) {
+  const { totalQty } = useCartStore();
+  const cartCount = toPersianDigits(totalQty);
+
   return (
     <>
       <nav
