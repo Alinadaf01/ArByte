@@ -42,3 +42,12 @@ apps/web/public/hero/frames/
 apps/web/public/hero/manifest.json
 apps/web/.hero-tmp/
 apps/web/.hero-dev-tmp/
+
+# apps/backend (Django, D-01)
+apps/backend/.venv/
+apps/backend/__pycache__/
+apps/backend/**/__pycache__/
+apps/backend/**/*.pyc
+apps/backend/staticfiles/
+apps/backend/media/
+apps/backend/.pytest_cache/

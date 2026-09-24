@@ -1,0 +1,19 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 119
+
+[tool.ruff.lint]
+# Ruff's own default (E4, E7, E9, F) rather than opting into wider families —
+# this codebase (imported from vybeshop, D-01) predates any ruff config and
+# has its own established line-length/style conventions; broader families
+# (E501, RUF001-003) would flag hundreds of pre-existing, harmless lines
+# (long-but-readable Persian strings, RTL text ruff misreads as "ambiguous
+# unicode") that have nothing to do with this task's scope.
+select = ["E4", "E7", "E9", "F", "I"]
+ignore = [
+    # DRF's own idiom is `permission_classes = [X]` / `fields = [...]` as a
+    # class attribute — never mutated in place, just read by DRF's machinery.
+    # Flagging every DRF view/serializer in the codebase is a well-known
+    # false-positive for this rule with Django REST Framework.
+    "RUF012",
+]

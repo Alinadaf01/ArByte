@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>{{ doc_title }}</title>
+<style>
+  @font-face {
+    font-family: "Peyda";
+    src: url("{{ font_regular }}") format("woff2");
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "Peyda";
+    src: url("{{ font_medium }}") format("woff2");
+    font-weight: 500;
+  }
+  @font-face {
+    font-family: "Peyda";
+    src: url("{{ font_semibold }}") format("woff2");
+    font-weight: 600;
+  }
+  @font-face {
+    font-family: "Peyda";
+    src: url("{{ font_bold }}") format("woff2");
+    font-weight: 700;
+  }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("{{ mono_regular }}") format("woff2");
+    font-weight: 400;
+  }
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("{{ mono_bold }}") format("woff2");
+    font-weight: 700;
+  }
+
+  /* Print-media brand palette (BACKEND-TASK.md §5) — these five colors are
+     the only ones any generated document may use. No shadows, no gradients:
+     the brand book calls for borders instead of shadows. */
+  :root {
+    --graphite: #0B0B0C;
+    --fog-white: #F5F5F3;
+    --titanium: #7A7D82;
+    --light-gray: #ECECEC;
+    --cyan: #00D1FF;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Peyda", sans-serif;
+    font-weight: 400;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: var(--graphite);
+    direction: rtl;
+  }
+  .mono { font-family: "JetBrains Mono", "Peyda", monospace; direction: ltr; unicode-bidi: embed; }
+  .muted { color: var(--titanium); }
+
+  /* ---- page header: logo (right) / document name (center) / number+date (left) ---- */
+  .doc-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    padding-bottom: 4mm;
+  }
+  .doc-header-logo { justify-self: start; color: var(--graphite); }
+  .doc-header-logo svg { height: 12mm; width: auto; display: block; }
+  .doc-header-title {
+    justify-self: center;
+    text-align: center;
+    font-weight: 600;
+    font-size: 24pt;
+    color: var(--graphite);
+  }
+  .doc-header-meta {
+    justify-self: end;
+    text-align: end;
+    font-size: 9pt;
+    color: var(--titanium);
+    line-height: 1.8;
+  }
+
+  .doc-header-rule { border-top: 1px solid var(--light-gray); }
+  /* The one allowed spot of color per document (§5: "single accent stripe,
+     max once per document") — a slim cyan rule directly under the gray
+     hairline, on every document for visual consistency. */
+  .doc-header-accent { height: 2px; background: var(--cyan); margin-bottom: 5mm; }
+
+  .context-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 8mm;
+    font-size: 9pt;
+    color: var(--titanium);
+    margin-bottom: 6mm;
+  }
+
+  .section-title {
+    font-weight: 600;
+    font-size: 14pt;
+    color: var(--graphite);
+    margin: 6mm 0 3mm;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .footnote { font-size: 8pt; color: var(--titanium); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  thead th {
+    background: var(--graphite);
+    color: #fff;
+    font-weight: 600;
+    text-align: start;
+    height: 8mm;
+    padding: 0 3mm;
+  }
+  tbody td {
+    height: 8mm;
+    padding: 0 3mm;
+    text-align: start;
+    border-bottom: 1px solid var(--light-gray);
+  }
+  tbody tr:nth-child(even) { background: var(--fog-white); }
+  /* Numeric/mono columns stay right-aligned like the rest of this RTL
+     document (§5: "numeric columns right-aligned mono") — the mistake this
+     guards against is a LTR-invoice habit of left-aligning number columns,
+     which would look reversed here. Explicit rather than relying on the
+     text-align:start default, since it's easy to get this backwards. */
+  .num { text-align: start; }
+  tfoot td { border-top: 1px solid var(--graphite); font-weight: 600; }
+</style>
+</head>
+<body>
+  <div class="doc-header">
+    <div class="doc-header-logo">{{ wordmark_svg }}</div>
+    <div class="doc-header-title">{{ doc_title }}</div>
+    <div class="doc-header-meta">
+      {% if doc_number %}<div class="mono" style="direction:ltr;">{{ doc_number }}</div>{% endif %}
+      <div class="mono" style="direction:ltr;">{{ doc_date }}</div>
+    </div>
+  </div>
+  <div class="doc-header-rule"></div>
+  <div class="doc-header-accent"></div>
+
+  {% if filter_summary or generated_by %}
+  <div class="context-bar">
+    <span>{{ filter_summary }}</span>
+    {% if generated_by %}<span>تهیه‌شده توسط {{ generated_by }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% block content %}{% endblock %}
+  {% block after_content %}{% endblock %}
+</body>
+</html>

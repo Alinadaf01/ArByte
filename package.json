@@ -20,6 +20,10 @@
     "db:migrate:deploy": "pnpm --filter @arbyte/api db:migrate:deploy",
     "db:seed": "pnpm --filter @arbyte/api db:seed",
     "db:studio": "pnpm --filter @arbyte/api db:studio",
+    "be:dev": "node scripts/backend.mjs python manage.py runserver 8000",
+    "be:test": "node scripts/backend.mjs python manage.py test",
+    "be:migrate": "node scripts/backend.mjs python manage.py migrate",
+    "be:lint": "node scripts/backend.mjs ruff check .",
     "prepare": "husky"
   },
   "devDependencies": {

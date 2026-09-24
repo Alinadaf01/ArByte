@@ -1,0 +1,44 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+{% for section in sections %}
+<div style="{% if not forloop.first %}margin-top:8mm;{% endif %} page-break-inside:avoid;">
+  <div class="section-title">{{ section.product_name }} <span class="mono muted" style="font-size:9pt;">({{ section.sku }})</span></div>
+  <table style="margin-bottom:3mm;">
+    <tbody>
+      <tr>
+        <td class="muted">مانده اول دوره</td><td class="mono num">{{ section.opening_balance }}</td>
+        <td class="muted">جمع ورود</td><td class="mono num">{{ section.total_in }}</td>
+        <td class="muted">جمع خروج</td><td class="mono num">{{ section.total_out }}</td>
+        <td class="muted">مانده پایان دوره</td><td class="mono num" style="font-weight:600;">{{ section.closing_balance }}</td>
+      </tr>
+    </tbody>
+  </table>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:14%;">تاریخ</th>
+        <th style="width:16%;">نوع تراکنش</th>
+        <th class="num" style="width:14%;">مقدار</th>
+        <th class="num" style="width:18%;">مانده پس از تراکنش</th>
+        <th>مرجع</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in section.rows %}
+      <tr>
+        <td class="mono">{{ row.date }}</td>
+        <td>{{ row.type }}</td>
+        <td class="mono num">{{ row.quantity }}</td>
+        <td class="mono num">{{ row.balance_after }}</td>
+        <td class="mono">{{ row.reference }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<p class="muted" style="text-align:center; padding:12mm 0;">هیچ تراکنشی در این بازه یافت نشد.</p>
+{% endfor %}
+
+{% endblock %}

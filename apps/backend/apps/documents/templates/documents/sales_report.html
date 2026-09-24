@@ -1,0 +1,40 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+<div class="section-title">خلاصه دوره</div>
+<table style="margin-bottom:8mm;">
+  <tbody>
+    <tr><td class="muted" style="width:60%;">تعداد سفارش‌های پرداخت‌شده</td><td class="mono num">{{ order_count }}</td></tr>
+    <tr><td class="muted">جمع اقلام</td><td class="mono num">{{ subtotal }}</td></tr>
+    <tr><td class="muted">تخفیف</td><td class="mono num">{{ discount }}</td></tr>
+    <tr><td class="muted">هزینه ارسال</td><td class="mono num">{{ shipping_cost }}</td></tr>
+    <tr><td class="muted">مالیات</td><td class="mono num">{{ tax }}</td></tr>
+  </tbody>
+  <tfoot>
+    <tr style="font-size:14pt;"><td>مبلغ کل فروش</td><td class="mono num">{{ total }}</td></tr>
+  </tfoot>
+</table>
+
+<div class="section-title">تفکیک درگاه پرداخت</div>
+<table>
+  <thead>
+    <tr>
+      <th>درگاه</th>
+      <th class="num">مبلغ</th>
+      <th class="num">تعداد سفارش</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in gateway_rows %}
+    <tr>
+      <td>{{ row.gateway }}</td>
+      <td class="mono num">{{ row.total }}</td>
+      <td class="mono num">{{ row.order_count }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3" class="muted" style="text-align:center; padding:8mm 0;">تراکنشی در این بازه یافت نشد.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+<table style="margin-bottom:8mm;">
+  <tbody>
+    <tr><td class="muted" style="width:60%;">نام مشتری</td><td class="num">{{ customer_name }}</td></tr>
+    <tr><td class="muted">شماره تماس</td><td class="mono num" style="direction:ltr; display:inline-block;">{{ customer_phone }}</td></tr>
+    <tr><td class="muted">تعداد کل سفارش‌ها</td><td class="mono num">{{ order_count }}</td></tr>
+    <tr><td class="muted">تعداد سفارش‌های پرداخت‌شده</td><td class="mono num">{{ paid_order_count }}</td></tr>
+  </tbody>
+  <tfoot>
+    <tr style="font-size:14pt;"><td>جمع خرید (پرداخت‌شده)</td><td class="mono num">{{ total_spent }}</td></tr>
+  </tfoot>
+</table>
+
+<div class="section-title">تاریخچه سفارش‌ها</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:16%;">شماره سفارش</th>
+      <th style="width:16%;">تاریخ</th>
+      <th>وضعیت</th>
+      <th class="num" style="width:12%;">تعداد اقلام</th>
+      <th class="num" style="width:16%;">مبلغ</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="mono">{{ row.number }}</td>
+      <td class="mono">{{ row.date }}</td>
+      <td>{{ row.status }}</td>
+      <td class="mono num">{{ row.item_count }}</td>
+      <td class="mono num">{{ row.total }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="muted" style="text-align:center; padding:8mm 0;">این مشتری هنوز سفارشی ثبت نکرده است.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

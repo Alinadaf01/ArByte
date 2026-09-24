@@ -1,0 +1,39 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+<div style="border:1px solid var(--light-gray); padding:5mm 6mm; margin-bottom:6mm;">
+  <div class="muted" style="font-size:9pt;">گیرنده</div>
+  <div style="font-size:14pt; font-weight:600; margin:1mm 0;">{{ buyer_name }}</div>
+  <div class="mono" style="font-size:11pt; direction:ltr; display:inline-block;">{{ buyer_phone }}</div>
+  <div style="font-size:11pt; margin-top:2mm;">{{ shipping_address_line }}</div>
+  {% if postal_code %}<div class="mono muted" style="font-size:9pt; direction:ltr; display:inline-block; margin-top:1mm;">کد پستی: {{ postal_code }}</div>{% endif %}
+</div>
+
+<div class="section-title">اقلام ({{ item_count }} عدد)</div>
+<table style="font-size:11pt;">
+  <thead>
+    <tr>
+      <th style="width:10%;">تیک</th>
+      <th>شرح کالا</th>
+      <th style="width:20%;">کد کالا</th>
+      <th class="num" style="width:14%;">تعداد</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td style="font-size:13pt;">☐</td>
+      <td>{{ item.name }}</td>
+      <td class="mono">{{ item.sku }}</td>
+      <td class="mono num">{{ item.quantity }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if note %}
+<div class="section-title">یادداشت سفارش</div>
+<p style="font-size:11pt;">{{ note }}</p>
+{% endif %}
+
+{% endblock %}

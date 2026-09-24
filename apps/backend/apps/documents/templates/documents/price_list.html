@@ -1,0 +1,32 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+{% for group in groups %}
+<div style="{% if not forloop.first %}margin-top:6mm;{% endif %} page-break-inside:avoid;">
+  <div class="section-title">{{ group.category }}</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:5%;">#</th>
+        <th style="width:18%;">کد کالا</th>
+        <th>نام کالا</th>
+        <th class="num" style="width:20%;">قیمت</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in group.rows %}
+      <tr>
+        <td class="mono num">{{ forloop.counter }}</td>
+        <td class="mono">{{ row.sku }}</td>
+        <td>{{ row.name }}</td>
+        <td class="mono num">{{ row.price }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% empty %}
+<p class="muted" style="text-align:center; padding:12mm 0;">کالایی یافت نشد.</p>
+{% endfor %}
+
+{% endblock %}

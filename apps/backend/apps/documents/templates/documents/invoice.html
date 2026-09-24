@@ -1,0 +1,98 @@
+{% extends "documents/base.html" %}
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; gap:10mm; margin-bottom:6mm;">
+  <div style="flex:1;">
+    <div class="section-title">فروشنده</div>
+    <div style="font-weight:600;">{{ business_name }}</div>
+    {% if seller_address %}<div class="muted" style="font-size:9pt;">{{ seller_address }}</div>{% endif %}
+    {% if seller_economic_code %}<div class="muted mono" style="font-size:9pt;">کد اقتصادی: {{ seller_economic_code }}</div>{% endif %}
+    {% if seller_national_id %}<div class="muted mono" style="font-size:9pt;">شناسه ملی: {{ seller_national_id }}</div>{% endif %}
+  </div>
+  <div style="flex:1;">
+    <div class="section-title">خریدار</div>
+    <div style="font-weight:600;">{{ buyer_name }}</div>
+    <div class="muted mono" style="font-size:9pt; direction:ltr; display:inline-block;">{{ buyer_phone }}</div>
+    <div class="muted" style="font-size:9pt;">{{ shipping_address_line }}</div>
+    {% if postal_code %}<div class="muted mono" style="font-size:9pt; direction:ltr; display:inline-block;">کد پستی: {{ postal_code }}</div>{% endif %}
+  </div>
+</div>
+
+<table style="margin-bottom:6mm;">
+  <tbody>
+    <tr>
+      <td class="muted" style="width:25%;">شماره فاکتور</td>
+      <td class="mono num">{{ order.number }}</td>
+      <td class="muted" style="width:25%;">شماره سفارش</td>
+      <td class="mono num">{{ order.number }}</td>
+    </tr>
+    <tr>
+      <td class="muted">تاریخ</td>
+      <td class="mono num">{{ invoice_date }}</td>
+      <td class="muted">روش و درگاه پرداخت</td>
+      <td class="num">{{ payment_gateway_display|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td class="muted">کد رهگیری تراکنش</td>
+      <td class="mono num">{{ payment_ref_id|default:"—" }}</td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="section-title">اقلام سفارش</div>
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%;">#</th>
+      <th>شرح کالا</th>
+      <th style="width:16%;">کد کالا</th>
+      <th class="num" style="width:10%;">تعداد</th>
+      <th class="num" style="width:17%;">قیمت واحد</th>
+      <th class="num" style="width:17%;">جمع</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="mono num">{{ forloop.counter }}</td>
+      <td>{{ item.name }}</td>
+      <td class="mono">{{ item.sku }}</td>
+      <td class="mono num">{{ item.quantity }}</td>
+      <td class="mono num">{{ item.price }}</td>
+      <td class="mono num">{{ item.subtotal }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="display:flex; justify-content:flex-end; margin-top:6mm;">
+  <table style="width:50%;">
+    <tbody>
+      <tr><td>جمع اقلام</td><td class="mono num">{{ subtotal }}</td></tr>
+      <tr><td>تخفیف</td><td class="mono num">{{ discount }}</td></tr>
+      <tr><td>هزینه ارسال</td><td class="mono num">{{ shipping_cost }}</td></tr>
+      <tr><td>مالیات</td><td class="mono num">{{ tax }}</td></tr>
+    </tbody>
+    <tfoot>
+      <tr style="font-size:14pt;"><td>مبلغ نهایی</td><td class="mono num">{{ total }}</td></tr>
+    </tfoot>
+  </table>
+</div>
+
+<div class="muted" style="margin-top:3mm; font-size:9pt;">مبلغ به حروف: {{ total_in_words }}</div>
+
+{% if tracking_code %}
+<div class="section-title">ارسال</div>
+<table>
+  <tbody>
+    <tr><td class="muted" style="width:25%;">کد رهگیری پستی</td><td class="mono">{{ tracking_code }}</td></tr>
+  </tbody>
+</table>
+{% endif %}
+
+{% endblock %}
+{% block after_content %}
+<div class="footnote" style="text-align:center; margin-top:10mm;">طراحی‌شده برای ارتقای روزمرگی.</div>
+{% endblock %}
