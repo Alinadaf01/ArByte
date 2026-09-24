@@ -733,6 +733,158 @@ export const productDetailPage = {
   relatedViewAllCta: (categoryName: string) => `همه ${categoryName}`,
 } as const;
 
+/**
+ * T-215 §۱ — `/search`. طبق §۰ سند تسک: تب «نوشته‌ها» چون API وبلاگ نداریم
+ * پنهان است (Q). چیپ‌های پرتکرار فهرست ثابت خودِ سند تسک‌اند، نه رونویسی
+ * از طراحی (طراحی «مانیتور OLED»/«کد تخفیف» دارد که محصول ما نیست — Q).
+ * نمایه‌ی راهنما = صفحات ثابت + `faqQuestions` (منبع مشترک با `/legal`).
+ */
+export const searchPage = {
+  inputPlaceholder: "نام محصول، برند یا مثلاً «لپ‌تاپ ۱۸ اینچ»",
+  inputAriaLabel: "جستجو در آربایت",
+  clearAriaLabel: "پاک کردن جستجو",
+  idleSummary: "عبارتی بنویسید تا در محصولات و راهنماها جستجو کنیم.",
+  resultsSummary: (count: string, q: string) => `${count} نتیجه برای «${q}»`,
+  kindTabs: {
+    all: "همه",
+    products: "محصولات",
+    support: "راهنما و پشتیبانی",
+  },
+  hotSearchesTitle: "جستجوهای پرتکرار",
+  hotSearches: [
+    "لپ‌تاپ آکبند",
+    "لپ‌تاپ استوک",
+    "سرفیس",
+    "کیس گیمینگ",
+    "MSI",
+    "ASUS ROG",
+  ] as const,
+  suggestion: {
+    title: "نمی‌دانید دنبال چه بگردید؟",
+    subtitle:
+      "بر اساس کاربری انتخاب کنید یا بگذارید کارشناس ما دو سه گزینه پیشنهاد بدهد.",
+    categoriesCta: "انتخاب بر اساس کاربری",
+    supportCta: "پرسیدن از کارشناس",
+  },
+  emptyState: {
+    title: (q: string) => `برای «${q}» چیزی پیدا نشد`,
+    body: "املای عبارت را بررسی کنید، یا یکی از این جستجوها را امتحان کنید.",
+    supportCta: "پرسیدن از پشتیبانی",
+  },
+  productsHeading: "محصولات",
+  productsViewAllCta: "همه محصولات",
+  helpHeading: "راهنما و پشتیبانی",
+  resultCount: (count: string) => `${count} نتیجه`,
+  helpIndex: [
+    {
+      title: "پیگیری سفارش",
+      description: "وضعیت لحظه‌ای سفارش با شماره سفارش",
+      tag: "پشتیبانی",
+      href: "/track-order",
+    },
+    {
+      title: "شرایط گارانتی",
+      description: "مدت، تعویض سه‌روزه و موارد خارج از پوشش",
+      tag: "قوانین",
+      href: "/legal",
+    },
+    {
+      title: "تماس با پشتیبانی",
+      description: "گفت‌وگوی آنلاین یا تماس تلفنی با کارشناس",
+      tag: "پشتیبانی",
+      href: "/support",
+    },
+    {
+      title: "قوانین و مقررات",
+      description: "شرایط خرید، حریم خصوصی و مرجوعی",
+      tag: "قوانین",
+      href: "/legal",
+    },
+    ...faqQuestions.map((item) => ({
+      title: item.q,
+      description: item.a,
+      tag: "سوالات",
+      href: "/legal",
+    })),
+  ],
+} as const;
+
+/**
+ * T-215 §۲ — `/compare`. ردیف‌های مشخصات عیناً از `Compare.dc.html`؛ نشان
+ * «ارزش خرید بهتر» و یادداشت «اعداد از تست‌های داخلی...» طبق هشدار صریح
+ * سند تسک حذف شدند (مبنای محاسبه/تستی نداریم).
+ */
+export const comparePage = {
+  breadcrumbHome: "خانه",
+  breadcrumbShop: "فروشگاه",
+  breadcrumbCurrent: "مقایسه",
+  title: "مقایسه دستگاه‌ها",
+  subtitle:
+    "تا سه دستگاه را کنار هم بگذارید. در هر ردیف، مقدار بهتر با نشان بنفش مشخص می‌شود.",
+  diffOnlyLabel: "فقط تفاوت‌ها",
+  removeAriaLabel: "حذف از مقایسه",
+  viewAndBuyCta: "مشاهده و خرید",
+  addDeviceCta: "افزودن دستگاه",
+  addDevicePickerPlaceholder: "نام محصول را جستجو کنید",
+  addDevicePickerEmpty: "محصولی پیدا نشد",
+  emptyState: {
+    title: "چیزی برای مقایسه نمانده",
+    body: "از فروشگاه دو یا سه دستگاه انتخاب کنید تا کنار هم ببینید.",
+    resetCta: "برگرداندن مقایسه",
+  },
+  rowLabels: {
+    price: "قیمت",
+    cpu: "پردازنده",
+    gpu: "گرافیک",
+    ram: "رم",
+    storage: "حافظه SSD",
+    display: "نمایشگر",
+    refreshRate: "نرخ نوسازی",
+    weight: "وزن",
+    battery: "باتری در کار سبک",
+    fanNoise: "صدای فن زیر بار",
+    ports: "پورت‌ها",
+    warranty: "گارانتی",
+  },
+} as const;
+
+/**
+ * T-215 §۳ — `/wishlist`. «اطلاع از موجودی» طبق T-213 حذف است (Q)؛ برای
+ * کالای ناموجود فقط دکمه‌ی سبد غیرفعال می‌شود.
+ */
+export const wishlistPage = {
+  breadcrumbHome: "خانه",
+  breadcrumbAccount: "حساب کاربری",
+  breadcrumbCurrent: "علاقه‌مندی‌ها",
+  title: "علاقه‌مندی‌ها",
+  /** بخش تیره‌ی عدد و برچسب استایل جدا دارند (طراحی)؛ برای همین دو کلید جداست، نه یک تابع. */
+  itemsLabel: "کالا",
+  introWithDrops: (count: string) =>
+    `قیمت ${count} کالا از زمانی که ذخیره کردید پایین آمده است.`,
+  introNoDrops:
+    "کالاهایی که ذخیره کرده‌اید، همراه با تغییر قیمت و وضعیت موجودی.",
+  dropNote:
+    "تغییر قیمت هر کالا نسبت به روزی که آن را ذخیره کرده‌اید محاسبه می‌شود.",
+  addAllCta: "افزودن همه موجودها به سبد",
+  addAllDoneCta: "به سبد اضافه شد",
+  clearCta: "خالی کردن فهرست",
+  removeAriaLabel: "حذف از علاقه‌مندی‌ها",
+  addToCartCta: "افزودن به سبد",
+  addedToCartCta: "در سبد خرید",
+  priceTrend: {
+    down: (percent: string) => `${percent}٪ ارزان‌تر نسبت به زمان ذخیره`,
+    up: (percent: string) => `${percent}٪ گران‌تر شده`,
+    same: "قیمت بدون تغییر",
+  },
+  removedNote: "دیگر در فروشگاه نیست",
+  emptyState: {
+    title: "فهرست علاقه‌مندی خالی است",
+    body: "روی قلب کنار هر محصول بزنید تا اینجا ذخیره شود و از تغییر قیمتش باخبر شوید.",
+    shopCta: "رفتن به فروشگاه",
+    restoreCta: "برگرداندن فهرست",
+  },
+} as const;
+
 export const notFoundPage = {
   badge: "خطای ۴۰۴",
   title: "این صفحه را پیدا نکردیم",

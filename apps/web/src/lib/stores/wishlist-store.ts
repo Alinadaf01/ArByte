@@ -47,12 +47,18 @@ function clear() {
   store.setItems([]);
 }
 
+/** T-215 §۳ — برای «برگرداندن فهرست» بعد از خالی‌کردن (بازیابی محلی، نه یک پشته‌ی undo کامل). */
+function replace(items: readonly WishlistItem[]) {
+  store.setItems([...items]);
+}
+
 export const wishlistStore = {
   subscribe: store.subscribe,
   getSnapshot: store.getSnapshot,
   getServerSnapshot: store.getServerSnapshot,
   addItem,
   removeItem,
+  replace,
   has,
   clear,
 };
@@ -64,5 +70,5 @@ export function useWishlistStore() {
     store.getServerSnapshot,
   );
 
-  return { items, addItem, removeItem, has, clear };
+  return { items, addItem, removeItem, replace, has, clear };
 }

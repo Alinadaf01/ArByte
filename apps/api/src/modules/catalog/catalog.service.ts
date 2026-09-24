@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import {
   buildVariantLabel,
+  normalizeSearchText,
   selectCardVariant,
   type CategoryCard,
   type CategoryDetail,
@@ -831,30 +832,37 @@ export class CatalogService {
     };
   }
 
-  /** جستجوی متنی ساده روی نام محصول/برند — بدون زیرساخت جستجوی رتبه‌بندی‌شده (کش/ایندکس پیچیده لازم نیست، سند §۸). */
+  /**
+   * جستجوی متنی ساده روی نام محصول/برند — بدون زیرساخت جستجوی رتبه‌بندی‌شده
+   * (کش/ایندکس پیچیده لازم نیست، سند §۸). T-215 §۱ — تطبیق با
+   * `normalizeSearchText` (نیم‌فاصله/ي-ك عربی/ارقام/حروف بزرگ-کوچک) روی هر
+   * دو طرف انجام می‌شود، نه `contains` خام دیتابیس — چون نیم‌فاصله در مقدار
+   * ذخیره‌شده هم هست و SQL `contains` نمی‌تواند نادیده‌اش بگیرد. حجم کاتالوگ
+   * کوچک است (fetch کامل + فیلتر در JS بی‌خطر — همان الگوی این سرویس برای
+   * فهرست/فیلتر).
+   */
   async search(
     query: SearchQuery,
   ): Promise<{ items: ProductCard[]; total: number }> {
     const globalThreshold = await this.getGlobalLowStockThreshold();
+    const needle = normalizeSearchText(query.q);
 
-    const where = {
-      status: "ACTIVE" as const,
-      deletedAt: null,
-      isVisibleOnSite: true,
-      isVisibleInSearch: true,
-      OR: [
-        { name: { contains: query.q, mode: "insensitive" as const } },
-        {
-          brand: { name: { contains: query.q, mode: "insensitive" as const } },
-        },
-      ],
-    };
-
-    const products = (await this.prisma.product.findMany({
-      where,
+    const candidates = (await this.prisma.product.findMany({
+      where: {
+        status: "ACTIVE",
+        deletedAt: null,
+        isVisibleOnSite: true,
+        isVisibleInSearch: true,
+      },
       include: PRODUCT_INCLUDE,
       orderBy: [{ priority: "desc" }, { createdAt: "desc" }],
     })) as unknown as ProductRow[];
+
+    const products = candidates.filter(
+      (p) =>
+        normalizeSearchText(p.name).includes(needle) ||
+        normalizeSearchText(p.brand.name).includes(needle),
+    );
 
     const cards = products.map((p) => buildProductCard(p, globalThreshold));
     const total = cards.length;

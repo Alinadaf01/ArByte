@@ -26,12 +26,22 @@ function clear() {
   store.setItems([]);
 }
 
+/**
+ * T-215 §۲ — همگام‌سازی با URL (منبع حقیقت واقعی صفحه‌ی `/compare`)؛ این
+ * تابع فقط برای «به‌خاطر سپردن آخرین مجموعه» است، نه اعتبارسنجی سقف —
+ * صدازننده (صفحه‌ی مقایسه) خودش حداکثر سه‌تایی را رعایت کرده.
+ */
+function replace(productSlugs: readonly string[]) {
+  store.setItems([...productSlugs]);
+}
+
 export const compareStore = {
   subscribe: store.subscribe,
   getSnapshot: store.getSnapshot,
   getServerSnapshot: store.getServerSnapshot,
   addItem,
   removeItem,
+  replace,
   clear,
 };
 
@@ -46,6 +56,7 @@ export function useCompareStore() {
     items,
     addItem,
     removeItem,
+    replace,
     clear,
     isFull: items.length >= MAX_ITEMS,
   };

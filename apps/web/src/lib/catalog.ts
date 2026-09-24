@@ -140,6 +140,30 @@ export async function getProducts(
   }
 }
 
+/** T-215 §۱ — `/search`؛ سمت سرور، `GET /catalog/search?q=`. */
+export async function searchProducts(
+  q: string,
+  perPage = 24,
+): Promise<{ items: ProductCard[]; total: number }> {
+  const qs = new URLSearchParams({ q, perPage: String(perPage) });
+  try {
+    const res = await fetch(`${API_INTERNAL_BASE}/catalog/search?${qs}`, {
+      next: { revalidate: 30 },
+    });
+    if (!res.ok) return { items: [], total: 0 };
+    const body = (await res.json()) as {
+      data?: ProductCard[];
+      meta?: { pagination?: PaginationMeta };
+    };
+    return {
+      items: body.data ?? [],
+      total: body.meta?.pagination?.total ?? 0,
+    };
+  } catch {
+    return { items: [], total: 0 };
+  }
+}
+
 const EMPTY_FILTERS: CatalogFiltersData = {
   specs: [],
   priceRange: { min: 0, max: 0 },
