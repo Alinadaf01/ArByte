@@ -9,3 +9,4 @@ export * from "./storefront";
 export * from "./dev-showcase";
 export * from "./forbidden-words";
 export * from "./store-facts";
+export * from "./faq";

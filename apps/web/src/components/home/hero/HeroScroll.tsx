@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { formatNumberFa, homeHero } from "@arbyte/contracts";
+import { useIsMobile, usePrefersReducedMotion } from "@/lib/hooks";
 import {
   activeStep,
   bandAt,
@@ -35,30 +36,6 @@ export function HeroScroll({ manifest }: HeroScrollProps) {
   if (!manifest) return <HeroPoster />;
   if (reducedMotion) return <HeroStatic manifest={manifest} />;
   return <HeroScrollEngine manifest={manifest} />;
-}
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const onChange = () => setReduced(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return reduced;
-}
-
-function useIsMobile(): boolean {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 767px)");
-    setMobile(mq.matches);
-    const onChange = () => setMobile(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return mobile;
 }
 
 function clamp01(n: number): number {
