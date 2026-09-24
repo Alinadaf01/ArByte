@@ -1,4 +1,5 @@
 import type {
+  CatalogFiltersData,
   CategoryCard,
   CategoryDetail,
   CategoryTreeNode,
@@ -68,6 +69,11 @@ export interface ProductListParams {
   sort?: ProductSort;
   page?: number;
   perPage?: number;
+  /** T-213 §۳ — چندانتخابی؛ به `brand=a,b` سریالایز می‌شود. */
+  brand?: string[];
+  maxPrice?: number;
+  inStock?: boolean;
+  spec?: Record<string, string>;
 }
 
 const EMPTY_PAGINATION: PaginationMeta = {
@@ -77,7 +83,7 @@ const EMPTY_PAGINATION: PaginationMeta = {
   totalPages: 0,
 };
 
-/** T-202 §۲.۲ — گرید محصولات صفحه‌ی دسته‌بندی، sort/page از URL. */
+/** T-202 §۲.۲ / T-213 §۳ — گرید محصولات فروشگاه/دسته، همه‌ی فیلترها از URL. */
 export async function getProducts(
   params: ProductListParams,
 ): Promise<{ items: ProductCard[]; pagination: PaginationMeta }> {
@@ -86,6 +92,16 @@ export async function getProducts(
   if (params.sort) qs.set("sort", params.sort);
   if (params.page) qs.set("page", String(params.page));
   if (params.perPage) qs.set("perPage", String(params.perPage));
+  if (params.brand && params.brand.length > 0)
+    qs.set("brand", params.brand.join(","));
+  if (params.maxPrice !== undefined)
+    qs.set("maxPrice", String(params.maxPrice));
+  if (params.inStock) qs.set("availability", "IN_STOCK");
+  if (params.spec) {
+    for (const [id, value] of Object.entries(params.spec)) {
+      qs.set(`spec[${id}]`, value);
+    }
+  }
 
   try {
     const res = await fetch(`${API_INTERNAL_BASE}/catalog/products?${qs}`, {
@@ -102,5 +118,31 @@ export async function getProducts(
     };
   } catch {
     return { items: [], pagination: EMPTY_PAGINATION };
+  }
+}
+
+const EMPTY_FILTERS: CatalogFiltersData = {
+  specs: [],
+  priceRange: { min: 0, max: 0 },
+  brands: [],
+  conditions: [],
+};
+
+/** T-213 §۳ — `category` اختیاری: نبودش یعنی `/products` (کل کاتالوگ). */
+export async function getFilters(
+  category?: string,
+): Promise<CatalogFiltersData> {
+  const qs = new URLSearchParams();
+  if (category) qs.set("category", category);
+
+  try {
+    const res = await fetch(`${API_INTERNAL_BASE}/catalog/filters?${qs}`, {
+      next: { revalidate: 30 },
+    });
+    if (!res.ok) return EMPTY_FILTERS;
+    const body = (await res.json()) as { data?: CatalogFiltersData };
+    return body.data ?? EMPTY_FILTERS;
+  } catch {
+    return EMPTY_FILTERS;
   }
 }

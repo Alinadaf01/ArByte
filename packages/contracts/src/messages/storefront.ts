@@ -565,16 +565,97 @@ export const homePage = {
 } as const;
 
 /**
- * T-202 §۲.۱ — صفحه‌ی `/categories`. متن `Categories.dc.html` عدد ثابت
- * («هفت دسته») در خودش دارد که با داده‌ی واقعی هم‌خوان نیست — این نسخه
- * بدون عدد است، نه رونویسی نادرست از طراحی.
+ * T-202 §۲.۱ / T-213 §۸ — صفحه‌ی `/categories`. متن `Categories.dc.html` عدد
+ * ثابت («هفت دسته») در خودش دارد که با داده‌ی واقعی هم‌خوان نیست — این نسخه
+ * تعداد واقعی دسته‌ها را جای‌گذاری می‌کند، نه رونویسی نادرست از طراحی.
  */
 export const categoriesPage = {
   breadcrumb: { home: "خانه", current: "دسته‌بندی‌ها" },
   title: "از کجا شروع کنیم؟",
-  subtitle: "دسته‌ی مورد نظرتان را انتخاب کنید تا محصولات را ببینید.",
+  subtitle: (categoryCount: number) =>
+    `${toPersianDigits(categoryCount)} دسته، هر کدام با محدوده قیمت و تعداد موجودی واقعی.`,
   /** «۶ محصول» — بند ۲.۱۵، عدد فارسی چون متن نمایشی عمومی است. */
   productCount: (count: number) => `${toPersianDigits(count)} محصول`,
+  /**
+   * T-213 §۸ — کارت بزرگ بالای گرید. طراحی برچسب «پرفروش‌ترین دسته» دارد که
+   * داده‌ی فروش واقعی نداریم تا اثباتش کنیم؛ به‌جایش آمار واقعی («بیشترین
+   * موجودی» از productCount) — ر.ک. QUESTIONS.md.
+   */
+  featuredBadge: "بیشترین موجودی",
+  featuredCta: "مشاهده دسته",
+  priceFromLabel: (millions: string) => `از ${millions} میلیون`,
+  /**
+   * T-213 §۸ — سوییچر «نمی‌دانید کدام دسته؟». متن توصیفی عیناً از طراحی؛ عدد
+   * دستگاه هر گزینه (مثلاً «۲۴ دستگاه گیمینگ») ساختگی بود و حذف شده — ر.ک.
+   * QUESTIONS.md.
+   */
+  useCaseSwitcher: {
+    title: "نمی‌دانید کدام دسته؟",
+    subtitle:
+      "بگویید دستگاه را برای چه کاری می‌خواهید تا فهرست را بر همان اساس ببندیم.",
+    cta: "مشاهده فروشگاه",
+  },
+  useCases: [
+    {
+      label: "بازی",
+      description:
+        "لپ‌تاپ گیمینگ با نمایشگر بالای ۱۶۵ هرتز و گرافیک سری ۴۰۷۰ به بالا. بودجه پیشنهادی از ۱۵۰ میلیون.",
+    },
+    {
+      label: "رندر و تدوین",
+      description:
+        "نمایشگر کالیبره، رم ۳۲ گیگ به بالا و ذخیره‌سازی دو ترابایتی. تدوین چهارکی بدون افت فریم.",
+    },
+    {
+      label: "برنامه‌نویسی",
+      description:
+        "رم زیاد و کیبورد راحت مهم‌تر از گرافیک است. اولترابوک‌های ۱۶ اینچی با ۳۲ گیگ رم گزینه درست‌اند.",
+    },
+    {
+      label: "دانشجویی",
+      description:
+        "زیر ۶۰ میلیون، با باتری بلند و وزن کم برای بردن به دانشگاه. گارانتی و خدمات پس از فروش کامل.",
+    },
+    {
+      label: "سفر و جلسه",
+      description:
+        "زیر ۱٫۳ کیلوگرم، باتری بالای ۱۲ ساعت و شارژ با USB-C. برای جلسه و پرواز طولانی.",
+    },
+  ],
+} as const;
+
+/**
+ * T-213 — فروشگاه (`/products` و `/category/[slug]`، یک کامپوننت صفحه).
+ * عیناً از `Products.dc.html`؛ فیلتر «شرایط کالا» طبق §۰ سند تسک از UI
+ * حذف شده (دسته‌ها خودشان شرایط‌اند: آکبند/اپن‌باکس/استوک).
+ */
+export const productsPage = {
+  breadcrumbHome: "خانه",
+  breadcrumbShop: "فروشگاه",
+  title: "فروشگاه آربایت",
+  subtitle:
+    "هر دستگاه پیش از ارسال روشن و تست می‌شود. قیمت‌ها روزانه به‌روز می‌شوند و موجودی لحظه‌ای است.",
+  /** بخش تیره‌ی عدد و برچسب استایل جدا دارند (طراحی)؛ برای همین دو کلید جداست، نه یک تابع. */
+  deviceLabel: "دستگاه",
+  categoryLabel: "دسته‌بندی",
+  allCategories: "همه",
+  brandLabel: "برند",
+  maxPriceLabel: "حداکثر قیمت",
+  maxPriceAriaLabel: "حداکثر قیمت به میلیون تومان",
+  upToLabel: (millions: string) => `تا ${millions} تومان`,
+  millionShort: "م",
+  onlyInStockLabel: "فقط کالاهای موجود",
+  clearFiltersCta: "پاک کردن فیلترها",
+  clearCta: "پاک کردن",
+  resultCount: (count: string) => `${count} نتیجه`,
+  filtersButton: "فیلترها",
+  activeFilterCount: (count: string) => `${count} فیلتر فعال`,
+  noActiveFilters: "همه دستگاه‌ها",
+  showResultsCta: (count: string) => `نمایش ${count} نتیجه`,
+  filterSheetTitle: "فیلترها",
+  emptyTitle: "دستگاهی با این فیلترها نداریم",
+  emptyDescription: "سقف قیمت را بالا ببرید یا یک برند دیگر را هم انتخاب کنید.",
+  emptyCta: "نمایش همه دستگاه‌ها",
 } as const;
 
 /** T-202 §۲.۲ — صفحه‌ی `/category/[slug]`. */
@@ -588,6 +669,8 @@ export const categoryDetailPage = {
     price_asc: "ارزان‌ترین",
     price_desc: "گران‌ترین",
     popular: "محبوب‌ترین",
+    /** T-213 §۶ — پیش‌فرض فروشگاه؛ Products.dc.html خط ۱۲۹. */
+    featured: "پیشنهاد آربایت",
   },
   paginationPrevious: "قبلی",
   paginationNext: "بعدی",

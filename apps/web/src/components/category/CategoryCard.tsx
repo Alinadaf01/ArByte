@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { categoriesPage } from "@arbyte/contracts";
+import { categoriesPage, formatNumberFa } from "@arbyte/contracts";
 import type { CategoryCard as CategoryCardData } from "@arbyte/contracts";
 
 interface CategoryCardProps {
@@ -8,7 +8,7 @@ interface CategoryCardProps {
   imageSizes?: string;
 }
 
-/** T-202 §۲.۱ — کارت دسته‌بندی، صفحه‌ی `/categories` و گرید صفحه اصلی. */
+/** T-202 §۲.۱ / T-213 §۸ — کارت دسته‌بندی، صفحه‌ی `/categories` و گرید صفحه اصلی. */
 export function CategoryCard({ category, imageSizes }: CategoryCardProps) {
   return (
     <Link
@@ -26,13 +26,27 @@ export function CategoryCard({ category, imageSizes }: CategoryCardProps) {
           />
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-2 p-[19px]">
+      <div className="flex flex-1 flex-col gap-2.5 p-[19px]">
         <h3 className="text-card-title text-primary font-heading">
           {category.name}
         </h3>
-        <span className="text-caption text-secondary mt-auto">
-          {categoriesPage.productCount(category.productCount)}
-        </span>
+        {category.description ? (
+          <p className="text-caption text-secondary line-clamp-2">
+            {category.description}
+          </p>
+        ) : null}
+        <div className="border-border-divider mt-auto flex items-center justify-between gap-2.5 border-t pt-3">
+          <span className="text-caption text-secondary">
+            {categoriesPage.productCount(category.productCount)}
+          </span>
+          {category.minPrice !== null ? (
+            <span className="text-caption text-brand font-emphasis">
+              {categoriesPage.priceFromLabel(
+                formatNumberFa(Math.round(category.minPrice / 1_000_000)),
+              )}
+            </span>
+          ) : null}
+        </div>
       </div>
     </Link>
   );

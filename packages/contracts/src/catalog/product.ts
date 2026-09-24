@@ -103,13 +103,22 @@ export type ProductCard = z.infer<typeof ProductCardSchema>;
 export const ProductListQuerySchema = PaginationQuerySchema.extend({
   perPage: z.coerce.number().int().positive().max(60).default(24),
   category: SlugSchema.optional(),
-  brand: SlugSchema.optional(),
+  /**
+   * T-213 §۳ — چندانتخابی («MSI,ASUS» در URL). رشته‌ی کاما-جداشده قبل از
+   * اعتبارسنجی هر تکه به آرایه تبدیل می‌شود؛ خالی/فقط-کاما یعنی بدون فیلتر.
+   */
+  brand: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v.split(",").filter(Boolean) : undefined))
+    .pipe(z.array(SlugSchema).optional()),
   condition: ProductConditionSchema.optional(),
   minPrice: MoneyAmountSchema.optional(),
   maxPrice: MoneyAmountSchema.optional(),
   spec: z.record(z.string(), z.string()).optional(),
   availability: z.enum(["IN_STOCK", "PREORDER"]).optional(),
-  sort: ProductSortSchema.default("newest"),
+  /** T-213 §۶ — پیش‌فرض فروشگاه «پیشنهاد آربایت» است، نه جدیدترین. */
+  sort: ProductSortSchema.default("featured"),
 });
 export type ProductListQuery = z.infer<typeof ProductListQuerySchema>;
 

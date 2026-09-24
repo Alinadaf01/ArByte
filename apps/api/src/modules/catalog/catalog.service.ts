@@ -224,9 +224,15 @@ function buildProductCard(
 export class CatalogService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
+  /**
+   * ⚠️ `slug: { not: "" }` — همان فیلتر دفاعی `getTopLevelCategoryCards()`
+   * (ر.ک. کامنت آنجا، T-210 Q-1): این متد دقیقاً همان چیزی است که مگامنو
+   * می‌خواند و طبق Q-1 همین الان یک کاشی با نام خراب/لینک نامعتبر آنجا
+   * نشان می‌داد. حذف ردیف کار این تسک نیست؛ این فقط فیلتر است.
+   */
   async getCategoryTree(): Promise<CategoryTreeNode[]> {
     const rows = await this.prisma.category.findMany({
-      where: { isActive: true, deletedAt: null },
+      where: { isActive: true, deletedAt: null, slug: { not: "" } },
       orderBy: { sortOrder: "asc" },
       select: {
         id: true,
@@ -265,14 +271,18 @@ export class CatalogService {
     isVisibleInCategory: true,
   };
 
-  private toCategoryCard(row: {
-    id: string;
-    name: string;
-    slug: string;
-    imageMain: string | null;
-    description: string | null;
-    _count: { products: number };
-  }): CategoryCard {
+  private toCategoryCard(
+    row: {
+      id: string;
+      name: string;
+      slug: string;
+      imageMain: string | null;
+      description: string | null;
+      _count: { products: number };
+    },
+    /** T-213 §۸ — فقط `getTopLevelCategoryCards()` این را واقعی حساب می‌کند؛ بقیه null می‌مانند (مصرف‌کننده‌شان قیمت نشان نمی‌دهد). */
+    minPrice: number | null = null,
+  ): CategoryCard {
     return {
       id: row.id,
       name: row.name,
@@ -280,13 +290,26 @@ export class CatalogService {
       image: row.imageMain ? { url: row.imageMain, alt: row.name } : null,
       productCount: row._count.products,
       description: row.description,
+      minPrice,
     };
   }
 
-  /** T-202 §۱.۱ — `GET /catalog/categories/top-level`، برای صفحه‌ی `/categories`. */
+  /**
+   * T-202 §۱.۱ — `GET /catalog/categories/top-level`، برای صفحه‌ی `/categories`.
+   * ⚠️ `slug: { not: "" }` — یکی از ردیف‌های مشکوک dev که در T-210 Q-1
+   * ثبت شد (نام mojibake، slug خالی) الان در همین کوئری هم ظاهر می‌شد و
+   * روی این صفحه لینک شکسته (`/category/`) می‌ساخت. حذف ردیف از دیتابیس
+   * کار این تسک نیست (تصمیم مدیر پروژه طبق Q-1)؛ این فقط فیلتر است، نه
+   * تغییر داده.
+   */
   async getTopLevelCategoryCards(): Promise<CategoryCard[]> {
     const rows = await this.prisma.category.findMany({
-      where: { isActive: true, deletedAt: null, parentId: null },
+      where: {
+        isActive: true,
+        deletedAt: null,
+        parentId: null,
+        slug: { not: "" },
+      },
       orderBy: { sortOrder: "asc" },
       select: {
         id: true,
@@ -301,7 +324,38 @@ export class CatalogService {
         },
       },
     });
-    return rows.map((row) => this.toCategoryCard(row));
+
+    // T-213 §۸ — «از X میلیون»: کمترین finalPrice واریانتِ فعال هر محصول،
+    // بعد کمترین بین محصولات همان دسته. یک کوئری برای همه‌ی دسته‌ها (نه N+1).
+    const products = await this.prisma.product.findMany({
+      where: {
+        ...CatalogService.PUBLIC_CATEGORY_PRODUCT_WHERE,
+        categoryId: { in: rows.map((r) => r.id) },
+      },
+      select: {
+        categoryId: true,
+        variants: {
+          where: { deletedAt: null },
+          select: { finalPrice: true },
+          orderBy: { finalPrice: "asc" },
+          take: 1,
+        },
+      },
+    });
+    const minPriceByCategory = new Map<string, number>();
+    for (const p of products) {
+      const cheapest = p.variants[0];
+      if (!cheapest) continue;
+      const price = Number(cheapest.finalPrice);
+      const current = minPriceByCategory.get(p.categoryId);
+      if (current === undefined || price < current) {
+        minPriceByCategory.set(p.categoryId, price);
+      }
+    }
+
+    return rows.map((row) =>
+      this.toCategoryCard(row, minPriceByCategory.get(row.id) ?? null),
+    );
   }
 
   /** T-201/T-150 — رزولوشن بلوک CATEGORY_GRID صفحه اصلی، حالا با کارت واقعی. */
@@ -511,7 +565,8 @@ export class CatalogService {
       isVisibleOnSite: true,
       isVisibleInCategory: true,
       ...(query.category && { category: { slug: query.category } }),
-      ...(query.brand && { brand: { slug: query.brand } }),
+      ...(query.brand &&
+        query.brand.length > 0 && { brand: { slug: { in: query.brand } } }),
       ...(query.condition && { condition: query.condition }),
       variants: { some: { AND: variantConditions } },
     };
@@ -535,6 +590,7 @@ export class CatalogService {
         case "price_desc":
           return b.card.defaultVariant.price - a.card.defaultVariant.price;
         case "popular":
+        case "featured":
           return (
             b.priority - a.priority ||
             b.createdAt.getTime() - a.createdAt.getTime()
@@ -613,16 +669,26 @@ export class CatalogService {
     };
   }
 
-  /** §۶.۱۱ — فیلترهای پویای یک دسته: مشخصات SELECT/NUMBER، بازه‌ی قیمت، برند، شرایط کالا. */
-  async getFilters(categorySlug: string) {
-    const category = await this.prisma.category.findFirst({
-      where: { slug: categorySlug, isActive: true, deletedAt: null },
-    });
-    if (!category) {
-      throw new NotFoundException({
-        code: "NOT_FOUND",
-        message: "دسته‌بندی پیدا نشد.",
+  /**
+   * §۶.۱۱ — فیلترهای پویای فروشگاه: مشخصات SELECT/NUMBER، بازه‌ی قیمت،
+   * برند، شرایط کالا. T-213 §۳ — `categorySlug` اختیاری: نبودش یعنی
+   * `/products` (کل کاتالوگ) — بازه‌ی قیمت/برند/موجودی کل کاتالوگ حساب
+   * می‌شود، ولی چون مشخصات (`SpecificationDefinition`) به یک دسته وابسته‌اند،
+   * بدون دسته‌ی مشخص گروه مشخصات خالی برمی‌گردد (نه خطا).
+   */
+  async getFilters(categorySlug?: string) {
+    let categoryId: string | undefined;
+    if (categorySlug) {
+      const category = await this.prisma.category.findFirst({
+        where: { slug: categorySlug, isActive: true, deletedAt: null },
       });
+      if (!category) {
+        throw new NotFoundException({
+          code: "NOT_FOUND",
+          message: "دسته‌بندی پیدا نشد.",
+        });
+      }
+      categoryId = category.id;
     }
 
     const baseWhere = {
@@ -630,14 +696,16 @@ export class CatalogService {
       deletedAt: null,
       isVisibleOnSite: true,
       isVisibleInCategory: true,
-      categoryId: category.id,
+      ...(categoryId && { categoryId }),
     };
 
     const [definitions, products] = await Promise.all([
-      this.prisma.specificationDefinition.findMany({
-        where: { categoryId: category.id, isFilterable: true },
-        orderBy: { sortOrder: "asc" },
-      }),
+      categoryId
+        ? this.prisma.specificationDefinition.findMany({
+            where: { categoryId, isFilterable: true },
+            orderBy: { sortOrder: "asc" },
+          })
+        : Promise.resolve([]),
       this.prisma.product.findMany({
         where: baseWhere,
         select: {
@@ -676,6 +744,8 @@ export class CatalogService {
       string,
       { id: string; name: string; slug: string }
     >();
+    /** T-213 §۳ — چیپ برند تعداد نشان می‌دهد («MSI ۳»). */
+    const brandCounts = new Map<string, number>();
     const conditionSet = new Set<string>();
     const specValues = new Map<string, Map<string, Set<string>>>();
     const specNumericRange = new Map<string, { min: number; max: number }>();
@@ -683,6 +753,7 @@ export class CatalogService {
     for (const p of products) {
       conditionSet.add(p.condition);
       brandMap.set(p.brand.id, p.brand);
+      brandCounts.set(p.brand.id, (brandCounts.get(p.brand.id) ?? 0) + 1);
 
       const allSpecs = [...p.specifications];
       for (const v of p.variants) {
@@ -751,7 +822,10 @@ export class CatalogService {
         min: Number.isFinite(min) ? min : 0,
         max: Number.isFinite(max) ? max : 0,
       },
-      brands: Array.from(brandMap.values()),
+      brands: Array.from(brandMap.values()).map((b) => ({
+        ...b,
+        count: brandCounts.get(b.id) ?? 0,
+      })),
       conditions: Array.from(conditionSet) as ProductConditionValue[],
     };
   }

@@ -3,19 +3,15 @@ import Link from "next/link";
 import { formatPrice, homeFeatured, homePage } from "@arbyte/contracts";
 import type { PublicHomepageBlock } from "@arbyte/contracts";
 import { AddToCartButton } from "@/components/product/AddToCartButton";
-import { availabilityLabel, availabilityTone } from "@/lib/labels";
+import {
+  AVAILABILITY_TEXT_TONE,
+  availabilityLabel,
+  availabilityTone,
+} from "@/lib/labels";
 
 interface FeaturedSectionProps {
   block: Extract<PublicHomepageBlock, { type: "PRODUCT_RAIL" }>;
 }
-
-/** رنگ متن پیل موجودی کوچک — همان تن Badge اما فقط برای رنگ متن اینجا لازم است. */
-const AVAILABILITY_TEXT_TONE: Record<string, string> = {
-  success: "text-success-text",
-  warning: "text-warning",
-  neutral: "text-secondary",
-  info: "text-accent-deep",
-};
 
 /**
  * T-212 §۱ — «محصولات منتخب»: یک کارت بزرگ + دو کوچک، از بلوک PRODUCT_RAIL

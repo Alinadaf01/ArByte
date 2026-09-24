@@ -49,3 +49,15 @@ export function availabilityLabel(availability: Availability): string {
       return inventory.comingSoon;
   }
 }
+
+/**
+ * رنگ متن پیل موجودی کوچک (کارت محصول، Featured صفحه اصلی) — همان تن
+ * `availabilityTone` اما به‌جای رنگ Badge، رنگ متن خام می‌خواهد (پیل روی
+ * تصویر، نه داخل Badge کامپوننت).
+ */
+export const AVAILABILITY_TEXT_TONE: Record<AvailabilityTone, string> = {
+  success: "text-success-text",
+  warning: "text-warning",
+  neutral: "text-secondary",
+  info: "text-accent-deep",
+};

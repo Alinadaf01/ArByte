@@ -47,6 +47,8 @@ export const CategoryCardSchema = z.object({
   productCount: z.number().int().nonnegative(),
   /** T-211 §۳ — زیرمتن کاشی آکاردئون صفحه اصلی؛ همان description دسته. */
   description: z.string().nullable(),
+  /** T-213 §۸ — «از X میلیون» صفحه‌ی /categories؛ کمترین finalPrice واریانتِ فعال دسته. بدون محصول فعال → null. */
+  minPrice: MoneyAmountSchema.nullable(),
 });
 export type CategoryCard = z.infer<typeof CategoryCardSchema>;
 export const CategoryTopLevelResponseSchema = successResponseSchema(
@@ -92,13 +94,28 @@ export const FilterDefinitionSchema = z.object({
   numericRange: z.object({ min: z.number(), max: z.number() }).optional(),
 });
 
-export const CatalogFiltersQuerySchema = z.object({ category: SlugSchema });
+/** T-213 §۳ — چیپ برند تعداد نشان می‌دهد؛ `BrandRefSchema` عمومی این را ندارد (استفاده‌ی گسترده‌تر). */
+export const FilterBrandSchema = BrandRefSchema.extend({
+  count: z.number().int().nonnegative(),
+});
+
+/**
+ * T-213 §۳ — `category` اختیاری شد: `/products` (همه‌ی دسته‌ها) بازه‌ی
+ * قیمت/برند/موجودی را کل کاتالوگ حساب می‌کند؛ گروه‌های مشخصات فقط وقتی
+ * یک دسته انتخاب شده باشد پر می‌شوند (چون مشخصات به دسته وابسته‌اند).
+ */
+export const CatalogFiltersQuerySchema = z.object({
+  category: SlugSchema.optional(),
+});
 export type CatalogFiltersQuery = z.infer<typeof CatalogFiltersQuerySchema>;
+
+export const CatalogFiltersDataSchema = z.object({
+  specs: z.array(FilterDefinitionSchema),
+  priceRange: z.object({ min: MoneyAmountSchema, max: MoneyAmountSchema }),
+  brands: z.array(FilterBrandSchema),
+  conditions: z.array(ProductConditionSchema),
+});
+export type CatalogFiltersData = z.infer<typeof CatalogFiltersDataSchema>;
 export const CatalogFiltersResponseSchema = successResponseSchema(
-  z.object({
-    specs: z.array(FilterDefinitionSchema),
-    priceRange: z.object({ min: MoneyAmountSchema, max: MoneyAmountSchema }),
-    brands: z.array(BrandRefSchema),
-    conditions: z.array(ProductConditionSchema),
-  }),
+  CatalogFiltersDataSchema,
 );

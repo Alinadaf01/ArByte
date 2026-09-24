@@ -1,69 +1,80 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { Breadcrumb } from "@arbyte/ui";
-import { categoryDetailPage, type ProductSort } from "@arbyte/contracts";
+import { categoryDetailPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
-import { CategoryProductGrid } from "@/components/category/CategoryProductGrid";
+import { ShopControls } from "@/components/shop/ShopControls";
+import { ShopProductGrid } from "@/components/shop/ShopProductGrid";
 import { ProductGridSkeleton } from "@/components/category/ProductGridSkeleton";
-import { getCategoryBySlug } from "@/lib/catalog";
-
-const SORT_VALUES: readonly ProductSort[] = [
-  "newest",
-  "price_asc",
-  "price_desc",
-  "popular",
-];
+import { parseShopParams } from "@/components/shop/shop-params";
+import { computeShopRobotsAndCanonical } from "@/components/shop/shop-seo";
+import {
+  getCategoryBySlug,
+  getFilters,
+  getProducts,
+  getTopLevelCategories,
+} from "@/lib/catalog";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ sort?: string; page?: string }>;
-}
-
-function parseSort(raw: string | undefined): ProductSort {
-  return SORT_VALUES.includes(raw as ProductSort)
-    ? (raw as ProductSort)
-    : "newest";
-}
-
-function parsePage(raw: string | undefined): number {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : 1;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: CategoryPageProps): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCategoryBySlug(slug);
   if (!category) return {};
 
+  const rawParams = await searchParams;
+  const canonicalPath = category.seo.canonical ?? `/category/${slug}`;
+  const { index, canonicalPath: canonical } = computeShopRobotsAndCanonical(
+    rawParams,
+    canonicalPath,
+  );
+
   return {
     title: category.seo.title ?? category.name,
     description: category.seo.description ?? category.description ?? undefined,
-    // بند ۱۰.۷۱ — همیشه نسخه‌ی بدون پارامتر؛ صفحه‌ی ۲ و مرتب‌سازی نسخه‌ی
-    // جداگانه ایندکس نمی‌شوند.
-    alternates: { canonical: category.seo.canonical ?? `/category/${slug}` },
+    alternates: { canonical },
+    robots: index ? undefined : { index: false, follow: true },
   };
 }
 
 /**
- * T-202 §۲.۲/§۳ — صفحه‌ی دسته‌بندی: breadcrumb، گرید محصول، صفحه‌بندی، سئو.
- * ⚠️ بررسی وجود دسته‌بندی (`notFound()`) عمداً قبل از هر `<Suspense>` است —
- * ر.ک. کامنت `CategoryProductGrid.tsx` برای چرایی (کد وضعیت HTTP واقعی).
+ * T-213 §۱/§۲ — `/category/[slug]`: همان زیرکامپوننت‌های `shop/` که
+ * `/products` استفاده می‌کند، فقط با `category` از پیش تعیین‌شده. Breadcrumb
+ * و `BreadcrumbList` JSON-LD از T-202 حفظ شده‌اند؛ زیرعنوان طبق §۲ همان
+ * `category.description` است.
  */
 export default async function CategoryPage({
   params,
   searchParams,
 }: CategoryPageProps) {
   const { slug } = await params;
-  const query = await searchParams;
-  const sort = parseSort(query.sort);
-  const page = parsePage(query.page);
+  const rawParams = await searchParams;
+  const filters = parseShopParams(rawParams);
 
   const category = await getCategoryBySlug(slug);
   if (!category) notFound();
+
+  const [categories, filterData, countResult] = await Promise.all([
+    getTopLevelCategories(),
+    getFilters(slug),
+    getProducts({
+      category: slug,
+      sort: filters.sort,
+      page: filters.page,
+      perPage: 1,
+      brand: filters.brand,
+      maxPrice: filters.maxPrice,
+      inStock: filters.inStock,
+      spec: filters.spec,
+    }),
+  ]);
 
   const breadcrumbItems = [
     { label: categoryDetailPage.breadcrumbHome, href: "/" },
@@ -107,34 +118,26 @@ export default async function CategoryPage({
             {category.description}
           </p>
         ) : null}
-
-        {category.children.length > 0 ? (
-          <div className="mt-5 flex flex-wrap gap-2">
-            {category.children.map((child) => (
-              <Link
-                key={child.id}
-                href={`/category/${child.slug}`}
-                className="border-border hover:border-brand-tint-2 hover:text-brand rounded-pill border bg-surface px-4 py-2 text-caption text-primary transition-colors duration-200"
-              >
-                {child.name}
-              </Link>
-            ))}
-          </div>
-        ) : null}
       </section>
 
       <section className="px-[5vw] py-8 md:py-11">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
-          {/* T-203 پنل فیلتر را اینجا پر می‌کند — عمداً خالی نگه داشته شده. */}
-          <aside data-testid="filter-panel-slot" className="hidden lg:block" />
-
+        <ShopControls
+          categories={categories}
+          activeCategorySlug={category.slug}
+          filters={filterData}
+          resultCount={countResult.pagination.total}
+        >
           <Suspense
-            key={`${slug}-${sort}-${page}`}
+            key={JSON.stringify(rawParams)}
             fallback={<ProductGridSkeleton />}
           >
-            <CategoryProductGrid slug={slug} sort={sort} page={page} />
+            <ShopProductGrid
+              category={slug}
+              basePath={`/category/${slug}`}
+              filters={filters}
+            />
           </Suspense>
-        </div>
+        </ShopControls>
       </section>
     </StorefrontShell>
   );

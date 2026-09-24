@@ -142,6 +142,12 @@ export const PRODUCT_SORT_VALUES = [
   "price_asc",
   "price_desc",
   "popular",
+  /**
+   * T-213 §۶ — پیش‌فرض `/products`/`/category/[slug]`: priority desc سپس
+   * createdAt desc (منطق یکسان با popular). `popular` در API می‌ماند اما
+   * فقط `featured` در UI فروشگاه دیده می‌شود.
+   */
+  "featured",
 ] as const;
 export const ProductSortSchema = z.enum(PRODUCT_SORT_VALUES);
 export type ProductSort = z.infer<typeof ProductSortSchema>;
