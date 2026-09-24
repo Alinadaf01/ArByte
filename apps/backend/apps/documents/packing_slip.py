@@ -25,8 +25,9 @@ def build_packing_slip_context(order: Order, *, generated_by_name: str) -> dict:
             "postal_code": address.get("postalCode", ""),
             "items": [
                 {
-                    "name": item.product_name + (f" ({item.color_name})" if item.color_name else ""),
-                    "sku": item.sku,
+                    "name": item.product_name_snapshot
+                    + (f" ({item.variant_name_snapshot})" if item.variant_name_snapshot else ""),
+                    "sku": item.sku_snapshot,
                     "quantity": item.quantity,
                 }
                 for item in order.items.all()

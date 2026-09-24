@@ -1,11 +1,16 @@
+from unittest import skip
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from apps.catalog.models import Attribute, AttributeValue, ProductAttribute
-
 from .base import AdminApiTestMixin
 
+# Attribute/AttributeValue/ProductAttribute (vybeshop's EAV models) were
+# replaced by SpecificationDefinition/SpecificationValue/ProductSpecification
+# in D-02 — import removed, see docs/backend/ADMIN-DISABLED.md.
 
+
+@skip("D-02: admin/attributes/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminSpecsApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.make_staff())

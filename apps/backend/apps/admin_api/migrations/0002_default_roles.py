@@ -34,9 +34,14 @@ def remove_default_roles(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    # D-02 — squashed from vybeshop's 0003/0005/0007 (all three data
+    # migrations existed only to retroactively grant permissions added to
+    # SECTIONS *after* 0003 first ran). apps/admin_api/sections.py's SECTIONS
+    # already lists every section's final action set, so a single pass here
+    # grants everything DEFAULT_ROLES asks for — nothing left to replay.
 
     dependencies = [
-        ("admin_api", "0002_adminrole"),
+        ("admin_api", "0001_initial"),
     ]
 
     operations = [

@@ -1,3 +1,5 @@
+from unittest import skip
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
@@ -6,6 +8,7 @@ from apps.catalog.models import PriceHistory
 from .base import AdminApiTestMixin
 
 
+@skip("D-02: admin/products/prices/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminBulkPriceEditTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.staff = self.make_staff()

@@ -123,21 +123,28 @@ class AdminTopProductsReportView(APIView):
         from_date, to_date = _date_range(request)
         by = request.query_params.get("by", "quantity")
 
-        items = OrderItem.objects.filter(order__paid_at__isnull=False, product__isnull=False)
+        items = OrderItem.objects.filter(order__paid_at__isnull=False, variant__isnull=False)
         if from_date:
             items = items.filter(order__paid_at__date__gte=from_date)
         if to_date:
             items = items.filter(order__paid_at__date__lte=to_date)
 
         rows = (
-            items.values("product_id", "product__name", "product__sku")
-            .annotate(units_sold=Sum("quantity"), revenue=Sum(F("price") * F("quantity"), output_field=IntegerField()))
+            items.values("variant__product_id", "variant__product__name", "variant__sku")
+            .annotate(
+                units_sold=Sum("quantity"),
+                revenue=Sum(F("unit_price") * F("quantity"), output_field=IntegerField()),
+            )
             .order_by("-revenue" if by == "revenue" else "-units_sold")
         )
         return Response(
             [
                 {
-                    "product": {"id": row["product_id"], "name": row["product__name"], "sku": row["product__sku"]},
+                    "product": {
+                        "id": row["variant__product_id"],
+                        "name": row["variant__product__name"],
+                        "sku": row["variant__sku"],
+                    },
                     "units_sold": row["units_sold"],
                     "revenue": row["revenue"],
                 }
@@ -151,20 +158,30 @@ class AdminByCategoryReportView(APIView):
 
     def get(self, request):
         from_date, to_date = _date_range(request)
-        items = OrderItem.objects.filter(order__paid_at__isnull=False, product__isnull=False)
+        items = OrderItem.objects.filter(order__paid_at__isnull=False, variant__isnull=False)
         if from_date:
             items = items.filter(order__paid_at__date__gte=from_date)
         if to_date:
             items = items.filter(order__paid_at__date__lte=to_date)
 
         rows = (
-            items.values("product__category_id", "product__category__name")
-            .annotate(total=Sum(F("price") * F("quantity"), output_field=IntegerField()), order_count=Count("order_id", distinct=True))
+            items.values("variant__product__category_id", "variant__product__category__name")
+            .annotate(
+                total=Sum(F("unit_price") * F("quantity"), output_field=IntegerField()),
+                order_count=Count("order_id", distinct=True),
+            )
             .order_by("-total")
         )
         return Response(
             [
-                {"category": {"id": row["product__category_id"], "name": row["product__category__name"]}, "total": row["total"], "order_count": row["order_count"]}
+                {
+                    "category": {
+                        "id": row["variant__product__category_id"],
+                        "name": row["variant__product__category__name"],
+                    },
+                    "total": row["total"],
+                    "order_count": row["order_count"],
+                }
                 for row in rows
             ]
         )
@@ -268,7 +285,7 @@ class AdminGrossMarginReportView(APIView):
 
     def get(self, request):
         from_date, to_date = _date_range(request)
-        items = OrderItem.objects.filter(order__paid_at__isnull=False, product__isnull=False).select_related("product")
+        items = OrderItem.objects.filter(order__paid_at__isnull=False, variant__isnull=False).select_related("variant")
         if from_date:
             items = items.filter(order__paid_at__date__gte=from_date)
         if to_date:
@@ -279,10 +296,10 @@ class AdminGrossMarginReportView(APIView):
         total_units = 0
         priced_units = 0
         for item in items:
-            revenue += item.price * item.quantity
+            revenue += item.unit_price * item.quantity
             total_units += item.quantity
-            if item.product.cost_price is not None:
-                cost += item.product.cost_price * item.quantity
+            if item.variant.supplier_price is not None:
+                cost += item.variant.supplier_price * item.quantity
                 priced_units += item.quantity
 
         margin = revenue - cost

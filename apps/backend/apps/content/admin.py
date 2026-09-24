@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BlogPost, ContactMessage, Coupon, Favorite, ProductReview
+from .models import BlogPost, ContactMessage, Coupon, Favorite, HomepageBlock, ProductReview
 
 
 @admin.register(BlogPost)
@@ -38,3 +38,10 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display = ["user", "product", "created_at"]
     list_filter = ["created_at"]
     search_fields = ["user__phone", "product__name"]
+
+
+@admin.register(HomepageBlock)
+class HomepageBlockAdmin(admin.ModelAdmin):
+    list_display = ["type", "sort_order", "is_active", "title"]
+    list_filter = ["type", "is_active"]
+    ordering = ["sort_order"]

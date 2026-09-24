@@ -17,7 +17,7 @@ class CartAdmin(admin.ModelAdmin):
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
-    readonly_fields = ["product_name", "sku", "price", "color_name", "quantity"]
+    readonly_fields = ["product_name_snapshot", "sku_snapshot", "unit_price", "quantity"]
 
 
 class OrderStatusLogInline(admin.TabularInline):

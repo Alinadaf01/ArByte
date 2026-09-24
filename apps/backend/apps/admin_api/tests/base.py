@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group
 
-from apps.catalog.models import Category, Product
-from apps.inventory.models import StockMovement
+from apps.catalog.models import Brand, Category, Product, ProductVariant
+from apps.inventory.models import Inventory
 from apps.users.models import User
 
 
@@ -28,10 +28,30 @@ class AdminApiTestMixin:
         kwargs.setdefault("is_verified", True)
         return User.objects.create_user(phone=phone, **kwargs)
 
-    def make_product(self, *, sku="TEST-001", slug="test-product", name="Test Product", price=100000, stock=10, category=None) -> Product:
+    def make_product(
+        self, *, sku="TEST-001", slug="test-product", name="Test Product", price=100000, stock=10, category=None
+    ) -> Product:
+        """D-02 §۲ — builds the whole Brand/Category/Product/ProductVariant/
+        Inventory chain and returns the Product (kept for callers that only
+        need `.pk`/`.name`/`.slug`); the default variant is reachable via
+        `product.default_variant` or `product.variants.first()`."""
         if category is None:
             category, _ = Category.objects.get_or_create(slug="desktop-stands", defaults={"name": "Desktop Stands"})
-        product = Product.objects.create(sku=sku, slug=slug, name=name, price=price, category=category)
+        brand, _ = Brand.objects.get_or_create(name="Test Brand", defaults={"slug": "test-brand"})
+        product = Product.objects.create(
+            slug=slug, name=name, brand=brand, category=category, condition="NEW"
+        )
+        variant = ProductVariant.objects.create(
+            product=product, sku=sku, is_default=True, final_price=price
+        )
+        Inventory.objects.create(variant=variant, low_stock_threshold=5)
         if stock:
-            StockMovement.objects.record(product, "purchase", stock, reference="PO-TEST")
+            Inventory.objects.stock_in(variant, stock, reference="fixture")
         return product
+
+    def make_variant(self, *, product=None, **kwargs) -> ProductVariant:
+        """For tests that need the ProductVariant directly (OrderItem.variant,
+        CartItem.variant, ...)."""
+        if product is None:
+            product = self.make_product()
+        return product.variants.first()

@@ -129,6 +129,11 @@ class Coupon(models.Model):
 class Favorite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="favorites")
     product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, related_name="favorited_by")
+    # D-02 §۲ — optional: which configuration was favorited, if the user had
+    # one selected. Falls back to the product's default variant when null.
+    variant = models.ForeignKey(
+        "catalog.ProductVariant", on_delete=models.SET_NULL, blank=True, null=True, related_name="favorited_by"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -141,132 +146,65 @@ class Favorite(models.Model):
         return f"{self.user} ♥ {self.product}"
 
 
-class HeroSection(models.Model):
-    """Singleton — always pk=1, same pattern as SiteSettings. Lets the owner
-    swap the home page's hero image/copy without a redeploy
-    (HOMEPAGE-ADMIN-TASK.md). `is_active=False` means "hidden", not "no
-    hero" — the storefront falls back to its own static default rather than
-    showing an empty hero, since it's the page's visual anchor."""
+HOMEPAGE_BLOCK_TYPE_CHOICES = [
+    ("HERO", "هیرو"),
+    ("CATEGORY_GRID", "شبکه دسته‌بندی‌ها"),
+    ("FLAGSHIP_DUEL", "دوئل پرچم‌دار"),
+    ("PRODUCT_RAIL", "ردیف محصولات"),
+    ("CAMPAIGN", "کمپین"),
+    ("BENEFITS", "مزایا"),
+    ("BLOG_RAIL", "ردیف مجله"),
+]
 
-    image = models.ImageField(upload_to="homepage/", blank=True, null=True)
-    image_mobile = models.ImageField(
-        upload_to="homepage/", blank=True, null=True,
-        help_text="اختیاری — نسخه افقی دسکتاپ روی موبایل معمولاً بد کراپ می‌شود",
-    )
-    image_alt = models.CharField(max_length=200)
-    title = models.CharField(max_length=200, blank=True)
-    subtitle = models.CharField(max_length=300, blank=True)
-    caption = models.CharField(max_length=100, blank=True, help_text='مونو، مثلاً "PLA · FDM · 0.2MM LAYER"')
-    cta_label = models.CharField(max_length=100, blank=True)
-    cta_url = models.CharField(max_length=300, blank=True)
+# D-02 §۱ — required `config` keys per block type, mirroring
+# packages/contracts/src/content/block-config.ts's HomepageBlockConfigSchema
+# discriminated union. Types with an empty tuple here (CAMPAIGN/BENEFITS/
+# BLOG_RAIL) take no config keys at all in that same Zod schema.
+_HOMEPAGE_BLOCK_REQUIRED_CONFIG_KEYS: dict[str, tuple[str, ...]] = {
+    "HERO": ("framesManifest",),
+    "CATEGORY_GRID": ("categorySlugs",),
+    "FLAGSHIP_DUEL": ("productSlugs", "metrics"),
+    "PRODUCT_RAIL": ("productSlugs",),
+    "CAMPAIGN": (),
+    "BENEFITS": (),
+    "BLOG_RAIL": (),
+}
+
+
+class HomepageBlock(models.Model):
+    """§۸.۵۷+ سند مقایسه‌ی وایب‌شاپ — جایگزین سه مدل تک‌کاره‌ی وایب
+    (HeroSection/HomeShowcase/CommunityTile) با یک مدل بلوک‌محور مثل Nest."""
+
+    type = models.CharField(max_length=20, choices=HOMEPAGE_BLOCK_TYPE_CHOICES)
+    sort_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    title = models.CharField(max_length=200, blank=True, null=True)
+    subtitle = models.CharField(max_length=300, blank=True, null=True)
+    cta_label = models.CharField(max_length=100, blank=True, null=True)
+    cta_url = models.CharField(max_length=300, blank=True, null=True)
+    image_desktop = models.CharField(max_length=500, blank=True, null=True)
+    image_mobile = models.CharField(max_length=500, blank=True, null=True)
+    image_alt = models.CharField(max_length=200, blank=True, null=True)
+    config = models.JSONField(blank=True, null=True)
+    starts_at = models.DateTimeField(blank=True, null=True)
+    ends_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name_plural = "hero section"
+        ordering = ["sort_order"]
+        indexes = [models.Index(fields=["type", "sort_order"])]
 
     def __str__(self):
-        return "Hero section"
-
-    def save(self, *args, **kwargs):
-        self.pk = 1
-        super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        pass  # singleton — never deleted
-
-    @classmethod
-    def load(cls) -> "HeroSection":
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-
-
-class HomeShowcase(models.Model):
-    """One of the two full-width product-showcase blocks under the hero.
-    `product` is optional — an admin can point a block at a category or
-    campaign page instead of a specific product (HOMEPAGE-ADMIN-TASK.md:
-    "می‌تواند به دسته‌بندی یا کمپین لینک شود") — but when it *is* set, the
-    resolved_* properties auto-fill title/link/image so there's less to
-    fill in by hand."""
-
-    order = models.PositiveSmallIntegerField(help_text="۱ یا ۲")
-    product = models.ForeignKey(
-        "catalog.Product", on_delete=models.SET_NULL, blank=True, null=True, related_name="+"
-    )
-    image = models.ImageField(upload_to="homepage/", blank=True, null=True)
-    image_alt = models.CharField(max_length=200, blank=True)
-    title = models.CharField(max_length=200, blank=True)
-    description = models.CharField(max_length=300, blank=True)
-    specs = models.JSONField(default=list, help_text="[{label, value}, ...] — mono-rendered on the frontend")
-    cta_label = models.CharField(max_length=100, default="جزئیات را ببینید")
-    cta_url = models.CharField(max_length=300, blank=True)
-    theme = models.CharField(max_length=5, choices=[("light", "روشن"), ("dark", "تیره")], default="light")
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["order"]
-
-    def __str__(self):
-        return self.resolved_title or f"Showcase #{self.order}"
+        return f"{self.type} #{self.sort_order}"
 
     def clean(self):
-        # Server-side cap, not just a UI limit — HOMEPAGE-ADMIN-TASK.md §3:
-        # "حداکثر دو تای فعال — اعتبارسنجی سمت سرور".
-        if self.is_active:
-            already_active = HomeShowcase.objects.filter(is_active=True).exclude(pk=self.pk).count()
-            if already_active >= 2:
-                raise ValidationError({"is_active": "حداکثر دو بلوک نمایش می‌تواند هم‌زمان فعال باشد."})
-
-    def _product_is_usable(self) -> bool:
-        # A deactivated or deleted linked product must not break this block
-        # (HOMEPAGE-ADMIN-TASK.md §1) — SET_NULL already handles delete;
-        # this covers the "deactivated but still linked" case by simply no
-        # longer trusting its data, falling back to whatever was typed in
-        # manually (blank if nothing was).
-        return bool(self.product_id and self.product.is_active)
-
-    @property
-    def resolved_title(self) -> str:
-        if self.title:
-            return self.title
-        return self.product.name if self._product_is_usable() else ""
-
-    @property
-    def resolved_cta_url(self) -> str:
-        if self.cta_url:
-            return self.cta_url
-        return f"/products/{self.product.slug}" if self._product_is_usable() else ""
-
-    @property
-    def resolved_image_url(self) -> str:
-        if self.image:
-            return self.image.url
-        if self._product_is_usable():
-            primary = self.product.images.first()
-            if primary:
-                return primary.resolved_url
-        return ""
-
-
-class CommunityTile(models.Model):
-    """One of up to six square photos in the home page's community section.
-    Purely decorative — no static fallback if none are active, the section
-    just doesn't render (HOMEPAGE-ADMIN-TASK.md §1: "اگر هیچ تصویر فعالی
-    نبود، سکشن جامعه رندر نشود")."""
-
-    order = models.PositiveSmallIntegerField(help_text="۱ تا ۶")
-    image = models.ImageField(upload_to="homepage/", blank=True, null=True)
-    image_alt = models.CharField(max_length=200, blank=True)
-    link_url = models.CharField(max_length=300, blank=True)
-    is_active = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["order"]
-
-    def __str__(self):
-        return f"Community tile #{self.order}"
-
-    def clean(self):
-        if self.is_active:
-            already_active = CommunityTile.objects.filter(is_active=True).exclude(pk=self.pk).count()
-            if already_active >= 6:
-                raise ValidationError({"is_active": "حداکثر شش کاشی می‌تواند هم‌زمان فعال باشد."})
+        required_keys = _HOMEPAGE_BLOCK_REQUIRED_CONFIG_KEYS.get(self.type, ())
+        config = self.config or {}
+        if not required_keys:
+            return
+        missing = [key for key in required_keys if key not in config]
+        if missing:
+            raise ValidationError(
+                {"config": f"برای بلوک {self.type} کلیدهای {', '.join(missing)} در config لازم است."}
+            )

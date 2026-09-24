@@ -1,12 +1,18 @@
+from unittest import skip
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from apps.catalog.models import Product
-from apps.inventory.models import StockAlert, StockMovement
 
 from .base import AdminApiTestMixin
 
+# StockAlert/StockMovement (vybeshop) were replaced by Inventory/
+# InventoryTransaction (on ProductVariant) in D-02 — import removed, see
+# docs/backend/ADMIN-DISABLED.md.
 
+
+@skip("D-02: admin/inventory/* and admin/stock-movements/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminInventoryApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.make_staff())

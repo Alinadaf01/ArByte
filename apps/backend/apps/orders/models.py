@@ -30,18 +30,17 @@ class Cart(models.Model):
 
 
 class CartItem(models.Model):
+    """D-02 §۲ — روی واریانت (نه product+color_option)."""
+
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, related_name="cart_items")
-    color_option = models.ForeignKey(
-        "catalog.ColorOption", on_delete=models.SET_NULL, blank=True, null=True, related_name="cart_items"
-    )
+    variant = models.ForeignKey("catalog.ProductVariant", on_delete=models.CASCADE, related_name="cart_items")
     quantity = models.PositiveIntegerField(default=1)
 
     class Meta:
-        unique_together = ["cart", "product", "color_option"]
+        unique_together = ["cart", "variant"]
 
     def __str__(self):
-        return f"{self.product.name} x{self.quantity}"
+        return f"{self.variant} x{self.quantity}"
 
 
 def generate_order_number() -> str:
@@ -133,17 +132,18 @@ class Order(models.Model):
     @transaction.atomic
     def mark_paid(self, *, user=None):
         """The only place stock leaves the ledger for a sale — never at order
-        creation. Each StockMovement.record() call locks its product row
-        (select_for_update), so concurrent payments can't oversell."""
-        from apps.inventory.models import StockMovement
+        creation. Each Inventory.objects.stock_out() call locks its
+        Inventory row (select_for_update), so concurrent payments can't
+        oversell — see apps/inventory/models.py (D-02)."""
+        from apps.inventory.models import Inventory
 
         if self.status != "pending":
             raise InvalidOrderTransition("فقط سفارش pending می‌تواند paid شود.")
         already_notified = self._already_notified_for("paid")
-        for item in self.items.select_related("product"):
-            if item.product_id:
-                StockMovement.objects.record(
-                    item.product, "sale", item.quantity, reference=self.number, user=user
+        for item in self.items.select_related("variant"):
+            if item.variant_id:
+                Inventory.objects.stock_out(
+                    item.variant, item.quantity, reference=self.number, user=user
                 )
         self.paid_at = timezone.now()
         self._transition("paid", user=user, extra_fields=["paid_at"])
@@ -180,7 +180,7 @@ class Order(models.Model):
 
     @transaction.atomic
     def cancel(self, *, reason: str = "", user=None):
-        from apps.inventory.models import StockMovement
+        from apps.inventory.models import Inventory
 
         if self.status not in _CANCELABLE_FROM:
             raise InvalidOrderTransition(f"سفارش با وضعیت {self.status} قابل لغو نیست.")
@@ -188,23 +188,23 @@ class Order(models.Model):
         # mark_paid) — "pending" never deducted anything, so only reverse
         # for the two statuses reachable after payment.
         if self.status in {"paid", "processing"}:
-            for item in self.items.select_related("product"):
-                if item.product_id:
-                    StockMovement.objects.record(
-                        item.product, "return_in", item.quantity, reference=self.number, user=user
+            for item in self.items.select_related("variant"):
+                if item.variant_id:
+                    Inventory.objects.stock_in(
+                        item.variant, item.quantity, reference=self.number, user=user
                     )
         self._transition("canceled", note=reason, user=user)
 
     @transaction.atomic
     def mark_returned(self, *, user=None):
-        from apps.inventory.models import StockMovement
+        from apps.inventory.models import Inventory
 
         if self.status not in _RETURNABLE_FROM:
             raise InvalidOrderTransition(f"سفارش با وضعیت {self.status} قابل مرجوع‌شدن نیست.")
-        for item in self.items.select_related("product"):
-            if item.product_id:
-                StockMovement.objects.record(
-                    item.product, "return_in", item.quantity, reference=self.number, user=user
+        for item in self.items.select_related("variant"):
+            if item.variant_id:
+                Inventory.objects.stock_in(
+                    item.variant, item.quantity, reference=self.number, user=user
                 )
         self._transition("returned", user=user)
 
@@ -254,24 +254,33 @@ class OrderStatusLog(models.Model):
 
 
 class OrderItem(models.Model):
-    """Snapshots product details at order time — immune to later product edits."""
+    """Snapshots variant details at order time — immune to later product
+    edits. Field names match apps/api/prisma/schema/05-order.prisma's
+    OrderItem (D-02 §۲); `variant` stays nullable so a later variant delete
+    doesn't break an old order's history (Prisma's own comment on this)."""
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(
-        "catalog.Product", on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items"
+    variant = models.ForeignKey(
+        "catalog.ProductVariant", on_delete=models.SET_NULL, blank=True, null=True, related_name="order_items"
     )
-    product_name = models.CharField(max_length=200)
-    sku = models.CharField(max_length=50)
-    price = models.PositiveIntegerField()
-    color_name = models.CharField(max_length=50, blank=True)
+    product_name_snapshot = models.CharField(max_length=200)
+    variant_name_snapshot = models.CharField(max_length=200, blank=True, null=True)
+    sku_snapshot = models.CharField(max_length=50)
+    spec_snapshot = models.JSONField(blank=True, null=True)
+    unit_price = models.PositiveIntegerField()
     quantity = models.PositiveIntegerField(default=1)
+    discount = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.product_name} x{self.quantity}"
+        return f"{self.product_name_snapshot} x{self.quantity}"
 
     @property
     def subtotal(self) -> int:
-        return self.price * self.quantity
+        return self.unit_price * self.quantity
+
+    @property
+    def final_price(self) -> int:
+        return self.subtotal - self.discount
 
 
 # Values match PaymentProvider.code in apps/orders/providers/ exactly —

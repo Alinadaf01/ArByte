@@ -43,10 +43,11 @@ def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
             "postal_code": address.get("postalCode", ""),
             "items": [
                 {
-                    "name": item.product_name + (f" ({item.color_name})" if item.color_name else ""),
-                    "sku": item.sku,
+                    "name": item.product_name_snapshot
+                    + (f" ({item.variant_name_snapshot})" if item.variant_name_snapshot else ""),
+                    "sku": item.sku_snapshot,
                     "quantity": item.quantity,
-                    "price": format_toman(item.price),
+                    "price": format_toman(item.unit_price),
                     "subtotal": format_toman(item.subtotal),
                 }
                 for item in order.items.all()

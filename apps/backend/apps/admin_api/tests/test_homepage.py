@@ -1,13 +1,15 @@
 import io
+from unittest import skip
 
 from django.urls import reverse
 from PIL import Image
 from rest_framework.test import APITestCase
 
-from apps.catalog.models import Product
-from apps.content.models import CommunityTile, HeroSection, HomeShowcase
-
 from .base import AdminApiTestMixin
+
+# HeroSection/HomeShowcase/CommunityTile (vybeshop) were replaced by
+# HomepageBlock in D-02 — import removed, see docs/backend/ADMIN-DISABLED.md.
+# Product import also removed: no longer used once these classes are skipped.
 
 
 def _fake_image_file(name="hero.png"):
@@ -18,6 +20,7 @@ def _fake_image_file(name="hero.png"):
     return buffer
 
 
+@skip("D-02: admin/homepage/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminHeroSectionApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.make_staff())
@@ -50,6 +53,7 @@ class AdminHeroSectionApiTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.status_code, 403)
 
 
+@skip("D-02: admin/homepage/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminHomeShowcaseApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.staff = self.make_staff()
@@ -220,6 +224,7 @@ class AdminHomeShowcaseApiTests(AdminApiTestMixin, APITestCase):
         self.assertFalse(response.data["product_detail"]["is_active"])
 
 
+@skip("D-02: admin/homepage/* disabled, see docs/backend/ADMIN-DISABLED.md")
 class AdminCommunityTileApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.make_staff())

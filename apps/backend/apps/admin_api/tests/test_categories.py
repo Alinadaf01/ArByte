@@ -1,20 +1,9 @@
-import io
-
 from django.urls import reverse
-from PIL import Image
 from rest_framework.test import APITestCase
 
 from apps.catalog.models import Category
 
 from .base import AdminApiTestMixin
-
-
-def _fake_image_file(name="logo.png"):
-    buffer = io.BytesIO()
-    Image.new("RGB", (10, 10), color="red").save(buffer, format="PNG")
-    buffer.seek(0)
-    buffer.name = name
-    return buffer
 
 
 class AdminCategoryApiTests(AdminApiTestMixin, APITestCase):
@@ -42,15 +31,17 @@ class AdminCategoryApiTests(AdminApiTestMixin, APITestCase):
         )
         self.assertEqual(response.status_code, 201)
 
-    def test_create_with_image_upload(self):
+    def test_create_with_image_path(self):
+        # D-02 §۲ — image_main is a plain string path (apps/web/public/...),
+        # not a file upload anymore.
         response = self.client.post(
             reverse("admin-category-list"),
-            {"slug": "with-image", "name": "With Image", "image": _fake_image_file()},
-            format="multipart",
+            {"slug": "with-image", "name": "With Image", "imageMain": "/categories/stands.webp"},
+            format="json",
         )
         self.assertEqual(response.status_code, 201)
         category = Category.objects.get(slug="with-image")
-        self.assertTrue(category.image)
+        self.assertEqual(category.image_main, "/categories/stands.webp")
 
     def test_delete_category_with_products_is_400_not_500(self):
         category = Category.objects.create(slug="occupied", name="Occupied")
@@ -65,13 +56,13 @@ class AdminCategoryApiTests(AdminApiTestMixin, APITestCase):
         response = self.client.delete(reverse("admin-category-detail", args=[category.pk]))
         self.assertEqual(response.status_code, 204)
 
-    def test_patch_adds_image_to_existing_category(self):
+    def test_patch_sets_image_on_existing_category(self):
         category = Category.objects.create(slug="no-image-yet", name="No Image Yet")
         response = self.client.patch(
             reverse("admin-category-detail", args=[category.pk]),
-            {"image": _fake_image_file()},
-            format="multipart",
+            {"imageMain": "/categories/no-image-yet.webp"},
+            format="json",
         )
         self.assertEqual(response.status_code, 200)
         category.refresh_from_db()
-        self.assertTrue(category.image)
+        self.assertEqual(category.image_main, "/categories/no-image-yet.webp")

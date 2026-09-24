@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 from apps.analytics.models import AdminActivityLog, DailyStat, PageView
 from apps.catalog.models import Product
 from apps.content.models import ContactMessage, ProductReview
-from apps.inventory.models import StockMovement
+from apps.inventory.models import Inventory, InventoryTransaction
 from apps.orders.models import Cart, Order, OrderItem, Payment, Return
 from apps.settings.models import ApiCredential
 from apps.users.models import User
@@ -17,7 +17,11 @@ from apps.users.models import User
 from .models import SearchConsoleSitemapStatus
 from .orders import ORDER_PREFETCH, AdminOrderSerializer
 from .permissions import IsAdminStaff
-from .products import PRODUCT_PREFETCH, AdminProductSerializer
+
+# D-02 §۲ — dashboard no longer imports AdminProductSerializer/PRODUCT_PREFETCH
+# from .products: that module's shape doesn't match the new variant-based
+# catalog and its admin routes are disabled (docs/backend/ADMIN-DISABLED.md).
+# Product summaries below are plain inline dicts instead.
 
 KAVENEGAR_CREDIT_THRESHOLD = 10000
 STALE_PENDING_PAYMENT_MINUTES = 30
@@ -33,10 +37,12 @@ def _needs_action():
         "new_return_requests": Return.objects.filter(status="requested").count(),
         "unread_messages": ContactMessage.objects.filter(is_read=False).count(),
         "pending_reviews": ProductReview.objects.filter(status="pending").count(),
-        "low_stock_count": Product.objects.filter(
-            stock_alert__is_active=True, stock_count__lte=F("stock_alert__reorder_point")
+        "low_stock_count": Inventory.objects.filter(
+            low_stock_threshold__isnull=False, available_quantity__lte=F("low_stock_threshold")
         ).count(),
-        "out_of_stock_active": Product.objects.filter(stock_count=0, is_active=True).count(),
+        "out_of_stock_active": Inventory.objects.filter(
+            quantity=0, variant__product__status="ACTIVE"
+        ).count(),
         "stale_pending_payments": Order.objects.filter(status="pending", created_at__lt=stale_cutoff).count(),
     }
 
@@ -103,12 +109,14 @@ def _site_visits():
         if not product:
             continue
         purchases = (
-            OrderItem.objects.filter(order__paid_at__gte=week_ago, product=product).aggregate(units=Sum("quantity"))["units"]
+            OrderItem.objects.filter(order__paid_at__gte=week_ago, variant__product=product).aggregate(
+                units=Sum("quantity")
+            )["units"]
             or 0
         )
         ratio = round(purchases / row["views"], 4) if row["views"] else 0
         worst_ratio.append(
-            {"product": {"id": product.pk, "name": product.name, "sku": product.sku}, "views": row["views"], "purchases": purchases, "ratio": ratio}
+            {"product": {"id": product.pk, "name": product.name, "slug": product.slug}, "views": row["views"], "purchases": purchases, "ratio": ratio}
         )
     worst_ratio.sort(key=lambda r: r["ratio"])
 
@@ -142,25 +150,29 @@ def _trends():
 
     def top_products(order_by_field, limit=5):
         items = (
-            OrderItem.objects.filter(order__paid_at__gte=week_ago, product__isnull=False)
-            .values("product_id")
-            .annotate(units_sold=Sum("quantity"), revenue=Sum(F("price") * F("quantity")))
+            OrderItem.objects.filter(order__paid_at__gte=week_ago, variant__isnull=False)
+            .values("variant__product_id")
+            .annotate(units_sold=Sum("quantity"), revenue=Sum(F("unit_price") * F("quantity")))
             .order_by(order_by_field)[:limit]
         )
         product_by_id = {
             p.pk: p
-            for p in Product.objects.filter(pk__in=[row["product_id"] for row in items])
-            .select_related("category")
-            .prefetch_related(*PRODUCT_PREFETCH)
+            for p in Product.objects.filter(pk__in=[row["variant__product_id"] for row in items]).select_related(
+                "category"
+            )
         }
         return [
             {
-                "product": AdminProductSerializer(product_by_id[row["product_id"]]).data,
+                "product": {
+                    "id": product_by_id[row["variant__product_id"]].pk,
+                    "name": product_by_id[row["variant__product_id"]].name,
+                    "slug": product_by_id[row["variant__product_id"]].slug,
+                },
                 "units_sold": row["units_sold"],
                 "revenue": row["revenue"],
             }
             for row in items
-            if row["product_id"] in product_by_id
+            if row["variant__product_id"] in product_by_id
         ]
 
     month_start = today.replace(day=1)
@@ -274,14 +286,20 @@ def _system_health():
     payment_errors_24h = Payment.objects.filter(status="failed", created_at__gte=timezone.now() - timedelta(hours=24)).count()
 
     discrepancies = []
-    for product in Product.objects.all().only("id", "name", "sku", "stock_count"):
-        latest = StockMovement.objects.filter(product=product).order_by("-created_at").first()
-        if latest and latest.balance_after != product.stock_count:
+    for inventory in Inventory.objects.select_related("variant__product").all():
+        latest = (
+            InventoryTransaction.objects.filter(variant_id=inventory.variant_id).order_by("-created_at").first()
+        )
+        if latest and latest.quantity_after != inventory.quantity:
             discrepancies.append(
                 {
-                    "product": {"id": product.pk, "name": product.name, "sku": product.sku},
-                    "stock_count": product.stock_count,
-                    "ledger_balance": latest.balance_after,
+                    "product": {
+                        "id": inventory.variant.product.pk,
+                        "name": inventory.variant.product.name,
+                        "sku": inventory.variant.sku,
+                    },
+                    "stock_count": inventory.quantity,
+                    "ledger_balance": latest.quantity_after,
                 }
             )
 

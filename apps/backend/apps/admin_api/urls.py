@@ -10,20 +10,22 @@ from . import (
     contact_messages,
     coupons,
     dashboard,
-    homepage,
-    inventory,
     orders,
-    pricing,
-    products,
     reports,
     returns,
     reviews,
     roles,
     search_console,
     settings_admin,
-    specs,
     users,
 )
+
+# D-02 §۲ — products/pricing/specs/inventory/homepage removed from this
+# import (and every path() below that used them) because their serialized
+# shape is vybeshop's single-price-per-product model, not ArByte's
+# variant-based one. The files themselves are untouched ("از urls برداشته
+# شوند، نه حذف کد") — see docs/backend/ADMIN-DISABLED.md for the exact
+# route list and what rebuilds them (D-08, batch-04).
 
 urlpatterns = [
     # Auth
@@ -38,32 +40,9 @@ urlpatterns = [
     # Dashboard
     path("admin/dashboard/", dashboard.AdminDashboardView.as_view(), name="admin-dashboard"),
     path("admin/dashboard/mark-seen/", dashboard.AdminDashboardMarkSeenView.as_view(), name="admin-dashboard-mark-seen"),
-    # Homepage management
-    path("admin/homepage/hero/", homepage.AdminHeroSectionView.as_view(), name="admin-homepage-hero"),
-    path("admin/homepage/showcases/", homepage.AdminHomeShowcaseListCreateView.as_view(), name="admin-homepage-showcase-list"),
-    path("admin/homepage/showcases/<int:pk>/", homepage.AdminHomeShowcaseDetailView.as_view(), name="admin-homepage-showcase-detail"),
-    path("admin/homepage/community-tiles/", homepage.AdminCommunityTileListCreateView.as_view(), name="admin-homepage-tile-list"),
-    path("admin/homepage/community-tiles/<int:pk>/", homepage.AdminCommunityTileDetailView.as_view(), name="admin-homepage-tile-detail"),
-    # Products
-    path("admin/products/", products.AdminProductListCreateView.as_view(), name="admin-product-list"),
-    path("admin/products/price-list.pdf", products.AdminPriceListPdfView.as_view(), name="admin-product-price-list-pdf"),
-    path("admin/products/<int:pk>/", products.AdminProductDetailView.as_view(), name="admin-product-detail"),
-    path("admin/products/<int:product_id>/images/", products.AdminProductImageCreateView.as_view(), name="admin-product-image-create"),
-    path("admin/products/<int:product_id>/images/<int:image_id>/", products.AdminProductImageDetailView.as_view(), name="admin-product-image-delete"),
-    path("admin/products/<int:product_id>/colors/", products.AdminColorOptionListCreateView.as_view(), name="admin-product-color-list"),
-    path("admin/products/<int:product_id>/colors/<int:color_id>/", products.AdminColorOptionDetailView.as_view(), name="admin-product-color-detail"),
-    # Price bulk edit
-    path("admin/products/prices/", pricing.AdminProductPriceListView.as_view(), name="admin-product-prices"),
-    path("admin/products/prices/bulk/", pricing.AdminBulkPriceEditView.as_view(), name="admin-product-prices-bulk"),
-    path("admin/products/<int:product_id>/price-history/", pricing.AdminPriceHistoryListView.as_view(), name="admin-price-history"),
     # Categories
     path("admin/categories/", categories.AdminCategoryListCreateView.as_view(), name="admin-category-list"),
     path("admin/categories/<int:pk>/", categories.AdminCategoryDetailView.as_view(), name="admin-category-detail"),
-    # Specs / EAV
-    path("admin/attributes/", specs.AdminAttributeListCreateView.as_view(), name="admin-attribute-list"),
-    path("admin/attributes/<int:pk>/", specs.AdminAttributeDetailView.as_view(), name="admin-attribute-detail"),
-    path("admin/attributes/<int:attribute_id>/values/", specs.AdminAttributeValueListCreateView.as_view(), name="admin-attribute-value-list"),
-    path("admin/products/<int:product_id>/specs/", specs.AdminProductSpecsView.as_view(), name="admin-product-specs"),
     # Orders
     path("admin/orders/", orders.AdminOrderListView.as_view(), name="admin-order-list"),
     path("admin/orders/<int:pk>/", orders.AdminOrderDetailView.as_view(), name="admin-order-detail"),
@@ -81,11 +60,6 @@ urlpatterns = [
     path("admin/search-console/pages/", search_console.AdminSearchConsolePagesView.as_view(), name="admin-sc-pages"),
     path("admin/search-console/index-status/", search_console.AdminSearchConsoleIndexStatusView.as_view(), name="admin-sc-index-status"),
     path("admin/search-console/sitemap-status/", search_console.AdminSearchConsoleSitemapStatusView.as_view(), name="admin-sc-sitemap-status"),
-    # Inventory
-    path("admin/inventory/", inventory.AdminInventoryListView.as_view(), name="admin-inventory-list"),
-    path("admin/inventory/summary/", inventory.AdminInventorySummaryView.as_view(), name="admin-inventory-summary"),
-    path("admin/inventory/stocktake.pdf", inventory.AdminStocktakePdfView.as_view(), name="admin-inventory-stocktake-pdf"),
-    path("admin/inventory/<int:product_id>/alert/", inventory.AdminInventoryAlertView.as_view(), name="admin-inventory-alert"),
     # Users
     path("admin/users/", users.AdminUserListCreateView.as_view(), name="admin-user-list"),
     path("admin/users/<int:pk>/", users.AdminUserDetailView.as_view(), name="admin-user-detail"),
@@ -116,10 +90,6 @@ urlpatterns = [
     path("admin/settings/credentials/<int:pk>/", settings_admin.AdminApiCredentialDetailView.as_view(), name="admin-settings-credential-detail"),
     path("admin/settings/shipping-methods/", settings_admin.AdminShippingMethodListCreateView.as_view(), name="admin-settings-shipping-list"),
     path("admin/settings/shipping-methods/<int:pk>/", settings_admin.AdminShippingMethodDetailView.as_view(), name="admin-settings-shipping-detail"),
-    # Stock ledger
-    path("admin/stock-movements/", inventory.AdminStockMovementListCreateView.as_view(), name="admin-stock-movement-list"),
-    path("admin/stock-movements/export/", inventory.AdminStockMovementExportView.as_view(), name="admin-stock-movement-export"),
-    path("admin/stock-movements/export.pdf", inventory.AdminStockLedgerPdfView.as_view(), name="admin-stock-ledger-pdf"),
     # Reviews
     path("admin/reviews/", reviews.AdminReviewListView.as_view(), name="admin-review-list"),
     path("admin/reviews/<int:pk>/", reviews.AdminReviewDetailView.as_view(), name="admin-review-detail"),
