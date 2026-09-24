@@ -656,6 +656,7 @@ export class CatalogService {
         alt: img.altText,
         order: img.sortOrder,
       })),
+      shortDescription: product.shortDescription,
       description: product.description,
       defaultVariantId,
       variantAxes,

@@ -6,6 +6,7 @@ import type {
   PaginationMeta,
   ProductCard,
   ProductSort,
+  PublicProductDetail,
 } from "@arbyte/contracts";
 
 /**
@@ -61,6 +62,24 @@ export async function getCategoryBySlug(
   if (!res.ok)
     throw new Error(`GET /catalog/categories/${slug} → ${res.status}`);
   const body = (await res.json()) as { data: CategoryDetail };
+  return body.data;
+}
+
+/**
+ * T-214 §۱ — صفحه‌ی `/products/[slug]`. مثل `getCategoryBySlug`، عمداً
+ * خطا را قورت نمی‌دهد — تفاوت «۴۰۴ واقعی» با «API موقتاً در دسترس نیست»
+ * برای `notFound()` صفحه مهم است.
+ */
+export async function getProductBySlug(
+  slug: string,
+): Promise<PublicProductDetail | null> {
+  const res = await fetch(
+    `${API_INTERNAL_BASE}/catalog/products/${encodeURIComponent(slug)}`,
+    { next: { revalidate: 30 } },
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`GET /catalog/products/${slug} → ${res.status}`);
+  const body = (await res.json()) as { data: PublicProductDetail };
   return body.data;
 }
 

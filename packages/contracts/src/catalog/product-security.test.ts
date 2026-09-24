@@ -18,6 +18,7 @@ describe("PublicProductDetailSchema — هرگز فیلد حساس لو نمی�
     category: { id: "c_1", name: "لپ‌تاپ گیمینگ", slug: "gaming-laptop" },
     condition: "NEW",
     images: [],
+    shortDescription: null,
     description: null,
     defaultVariantId: "v_1",
     variantAxes: [],

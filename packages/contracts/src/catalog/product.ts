@@ -42,6 +42,8 @@ export const PublicProductDetailSchema = z.object({
   category: CategoryRefSchema,
   condition: ProductConditionSchema,
   images: z.array(ProductImageSchema),
+  /** T-214 §۱ — زیرعنوان کوتاه زیر h1؛ از `description` (بررسی چندپاراگرافی تب) جداست. */
+  shortDescription: z.string().nullable(),
   description: z.string().nullable(),
 
   defaultVariantId: z.string(),

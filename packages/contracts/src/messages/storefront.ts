@@ -676,6 +676,63 @@ export const categoryDetailPage = {
   paginationNext: "بعدی",
 } as const;
 
+/**
+ * T-214 — صفحه‌ی `/products/[slug]` (`Product.dc.html`). دو حذف عمدی طبق
+ * هشدار صریح سند تسک: بدون «یا X در ۱۲ قسط» (اقساط نداریم، T-149) و بدون
+ * «موجود در انبار تهران» (بدون بُعد مکانی موجودی — به‌جایش `availabilityLabel()`
+ * از `lib/labels.ts`). تایل سوم اعتماد («تست پیش از ارسال») همان اصلاحِ
+ * T-212 است (`homePage.benefits.testedBeforeShipping`) — رونویسی از طراحی
+ * («سریال در پرونده») ادعای بدون پشتیبان بود.
+ */
+export const productDetailPage = {
+  configLabel: "پیکربندی",
+  decreaseQtyAriaLabel: "کم کردن",
+  increaseQtyAriaLabel: "اضافه کردن",
+  addToCartCta: "افزودن به سبد خرید",
+  addedToCartCta: "در سبد خرید",
+  addToWishlistAriaLabel: "افزودن به علاقه‌مندی‌ها",
+  removeFromWishlistAriaLabel: "حذف از علاقه‌مندی‌ها",
+  toastAddedLabel: (deviceCountLabel: string) =>
+    `${deviceCountLabel} به سبد اضافه شد`,
+  toastDeviceCount: (qtyFa: string) => `${qtyFa} دستگاه`,
+  viewCartCta: "دیدن سبد",
+  tabs: {
+    specs: "مشخصات فنی",
+    review: "بررسی آربایت",
+    warrantyShipping: "گارانتی و ارسال",
+  },
+  trustTiles: {
+    warrantyTitle: (months: string) => `${months} ماه گارانتی`,
+    replacementSubtitle: "تعویض سه‌روزه",
+    freeShippingTitle: "ارسال رایگان",
+    /** طبق storeFacts.policies.tehranDeliveryDays فعلی (۱ روز = «فردا»). */
+    tehranSubtitle: "تهران فردا",
+  },
+  warrantyPolicy: {
+    heading: "گارانتی",
+    body: (months: string) =>
+      `${months} ماه گارانتی رسمی شرکتی با کارت همراه دستگاه. در ۷۲ ساعت اول، ایراد سخت‌افزاری یعنی تعویض کامل دستگاه، نه تعمیر.`,
+  },
+  shippingPolicy: {
+    heading: "ارسال",
+    body: (
+      cutoffHour: string,
+      tehranDays: string,
+      provinceMin: string,
+      provinceMax: string,
+    ) =>
+      `سفارش تا ساعت ${cutoffHour} همان روز ارسال می‌شود. تهران ${tehranDays} روز کاری، شهرستان ${provinceMin} تا ${provinceMax} روز کاری.`,
+    freeShippingNote: "برای این دستگاه ارسال رایگان است.",
+  },
+  returnPolicy: {
+    heading: "مرجوعی",
+    body: (days: string) =>
+      `تا ${days} روز پس از تحویل، با جعبه و لوازم کامل، بدون نیاز به دلیل. هزینه بازگشت با ماست.`,
+  },
+  relatedTitle: "گزینه‌های هم‌رده",
+  relatedViewAllCta: (categoryName: string) => `همه ${categoryName}`,
+} as const;
+
 export const notFoundPage = {
   badge: "خطای ۴۰۴",
   title: "این صفحه را پیدا نکردیم",
