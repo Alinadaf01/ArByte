@@ -1,0 +1,53 @@
+{
+  "variants": [
+    {
+      "id": "v_1",
+      "axisValues": { "ram": "۳۲GB", "storage": "۱TB" },
+      "price": 261000000
+    },
+    {
+      "id": "v_2",
+      "axisValues": { "ram": "۶۴GB", "storage": "۲TB" },
+      "price": 289500000
+    },
+    {
+      "id": "v_3",
+      "axisValues": { "ram": "۱۲۸GB", "storage": "۴TB" },
+      "price": 333000000
+    }
+  ],
+  "cases": [
+    {
+      "description": "بدون فیلتر، واریانت پیش‌فرض واقعی محصول را برمی‌گرداند",
+      "defaultVariantId": "v_2",
+      "specFilters": null,
+      "expectedId": "v_2"
+    },
+    {
+      "description": "با فیلتر مشخصه‌ی محور، اولین واریانت منطبق را برمی‌گرداند — نه پیش‌فرض",
+      "defaultVariantId": "v_2",
+      "specFilters": { "ram": "۳۲GB" },
+      "expectedId": "v_1",
+      "expectedPrice": 261000000
+    },
+    {
+      "description": "اگر هیچ واریانتی با فیلتر منطبق نبود، به پیش‌فرض برمی‌گردد",
+      "defaultVariantId": "v_2",
+      "specFilters": { "ram": "256GB" },
+      "expectedId": "v_2"
+    },
+    {
+      "description": "فیلتر چندمحوره فقط واریانتی که هر دو شرط را دارد برمی‌گرداند",
+      "defaultVariantId": "v_2",
+      "specFilters": { "ram": "۱۲۸GB", "storage": "۴TB" },
+      "expectedId": "v_3"
+    },
+    {
+      "description": "آرایه‌ی خالی خطا می‌دهد — هر محصول حداقل یک واریانت دارد",
+      "variants": [],
+      "defaultVariantId": "v_1",
+      "specFilters": null,
+      "expectError": true
+    }
+  ]
+}

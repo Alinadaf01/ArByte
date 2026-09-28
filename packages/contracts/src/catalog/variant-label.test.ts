@@ -1,32 +1,28 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { buildVariantLabel } from "./variant-label";
 
-describe("buildVariantLabel", () => {
-  it("مقادیر محورها را با ' · ' به ترتیب variantAxes وصل می‌کند — نمونه‌ی دقیق الحاقیه", () => {
-    const label = buildVariantLabel({ ram: "۶۴GB", storage: "۲TB" }, [
-      { specDefId: "ram" },
-      { specDefId: "storage" },
-    ]);
-    expect(label).toBe("۶۴GB · ۲TB");
-  });
+/**
+ * D-03 §3 — این بردار در apps/backend/apps/public_api/tests.py هم اجرا
+ * می‌شود؛ یک منطق، دو پیاده‌سازی (Nest/TS و Django/Python)، یک مجموعه‌ی جواب.
+ */
+const vectorsPath = fileURLToPath(
+  new URL("../../test-vectors/variant-label.json", import.meta.url),
+);
+const vectors: {
+  description: string;
+  axisValues: Record<string, string>;
+  variantAxes: { specDefId: string }[];
+  expected: string;
+}[] = JSON.parse(readFileSync(vectorsPath, "utf-8"));
 
-  it("ترتیب را از variantAxes می‌گیرد، نه از کلیدهای Object", () => {
-    const label = buildVariantLabel({ storage: "۲TB", ram: "۶۴GB" }, [
-      { specDefId: "ram" },
-      { specDefId: "storage" },
-    ]);
-    expect(label).toBe("۶۴GB · ۲TB");
-  });
-
-  it("محصول بدون پیکربندی — variantAxes خالی یعنی برچسب خالی", () => {
-    expect(buildVariantLabel({}, [])).toBe("");
-  });
-
-  it("محوری که مقدارش در axisValues نیست را نادیده می‌گیرد", () => {
-    const label = buildVariantLabel({ ram: "۳۲GB" }, [
-      { specDefId: "ram" },
-      { specDefId: "storage" },
-    ]);
-    expect(label).toBe("۳۲GB");
-  });
+describe("buildVariantLabel — بردار مشترک test-vectors/variant-label.json", () => {
+  for (const vector of vectors) {
+    it(vector.description, () => {
+      expect(buildVariantLabel(vector.axisValues, vector.variantAxes)).toBe(
+        vector.expected,
+      );
+    });
+  }
 });

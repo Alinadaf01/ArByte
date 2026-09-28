@@ -1,35 +1,19 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { normalizeSearchText } from "./search-text";
 
-describe("normalizeSearchText", () => {
-  it("نیم‌فاصله را حذف می‌کند — «لپتاپ» با «لپ‌تاپ» یکی می‌شود", () => {
-    expect(normalizeSearchText("لپتاپ")).toBe(normalizeSearchText("لپ‌تاپ"));
-  });
+/** D-03 §3 — همان بردار در apps/backend/apps/public_api/tests.py اجرا می‌شود. */
+const vectorsPath = fileURLToPath(
+  new URL("../../test-vectors/search-normalize.json", import.meta.url),
+);
+const vectors: { description: string; input: string; expected: string }[] =
+  JSON.parse(readFileSync(vectorsPath, "utf-8"));
 
-  it("ي عربی را به ی فارسی تبدیل می‌کند", () => {
-    expect(normalizeSearchText("علي")).toBe(normalizeSearchText("علی"));
-  });
-
-  it("ك عربی را به ک فارسی تبدیل می‌کند", () => {
-    expect(normalizeSearchText("كيس")).toBe(normalizeSearchText("کیس"));
-  });
-
-  it("ارقام فارسی/عربی به لاتین — «۶۴» با «64» یکی می‌شود", () => {
-    expect(normalizeSearchText("۶۴GB")).toBe(normalizeSearchText("64GB"));
-    expect(normalizeSearchText("٦٤GB")).toBe(normalizeSearchText("64GB"));
-  });
-
-  it("حروف لاتین lower-case می‌شوند", () => {
-    expect(normalizeSearchText("MSI")).toBe(normalizeSearchText("msi"));
-  });
-
-  it("اعراب حذف می‌شود", () => {
-    expect(normalizeSearchText("مُحَصَّل")).toBe(normalizeSearchText("محصل"));
-  });
-
-  it("فاصله‌ی معمولی هم حذف می‌شود", () => {
-    expect(normalizeSearchText("کیس گیمینگ")).toBe(
-      normalizeSearchText("کیسگیمینگ"),
-    );
-  });
+describe("normalizeSearchText — بردار مشترک test-vectors/search-normalize.json", () => {
+  for (const vector of vectors) {
+    it(vector.description, () => {
+      expect(normalizeSearchText(vector.input)).toBe(vector.expected);
+    });
+  }
 });

@@ -1,0 +1,26 @@
+[
+  {
+    "description": "مقادیر محورها را با ' · ' به ترتیب variantAxes وصل می‌کند",
+    "axisValues": { "ram": "۶۴GB", "storage": "۲TB" },
+    "variantAxes": [{ "specDefId": "ram" }, { "specDefId": "storage" }],
+    "expected": "۶۴GB · ۲TB"
+  },
+  {
+    "description": "ترتیب را از variantAxes می‌گیرد، نه از کلیدهای Object",
+    "axisValues": { "storage": "۲TB", "ram": "۶۴GB" },
+    "variantAxes": [{ "specDefId": "ram" }, { "specDefId": "storage" }],
+    "expected": "۶۴GB · ۲TB"
+  },
+  {
+    "description": "محصول بدون پیکربندی — variantAxes خالی یعنی برچسب خالی",
+    "axisValues": {},
+    "variantAxes": [],
+    "expected": ""
+  },
+  {
+    "description": "محوری که مقدارش در axisValues نیست را نادیده می‌گیرد",
+    "axisValues": { "ram": "۳۲GB" },
+    "variantAxes": [{ "specDefId": "ram" }, { "specDefId": "storage" }],
+    "expected": "۳۲GB"
+  }
+]

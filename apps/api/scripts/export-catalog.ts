@@ -102,6 +102,30 @@ async function main() {
     orderBy: { sortOrder: "asc" },
   });
 
+  // FLAGSHIP_DUEL's `config.metrics` holds raw specificationDefinitionId
+  // (cuid) values — meaningless once seeded into Django, which assigns its
+  // own integer PKs. Every other id-shaped config value (productSlugs,
+  // categorySlugs) is already a natural key; remap metrics the same way
+  // (id -> key) here so manage.py seed_arbyte never has to special-case it.
+  const specKeyById = new Map(specDefinitions.map((d) => [d.id, d.key]));
+  const toPortableConfig = (
+    block: (typeof homepageBlocks)[number],
+  ): unknown => {
+    if (
+      block.type !== "FLAGSHIP_DUEL" ||
+      !block.config ||
+      typeof block.config !== "object"
+    ) {
+      return block.config;
+    }
+    const config = block.config as { metrics?: unknown; [k: string]: unknown };
+    if (!Array.isArray(config.metrics)) return block.config;
+    return {
+      ...config,
+      metrics: config.metrics.map((id) => specKeyById.get(id as string) ?? id),
+    };
+  };
+
   const toSpecRow = (s: {
     definition: { key: string };
     value: { value: string } | null;
@@ -215,7 +239,7 @@ async function main() {
       imageDesktop: b.imageDesktop,
       imageMobile: b.imageMobile,
       imageAlt: b.imageAlt,
-      config: b.config,
+      config: toPortableConfig(b),
       startsAt: b.startsAt ? b.startsAt.toISOString() : null,
       endsAt: b.endsAt ? b.endsAt.toISOString() : null,
     })),

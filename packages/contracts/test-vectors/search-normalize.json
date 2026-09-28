@@ -1,0 +1,46 @@
+[
+  {
+    "description": "نیم‌فاصله حذف می‌شود",
+    "input": "لپتاپ",
+    "expected": "لپتاپ"
+  },
+  {
+    "description": "نیم‌فاصله حذف می‌شود (نسخه‌ی با نیم‌فاصله)",
+    "input": "لپ‌تاپ",
+    "expected": "لپتاپ"
+  },
+  { "description": "ي عربی به ی فارسی", "input": "علي", "expected": "علی" },
+  {
+    "description": "ي عربی به ی فارسی (نسخه‌ی فارسی)",
+    "input": "علی",
+    "expected": "علی"
+  },
+  { "description": "ك عربی به ک فارسی", "input": "كيس", "expected": "کیس" },
+  {
+    "description": "ك عربی به ک فارسی (نسخه‌ی فارسی)",
+    "input": "کیس",
+    "expected": "کیس"
+  },
+  {
+    "description": "ارقام فارسی به لاتین",
+    "input": "۶۴GB",
+    "expected": "64gb"
+  },
+  { "description": "ارقام عربی به لاتین", "input": "٦٤GB", "expected": "64gb" },
+  {
+    "description": "ارقام لاتین بدون تغییر",
+    "input": "64GB",
+    "expected": "64gb"
+  },
+  { "description": "حروف لاتین lower-case", "input": "MSI", "expected": "msi" },
+  {
+    "description": "اعراب حذف می‌شود",
+    "input": "مُحَصَّل",
+    "expected": "محصل"
+  },
+  {
+    "description": "فاصله‌ی معمولی حذف می‌شود",
+    "input": "کیس گیمینگ",
+    "expected": "کیسگیمینگ"
+  }
+]

@@ -47,11 +47,14 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.admin_api",
     "apps.documents",
+    "apps.public_api",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "corsheaders.middleware.CorsMiddleware",
+    # D-03 §2 — global (harmless for /api/admin/, which ignores request_id).
+    "apps.public_api.middleware.RequestIdMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -198,6 +201,11 @@ REST_FRAMEWORK = {
         "admin_login": "10/min",
         "contact_form": "5/hour",
         "checkout": "20/hour",
+        # D-03 §2 — packages/contracts/src/common/rate-limits.ts's
+        # publicApiPerIp (100 req/60s/ip), applied via PublicAPIView's
+        # throttle_scope (apps/public_api/envelope.py) — not global, so
+        # /api/admin/'s own scoped throttles above are unaffected.
+        "public_api": "100/min",
     },
 }
 

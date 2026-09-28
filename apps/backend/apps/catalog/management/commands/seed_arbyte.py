@@ -61,7 +61,7 @@ class Command(BaseCommand):
         products_count, variants_count = self._seed_products(
             data["products"], brands_by_slug, categories_by_slug, defs_by_key, values_by_key_value
         )
-        blocks_count = self._seed_homepage_blocks(data["homepageBlocks"])
+        blocks_count = self._seed_homepage_blocks(data["homepageBlocks"], defs_by_key)
         self._seed_superuser()
 
         self.stdout.write(
@@ -247,7 +247,7 @@ class Command(BaseCommand):
 
         return products_count, variants_count
 
-    def _seed_homepage_blocks(self, rows: list[dict]) -> int:
+    def _seed_homepage_blocks(self, rows: list[dict], defs_by_key: dict) -> int:
         # No natural key on HomepageBlock either — same replace-in-full
         # reasoning as ProductImage above.
         HomepageBlock.objects.all().delete()
@@ -263,11 +263,24 @@ class Command(BaseCommand):
                 image_desktop=row["imageDesktop"],
                 image_mobile=row["imageMobile"],
                 image_alt=row["imageAlt"],
-                config=row["config"],
+                config=self._resolve_block_config(row["type"], row["config"], defs_by_key),
                 starts_at=row["startsAt"],
                 ends_at=row["endsAt"],
             )
         return len(rows)
+
+    def _resolve_block_config(self, block_type: str, config: dict | None, defs_by_key: dict) -> dict | None:
+        # export-catalog.ts already remaps FLAGSHIP_DUEL's `metrics` from
+        # Nest's raw specificationDefinitionId (cuid, meaningless here) to
+        # the specification's natural `key` — resolve that key to this
+        # database's own integer SpecificationDefinition.id, same natural-key
+        # pattern as every other relation in this command.
+        if block_type != "FLAGSHIP_DUEL" or not config or "metrics" not in config:
+            return config
+        return {
+            **config,
+            "metrics": [str(defs_by_key[key].id) for key in config["metrics"]],
+        }
 
     def _seed_superuser(self) -> None:
         phone = os.environ.get("DJANGO_SUPERUSER_PHONE")

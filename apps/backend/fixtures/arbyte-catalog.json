@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-09-28T06:24:03.402Z",
+  "exportedAt": "2026-09-28T07:10:39.411Z",
   "brands": [
     {
       "name": "ASUS",
@@ -2164,7 +2164,7 @@
       "imageMobile": null,
       "imageAlt": null,
       "config": {
-        "metrics": ["cmueb9n6k0009s08tppc0fol4", "cmueb9n6o000as08t9roy50fp"],
+        "metrics": ["total-power", "brightness"],
         "productSlugs": ["msi-titan-18-hx", "asus-rog-strix-scar-18"]
       },
       "startsAt": null,

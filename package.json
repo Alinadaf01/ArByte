@@ -24,6 +24,8 @@
     "be:test": "node scripts/backend.mjs python manage.py test",
     "be:migrate": "node scripts/backend.mjs python manage.py migrate",
     "be:lint": "node scripts/backend.mjs ruff check .",
+    "contract:test": "pnpm --filter @arbyte/contracts exec vitest run --config vitest.contract.config.ts",
+    "contract:parity": "pnpm --filter @arbyte/contracts exec tsx test/contract/parity.ts",
     "prepare": "husky"
   },
   "devDependencies": {

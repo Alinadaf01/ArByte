@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-const API_BASE = "http://localhost:4000/api/v1";
+// D-03 — was hardcoded to Nest's port (4000); must follow whatever backend
+// apps/web itself is actually configured against (see .env's
+// NEXT_PUBLIC_API_BASE_URL), or this test fetches its expectations from a
+// different database than the one rendering the page under test.
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
 
 interface FilterOption {
   value: string;

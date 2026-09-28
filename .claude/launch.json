@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "arbyte-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@arbyte/web", "dev"],
+      "port": 3000
+    },
+    {
+      "name": "arbyte-admin",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@arbyte/admin", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "arbyte-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@arbyte/api", "dev"],
+      "port": 4000
+    },
+    {
+      "name": "arbyte-backend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/backend.mjs",
+        "python",
+        "manage.py",
+        "runserver",
+        "8000"
+      ],
+      "port": 8000
+    }
+  ]
+}
