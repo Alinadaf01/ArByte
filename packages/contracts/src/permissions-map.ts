@@ -69,10 +69,22 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
     access: "authenticated",
   },
   {
+    method: "GET",
+    path: "/orders/:orderNumber/invoice.pdf",
+    access: "authenticated",
+  },
+  {
+    method: "POST",
+    path: "/orders/:orderNumber/return",
+    access: "authenticated",
+  },
+  {
     method: "POST",
     path: "/orders/:orderNumber/payment/initiate",
     access: "authenticated",
   },
+  /** D-05 §۵ — پیگیری مهمان؛ بدون ورود اما با محدودیت نرخ سخت (order_track). */
+  { method: "POST", path: "/orders/track", access: "public" },
 
   // ---------- payment (درگاه) ----------
   /** وب‌هوک درگاه — بدون کاربر، اما باید با امضا/HMAC تأیید شود (منطق سرویس). */
@@ -187,6 +199,12 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
     method: "PATCH",
     path: "/admin/payments/receipts/:id",
     access: "payments.update",
+  },
+  /** D-05 §۳ — فایل رسید هرگز عمومی نیست؛ فقط از این endpoint احراز‌هویت‌شده. */
+  {
+    method: "GET",
+    path: "/admin/payments/receipts/:id/file",
+    access: "payments.view",
   },
 
   // ---------- admin: کاربران و نقش‌ها ----------

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account_views, auth_views, cart_views, views
+from . import account_views, auth_views, cart_views, order_views, payment_views, views
 
 # Mounted at /api/v1/ (config/urls.py). Mirrors
 # apps/api/src/modules/catalog/catalog.controller.ts +
@@ -52,4 +52,33 @@ urlpatterns = [
     path("cart", cart_views.CartView.as_view(), name="public-cart"),
     path("cart/items", cart_views.CartItemsView.as_view(), name="public-cart-items"),
     path("cart/items/<int:pk>", cart_views.CartItemDetailView.as_view(), name="public-cart-item-detail"),
+
+    # D-05 §۲/۵ — سفارش. track باید قبل از <str:order_number> ثبت شود.
+    path("orders/track", order_views.OrderTrackView.as_view(), name="public-order-track"),
+    path("orders", order_views.OrderListCreateView.as_view(), name="public-order-list-create"),
+    path("orders/<str:order_number>", order_views.OrderDetailView.as_view(), name="public-order-detail"),
+    path(
+        "orders/<str:order_number>/receipt",
+        order_views.OrderReceiptUploadView.as_view(),
+        name="public-order-receipt-upload",
+    ),
+    path(
+        "orders/<str:order_number>/invoice.pdf",
+        order_views.OrderInvoicePdfView.as_view(),
+        name="public-order-invoice-pdf",
+    ),
+    path(
+        "orders/<str:order_number>/return",
+        order_views.OrderReturnRequestView.as_view(),
+        name="public-order-return",
+    ),
+
+    # D-05 §۳ — پرداخت درگاهی
+    path(
+        "orders/<str:order_number>/payment/initiate",
+        payment_views.PaymentInitiateView.as_view(),
+        name="public-payment-initiate",
+    ),
+    path("payments/callback/<str:provider>", payment_views.PaymentCallbackView.as_view(), name="public-payment-callback"),
+    path("payments/return/<str:provider>", payment_views.PaymentReturnView.as_view(), name="public-payment-return"),
 ]

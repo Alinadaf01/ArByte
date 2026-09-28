@@ -150,6 +150,17 @@ class OrderStatusServiceTests(TestCase):
         self.assertEqual(self.order.payment_status, "RECEIPT_UPLOADED")
         self.assertEqual(self.order.status, "PENDING")  # مستقل — تصمیم ب
 
+    def test_every_transition_sms_template_is_seeded_and_active(self):
+        """بدون این seed (notifications/migrations/0003)، هر پیامک واقعی
+        بی‌صدا SmsLog(status="failed") می‌شود — این تست همان چیزی است که
+        enum-label test's الگو برای enum مقایسه می‌کند، اینجا برای پیامک."""
+        from apps.notifications.models import SmsTemplate
+
+        for template_key in order_status._SMS_TEMPLATE_BY_TRANSITION.values():
+            template = SmsTemplate.objects.filter(key=template_key, is_active=True).first()
+            self.assertIsNotNone(template, f'قالب پیامک "{template_key}" seed نشده یا غیرفعال است.')
+            self.assertIn("{orderNumber}", template.body)
+
 
 def _zarinpal_request_response(authority="A-TEST-AUTHORITY"):
     mock = MagicMock()

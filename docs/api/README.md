@@ -54,6 +54,7 @@ Swagger تولیدشده از همین قراردادها در dev روی `/api/
 | `adminLoginPerIp`     | ۵   | ۱۵ دقیقه | ip     |
 | `publicApiPerIp`      | ۱۰۰ | ۱ دقیقه  | ip     |
 | `uploadPerUser`       | ۲۰  | ۱ ساعت   | user   |
+| `orderTrackPerIp`     | ۱۰  | ۱ ساعت   | ip     |
 
 اعداد پیش‌فرض‌اند نه ثابت سخت‌کدشده (برند بوک عدد نداده) — پیاده‌سازی
 واقعی باید از `Setting`/env قابل‌تنظیم باشد. `OTP_VERIFY_MAX_ATTEMPTS = 5`
@@ -101,11 +102,18 @@ X-Cart-Session یا با ورود — فقط سبد، D-04 §۳)، یا کلید
 رخ می‌دهد، نه یک endpoint جدا — جمع تعداد هر واریانت، سقف ۵ عدد و سقف
 موجودی لحظه‌ای هر دو رعایت می‌شوند.
 
-### order — `src/order/` (همه auth)
+### order — `src/order/` (همه auth مگر ذکرشده)
 
 `POST /orders` · `GET /orders` · `GET /orders/:orderNumber` ·
 `POST /orders/:orderNumber/receipt` ·
-`POST /orders/:orderNumber/payment/initiate`
+`GET /orders/:orderNumber/invoice.pdf` ·
+`POST /orders/:orderNumber/return` ·
+`POST /orders/:orderNumber/payment/initiate` ·
+`POST /orders/track` (**public** — پیگیری مهمان، rate-limit سخت)
+
+`CreateOrderBodySchema` (D-05): `addressId`، `paymentMethod`،
+`shippingMethodId?`، `couponCode?`. قیمت/محاسبات همیشه سرور — بدنه هرگز
+عدد قیمت نمی‌فرستد.
 
 ### payment — `src/payment/`
 
@@ -257,6 +265,37 @@ JSON، نه رشته‌ی BigInt؛ چون مبالغ تومانی هرگز به 
   آستانه‌ی سراسری موجودی کم، ۱ JOIN واحد برای محصول+برند+دسته+تصاویر+
   مشخصات+واریانت+موجودی+مشخصات‌واریانت) — اندازه‌گیری‌شده با
   `PRISMA_LOG_QUERIES=1` روی `/catalog/products?perPage=24`.
+
+**D-05 — سفارش/پرداخت/کوپن/ارسال/مرجوعی (بازنویسی Nest→Django).** پیاده‌سازی
+واقعی روی `apps/backend` (نه `apps/api`، طبق بچ ۰۲) — تصمیم‌های خارج از
+سند تسک:
+
+- **`initiate_payment()` باید صریحاً به `PAYMENT_REVIEW` گذار کند.** جدول
+  گذار فقط `PAYMENT_REVIEW → PAID` را مجاز می‌داند، نه
+  `AWAITING_PAYMENT → PAID` — این هم برای کارت‌به‌کارت (آپلود رسید) هم
+  درگاه (شروع پرداخت) صادق است؛ هر دو یعنی «کاربر یک اقدام پرداخت مشخص
+  انجام داد، حالا منتظر تأیید». یک باگ واقعی همین‌جا پیدا و رفع شد (تست
+  `test_duplicate_callback_confirms_only_once`).
+- **نوع فاکتور (شخصی/حقوقی، `Checkout.dc.html`) به مدل/قرارداد اضافه
+  نشد.** سند تسک §۲ آن را جزو ورودی سفارش می‌شمارد، اما §۱ همان سند مدل
+  را «طبق Prisma» می‌خواهد و Prisma's `Order` هیچ فیلد فاکتور/شرکتی
+  ندارد. تناقض حل‌نشده در `docs/QUESTIONS.md` ثبت شد؛ صفحه‌ی Checkout
+  واقعی بچ ۰۳ است، تصمیم مدل آن‌جا یا با تأیید مدیر پروژه می‌آید.
+- **`GET /shipping-methods` عمومی ساخته نشد.** سند تسک فقط seed dev سه
+  روش ارسال را می‌خواست، نه یک endpoint فهرست؛ `POST /orders` بدون
+  `shippingMethodId` روی ارزان‌ترین روش فعال fallback می‌کند. صفحه‌ی
+  Checkout واقعی (بچ ۰۳) برای انتخاب کاربر به این endpoint نیاز خواهد
+  داشت — یادداشت برای آن بچ.
+- **رسید پرداخت بدون MinIO/presigned URL واقعی.** این پروژه هیچ
+  `django-storages`/`boto3` سیم‌کشی ندارد؛ فایل رسید در
+  `MEDIA_ROOT/receipts/private/` (خارج از هر مسیر public) ذخیره و فقط از
+  `GET /admin/payments/receipts/:id/file` (احراز‌هویت‌شده، `payments.view`)
+  سرو می‌شود — همان اثر «نه عمومی» بدون presigned URL واقعی؛ انحراف
+  مستند، نه نقض قانون.
+- **کوپن دقیقاً طبق Prisma بازنویسی شد** (نه ساختار قدیمی وایب): scoping
+  دسته‌بندی/محصول حذف شد (Prisma's `Coupon` ندارد، همیشه روی کل سبد
+  اعمال می‌شود)، `used_count` دیگر ستون ذخیره‌شده نیست — همیشه زنده از
+  شمارش `CouponUsage` محاسبه می‌شود.
 
 ## نگاشت enum
 

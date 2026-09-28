@@ -352,6 +352,10 @@ def initiate_payment(*, order: Order, provider_code: str) -> tuple[Payment, str]
     from . import order_status
 
     order_status.sync_payment_status(order, "UNDER_REVIEW")
+    # تنها راه رسیدن به PAID از PAYMENT_REVIEW می‌گذرد (order_status.py's
+    # ORDER_STATUS_TRANSITIONS) — درگاه هم مثل رسید کارت‌به‌کارت باید اول
+    # وارد «در حال بررسی» شود، بعد وب‌هوک تأییدش کند.
+    order_status.transition_to(order, "PAYMENT_REVIEW")
     return payment, result.redirect_url
 
 

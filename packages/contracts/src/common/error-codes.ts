@@ -36,6 +36,12 @@ export const ERROR_CODES = [
   "GATEWAY_ERROR",
   "GATEWAY_TIMEOUT",
   "GATEWAY_AMOUNT_MISMATCH",
+  // D-05 §۴/۵ — کوپن و مرجوعی
+  "COUPON_INVALID",
+  "COUPON_MIN_ORDER_NOT_MET",
+  "COUPON_USAGE_LIMIT_REACHED",
+  "RETURN_NOT_ELIGIBLE",
+  "RETURN_WINDOW_EXPIRED",
 ] as const;
 
 export const ErrorCodeSchema = z.enum(ERROR_CODES);
@@ -85,6 +91,11 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   GATEWAY_ERROR: "پرداخت با خطا مواجه شد. لطفاً دوباره تلاش کنید.",
   GATEWAY_TIMEOUT: "درگاه پرداخت پاسخ نداد. لطفاً دوباره تلاش کنید.",
   GATEWAY_AMOUNT_MISMATCH: "مبلغ پرداختی با مبلغ سفارش مطابقت ندارد.",
+  COUPON_INVALID: "کد تخفیف معتبر نیست.",
+  COUPON_MIN_ORDER_NOT_MET: "حداقل مبلغ سفارش برای این کد رعایت نشده است.",
+  COUPON_USAGE_LIMIT_REACHED: "سقف استفاده از این کد پر شده است.",
+  RETURN_NOT_ELIGIBLE: "این سفارش قابل مرجوع‌کردن نیست.",
+  RETURN_WINDOW_EXPIRED: "مهلت مرجوعی این سفارش به پایان رسیده است.",
 };
 
 /**

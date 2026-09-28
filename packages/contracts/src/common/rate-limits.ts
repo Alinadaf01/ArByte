@@ -18,6 +18,8 @@ export const RATE_LIMITS = {
   adminLoginPerIp: { limit: 5, windowSeconds: 15 * 60, scope: "ip" },
   publicApiPerIp: { limit: 100, windowSeconds: 60, scope: "ip" },
   uploadPerUser: { limit: 20, windowSeconds: 60 * 60, scope: "user" },
+  /** D-05 §۵ — پیگیری مهمان عمومی است؛ بدون این، شماره‌ی سفارش قابل حدس‌زدن می‌شود. */
+  orderTrackPerIp: { limit: 10, windowSeconds: 60 * 60, scope: "ip" },
 } as const satisfies Record<string, RateLimitRule>;
 
 /** به ازای هر کد OTP (نه در یک بازه‌ی زمانی — عمرش با otpCodeTtlSeconds محدود است). */

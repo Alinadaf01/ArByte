@@ -10,6 +10,7 @@ import {
   PaymentProviderSchema,
   PaymentStatusSchema,
   ReceiptStatusSchema,
+  ReturnStatusSchema,
 } from "../common/enums";
 import { MoneyAmountSchema } from "../validators";
 
@@ -74,14 +75,22 @@ export const OrderSchema = z.object({
 export type Order = z.infer<typeof OrderSchema>;
 
 /**
- * `POST /orders` — کاربر فقط آدرس و روش پرداخت می‌فرستد (§۸.۵۵)؛ قیمت‌ها
- * سرور از سبد فعلی بازمحاسبه می‌کند. اگر قیمت زودتر عوض شده باشد، سرور
- * خطای PRICE_CHANGED می‌دهد نه ثبت بی‌صدا با قیمت جدید (T-004 بخش ۲،
- * هشدار).
+ * `POST /orders` — کاربر آدرس، روش پرداخت، و اختیاری روش ارسال/کد تخفیف
+ * می‌فرستد (§۸.۵۵)؛ قیمت‌ها سرور از سبد فعلی بازمحاسبه می‌کند. اگر قیمت
+ * زودتر عوض شده باشد، سرور خطای PRICE_CHANGED می‌دهد نه ثبت بی‌صدا با
+ * قیمت جدید (T-004 بخش ۲، هشدار).
+ *
+ * ⚠️ D-05 §۲ سند تسک «نوع فاکتور (شخصی/شرکتی)» را هم جزو ورودی می‌شمارد
+ * (طبق Checkout.dc.html)، اما Prisma's Order مدل هیچ فیلد فاکتور/شرکتی
+ * ندارد (§۱ همین سند: «مدل طبق Prisma»). این تناقض حل‌نشده در
+ * docs/QUESTIONS.md ثبت شده — عمداً اینجا اضافه نشده تا مدل از Prisma
+ * منحرف نشود؛ صفحه‌ی Checkout واقعی بچ ۰۳ است.
  */
 export const CreateOrderBodySchema = z.object({
   addressId: z.string(),
   paymentMethod: PaymentMethodSchema,
+  shippingMethodId: z.string().optional(),
+  couponCode: z.string().optional(),
 });
 export const CreateOrderResponseSchema = successResponseSchema(OrderSchema);
 
@@ -112,5 +121,44 @@ export const PaymentReceiptSchema = z.object({
 });
 export const UploadReceiptResponseSchema =
   successResponseSchema(PaymentReceiptSchema);
+
+/**
+ * `POST /orders/track` — پیگیری مهمان (§۵). عمومی، محدودیت نرخ سخت
+ * (rate-limit.ts's `order_track`). پاسخ خطا برای «سفارش نیست» و «موبایل
+ * نمی‌خورد» عمداً یکسان است (NOT_FOUND) تا شماره‌ی سفارش قابل حدس‌زدن
+ * نباشد — این یکسانی مسئولیت سرویس است، نه این اسکیما.
+ */
+export const TrackOrderBodySchema = z.object({
+  orderNumber: z.string(),
+  mobile: z.string(),
+});
+export const TrackOrderResponseSchema = successResponseSchema(OrderSchema);
+
+/**
+ * `POST /orders/:orderNumber/return` — مرجوعی قلم‌به‌قلم (§۵)، فقط سفارش
+ * DELIVERED در بازه‌ی `storeFacts.policies.returnDays`. خارج از بازه →
+ * RETURN_WINDOW_EXPIRED؛ سفارش نامناسب (غیر DELIVERED) → RETURN_NOT_ELIGIBLE.
+ */
+export const CreateReturnRequestBodySchema = z.object({
+  reason: z.string().min(1),
+  description: z.string().optional(),
+  items: z
+    .array(
+      z.object({
+        orderItemId: z.string(),
+        quantity: z.number().int().positive(),
+      }),
+    )
+    .min(1),
+});
+export const ReturnRequestSchema = z.object({
+  id: z.string(),
+  orderNumber: z.string(),
+  status: ReturnStatusSchema,
+  reason: z.string(),
+  createdAt: z.string().datetime(),
+});
+export const CreateReturnRequestResponseSchema =
+  successResponseSchema(ReturnRequestSchema);
 
 export * from "./status-transitions";

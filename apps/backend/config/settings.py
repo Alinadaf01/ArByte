@@ -208,6 +208,10 @@ REST_FRAMEWORK = {
         "admin_login": "10/min",
         "contact_form": "5/hour",
         "checkout": "20/hour",
+        # D-05 §۵ — پیگیری مهمان (POST /orders/track) پاسخ یکسان برای «نیست»
+        # و «موبایل نمی‌خورد» می‌دهد، اما بدون نرخ سخت، حدس‌زدن شماره سفارش
+        # با brute-force ممکن می‌شد؛ سخت‌گیرتر از سایر مسیرهای عمومی.
+        "order_track": "10/hour",
         # D-03 §2 — packages/contracts/src/common/rate-limits.ts's
         # publicApiPerIp (100 req/60s/ip), applied via PublicAPIView's
         # throttle_scope (apps/public_api/envelope.py) — not global, so
@@ -267,7 +271,15 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.analytics.tasks.aggregate_daily_stats",
         "schedule": crontab(hour=1, minute=0),  # 01:00 server time — rolls up yesterday, purges >90 days
     },
+    # D-05 §۲ — سفارش‌های AWAITING_PAYMENT قدیمی‌تر از ORDER_AUTO_CANCEL_AFTER_HOURS.
+    "cancel-stale-unpaid-orders": {
+        "task": "apps.orders.tasks.cancel_stale_unpaid_orders",
+        "schedule": crontab(minute="*/15"),
+    },
 }
+
+# D-05 §۲ — پیش‌فرض ۲۴ ساعت (کارت‌به‌کارت)؛ از env قابل تنظیم.
+ORDER_AUTO_CANCEL_AFTER_HOURS = config("ORDER_AUTO_CANCEL_AFTER_HOURS", default=24, cast=int)
 
 # DRF throttling (§7.5 security review) stores its per-client counters in
 # Django's cache framework. Without an explicit CACHES setting, Django falls

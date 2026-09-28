@@ -32,6 +32,12 @@ ERROR_MESSAGES = {
     "GATEWAY_ERROR": "پرداخت با خطا مواجه شد. لطفاً دوباره تلاش کنید.",
     "GATEWAY_TIMEOUT": "درگاه پرداخت پاسخ نداد. لطفاً دوباره تلاش کنید.",
     "GATEWAY_AMOUNT_MISMATCH": "مبلغ پرداختی با مبلغ سفارش مطابقت ندارد.",
+    # D-05 §۴/۵ — کدهای جدید این تسک (packages/contracts/src/common/error-codes.ts).
+    "COUPON_INVALID": "کد تخفیف معتبر نیست.",
+    "COUPON_MIN_ORDER_NOT_MET": "حداقل مبلغ سفارش برای این کد رعایت نشده است.",
+    "COUPON_USAGE_LIMIT_REACHED": "سقف استفاده از این کد پر شده است.",
+    "RETURN_NOT_ELIGIBLE": "این سفارش قابل مرجوع‌کردن نیست.",
+    "RETURN_WINDOW_EXPIRED": "مهلت مرجوعی این سفارش به پایان رسیده است.",
 }
 
 

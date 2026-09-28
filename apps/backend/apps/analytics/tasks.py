@@ -46,7 +46,7 @@ def aggregate_daily_stats(days_to_keep: int = 90) -> None:
 
     day_orders = Order.objects.filter(paid_at__gte=start, paid_at__lt=end)
     orders_count = day_orders.count()
-    revenue = sum(day_orders.values_list("total", flat=True))
+    revenue = sum(day_orders.values_list("final_total", flat=True))
 
     DailyStat.objects.update_or_create(
         date=yesterday,
