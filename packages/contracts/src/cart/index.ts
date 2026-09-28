@@ -31,8 +31,12 @@ export const CartSchema = z.object({
   id: z.string(),
   items: z.array(CartItemSchema),
   itemCount: z.number().int().nonnegative(),
-  subtotal: MoneyAmountSchema,
+  /** D-04 §۵ — سبد خالی جمع صفر دارد؛ برخلاف `lineTotal` (همیشه مثبت،
+   * چون هر آیتم حداقل تعداد ۱ دارد)، اینجا نمی‌شود از `MoneyAmountSchema`
+   * (positive) استفاده کرد. */
+  subtotal: z.number().int().nonnegative(),
 });
+export type Cart = z.infer<typeof CartSchema>;
 
 // GET /cart
 export const CartResponseSchema = successResponseSchema(CartSchema);

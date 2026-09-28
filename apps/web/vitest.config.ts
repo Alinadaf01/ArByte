@@ -14,5 +14,12 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // D-04 §۴ — wishlist-store.ts حالا مستقیم `@/lib/env` را ایمپورت می‌کند
+    // (syncAfterLogin). `.env` واقعی در gitignore است، پس تست نباید به
+    // وجودش تکیه کند؛ این مقادیر دقیقاً همان‌های .env.example هستند.
+    env: {
+      NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:8000/api/v1",
+    },
   },
 });

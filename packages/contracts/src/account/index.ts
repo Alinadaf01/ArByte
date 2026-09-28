@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { successResponseSchema } from "../common/response";
-import { MobileSchema, PostalCodeSchema } from "../validators";
+import {
+  MobileSchema,
+  MoneyAmountSchema,
+  PostalCodeSchema,
+} from "../validators";
 
 /** حساب کاربری — T-004 §۳: پروفایل، آدرس‌ها، علاقه‌مندی. */
 
@@ -53,6 +57,9 @@ export const WishlistItemSchema = z.object({
     image: z.string().nullable(),
   }),
   variantId: z.string().nullable(),
+  /** D-04 §۲ — قیمت لحظه‌ی ذخیره؛ صفحه‌ی /wishlist تغییر قیمت را از این و
+   * قیمت زنده‌ی واریانت حساب می‌کند. نال یعنی محصول موقع ذخیره قیمتی نداشت. */
+  priceAtSave: MoneyAmountSchema.nullable(),
   createdAt: z.string().datetime(),
 });
 export const WishlistResponseSchema = successResponseSchema(
@@ -63,3 +70,18 @@ export const AddWishlistItemBodySchema = z.object({
   productId: z.string(),
   variantId: z.string().optional(),
 });
+
+/**
+ * D-04 §۲ — جدید در قرارداد: POST /account/wishlist/merge، برای انتقال
+ * علاقه‌مندی محلی (localStorage، قبل از ورود) به حساب کاربر بعد از ورود.
+ * با productSlug شناسایی می‌شود، نه id — localStorage قبل از ورود فقط
+ * slug دارد (apps/web/src/lib/stores/wishlist-store.ts). آیتمی که از قبل
+ * در حساب کاربر بود دست نمی‌خورد (merge، نه overwrite).
+ */
+export const MergeWishlistItemSchema = z.object({
+  productSlug: z.string(),
+  variantId: z.string().optional(),
+  priceAtSave: MoneyAmountSchema.optional(),
+});
+export const MergeWishlistBodySchema = z.array(MergeWishlistItemSchema);
+export const MergeWishlistResponseSchema = WishlistResponseSchema;

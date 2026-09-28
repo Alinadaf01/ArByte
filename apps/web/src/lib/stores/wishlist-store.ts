@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { env } from "@/lib/env";
 import { createLocalArrayStore } from "./create-local-store";
 
 /**
@@ -52,6 +53,47 @@ function replace(items: readonly WishlistItem[]) {
   store.setItems([...items]);
 }
 
+/**
+ * D-04 §۴ — آماده برای صدا زدن از صفحه‌ی ورود (بچ ۰۳، هنوز ساخته نشده).
+ * علاقه‌مندی محلی (localStorage، قبل از ورود) را با
+ * `POST /account/wishlist/merge` (apps/public_api/account_views.py،
+ * WishlistMergeView) در حساب کاربر ادغام می‌کند — آیتمی که از قبل در
+ * حساب بود دست نمی‌خورد، فقط چیزهای تازه اضافه می‌شوند. بعد از merge
+ * موفق، منبع حقیقت حساب سرور می‌شود؛ store محلی پاک می‌شود تا دوبار
+ * نمایش داده نشود (صفحه‌ی /wishlist واقعی، بچ ۰۳، از سرور می‌خواند).
+ * توکن نگه‌داشته نمی‌شود — فراخوان (صفحه‌ی ورود) آن را می‌دهد
+ * (D-04 §۶: تصمیم کوکی httpOnly بچ ۰۳ است، نه اینجا).
+ */
+async function syncAfterLogin(accessToken: string): Promise<boolean> {
+  const items = store.getItems();
+  if (items.length === 0) return true;
+
+  try {
+    const res = await fetch(
+      `${env.NEXT_PUBLIC_API_BASE_URL}/account/wishlist/merge`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(
+          items.map((item) => ({
+            productSlug: item.productSlug,
+            variantId: item.variantId,
+            priceAtSave: item.priceAtSave,
+          })),
+        ),
+      },
+    );
+    if (!res.ok) return false;
+    clear();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const wishlistStore = {
   subscribe: store.subscribe,
   getSnapshot: store.getSnapshot,
@@ -61,6 +103,7 @@ export const wishlistStore = {
   replace,
   has,
   clear,
+  syncAfterLogin,
 };
 
 export function useWishlistStore() {
@@ -70,5 +113,5 @@ export function useWishlistStore() {
     store.getServerSnapshot,
   );
 
-  return { items, addItem, removeItem, replace, has, clear };
+  return { items, addItem, removeItem, replace, has, clear, syncAfterLogin };
 }

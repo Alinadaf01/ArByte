@@ -196,7 +196,14 @@ REST_FRAMEWORK = {
     # client IP for anonymous endpoints (ScopedRateThrottle falls back to IP
     # when there's no authenticated user), per user once authenticated.
     "DEFAULT_THROTTLE_RATES": {
-        "otp_request": "8/hour",
+        # D-04 §۱ — packages/contracts/src/common/rate-limits.ts's
+        # otpRequestPerIp (10 req/60min/ip). این کلید از وایب جا مانده بود
+        # (هیچ view آن را صدا نمی‌زد)؛ عددش هم به قرارداد آربایت به‌روز شد.
+        # سقف per-mobile (otpRequestPerMobile، ۳/۱۰دقیقه) را DRF's
+        # ScopedRateThrottle نمی‌تواند بسازد (کلید IP/user است، نه یک فیلد
+        # دلخواه در بدنه) — apps/public_api/otp.py دستی چک می‌کند، با ثابت‌های
+        # env-پذیر خودش (OTP_REQUEST_PER_MOBILE_LIMIT/WINDOW_MINUTES).
+        "otp_request": config("OTP_REQUEST_PER_IP_RATE", default="10/hour"),
         "otp_verify": "20/hour",
         "admin_login": "10/min",
         "contact_form": "5/hour",
@@ -221,8 +228,24 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "ROTATE_REFRESH_TOKENS": True,
+    # D-04 §۱ — "refresh با چرخش توکن و blacklist قبلی". بدون این، چرخش
+    # روشن بود اما توکن قبلی هرگز baclklist نمی‌شد (rest_framework_simplejwt
+    # .token_blacklist از قبل در INSTALLED_APPS بود، همین یک پرچم کم داشت).
+    "BLACKLIST_AFTER_ROTATION": True,
     "SIGNING_KEY": config("JWT_SIGNING_KEY", default=SECRET_KEY),
 }
+
+# D-04 §۱ — «اگر DEBUG=False و این فلگ روشن بود، سرور بالا نیاید». کد OTP
+# را در لاگ می‌نویسد و پیامک نمی‌فرستد؛ فقط برای dev محلی بدون Kavenegar
+# واقعی. کلید Kavenegar خودش env نیست — از قبل روی ApiCredential (رمزنگاری‌شده،
+# قابل‌ویرایش از پنل ادمین بدون ریدیپلوی) ذخیره می‌شود
+# (apps/notifications/kavenegar_client.py) — نزدیک‌ترین معادل موجود، بهتر
+# از یک متغیر env موازی؛ ر.ک. گزارش D-04.
+OTP_DEV_MODE = config("OTP_DEV_MODE", default=DEBUG, cast=bool)
+if not DEBUG and OTP_DEV_MODE:
+    raise RuntimeError(
+        "OTP_DEV_MODE=True با DEBUG=False مجاز نیست — کد OTP در لاگ سرور واقعی نوشته می‌شود."
+    )
 
 
 # Celery — background jobs (SMS, email, reports)

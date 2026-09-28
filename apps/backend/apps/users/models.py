@@ -102,8 +102,13 @@ class Address(models.Model):
 
 
 class OTPCode(models.Model):
-    EXPIRY_MINUTES = 2
+    # D-04 §۱ — عمر ۳۰۰ ثانیه طبق packages/contracts/src/common/rate-limits.ts's
+    # OTP_CODE_TTL_SECONDS (نه ۲ دقیقه‌ی اصلی وایب).
+    EXPIRY_MINUTES = 5
+    # OTP_VERIFY_MAX_ATTEMPTS (rate-limits.ts) — هر تلاش برای همین کد، نه در یک بازه‌ی زمانی.
     MAX_ATTEMPTS = 5
+    # RATE_LIMIT_COUNT/MINUTES وایب هرگز جایی خوانده نمی‌شدند — پیاده‌سازی واقعی
+    # نرخ‌محدودسازی (otpRequestPerMobile) در apps/public_api/otp.py است، نه اینجا.
     RATE_LIMIT_COUNT = 3
     RATE_LIMIT_MINUTES = 10
 

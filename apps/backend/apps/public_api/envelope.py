@@ -13,6 +13,7 @@ from django.http import Http404
 from rest_framework.exceptions import APIException, NotAuthenticated, PermissionDenied, Throttled
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from .errors import ERROR_MESSAGES, ApiError
@@ -56,6 +57,13 @@ class PublicAPIView(APIView):
     per-view (not EXCEPTION_HANDLER globally) so /api/admin/'s own error
     shape is untouched."""
 
+    # D-04 §۱ — گزارش‌شده و رفع‌شده اینجا: تا این‌جا `throttle_scope` بدون
+    # `throttle_classes` عملاً هیچ محدودیتی اعمال نمی‌کرد (DRF's
+    # DEFAULT_THROTTLE_CLASSES هیچ‌جای REST_FRAMEWORK تنظیم نشده، پیش‌فرضش
+    # خالی است) — یعنی publicApiPerIp از D-03 در واقعیت هرگز فعال نبود.
+    # ScopedRateThrottle اینجا سراسری شد تا محدودیت OTP (این تسک) هم واقعی
+    # کار کند، نه فقط مستند.
+    throttle_classes = [ScopedRateThrottle]
     throttle_scope = "public_api"
 
     def handle_exception(self, exc):

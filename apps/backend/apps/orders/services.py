@@ -9,23 +9,38 @@ from .models import Cart, CartItem, Order, OrderItem, Payment
 
 @transaction.atomic
 def merge_guest_cart_into_user(session_key: str, user) -> None:
-    """Called from the OTP-verify view — 'merge on login' means at login,
-    not as a separate endpoint the frontend has to remember to call."""
+    """Called from OtpVerifyView (apps.public_api.auth_views) — 'merge on
+    login' means at login, not a separate endpoint the frontend has to
+    remember to call (D-04 §۱/§۳).
+
+    D-04 rewrite: the vybeshop original matched on `product`/`color_option`,
+    neither of which exists on CartItem post-D-02 (variant-only) — this was
+    dead code (FieldError on the first call) until now. Merged quantity is
+    capped at both MAX_ITEM_QUANTITY and live stock, same rule as a normal
+    add-to-cart; a guest item that no longer fits either cap is dropped
+    rather than left over-quantity in the merged cart."""
+    if not session_key:
+        return
     guest_cart = Cart.objects.filter(user=None, session_key=session_key).first()
     if not guest_cart:
         return
 
+    from apps.public_api.cart_service import MAX_ITEM_QUANTITY, available_quantity_for
+
     user_cart, _ = Cart.objects.get_or_create(user=user)
-    for guest_item in guest_cart.items.all():
-        existing = CartItem.objects.filter(
-            cart=user_cart, product=guest_item.product, color_option=guest_item.color_option
-        ).first()
+    for guest_item in guest_cart.items.select_related("variant__inventory"):
+        variant = guest_item.variant
+        existing = CartItem.objects.filter(cart=user_cart, variant=variant).first()
+        merged_quantity = (existing.quantity if existing else 0) + guest_item.quantity
+        cap = min(MAX_ITEM_QUANTITY, available_quantity_for(variant))
+        merged_quantity = min(merged_quantity, cap)
+        if merged_quantity <= 0:
+            continue
         if existing:
-            existing.quantity += guest_item.quantity
+            existing.quantity = merged_quantity
             existing.save(update_fields=["quantity"])
         else:
-            guest_item.cart = user_cart
-            guest_item.save(update_fields=["cart"])
+            CartItem.objects.create(cart=user_cart, variant=variant, quantity=merged_quantity)
 
     guest_cart.delete()
 

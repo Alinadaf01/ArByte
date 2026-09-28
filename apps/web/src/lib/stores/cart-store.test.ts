@@ -1,60 +1,158 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { cartStore } from "./cart-store";
+import type { Cart, CartItem } from "@arbyte/contracts";
 import { createLocalArrayStore } from "./create-local-store";
+
+/**
+ * D-04 §۴ — cartStore حالا سمت سرور است (lib/cart-api.ts)، پس این تست‌ها
+ * آن چهار تابع را mock می‌کنند و یک «سرور جعلی» درون‌حافظه‌ای شبیه‌سازی
+ * می‌کنند. هر تست با `vi.resetModules()` + import پویا یک نمونه‌ی تازه از
+ * ماژول store می‌گیرد — state داخلی ماژول (serverCart/lines/hydrated)
+ * بین تست‌ها مشترک نیست.
+ */
+vi.mock("@/lib/cart-api", () => ({
+  fetchCart: vi.fn(),
+  addCartItem: vi.fn(),
+  updateCartItemQuantity: vi.fn(),
+  removeCartItem: vi.fn(),
+}));
+
+let nextId = 1;
+
+function makeCartItem(variantId: string, qty: number): CartItem {
+  return {
+    id: `item-${variantId}`,
+    variant: {
+      id: variantId,
+      productId: `product-${variantId}`,
+      productName: `محصول ${variantId}`,
+      productSlug: `product-${variantId}`,
+      label: "",
+      image: null,
+      price: { final: 1_000_000, compareAt: null },
+    },
+    quantity: qty,
+    lineTotal: 1_000_000 * qty,
+  };
+}
+
+function makeCart(items: CartItem[]): Cart {
+  return {
+    id: `cart-${nextId++}`,
+    items,
+    itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
+    subtotal: items.reduce((sum, i) => sum + i.lineTotal, 0),
+  };
+}
+
+async function freshStore() {
+  vi.resetModules();
+  const api = await import("@/lib/cart-api");
+  const store = await import("./cart-store");
+  return { api: vi.mocked(api), cartStore: store.cartStore };
+}
 
 beforeEach(() => {
   window.localStorage.clear();
-  cartStore.clear();
+  vi.clearAllMocks();
 });
 
-describe("cartStore", () => {
-  it("محصول جدید اضافه می‌کند و qty را بین ۱ و ۵ محدود می‌کند", () => {
-    cartStore.addItem("v1", "product-a", 2);
+describe("cartStore — سبد سمت سرور (D-04 §۴)", () => {
+  it("addItem سرور را صدا می‌زند و snapshot را از پاسخ سرور پر می‌کند", async () => {
+    const { api, cartStore } = await freshStore();
+    api.fetchCart.mockResolvedValue(makeCart([]));
+    api.addCartItem.mockResolvedValue(makeCart([makeCartItem("v1", 2)]));
+
+    await cartStore.addItem("v1", "product-a", 2);
+
+    expect(api.addCartItem).toHaveBeenCalledWith("v1", 2);
     expect(cartStore.getSnapshot()).toEqual([
-      { variantId: "v1", productSlug: "product-a", qty: 2 },
+      { variantId: "v1", productSlug: "product-v1", qty: 2 },
     ]);
+  });
 
-    cartStore.addItem("v2", "product-b", 99);
-    expect(cartStore.getSnapshot().find((l) => l.variantId === "v2")?.qty).toBe(
-      5,
+  it("setQty آیتم سرور را با itemId درست PATCH می‌کند", async () => {
+    const { api, cartStore } = await freshStore();
+    api.fetchCart.mockResolvedValue(makeCart([makeCartItem("v1", 1)]));
+    api.updateCartItemQuantity.mockResolvedValue(
+      makeCart([makeCartItem("v1", 5)]),
     );
-  });
 
-  it("افزودن همان variantId دوباره، qty را جمع می‌زند نه ردیف جدید", () => {
-    cartStore.addItem("v1", "product-a", 2);
-    cartStore.addItem("v1", "product-a", 2);
-    const items = cartStore.getSnapshot();
-    expect(items).toHaveLength(1);
-    expect(items[0]?.qty).toBe(4);
-  });
+    await cartStore.addItem("v1", "product-v1", 1); // hydrate + seed local state
+    await cartStore.setQty("v1", 10); // کلمپ سمت سرور اتفاق می‌افتد؛ اینجا فقط فراخوانی را چک می‌کنیم
 
-  it("qty جمعی حتی روی افزودن هم سقف ۵ را رعایت می‌کند", () => {
-    cartStore.addItem("v1", "product-a", 4);
-    cartStore.addItem("v1", "product-a", 4);
+    expect(api.updateCartItemQuantity).toHaveBeenCalledWith("item-v1", 5);
     expect(cartStore.getSnapshot()[0]?.qty).toBe(5);
   });
 
-  it("setQty مقدار را کلمپ می‌کند", () => {
-    cartStore.addItem("v1", "product-a", 1);
-    cartStore.setQty("v1", 0);
-    expect(cartStore.getSnapshot()[0]?.qty).toBe(1);
-    cartStore.setQty("v1", 10);
-    expect(cartStore.getSnapshot()[0]?.qty).toBe(5);
-  });
+  it("removeItem آیتم سرور را با itemId درست DELETE می‌کند", async () => {
+    const { api, cartStore } = await freshStore();
+    api.fetchCart.mockResolvedValue(makeCart([makeCartItem("v1", 1)]));
+    api.addCartItem.mockResolvedValue(makeCart([makeCartItem("v1", 1)]));
+    api.removeCartItem.mockResolvedValue(makeCart([]));
 
-  it("removeItem ردیف را حذف می‌کند", () => {
-    cartStore.addItem("v1", "product-a", 1);
-    cartStore.removeItem("v1");
+    await cartStore.addItem("v1", "product-v1", 1);
+    await cartStore.removeItem("v1");
+
+    expect(api.removeCartItem).toHaveBeenCalledWith("item-v1");
     expect(cartStore.getSnapshot()).toEqual([]);
   });
 
-  it("روی localStorage با کلید نسخه‌دار ذخیره می‌کند", () => {
-    cartStore.addItem("v1", "product-a", 1);
-    const raw = window.localStorage.getItem("arbyte:cart:v1");
-    expect(raw).not.toBeNull();
-    expect(JSON.parse(raw ?? "[]")).toEqual([
-      { variantId: "v1", productSlug: "product-a", qty: 1 },
+  it("اولین subscribe سبد را از سرور می‌خواند (hydrate)", async () => {
+    const { api, cartStore } = await freshStore();
+    api.fetchCart.mockResolvedValue(makeCart([makeCartItem("v9", 3)]));
+
+    await new Promise<void>((resolve) => {
+      const unsubscribe = cartStore.subscribe(() => {
+        if (cartStore.getSnapshot().length > 0) {
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
+
+    expect(api.fetchCart).toHaveBeenCalled();
+    expect(cartStore.getSnapshot()).toEqual([
+      { variantId: "v9", productSlug: "product-v9", qty: 3 },
+    ]);
+  });
+
+  it("آیتم‌های arbyte:cart:v1 قدیمی یک‌بار به سرور فرستاده و پاک می‌شوند", async () => {
+    window.localStorage.setItem(
+      "arbyte:cart:v1",
+      JSON.stringify([
+        { variantId: "legacy-1", productSlug: "legacy", qty: 2 },
+      ]),
+    );
+    const { api, cartStore } = await freshStore();
+    api.addCartItem.mockResolvedValue(makeCart([makeCartItem("legacy-1", 2)]));
+    api.fetchCart.mockResolvedValue(makeCart([makeCartItem("legacy-1", 2)]));
+
+    await new Promise<void>((resolve) => {
+      const unsubscribe = cartStore.subscribe(() => {
+        if (cartStore.getSnapshot().length > 0) {
+          unsubscribe();
+          resolve();
+        }
+      });
+    });
+
+    expect(api.addCartItem).toHaveBeenCalledWith("legacy-1", 2);
+    expect(window.localStorage.getItem("arbyte:cart:v1")).toBeNull();
+  });
+
+  it("وقتی سرور خطا می‌دهد (null)، snapshot قبلی حفظ می‌شود، کرش نمی‌کند", async () => {
+    const { api, cartStore } = await freshStore();
+    api.fetchCart.mockResolvedValue(makeCart([makeCartItem("v1", 1)]));
+    api.addCartItem.mockResolvedValue(makeCart([makeCartItem("v1", 1)]));
+
+    await cartStore.addItem("v1", "product-v1", 1);
+    expect(cartStore.getSnapshot()).toHaveLength(1);
+
+    api.addCartItem.mockResolvedValueOnce(null);
+    await cartStore.addItem("v2", "product-v2", 1);
+    expect(cartStore.getSnapshot()).toEqual([
+      { variantId: "v1", productSlug: "product-v1", qty: 1 },
     ]);
   });
 });

@@ -8,11 +8,46 @@ ignored, per the task doc)."""
 import re
 
 from .errors import validation_error
+from .search import to_latin_digits
 
 SLUG_REGEX = re.compile(r"^[a-z0-9-]+$")
 PRODUCT_SORT_VALUES = ("newest", "price_asc", "price_desc", "popular", "featured")
 PRODUCT_CONDITION_VALUES = ("NEW", "OPEN_BOX", "STOCK", "LIKE_NEW")
 AVAILABILITY_VALUES = ("IN_STOCK", "PREORDER")
+
+# D-04 — packages/contracts/src/validators.ts's MOBILE_REGEX/OTP_REGEX/POSTAL_CODE_REGEX.
+MOBILE_REGEX = re.compile(r"^09\d{9}$")
+OTP_REGEX = re.compile(r"^\d{4}$")
+POSTAL_CODE_REGEX = re.compile(r"^\d{10}$")
+
+
+def parse_mobile(raw: str | None, field: str = "mobile") -> str:
+    normalized = to_latin_digits(raw or "")
+    if not MOBILE_REGEX.match(normalized):
+        raise validation_error({field: "شماره موبایل باید با ۰۹ شروع شود و ۱۱ رقم باشد."})
+    return normalized
+
+
+def parse_otp_code(raw: str | None, field: str = "code") -> str:
+    normalized = to_latin_digits(raw or "")
+    if not OTP_REGEX.match(normalized):
+        raise validation_error({field: "کد وارد شده باید ۴ رقم باشد."})
+    return normalized
+
+
+def parse_postal_code(raw: str | None, field: str = "postalCode") -> str:
+    normalized = to_latin_digits(raw or "")
+    if not POSTAL_CODE_REGEX.match(normalized):
+        raise validation_error({field: "کد پستی باید ۱۰ رقم باشد."})
+    return normalized
+
+
+def parse_non_empty_string(raw, field: str, *, max_length: int | None = None) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        raise validation_error({field: f"{field} الزامی است."})
+    if max_length is not None and len(raw) > max_length:
+        raise validation_error({field: f"{field} نمی‌تواند بیشتر از {max_length} نویسه باشد."})
+    return raw
 
 
 def _parse_positive_int(raw: str | None, field: str, *, default: int, max_value: int | None = None) -> int:

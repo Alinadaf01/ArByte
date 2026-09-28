@@ -134,6 +134,11 @@ class Favorite(models.Model):
     variant = models.ForeignKey(
         "catalog.ProductVariant", on_delete=models.SET_NULL, blank=True, null=True, related_name="favorited_by"
     )
+    # D-04 §۲ — قیمت لحظه‌ی ذخیره؛ صفحه‌ی /wishlist تغییر قیمت را با مقایسه‌ی
+    # این مقدار و قیمت زنده‌ی واریانت نشان می‌دهد (packages/contracts's
+    # WishlistItemSchema.priceAtSave). نال یعنی یا محصول وقت ذخیره قیمتی
+    # نداشت یا (مهاجرت از localStorage) قیمت لحظه‌ی ذخیره در مرورگر ثبت نشده بود.
+    price_at_save = models.BigIntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

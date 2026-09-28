@@ -31,6 +31,9 @@ export const OtpRequestResponseSchema = successResponseSchema(
 export const OtpVerifyBodySchema = z.object({
   mobile: MobileSchema,
   code: OtpCodeSchema,
+  /** D-04 §۱ — کلید سبد مهمان (X-Cart-Session)؛ اگر حاضر باشد، سبد مهمان
+   * موقع ورود در سبد کاربر ادغام می‌شود (جمع تعداد، سقف ۵ و سقف موجودی). */
+  cartSessionKey: z.string().optional(),
 });
 export const AuthTokensSchema = z.object({
   accessToken: z.string(),

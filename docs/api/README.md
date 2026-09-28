@@ -62,20 +62,23 @@ Swagger تولیدشده از همین قراردادها در dev روی `/api/
 
 ## نقشه‌ی مجوزها (`permissions-map.ts`)
 
-هر endpoint دقیقاً یکی از سه حالت را دارد: `"public"` (بدون ورود)،
-`"authenticated"` (فقط ورود)، یا کلید Permission به شکل `domain.action`
-(بند ۸.۱۱، مثل `products.update`). همه‌ی مسیرهای `/admin/*` باید مجوز
-داشته باشند — هرگز `public`/`authenticated` خام (تست
-`permissions-map.test.ts` این را اجباری می‌کند). `users.impersonate`
+هر endpoint دقیقاً یکی از چهار حالت را دارد: `"public"` (بدون ورود)،
+`"authenticated"` (فقط ورود)، `"guest-or-authenticated"` (بدون ورود با
+X-Cart-Session یا با ورود — فقط سبد، D-04 §۳)، یا کلید Permission به شکل
+`domain.action` (بند ۸.۱۱، مثل `products.update`). همه‌ی مسیرهای
+`/admin/*` باید مجوز داشته باشند — هرگز `public`/`authenticated` خام
+(تست `permissions-map.test.ts` این را اجباری می‌کند). `users.impersonate`
 طبق seed فقط روی نقش «مدیر ارشد» است.
 
 ## دامنه‌ها و endpointها
 
 ### auth — `src/auth/`
 
-`POST /auth/otp/request` (public) · `POST /auth/otp/verify` (public) ·
-`POST /auth/refresh` (public) · `POST /auth/logout` (auth) ·
-`GET /auth/me` (auth) · `POST /auth/impersonate/exchange` (public، بلیت‌محور)
+`POST /auth/otp/request` (public) · `POST /auth/otp/verify` (public،
+بدنه با `cartSessionKey` اختیاری — D-04 §۱/§۳: اگر حاضر باشد سبد مهمان
+موقع ورود در سبد کاربر ادغام می‌شود) · `POST /auth/refresh` (public) ·
+`POST /auth/logout` (auth) · `GET /auth/me` (auth) ·
+`POST /auth/impersonate/exchange` (public، بلیت‌محور)
 
 ### catalog — `src/catalog/` (همه public)
 
@@ -83,10 +86,20 @@ Swagger تولیدشده از همین قراردادها در dev روی `/api/
 `GET /catalog/products` · `GET /catalog/products/:slug` ·
 `GET /catalog/search` · `GET /catalog/filters`
 
-### cart — `src/cart/` (همه auth)
+### cart — `src/cart/` (`guest-or-authenticated` — D-04 §۳)
 
 `GET /cart` · `POST /cart/items` · `PATCH /cart/items/:id` ·
 `DELETE /cart/items/:id` — بدون فیلد قیمت در بدنه‌ی درخواست (§۸.۵۵).
+
+سبد سمت سرور، روی واریانت. بدون ورود: هدر `X-Cart-Session` — سرور یک
+کلید تازه می‌سازد و در همین هدر روی هر پاسخ سبد برمی‌گرداند (پیش‌فرض
+`CORS_EXPOSE_HEADERS`، وگرنه fetch مرورگر هدرهای سفارشی cross-origin را
+نمی‌بیند)؛ کلاینت باید آن را نگه دارد (apps/web:
+`localStorage["arbyte:cart-session:v1"]`) و روی درخواست‌های بعدی همان
+هدر را بفرستد. با ورود: `Authorization` کافی است، `X-Cart-Session` نادیده
+گرفته می‌شود. ادغام سبد مهمان در سبد کاربر فقط موقع `otp/verify` (بالا)
+رخ می‌دهد، نه یک endpoint جدا — جمع تعداد هر واریانت، سقف ۵ عدد و سقف
+موجودی لحظه‌ای هر دو رعایت می‌شوند.
 
 ### order — `src/order/` (همه auth)
 
@@ -101,7 +114,14 @@ Swagger تولیدشده از همین قراردادها در dev روی `/api/
 
 ### account — `src/account/` (همه auth)
 
-Profile، Address (CRUD + `isDefault`)، Wishlist (CRUD)
+Profile، Address (CRUD + `isDefault`)، Wishlist (CRUD +
+`POST /account/wishlist/merge` — D-04 §۲، جدید). `WishlistItemSchema` یک
+`priceAtSave` هم دارد (قیمت لحظه‌ی ذخیره؛ صفحه‌ی `/wishlist` تغییر قیمت
+را از این و قیمت زنده‌ی واریانت حساب می‌کند). `merge` آرایه‌ای از
+`{ productSlug, variantId?, priceAtSave? }` می‌گیرد — برای انتقال
+علاقه‌مندی محلی (`localStorage`، قبل از ورود) بعد از ورود؛ با
+`productSlug` شناسایی می‌شود چون localStorage قبل از ورود فقط slug دارد،
+و آیتمی که از قبل در حساب کاربر بود دست نمی‌خورد (merge، نه overwrite).
 
 ### content — `src/content/`
 
@@ -268,22 +288,41 @@ drift بین دو طرف بی‌صدا رخ ندهد. جداگانه، `apps/api
 وابسته‌اند و Swagger لازم ندارند. تمام ثبت OpenAPI فقط داخل
 `apps/api/src/openapi/registry.ts` است، با ایمپورت از قراردادها.
 
-## سه store سمت کاربر (T-210 §۶) — موقت، بدون بک‌اند
+## سه store سمت کاربر (T-210 §۶ → D-04 §۴)
 
-`apps/web/src/lib/stores/{cart,wishlist,compare}-store.ts` سه store
-کاملاً کلاینتی‌اند (`localStorage`، کلید نسخه‌دار `arbyte:{cart,wishlist,compare}:v1`)
-که قبل از این ساخته شدند که بک‌اند سبد (T-308) و ورود (T-307) وجود
-داشته باشند — چون صفحه اصلی/فروشگاه/محصول/علاقه‌مندی از قبل دکمه‌ی
-«افزودن به سبد» و قلب دارند و باید جایی می‌رفتند.
+`apps/web/src/lib/stores/{cart,wishlist,compare}-store.ts` سه store با
+امضای بیرونی یکسان‌اند (`useSyncExternalStore`، بدون prop-drilling)،
+اما از D-04 دیگر هر سه یک جور نیستند:
 
-- قیمت/موجودی این‌جا ذخیره **نمی‌شود** (به‌جز `priceAtSave` در
-  wishlist — استثنای عمدی، برای نمایش «چقدر تغییر کرده»)؛ همیشه از API
+- **`cart-store.ts`** از D-04 سمت سرور است — منبع حقیقت
+  `apps/backend/apps/public_api/cart_views.py` (`GET/POST /cart`،
+  `PATCH|DELETE /cart/items/:id`) است، نه `localStorage`. `lib/cart-api.ts`
+  کلید سشن مهمان را در `arbyte:cart-session:v1` نگه می‌دارد و روی هر
+  درخواست در هدر `X-Cart-Session` می‌فرستد/از پاسخ به‌روز می‌کند؛ بعد از
+  ورود (بچ ۰۳)، فقط فرستادن `Authorization` کافی است و سرور خودش سبد
+  کاربر را ترجیح می‌دهد (`cart_service.py:resolve_cart`). آیتم‌های
+  `arbyte:cart:v1` قدیمی (پیش از D-04) یک‌بار به سرور فرستاده و پاک
+  می‌شوند (`flushLegacyLocalCart`). ادغام سبد مهمان با کاربر در لحظه‌ی
+  ورود، سرور خودش در `POST /auth/otp/verify` (فیلد اختیاری
+  `cartSessionKey`) انجام می‌دهد — فرانت کاری نمی‌کند جز فرستادن همان
+  کلید سشن. کامپوننت‌های مصرف‌کننده (`AddToCartButton`, `PurchasePanel`,
+  `SiteHeader`, `MobileNavBar`, `WishlistView`) دست‌نخورده ماندند —
+  امضای `useCartStore()` عوض نشده.
+- **`wishlist-store.ts`** هنوز کاملاً کلاینتی است (`localStorage`، کلید
+  `arbyte:wishlist:v1`) — تا وقتی صفحه‌ی ورود واقعی وجود ندارد (بچ ۰۳)
+  جای دیگری برای merge کردن نیست. یک تابع آماده اضافه شده:
+  `syncAfterLogin(accessToken)` که علاقه‌مندی محلی را با
+  `POST /account/wishlist/merge` ادغام می‌کند و بعد از موفقیت store
+  محلی را پاک می‌کند (سرور منبع حقیقت می‌شود). این تابع **در این بچ به
+  هیچ UI وصل نیست** — فقط برای صفحه‌ی ورود بچ ۰۳ آماده شده.
+- **`compare-store.ts`** دست‌نخورده و کاملاً کلاینتی مانده — مقایسه
+  حساب کاربری ندارد.
+
+- قیمت/موجودی سمت کلاینت ذخیره **نمی‌شود** (به‌جز `priceAtSave` در
+  wishlist — استثنای عمدی، برای نمایش «چقدر تغییر کرده»؛ حالا سمت سرور
+  هم روی `Favorite.price_at_save` همین استثنا تکرار شده)؛ همیشه از API
   تازه خوانده می‌شود (بند ۸.۵۵).
-- وقتی T-307 (ورود) و T-308 (سبد سرور) ساخته شدند، این سه store باید با
-  حساب کاربر merge شوند (سبد/علاقه‌مندی/مقایسه‌ی مهمان با همان چیزهایی
-  که کاربر از قبل در حساب سرور دارد یکی شود، نه این‌که یکی جایگزین
-  دیگری شود). T-312 (اگر sync چندابزاره‌ی صریح دارد) هم به همین سه
-  فایل وابسته است.
 - الگوی هیدریشن: مقدار اولیه‌ی سرور همیشه خالی است (بدون خطای
-  hydration)؛ `useSyncExternalStore` بعد از mount واقعی `localStorage`
-  را می‌خواند. جزئیات در کامنت بالای `create-local-store.ts`.
+  hydration)؛ `useSyncExternalStore` بعد از mount واقعی state را
+  می‌خواند (`cart-store` از سرور fetch می‌کند، بقیه از `localStorage`).
+  جزئیات در کامنت بالای `create-local-store.ts` و `cart-store.ts`.

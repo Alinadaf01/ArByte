@@ -2,9 +2,13 @@ import { describe, expect, it } from "vitest";
 import { PERMISSIONS_MAP } from "./permissions-map";
 
 describe("PERMISSIONS_MAP", () => {
-  it("هر مجوز غیر از public/authenticated الگوی domain.action دارد (§۸.۱۱)", () => {
+  it("هر مجوز غیر از public/authenticated/guest-or-authenticated الگوی domain.action دارد (§۸.۱۱)", () => {
     for (const entry of PERMISSIONS_MAP) {
-      if (entry.access === "public" || entry.access === "authenticated")
+      if (
+        entry.access === "public" ||
+        entry.access === "authenticated" ||
+        entry.access === "guest-or-authenticated"
+      )
         continue;
       const keys = Array.isArray(entry.access) ? entry.access : [entry.access];
       for (const key of keys) {
@@ -34,5 +38,17 @@ describe("PERMISSIONS_MAP", () => {
     );
     expect(issue?.access).toBe("users.impersonate");
     expect(exchange?.access).toBe("public");
+  });
+
+  it("D-04 §۳ — مسیرهای سبد guest-or-authenticated‌اند (سبد مهمان + کاربر)", () => {
+    const cartEntries = PERMISSIONS_MAP.filter((e) =>
+      e.path.startsWith("/cart"),
+    );
+    expect(cartEntries.length).toBeGreaterThan(0);
+    for (const entry of cartEntries) {
+      expect(entry.access, `${entry.method} ${entry.path}`).toBe(
+        "guest-or-authenticated",
+      );
+    }
   });
 });

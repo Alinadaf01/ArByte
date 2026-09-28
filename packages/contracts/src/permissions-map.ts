@@ -10,7 +10,14 @@
  * را جایگزین نمی‌کند مگر صریحاً به نقشی داده شود.
  */
 
-export type EndpointAccess = "public" | "authenticated" | string | string[];
+/**
+ * D-04 §۳ — `"guest-or-authenticated"`: بدون ورود با هدر X-Cart-Session
+ * (سبد مهمان سمت سرور، وایب‌محور)، یا با ورود (Authorization). با
+ * `"public"` فرق دارد چون سرور همیشه یک هویت سبد (مهمان یا کاربر) نیاز
+ * دارد؛ با `"authenticated"` فرق دارد چون کاربر واردنشده هم مجاز است.
+ */
+export type EndpointAccess =
+  "public" | "authenticated" | "guest-or-authenticated" | string | string[];
 
 export interface PermissionMapEntry {
   method: "GET" | "POST" | "PATCH" | "DELETE";
@@ -37,10 +44,19 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
   { method: "GET", path: "/catalog/filters", access: "public" },
 
   // ---------- cart ----------
-  { method: "GET", path: "/cart", access: "authenticated" },
-  { method: "POST", path: "/cart/items", access: "authenticated" },
-  { method: "PATCH", path: "/cart/items/:id", access: "authenticated" },
-  { method: "DELETE", path: "/cart/items/:id", access: "authenticated" },
+  /** D-04 §۳ — قبلاً فقط authenticated بود؛ سبد مهمان سمت سرور اضافه شد. */
+  { method: "GET", path: "/cart", access: "guest-or-authenticated" },
+  { method: "POST", path: "/cart/items", access: "guest-or-authenticated" },
+  {
+    method: "PATCH",
+    path: "/cart/items/:id",
+    access: "guest-or-authenticated",
+  },
+  {
+    method: "DELETE",
+    path: "/cart/items/:id",
+    access: "guest-or-authenticated",
+  },
 
   // ---------- order ----------
   /** الحاقیه §۶ — سشن جعل‌هویت این را رد می‌کند (orders.create مسدود است). */
@@ -73,6 +89,8 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
   { method: "GET", path: "/account/wishlist", access: "authenticated" },
   { method: "POST", path: "/account/wishlist", access: "authenticated" },
   { method: "DELETE", path: "/account/wishlist/:id", access: "authenticated" },
+  /** D-04 §۲ — جدید. */
+  { method: "POST", path: "/account/wishlist/merge", access: "authenticated" },
 
   // ---------- content (عمومی) ----------
   { method: "GET", path: "/content/homepage", access: "public" },
