@@ -2,7 +2,7 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
 
-from apps.catalog.models import Product
+from apps.catalog.models import ProductVariant
 from apps.orders.models import Order, OrderItem
 
 from .base import AdminApiTestMixin
@@ -12,12 +12,14 @@ class AdminReportsApiTests(AdminApiTestMixin, APITestCase):
     def setUp(self):
         self.client.force_authenticate(user=self.make_staff())
         self.product = self.make_product(stock=10, price=100000)
-        Product.objects.filter(pk=self.product.pk).update(cost_price=40000)
+        self.variant = self.product.variants.first()
+        # cost_price moved to ProductVariant.supplier_price in D-02.
+        ProductVariant.objects.filter(pk=self.variant.pk).update(supplier_price=40000)
         customer = self.make_customer()
         self.order = Order.objects.create(user=customer, shipping_address={}, subtotal=100000, total=100000)
         OrderItem.objects.create(
-            order=self.order, product=self.product, product_name=self.product.name, sku=self.product.sku,
-            price=100000, quantity=2,
+            order=self.order, variant=self.variant, product_name_snapshot=self.product.name,
+            sku_snapshot=self.variant.sku, unit_price=100000, quantity=2,
         )
         self.order.paid_at = timezone.now()
         self.order.status = "paid"

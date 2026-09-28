@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from apps.inventory.models import Inventory
 from apps.orders.models import Order, OrderItem
 
 from .base import AdminApiTestMixin
@@ -11,10 +12,11 @@ class AdminOrderApiTests(AdminApiTestMixin, APITestCase):
         self.client.force_authenticate(user=self.make_staff())
         self.customer = self.make_customer()
         self.product = self.make_product(stock=10)
+        self.variant = self.product.variants.first()
         self.order = Order.objects.create(user=self.customer, shipping_address={"city": "Tehran"}, subtotal=100000, total=100000)
         OrderItem.objects.create(
-            order=self.order, product=self.product, product_name=self.product.name, sku=self.product.sku,
-            price=self.product.price, quantity=1,
+            order=self.order, variant=self.variant, product_name_snapshot=self.product.name,
+            sku_snapshot=self.variant.sku, unit_price=self.variant.final_price, quantity=1,
         )
 
     def test_list_and_detail(self):
@@ -68,10 +70,10 @@ class AdminOrderApiTests(AdminApiTestMixin, APITestCase):
     def test_cancel_reverses_stock_when_processing(self):
         self.client.post(reverse("admin-order-mark-paid", args=[self.order.pk]))
         self.client.post(reverse("admin-order-start-processing", args=[self.order.pk]))
-        self.product.refresh_from_db()
-        stock_after_sale = self.product.stock_count
+        inventory = Inventory.objects.get(variant=self.variant)
+        stock_after_sale = inventory.quantity
 
         response = self.client.post(reverse("admin-order-cancel", args=[self.order.pk]), {"reason": "customer request"}, format="json")
         self.assertEqual(response.status_code, 200)
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, stock_after_sale + 1)
+        inventory.refresh_from_db()
+        self.assertEqual(inventory.quantity, stock_after_sale + 1)

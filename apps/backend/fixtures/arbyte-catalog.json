@@ -1,0 +1,2225 @@
+{
+  "exportedAt": "2026-09-28T06:24:03.402Z",
+  "brands": [
+    {
+      "name": "ASUS",
+      "slug": "asus",
+      "logoUrl": null,
+      "description": null,
+      "isActive": true
+    },
+    {
+      "name": "Lenovo",
+      "slug": "lenovo",
+      "logoUrl": null,
+      "description": null,
+      "isActive": true
+    },
+    {
+      "name": "MSI",
+      "slug": "msi",
+      "logoUrl": null,
+      "description": null,
+      "isActive": true
+    },
+    {
+      "name": "Microsoft",
+      "slug": "microsoft",
+      "logoUrl": null,
+      "description": null,
+      "isActive": true
+    }
+  ],
+  "categories": [
+    {
+      "slug": "laptop-new",
+      "name": "لپ‌تاپ آکبند",
+      "parentSlug": null,
+      "description": "کارتن پلمب، دست‌نخورده",
+      "imageMain": "/categories/category-1.webp",
+      "imageBanner": null,
+      "imageThumbnail": "/categories/category-1-thumb.webp",
+      "sortOrder": 1,
+      "isActive": true
+    },
+    {
+      "slug": "laptop-open-box",
+      "name": "لپ‌تاپ اپن باکس",
+      "parentSlug": null,
+      "description": "جعبه باز شده، در حد نو",
+      "imageMain": "/categories/category-2.webp",
+      "imageBanner": null,
+      "imageThumbnail": "/categories/category-2-thumb.webp",
+      "sortOrder": 2,
+      "isActive": true
+    },
+    {
+      "slug": "laptop-stock",
+      "name": "لپ‌تاپ استوک",
+      "parentSlug": null,
+      "description": "کارکرده و تست‌شده",
+      "imageMain": "/categories/category-3.webp",
+      "imageBanner": null,
+      "imageThumbnail": "/categories/category-3-thumb.webp",
+      "sortOrder": 3,
+      "isActive": true
+    },
+    {
+      "slug": "surface",
+      "name": "سرفیس",
+      "parentSlug": null,
+      "description": "Surface Pro و Surface Laptop",
+      "imageMain": "/categories/category-4.webp",
+      "imageBanner": null,
+      "imageThumbnail": "/categories/category-4-thumb.webp",
+      "sortOrder": 4,
+      "isActive": true
+    },
+    {
+      "slug": "gaming-pc",
+      "name": "کیس گیمینگ",
+      "parentSlug": null,
+      "description": "سیستم آماده برای بازی و رندر",
+      "imageMain": "/categories/category-5.webp",
+      "imageBanner": null,
+      "imageThumbnail": "/categories/category-5-thumb.webp",
+      "sortOrder": 5,
+      "isActive": true
+    }
+  ],
+  "specificationDefinitions": [
+    {
+      "key": "gpu-ws",
+      "nameFa": "گرافیک",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "display-ws",
+      "nameFa": "نمایشگر",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "weight-ws",
+      "nameFa": "وزن",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "ram-ws",
+      "nameFa": "حافظه رم",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۳۲GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۶۴GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "key": "storage-ws",
+      "nameFa": "فضای ذخیره‌سازی",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۱TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۲TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۲۵۶GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۵۱۲GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "key": "gpu-gaming",
+      "nameFa": "گرافیک",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "display-gaming",
+      "nameFa": "نمایشگر",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "weight-gaming",
+      "nameFa": "وزن",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "ram-gaming",
+      "nameFa": "حافظه رم",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۳۲GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۶۴GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۱۲۸GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۱۶GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "key": "storage-gaming",
+      "nameFa": "فضای ذخیره‌سازی",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۱TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۲TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۴TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "key": "cpu-ws",
+      "nameFa": "پردازنده",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "surface",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "total-power",
+      "nameFa": "توان کل",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "brightness",
+      "nameFa": "روشنایی",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "cpu-pc",
+      "nameFa": "پردازنده",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "gaming-pc",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "gpu-pc",
+      "nameFa": "گرافیک",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "gaming-pc",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "psu-pc",
+      "nameFa": "منبع تغذیه",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "gaming-pc",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "cpu-gaming",
+      "nameFa": "پردازنده",
+      "type": "TEXT",
+      "unit": null,
+      "categorySlug": "laptop-new",
+      "isRequired": false,
+      "isFilterable": false,
+      "isSearchable": true,
+      "isVariantAxis": false,
+      "sortOrder": 0,
+      "values": []
+    },
+    {
+      "key": "ram-pc",
+      "nameFa": "حافظه رم",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "gaming-pc",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۳۲GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۶۴GB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    },
+    {
+      "key": "storage-pc",
+      "nameFa": "فضای ذخیره‌سازی",
+      "type": "SELECT",
+      "unit": null,
+      "categorySlug": "gaming-pc",
+      "isRequired": false,
+      "isFilterable": true,
+      "isSearchable": false,
+      "isVariantAxis": true,
+      "sortOrder": 0,
+      "values": [
+        {
+          "value": "۱TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        },
+        {
+          "value": "۲TB",
+          "swatchHex": null,
+          "sortOrder": 0
+        }
+      ]
+    }
+  ],
+  "products": [
+    {
+      "slug": "msi-titan-18-hx",
+      "name": "MSI Titan 18 HX A2W",
+      "brandSlug": "msi",
+      "categorySlug": "laptop-new",
+      "modelNumber": "A2XWJG",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Titan 18 HX سنگین است و صدا می‌دهد، و هیچ‌کدام را پنهان نمی‌کند. در عوض زیر بار کامل رندر، فرکانس پردازنده را نگه می‌دارد. نمایشگر Mini LED در محیط روشن هم خوانا می‌ماند و برای تدوین رنگ قابل‌اتکاست.",
+      "shortDescription": "قوی‌ترین لپ‌تاپ رومیزی‌جایگزین بازار",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 100,
+      "images": [
+        {
+          "url": "/seed-images/msi-titan-18-hx.svg",
+          "altText": "تصویر نمونه‌ی MSI Titan 18 HX A2XWJG — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core Ultra 9 275HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 5090 Laptop ۲۴GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۸ اینچ Mini LED ۳۸۴۰×۲۴۰۰ ۱۲۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۳٫۶ کیلوگرم",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "total-power",
+          "value": null,
+          "customValue": "۲۷۰W",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "brightness",
+          "value": null,
+          "customValue": "۱۰۰۰ nits",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-TITAN-32-1TB",
+          "name": "۳۲GB · ۱TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "261000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 8,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۱TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-MSI-TITAN-64-2TB",
+          "name": "۶۴GB · ۲TB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "289500000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 5,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۶۴GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۲TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-MSI-TITAN-128-4TB",
+          "name": "۱۲۸GB · ۴TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "333000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۱۲۸GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۴TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "asus-rog-strix-scar-18",
+      "name": "ASUS ROG Strix SCAR 18 (2026)",
+      "brandSlug": "asus",
+      "categorySlug": "laptop-new",
+      "modelNumber": "SCAR18-2026",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Strix SCAR 18 (2026) رده‌ی بالای خط تولید ROG است؛ برای رقابتی‌ترین بازی‌ها روی نمایشگر ۴K Mini LED با نرخ فریم بالا ساخته شده. سقف رم تا ۱۲۸GB برای رندر و استریم همزمان جا دارد.",
+      "shortDescription": "پیروزی، شتاب‌گرفته — رده‌ی بالای ROG با ۱۲۸GB رم",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 95,
+      "images": [
+        {
+          "url": "/seed-images/asus-rog-strix-scar-18.svg",
+          "altText": "تصویر نمونه‌ی ASUS ROG Strix SCAR 18 (2026) — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "total-power",
+          "value": null,
+          "customValue": "۳۲۰W",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "brightness",
+          "value": null,
+          "customValue": "۱۶۰۰ nits",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core Ultra 9 275HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 5090 Laptop ۱۷۵W",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۴K Mini LED ۲۴۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۳٫۳ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-SCAR18-32-1TB",
+          "name": "۳۲GB · ۱TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "279000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 6,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۱TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-ASUS-SCAR18-64-2TB",
+          "name": "۶۴GB · ۲TB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "312000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 4,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۶۴GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۲TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-ASUS-SCAR18-128-4TB",
+          "name": "۱۲۸GB · ۴TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "359000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۱۲۸GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-gaming",
+              "value": "۴TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "microsoft-surface-laptop-studio-2",
+      "name": "Microsoft Surface Laptop Studio 2",
+      "brandSlug": "microsoft",
+      "categorySlug": "surface",
+      "modelNumber": "LaptopStudio2",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Surface Laptop Studio 2 با لولای منحصربه‌فرد بین حالت لپ‌تاپ، Stage و تبلت جابه‌جا می‌شود. برای کسانی که با قلم روی صفحه کار می‌کنند و همزمان به کارت گرافیک مجزا نیاز دارند مناسب است.",
+      "shortDescription": "لولای سه‌حالته برای طراحی، رندر و ارائه",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 90,
+      "images": [
+        {
+          "url": "/seed-images/microsoft-surface-laptop-studio-2.svg",
+          "altText": "تصویر نمونه‌ی Microsoft Surface Laptop Studio 2 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core i7-13800H",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "GeForce RTX 4060 Laptop ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۴٫۴ اینچ PixelSense Flow لمسی",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۱٫۹ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MS-SLS2-1TB",
+          "name": "۱TB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "145000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 7,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "storage-ws",
+              "value": "۱TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-MS-SLS2-2TB",
+          "name": "۲TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "172000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 3,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "storage-ws",
+              "value": "۲TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "asus-rog-strix-g16",
+      "name": "ASUS ROG Strix G16",
+      "brandSlug": "asus",
+      "categorySlug": "laptop-new",
+      "modelNumber": "G16",
+      "gtin": null,
+      "partNumber": null,
+      "description": "ROG Strix G16 برای کسی است که می‌خواهد اکثر بازی‌های روز را روی تنظیمات بالا اجرا کند، بدون پرداخت هزینه‌ی رده‌ی فلگ‌شیپ. بدنه‌ی فلزی و صفحه‌کلید RGB هم از ویژگی‌های این خط تولید است.",
+      "shortDescription": "گیمینگ روزمره با قیمت منطقی‌تر از رده‌ی Titan/Raider",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 70,
+      "images": [
+        {
+          "url": "/seed-images/asus-rog-strix-g16.svg",
+          "altText": "تصویر نمونه‌ی ASUS ROG Strix G16 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core i9-14900HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4070 Laptop ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۶ اینچ QHD ۲۴۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۵ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-G16-16GB",
+          "name": "۱۶GB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "142000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 6,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۱۶GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-ASUS-G16-32GB",
+          "name": "۳۲GB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "168000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 4,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-gaming",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "lenovo-thinkpad-p1-gen7",
+      "name": "Lenovo ThinkPad P1 Gen 7",
+      "brandSlug": "lenovo",
+      "categorySlug": "laptop-new",
+      "modelNumber": "P1Gen7",
+      "gtin": null,
+      "partNumber": null,
+      "description": "ThinkPad P1 Gen 7 با گواهی ISV برای نرم‌افزارهای CAD/رندر تست شده. کیبورد کلاسیک ThinkPad و بدنه‌ی مقاوم در برابر ضربه هم از ویژگی‌های همیشگی این خط تولید است.",
+      "shortDescription": "ورک‌استیشن متحرک برای مهندسی و رندر حرفه‌ای",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 65,
+      "images": [
+        {
+          "url": "/seed-images/lenovo-thinkpad-p1-gen-7.svg",
+          "altText": "تصویر نمونه‌ی Lenovo ThinkPad P1 Gen 7 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core Ultra 9 185H",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "NVIDIA RTX 2000 Ada ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۶ اینچ QHD+ ۱۶۵Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۱٫۸ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-LENOVO-P1G7-32GB",
+          "name": "۳۲GB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "165000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 4,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-ws",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-LENOVO-P1G7-64GB",
+          "name": "۶۴GB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "198000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-ws",
+              "value": "۶۴GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "msi-raider-ge78-hx",
+      "name": "MSI Raider GE78 HX",
+      "brandSlug": "msi",
+      "categorySlug": "laptop-new",
+      "modelNumber": "GE78HX",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Raider GE78 HX برای کسانی است که هم بازی می‌خواهند هم روی همان دستگاه رندر بگیرند. خنک‌کاری قوی‌تر از نسل قبل باعث شده فرکانس زیر بار طولانی‌تر پایدار بماند.",
+      "shortDescription": "تعادل بین کارایی و قابل‌حمل بودن در رده‌ی بالا",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 60,
+      "images": [
+        {
+          "url": "/seed-images/msi-raider-ge78-hx.svg",
+          "altText": "تصویر نمونه‌ی MSI Raider GE78 HX — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core Ultra 9 275HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 5080 Laptop ۱۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۷ اینچ QHD+ ۲۴۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۹ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-RAIDER-GE78-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "189000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "microsoft-surface-pro-10",
+      "name": "Microsoft Surface Pro 10",
+      "brandSlug": "microsoft",
+      "categorySlug": "surface",
+      "modelNumber": "Pro10",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Surface Pro 10 برای کسی است که بین جلسه و میز کار جابه‌جا می‌شود و به یک دستگاه سبک با کیبورد جدا‌شدنی نیاز دارد. باتری برای یک روز کاری کامل کافی است.",
+      "shortDescription": "تبلت و لپ‌تاپ دو در یک برای کار روزمره",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 55,
+      "images": [
+        {
+          "url": "/seed-images/microsoft-surface-pro-10.svg",
+          "altText": "تصویر نمونه‌ی Microsoft Surface Pro 10 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core Ultra 5 135U",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "Intel Graphics داخلی",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۳ اینچ PixelSense لمسی",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۰٫۹ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MS-PRO10-256",
+          "name": "۲۵۶GB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "98000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 10,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "storage-ws",
+              "value": "۲۵۶GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-MS-PRO10-512",
+          "name": "۵۱۲GB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "118000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 6,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "storage-ws",
+              "value": "۵۱۲GB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "msi-aegis-rs-2026",
+      "name": "MSI Aegis RS 2026",
+      "brandSlug": "msi",
+      "categorySlug": "gaming-pc",
+      "modelNumber": "AegisRS2026",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Aegis RS از پیش با کابل‌کشی مرتب و خنک‌کاری مایع مونتاژ و تست شده — نیازی به بستن قطعات نیست. برای بازی روی رزولوشن بالا و رندر همزمان مناسب است.",
+      "shortDescription": "کیس آماده‌ی رده‌ی بالا برای بازی و رندر",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 48,
+      "images": [
+        {
+          "url": "/seed-images/msi-aegis-rs-2026.svg",
+          "altText": "تصویر نمونه‌ی MSI Aegis RS 2026 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-pc",
+          "value": null,
+          "customValue": "Intel Core Ultra 9 285K",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-pc",
+          "value": null,
+          "customValue": "GeForce RTX 5080 ۱۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "psu-pc",
+          "value": null,
+          "customValue": "۸۵۰ وات — ۸۰+ Gold",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-AEGISRS-32-1TB",
+          "name": "۳۲GB · ۱TB",
+          "isDefault": false,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "185000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 4,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-pc",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-pc",
+              "value": "۱TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        },
+        {
+          "sku": "ARB-MSI-AEGISRS-64-2TB",
+          "name": "۶۴GB · ۲TB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "215000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-pc",
+              "value": "۶۴GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-pc",
+              "value": "۲TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "asus-rog-strix-ga35",
+      "name": "ASUS ROG Strix GA35",
+      "brandSlug": "asus",
+      "categorySlug": "gaming-pc",
+      "modelNumber": "GA35",
+      "gtin": null,
+      "partNumber": null,
+      "description": "ROG Strix GA35 با پردازنده‌ی ۱۶ هسته‌ای AMD و گرافیک RTX 5070 Ti برای بازی‌های رقابتی روی نرخ فریم بالا ساخته شده. کیس با پنل شیشه‌ای و نورپردازی Aura Sync عرضه می‌شود.",
+      "shortDescription": "پلتفرم AMD رده‌ی بالا برای گیمینگ رقابتی",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 44,
+      "images": [
+        {
+          "url": "/seed-images/asus-rog-strix-ga35.svg",
+          "altText": "تصویر نمونه‌ی ASUS ROG Strix GA35 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-pc",
+          "value": null,
+          "customValue": "AMD Ryzen 9 9950X",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-pc",
+          "value": null,
+          "customValue": "GeForce RTX 5070 Ti ۱۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "psu-pc",
+          "value": null,
+          "customValue": "۸۵۰ وات — ۸۰+ Gold",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-GA35-DEFAULT",
+          "name": "۳۲GB · ۲TB",
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "165000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 3,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": [
+            {
+              "definitionKey": "ram-pc",
+              "value": "۳۲GB",
+              "customValue": null,
+              "numericValue": null
+            },
+            {
+              "definitionKey": "storage-pc",
+              "value": "۲TB",
+              "customValue": null,
+              "numericValue": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "asus-rog-zephyrus-g14",
+      "name": "ASUS ROG Zephyrus G14",
+      "brandSlug": "asus",
+      "categorySlug": "laptop-open-box",
+      "modelNumber": "G14",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Zephyrus G14 کوچک‌ترین لپ‌تاپ گیمینگ رده‌ی بالای ASUS است. این نسخه در حد نو با یک بار باز شدن جعبه، با قیمتی پایین‌تر از خط تولید جدید ارائه می‌شود.",
+      "shortDescription": "گیمینگ فشرده و سبک — یک نسخه‌ی در حد نو با تخفیف",
+      "condition": "LIKE_NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 40,
+      "images": [
+        {
+          "url": "/seed-images/asus-rog-zephyrus-g14.svg",
+          "altText": "تصویر نمونه‌ی ASUS ROG Zephyrus G14 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "AMD Ryzen 9 8945HS",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4060 Laptop ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۴ اینچ QHD+ ۱۲۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۱٫۷ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-G14-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "118000000",
+          "compareAtPrice": "135000000",
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 3,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "msi-codex-r2",
+      "name": "MSI Codex R2",
+      "brandSlug": "msi",
+      "categorySlug": "gaming-pc",
+      "modelNumber": "CodexR2",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Codex R2 برای شروع گیمینگ روی FHD/QHD کافی است. این نسخه جعبه‌اش یک‌بار باز شده و دستگاه پیش از عرضه روشن و تست شده.",
+      "shortDescription": "ورودی گیمینگ باقیمت مناسب — جعبه باز شده",
+      "condition": "OPEN_BOX",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 36,
+      "images": [
+        {
+          "url": "/seed-images/msi-codex-r2.svg",
+          "altText": "تصویر نمونه‌ی MSI Codex R2 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-pc",
+          "value": null,
+          "customValue": "Intel Core i7-14700F",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-pc",
+          "value": null,
+          "customValue": "GeForce RTX 4070 SUPER ۱۲GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "psu-pc",
+          "value": null,
+          "customValue": "۶۵۰ وات — ۸۰+ Bronze",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-CODEXR2-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "96000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 5,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "microsoft-surface-laptop-6",
+      "name": "Microsoft Surface Laptop 6",
+      "brandSlug": "microsoft",
+      "categorySlug": "surface",
+      "modelNumber": "Laptop6",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Surface Laptop 6 بدون بخش جدا‌شدنی، فرم لپ‌تاپ معمولی دارد. بدنه‌ی فلزی و صفحه‌کلید مکانیکی نرم آن را برای تایپ طولانی مناسب می‌کند.",
+      "shortDescription": "لپ‌تاپ کلاسیک سرفیس برای کار اداری",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 35,
+      "images": [
+        {
+          "url": "/seed-images/microsoft-surface-laptop-6.svg",
+          "altText": "تصویر نمونه‌ی Microsoft Surface Laptop 6 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core Ultra 7 165H",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "Intel Graphics داخلی",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۳٫۸ اینچ PixelSense لمسی",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۱٫۳ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MS-LAPTOP6-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "89000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 3,
+            "reservedQuantity": 1,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "lenovo-legion-pro-7i",
+      "name": "Lenovo Legion Pro 7i",
+      "brandSlug": "lenovo",
+      "categorySlug": "laptop-open-box",
+      "modelNumber": "Pro7i",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Legion Pro 7i در رده‌ی بالای خط تولید Lenovo است؛ سیستم خنک‌کاری Legion Coldfront برای نگه‌داشتن فرکانس زیر بار طولانی طراحی شده. این نسخه جعبه‌اش یک‌بار باز شده، دستگاه دست‌نخورده است.",
+      "shortDescription": "فلگ‌شیپ Legion با جعبه بازشده",
+      "condition": "OPEN_BOX",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 30,
+      "images": [
+        {
+          "url": "/seed-images/lenovo-legion-pro-7i.svg",
+          "altText": "تصویر نمونه‌ی Lenovo Legion Pro 7i — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core i9-14900HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4090 Laptop ۱۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۶ اینچ QHD+ ۲۴۰Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۶ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-LENOVO-LEGION7I-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "175000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 0,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "asus-proart-studiobook-16",
+      "name": "ASUS ProArt Studiobook 16",
+      "brandSlug": "asus",
+      "categorySlug": "laptop-new",
+      "modelNumber": "Studiobook16",
+      "gtin": null,
+      "partNumber": null,
+      "description": "ProArt Studiobook 16 با پنل کالیبره‌شده‌ی کارخانه‌ای (Pantone Validated) برای کارهایی که دقت رنگ در آن‌ها مهم است ساخته شده. دسته‌ی چرخشی ASUS Dial کنترل لایه‌ها را سریع‌تر می‌کند.",
+      "shortDescription": "دقت رنگ کالیبره‌شده برای طراحان و تدوین‌گران",
+      "condition": "NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 25,
+      "images": [
+        {
+          "url": "/seed-images/asus-proart-studiobook-16.svg",
+          "altText": "تصویر نمونه‌ی ASUS ProArt Studiobook 16 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core i9-13980HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "GeForce RTX 4070 Laptop ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۶ اینچ ۴K OLED",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۲٫۴ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-PROART16-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "155000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 0,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "lenovo-loq-15",
+      "name": "Lenovo LOQ 15",
+      "brandSlug": "lenovo",
+      "categorySlug": "laptop-stock",
+      "modelNumber": "LOQ15",
+      "gtin": null,
+      "partNumber": null,
+      "description": "LOQ 15 برای شروع گیمینگ با بودجه‌ی محدودتر طراحی شده؛ همان پلتفرم خنک‌کاری Legion را در بدنه‌ای ساده‌تر دارد. محموله‌ی فعلی پیش‌فروش است.",
+      "shortDescription": "ورودی گیمینگ — محموله‌ی بعدی در راه است",
+      "condition": "STOCK",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 20,
+      "images": [
+        {
+          "url": "/seed-images/lenovo-loq-15.svg",
+          "altText": "تصویر نمونه‌ی Lenovo LOQ 15 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core i5-13450HX",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4050 Laptop ۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۵٫۶ اینچ FHD ۱۴۴Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۳ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-LENOVO-LOQ15-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "78000000",
+          "compareAtPrice": null,
+          "isPreorder": true,
+          "inventory": {
+            "quantity": 0,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "msi-katana-15",
+      "name": "MSI Katana 15",
+      "brandSlug": "msi",
+      "categorySlug": "laptop-stock",
+      "modelNumber": "Katana15",
+      "gtin": null,
+      "partNumber": null,
+      "description": "Katana 15 یک دستگاه دست‌دوم تست‌شده است؛ باتری و صفحه‌کلید قبل از عرضه بازبینی شده‌اند. برای شروع گیمینگ با بودجه‌ی محدودتر مناسب است.",
+      "shortDescription": "گیمینگ اقتصادی — کارکرده و تست‌شده",
+      "condition": "STOCK",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 16,
+      "images": [
+        {
+          "url": "/seed-images/msi-katana-15.svg",
+          "altText": "تصویر نمونه‌ی MSI Katana 15 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "Intel Core i7-13620H",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4060 Laptop ۸GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۵٫۶ اینچ FHD ۱۴۴Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۲۵ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-KATANA15-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "98000000",
+          "compareAtPrice": "112000000",
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 2,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "msi-ws66",
+      "name": "MSI WS66 Workstation",
+      "brandSlug": "msi",
+      "categorySlug": "laptop-open-box",
+      "modelNumber": "WS66",
+      "gtin": null,
+      "partNumber": null,
+      "description": "WS66 با گرافیک حرفه‌ای NVIDIA RTX A-series برای نرم‌افزارهای مهندسی تست و تأیید شده. این مدل نسل قبل است و با قیمت پایین‌تر از نسل جدید، به‌صورت پیش‌فروش عرضه می‌شود.",
+      "shortDescription": "ورک‌استیشن نسل قبل با قیمت مناسب — محموله‌ی بعدی",
+      "condition": "LIKE_NEW",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 15,
+      "images": [
+        {
+          "url": "/seed-images/msi-ws66.svg",
+          "altText": "تصویر نمونه‌ی MSI WS66 Workstation — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-ws",
+          "value": null,
+          "customValue": "Intel Core i7-11800H",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-ws",
+          "value": null,
+          "customValue": "NVIDIA RTX A5000 ۱۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-ws",
+          "value": null,
+          "customValue": "۱۵٫۶ اینچ ۴K",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-ws",
+          "value": null,
+          "customValue": "۲٫۱ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-MSI-WS66-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "142000000",
+          "compareAtPrice": null,
+          "isPreorder": true,
+          "inventory": {
+            "quantity": 0,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    },
+    {
+      "slug": "asus-tuf-gaming-a15",
+      "name": "ASUS TUF Gaming A15",
+      "brandSlug": "asus",
+      "categorySlug": "laptop-stock",
+      "modelNumber": "TUFA15",
+      "gtin": null,
+      "partNumber": null,
+      "description": "TUF Gaming A15 با استاندارد مقاومت نظامی MIL-STD-810H ساخته شده. این نسخه کارکرده، پیش از عرضه از نظر سلامت باتری و بدنه بازبینی و تست شده.",
+      "shortDescription": "بدنه‌ی مقاوم نظامی — کارکرده و تست‌شده",
+      "condition": "STOCK",
+      "status": "ACTIVE",
+      "isVisibleOnSite": true,
+      "isVisibleInSearch": true,
+      "isVisibleInCategory": true,
+      "returnPolicyNote": null,
+      "shippingNote": null,
+      "priority": 14,
+      "images": [
+        {
+          "url": "/seed-images/asus-tuf-gaming-a15.svg",
+          "altText": "تصویر نمونه‌ی ASUS TUF Gaming A15 — عکس واقعی جایگزین می‌شود",
+          "sortOrder": 0,
+          "isPrimary": true
+        }
+      ],
+      "specifications": [
+        {
+          "definitionKey": "cpu-gaming",
+          "value": null,
+          "customValue": "AMD Ryzen 7 7735HS",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "gpu-gaming",
+          "value": null,
+          "customValue": "GeForce RTX 4050 Laptop ۶GB",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "display-gaming",
+          "value": null,
+          "customValue": "۱۵٫۶ اینچ FHD ۱۴۴Hz",
+          "numericValue": null
+        },
+        {
+          "definitionKey": "weight-gaming",
+          "value": null,
+          "customValue": "۲٫۲ کیلوگرم",
+          "numericValue": null
+        }
+      ],
+      "variants": [
+        {
+          "sku": "ARB-ASUS-TUFA15-DEFAULT",
+          "name": null,
+          "isDefault": true,
+          "priceModel": "FIXED",
+          "supplierPrice": null,
+          "profitType": null,
+          "profitAmountToman": null,
+          "profitPercentBasisPoints": null,
+          "finalPrice": "86000000",
+          "compareAtPrice": null,
+          "isPreorder": false,
+          "inventory": {
+            "quantity": 3,
+            "reservedQuantity": 0,
+            "lowStockThreshold": null
+          },
+          "specifications": []
+        }
+      ]
+    }
+  ],
+  "homepageBlocks": [
+    {
+      "type": "HERO",
+      "sortOrder": 0,
+      "isActive": true,
+      "title": "تکنولوژی با ظرافت",
+      "subtitle": "لپ‌تاپ، سرفیس و کیس گیمینگ — تست‌شده پیش از ارسال",
+      "ctaLabel": "مشاهده‌ی فروشگاه",
+      "ctaUrl": "/products",
+      "imageDesktop": "/seed-images/hero-desktop.svg",
+      "imageMobile": "/seed-images/hero-mobile.svg",
+      "imageAlt": "لپ‌تاپ‌های منتخب آربایت روی میز کار",
+      "config": {
+        "framesManifest": "/hero/manifest.json"
+      },
+      "startsAt": null,
+      "endsAt": null
+    },
+    {
+      "type": "CATEGORY_GRID",
+      "sortOrder": 1,
+      "isActive": true,
+      "title": "دسته‌بندی‌ها",
+      "subtitle": null,
+      "ctaLabel": null,
+      "ctaUrl": null,
+      "imageDesktop": null,
+      "imageMobile": null,
+      "imageAlt": null,
+      "config": {
+        "categorySlugs": [
+          "laptop-new",
+          "laptop-open-box",
+          "laptop-stock",
+          "surface",
+          "gaming-pc"
+        ]
+      },
+      "startsAt": null,
+      "endsAt": null
+    },
+    {
+      "type": "FLAGSHIP_DUEL",
+      "sortOrder": 2,
+      "isActive": true,
+      "title": "دو پرچم‌دار، یک انتخاب",
+      "subtitle": "هر دو با RTX 5090. تفاوت در توان پایدار و نمایشگر است.",
+      "ctaLabel": null,
+      "ctaUrl": null,
+      "imageDesktop": null,
+      "imageMobile": null,
+      "imageAlt": null,
+      "config": {
+        "metrics": ["cmueb9n6k0009s08tppc0fol4", "cmueb9n6o000as08t9roy50fp"],
+        "productSlugs": ["msi-titan-18-hx", "asus-rog-strix-scar-18"]
+      },
+      "startsAt": null,
+      "endsAt": null
+    },
+    {
+      "type": "PRODUCT_RAIL",
+      "sortOrder": 3,
+      "isActive": true,
+      "title": "محصولات منتخب",
+      "subtitle": null,
+      "ctaLabel": null,
+      "ctaUrl": null,
+      "imageDesktop": null,
+      "imageMobile": null,
+      "imageAlt": null,
+      "config": {
+        "productSlugs": [
+          "asus-rog-strix-g16",
+          "lenovo-legion-pro-7i",
+          "microsoft-surface-laptop-studio-2"
+        ]
+      },
+      "startsAt": null,
+      "endsAt": null
+    },
+    {
+      "type": "BENEFITS",
+      "sortOrder": 4,
+      "isActive": true,
+      "title": "چرا آربایت",
+      "subtitle": "هر دستگاه پیش از ارسال تست می‌شود و با گارانتی رسمی به دست شما می‌رسد.",
+      "ctaLabel": null,
+      "ctaUrl": null,
+      "imageDesktop": null,
+      "imageMobile": null,
+      "imageAlt": null,
+      "config": null,
+      "startsAt": null,
+      "endsAt": null
+    },
+    {
+      "type": "BLOG_RAIL",
+      "sortOrder": 5,
+      "isActive": true,
+      "title": "از وبلاگ آربایت",
+      "subtitle": null,
+      "ctaLabel": null,
+      "ctaUrl": null,
+      "imageDesktop": null,
+      "imageMobile": null,
+      "imageAlt": null,
+      "config": null,
+      "startsAt": null,
+      "endsAt": null
+    }
+  ]
+}

@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
 
-from apps.catalog.models import Category, Product
-from apps.inventory.models import StockMovement
+from apps.catalog.models import Brand, Category, Product, ProductVariant
+from apps.inventory.models import Inventory
 from apps.orders.models import InvalidOrderTransition, Order, OrderItem, Payment
 from apps.orders.providers import PaymentProviderError, get_provider
 from apps.settings.models import ApiCredential
@@ -21,11 +21,16 @@ from apps.users.models import User
 class OrderStateMachineTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(phone="09121234567", password="test-pass")
+        brand = Brand.objects.create(name="Test Brand", slug="test-brand")
         category = Category.objects.create(slug="desktop-stands", name="Desktop Stands")
         self.product = Product.objects.create(
-            sku="TEST-001", slug="test-product", name="Test Product", price=390000, category=category
+            slug="test-product", name="Test Product", brand=brand, category=category, condition="NEW"
         )
-        StockMovement.objects.record(self.product, "purchase", 10, reference="PO-1")
+        self.variant = ProductVariant.objects.create(
+            product=self.product, sku="TEST-001", is_default=True, final_price=390000
+        )
+        self.inventory = Inventory.objects.create(variant=self.variant)
+        Inventory.objects.stock_in(self.variant, 10, reference="PO-1")
         self.order = Order.objects.create(
             user=self.user,
             shipping_address={"city": "Tehran", "line": "..."},
@@ -34,10 +39,10 @@ class OrderStateMachineTests(TestCase):
         )
         OrderItem.objects.create(
             order=self.order,
-            product=self.product,
-            product_name=self.product.name,
-            sku=self.product.sku,
-            price=self.product.price,
+            variant=self.variant,
+            product_name_snapshot=self.product.name,
+            sku_snapshot=self.variant.sku,
+            unit_price=self.variant.final_price,
             quantity=2,
         )
 
@@ -48,10 +53,10 @@ class OrderStateMachineTests(TestCase):
     def test_happy_path_transitions_and_stock_deduction(self):
         self.order.mark_paid()
         self.order.refresh_from_db()
-        self.product.refresh_from_db()
+        self.inventory.refresh_from_db()
         self.assertEqual(self.order.status, "paid")
         self.assertIsNotNone(self.order.paid_at)
-        self.assertEqual(self.product.stock_count, 8)  # deducted at payment, not later
+        self.assertEqual(self.inventory.quantity, 8)  # deducted at payment, not later
 
         self.order.start_processing()
         self.order.refresh_from_db()
@@ -87,43 +92,43 @@ class OrderStateMachineTests(TestCase):
     def test_double_mark_paid_does_not_double_deduct_stock(self):
         """Guards the same class of bug as a duplicate payment-gateway callback."""
         self.order.mark_paid()
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, 8)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)
 
         with self.assertRaises(InvalidOrderTransition):
             self.order.mark_paid()
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, 8)  # unchanged — not deducted twice
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)  # unchanged — not deducted twice
 
     def test_cancel_from_paid_reverses_stock(self):
         self.order.mark_paid()
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, 8)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)
 
         self.order.cancel(reason="مشتری منصرف شد")
-        self.product.refresh_from_db()
+        self.inventory.refresh_from_db()
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, "canceled")
-        self.assertEqual(self.product.stock_count, 10)  # fully reversed
+        self.assertEqual(self.inventory.quantity, 10)  # fully reversed
 
     def test_cancel_from_processing_reverses_stock(self):
         self.order.mark_paid()
         self.order.start_processing()
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, 8)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)
 
         self.order.cancel(reason="مشتری منصرف شد")
-        self.product.refresh_from_db()
+        self.inventory.refresh_from_db()
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, "canceled")
-        self.assertEqual(self.product.stock_count, 10)  # fully reversed
+        self.assertEqual(self.inventory.quantity, 10)  # fully reversed
 
     def test_cancel_from_pending_does_not_touch_stock(self):
         self.order.cancel(reason="منصرف شدم")
-        self.product.refresh_from_db()
+        self.inventory.refresh_from_db()
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, "canceled")
-        self.assertEqual(self.product.stock_count, 10)  # nothing was ever deducted
+        self.assertEqual(self.inventory.quantity, 10)  # nothing was ever deducted
 
     def test_mark_shipped_without_tracking_code_is_rejected(self):
         self.order.mark_paid()
@@ -138,14 +143,14 @@ class OrderStateMachineTests(TestCase):
         self.order.start_processing()
         self.order.mark_shipped(tracking_code="TRACK-1")
         self.order.mark_delivered()
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_count, 8)
+        self.inventory.refresh_from_db()
+        self.assertEqual(self.inventory.quantity, 8)
 
         self.order.mark_returned()
-        self.product.refresh_from_db()
+        self.inventory.refresh_from_db()
         self.order.refresh_from_db()
         self.assertEqual(self.order.status, "returned")
-        self.assertEqual(self.product.stock_count, 10)
+        self.assertEqual(self.inventory.quantity, 10)
 
 
 def _zarinpal_request_response(authority="A-TEST-AUTHORITY"):

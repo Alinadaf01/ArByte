@@ -16,12 +16,15 @@ ORDER_PREFETCH = ("items", "payments", "status_logs")
 
 
 class AdminOrderItemSerializer(serializers.Serializer):
+    """D-02 §۲ — field names match apps/orders/models.py's OrderItem
+    (variant + *_snapshot fields), not vybeshop's product/sku/price/color_name."""
+
     id = serializers.IntegerField()
-    product = serializers.IntegerField(source="product_id", allow_null=True)
-    product_name = serializers.CharField()
-    sku = serializers.CharField()
-    price = serializers.IntegerField()
-    color_name = serializers.CharField()
+    variant = serializers.IntegerField(source="variant_id", allow_null=True)
+    product_name = serializers.CharField(source="product_name_snapshot")
+    variant_name = serializers.CharField(source="variant_name_snapshot", allow_null=True)
+    sku = serializers.CharField(source="sku_snapshot")
+    price = serializers.IntegerField(source="unit_price")
     quantity = serializers.IntegerField()
     subtotal = serializers.IntegerField()
 

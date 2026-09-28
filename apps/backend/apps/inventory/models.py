@@ -11,7 +11,6 @@ D-02 report). `version` is still a real column (Prisma parity), just not the
 concurrency-safety mechanism here.
 """
 
-from django.core.exceptions import ValidationError
 from django.db import models, transaction
 
 INVENTORY_TRANSACTION_TYPE_CHOICES = [

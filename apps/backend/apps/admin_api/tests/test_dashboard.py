@@ -12,11 +12,12 @@ class AdminDashboardApiTests(AdminApiTestMixin, APITestCase):
         self.staff = self.make_staff()
         self.client.force_authenticate(user=self.staff)
         self.product = self.make_product(stock=10, price=100000)
+        self.variant = self.product.variants.first()
         customer = self.make_customer()
         self.order = Order.objects.create(user=customer, shipping_address={}, subtotal=100000, total=100000)
         OrderItem.objects.create(
-            order=self.order, product=self.product, product_name=self.product.name, sku=self.product.sku,
-            price=100000, quantity=1,
+            order=self.order, variant=self.variant, product_name_snapshot=self.product.name,
+            sku_snapshot=self.variant.sku, unit_price=100000, quantity=1,
         )
         self.order.paid_at = timezone.now()
         self.order.status = "paid"

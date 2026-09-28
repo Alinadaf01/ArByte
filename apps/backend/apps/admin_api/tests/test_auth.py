@@ -43,7 +43,10 @@ class AdminPermissionGateTests(AdminApiTestMixin, APITestCase):
     def test_authenticated_non_staff_is_denied(self):
         customer = self.make_customer()
         self.client.force_authenticate(user=customer)
-        for url_name in ["admin-dashboard", "admin-product-list", "admin-order-list", "admin-user-list", "admin-activity-log"]:
+        # admin-product-list dropped D-02 (admin/products/* disabled, see
+        # docs/backend/ADMIN-DISABLED.md); admin-category-list stands in as
+        # another §7.5-gated section that's still live.
+        for url_name in ["admin-dashboard", "admin-category-list", "admin-order-list", "admin-user-list", "admin-activity-log"]:
             response = self.client.get(reverse(url_name))
             self.assertEqual(response.status_code, 403, f"{url_name} should 403 for non-staff")
 
