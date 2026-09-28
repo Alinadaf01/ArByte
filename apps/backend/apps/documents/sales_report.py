@@ -35,15 +35,15 @@ def build_sales_report_context(
     if date_to:
         orders = orders.filter(paid_at__date__lte=date_to)
     totals = orders.aggregate(
-        subtotal=Sum("subtotal"), discount=Sum("discount"), shipping_cost=Sum("shipping_cost"),
-        tax=Sum("tax"), total=Sum("total"), order_count=Count("id"),
+        subtotal=Sum("subtotal"), discount=Sum("discount_total"), shipping_cost=Sum("shipping_cost"),
+        total=Sum("final_total"), order_count=Count("id"),
     )
 
-    payments = Payment.objects.filter(status="success")
+    payments = Payment.objects.filter(status="CONFIRMED")
     if date_from:
-        payments = payments.filter(verified_at__date__gte=date_from)
+        payments = payments.filter(updated_at__date__gte=date_from)
     if date_to:
-        payments = payments.filter(verified_at__date__lte=date_to)
+        payments = payments.filter(updated_at__date__lte=date_to)
     gateway_rows = (
         payments.values("gateway").annotate(total=Sum("amount"), order_count=Count("order_id", distinct=True)).order_by("-total")
     )
@@ -55,7 +55,6 @@ def build_sales_report_context(
             "subtotal": format_toman(totals["subtotal"] or 0),
             "discount": format_toman(totals["discount"] or 0),
             "shipping_cost": format_toman(totals["shipping_cost"] or 0),
-            "tax": format_toman(totals["tax"] or 0),
             "total": format_toman(totals["total"] or 0),
             "gateway_rows": [
                 {

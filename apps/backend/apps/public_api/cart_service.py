@@ -118,10 +118,15 @@ def add_item(cart: Cart, variant_id, quantity: int) -> CartItem:
     new_quantity = (existing.quantity if existing else 0) + quantity
     _check_quantity_against_stock(variant, new_quantity)
     if existing:
+        # D-05 §۲ — عکس‌فوری قیمت هم روی هر افزودن تازه می‌شود؛ منظور از
+        # PRICE_CHANGED «از وقتی این آیتم آخرین‌بار به سبد نگاه شد» است.
         existing.quantity = new_quantity
-        existing.save(update_fields=["quantity"])
+        existing.unit_price_snapshot = variant.final_price
+        existing.save(update_fields=["quantity", "unit_price_snapshot"])
         return existing
-    return CartItem.objects.create(cart=cart, variant=variant, quantity=new_quantity)
+    return CartItem.objects.create(
+        cart=cart, variant=variant, quantity=new_quantity, unit_price_snapshot=variant.final_price
+    )
 
 
 def update_item_quantity(cart: Cart, item_id, quantity: int) -> CartItem:
@@ -131,7 +136,8 @@ def update_item_quantity(cart: Cart, item_id, quantity: int) -> CartItem:
         raise ApiError("NOT_FOUND", status=404) from None
     _check_quantity_against_stock(item.variant, quantity)
     item.quantity = quantity
-    item.save(update_fields=["quantity"])
+    item.unit_price_snapshot = item.variant.final_price
+    item.save(update_fields=["quantity", "unit_price_snapshot"])
     return item
 
 

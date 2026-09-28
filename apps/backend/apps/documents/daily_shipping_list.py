@@ -18,16 +18,12 @@ def build_daily_shipping_list_context(orders: QuerySet, *, target_date: datetime
     )
     ctx["rows"] = [
         {
-            "number": order.number,
-            "receiver_name": (order.shipping_address or {}).get("receiverName", ""),
-            "receiver_phone": (order.shipping_address or {}).get("receiverPhone", ""),
+            "number": order.order_number,
+            "receiver_name": order.shipping_recipient_name,
+            "receiver_phone": order.shipping_mobile,
             "address_line": ", ".join(
                 part
-                for part in [
-                    (order.shipping_address or {}).get("province", ""),
-                    (order.shipping_address or {}).get("city", ""),
-                    (order.shipping_address or {}).get("line", ""),
-                ]
+                for part in [order.shipping_province, order.shipping_city, order.shipping_address_line]
                 if part
             ),
             "item_count": sum(item.quantity for item in order.items.all()),

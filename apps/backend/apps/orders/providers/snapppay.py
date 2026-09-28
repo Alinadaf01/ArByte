@@ -40,10 +40,10 @@ class SnapPayProvider(PaymentProvider):
     def request(self, order, callback_url: str) -> PaymentRequestResult:
         token = self._get_token()
         payload = {
-            "amount": order.total * _RIAL_PER_TOMAN,
+            "amount": order.final_total * _RIAL_PER_TOMAN,
             "returnURL": callback_url,
-            "externalSourceAmount": order.total * _RIAL_PER_TOMAN,
-            "orderId": order.number,
+            "externalSourceAmount": order.final_total * _RIAL_PER_TOMAN,
+            "orderId": order.order_number,
         }
         try:
             response = requests.post(
@@ -65,7 +65,7 @@ class SnapPayProvider(PaymentProvider):
             return PaymentVerifyResult(success=False, ref_id="", raw_response=callback_data)
 
         token = self._get_token()
-        payload = {"paymentToken": payment.authority}
+        payload = {"paymentToken": payment.provider_ref}
         try:
             response = requests.post(
                 _VERIFY_URL, json=payload, headers={"Authorization": f"Bearer {token}"}, timeout=15

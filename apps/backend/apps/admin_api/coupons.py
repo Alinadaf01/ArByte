@@ -8,19 +8,26 @@ from .permissions import require_section
 
 
 class AdminCouponSerializer(serializers.ModelSerializer):
+    """D-05 §۴ — عیناً apps/content/models.py's Coupon بازنویسی‌شده (طبق
+    Prisma). `categories`/`products` حذف شدند (کوپن دیگر به‌دسته/محصول
+    محدود نمی‌شود)؛ `used_count` جایش را به شمارش واقعی `CouponUsage` داد."""
+
     id = serializers.SerializerMethodField()
+    used_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Coupon
         fields = [
-            "id", "code", "type", "value", "min_order_value", "max_discount",
-            "usage_limit", "used_count", "per_user_limit", "starts_at", "ends_at",
-            "categories", "products", "is_active",
+            "id", "code", "type", "amount_toman", "percent_basis_points",
+            "minimum_order_amount", "maximum_discount_amount",
+            "usage_limit", "used_count", "per_user_limit", "start_date", "end_date", "is_active",
         ]
-        read_only_fields = ["used_count"]
 
     def get_id(self, obj: Coupon) -> str:
         return str(obj.pk)
+
+    def get_used_count(self, obj: Coupon) -> int:
+        return obj.usages.count()
 
 
 class AdminCouponListCreateView(AdminActivityLogMixin, ListCreateAPIView):

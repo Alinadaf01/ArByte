@@ -46,9 +46,10 @@ class AdminDocumentPdfTests(AdminApiTestMixin, APITestCase):
         self.variant = self.product.variants.first()
         self.order = Order.objects.create(
             user=self.customer,
-            shipping_address={"province": "تهران", "city": "تهران", "line": "خیابان ولیعصر", "receiverName": "مشتری تست", "receiverPhone": "09121110030"},
-            status="processing",
-            subtotal=100000, total=100000,
+            shipping_recipient_name="مشتری تست", shipping_mobile="09121110030",
+            shipping_province="تهران", shipping_city="تهران", shipping_address_line="خیابان ولیعصر",
+            status="PROCESSING",
+            subtotal=100000, final_total=100000,
         )
         OrderItem.objects.create(
             order=self.order,
@@ -57,6 +58,7 @@ class AdminDocumentPdfTests(AdminApiTestMixin, APITestCase):
             sku_snapshot=self.variant.sku,
             unit_price=100000,
             quantity=1,
+            final_price=100000,
         )
 
     def _assert_pdf(self, response):
@@ -65,14 +67,17 @@ class AdminDocumentPdfTests(AdminApiTestMixin, APITestCase):
         self.assertTrue(response.content.startswith(b"%PDF-"))
 
     def test_admin_order_invoice_pdf(self):
-        self.order.status = "paid"
+        self.order.status = "PAID"
         self.order.paid_at = timezone.now()
         self.order.save(update_fields=["status", "paid_at"])
         response = self.client.get(reverse("admin-order-invoice-pdf", args=[self.order.pk]))
         self._assert_pdf(response)
 
     def test_admin_order_invoice_pdf_rejects_unpaid_order(self):
-        pending_order = Order.objects.create(user=self.customer, shipping_address={}, status="pending", total=1000)
+        pending_order = Order.objects.create(
+            user=self.customer, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", status="PENDING", subtotal=1000, final_total=1000,
+        )
         response = self.client.get(reverse("admin-order-invoice-pdf", args=[pending_order.pk]))
         self.assertEqual(response.status_code, 400)
 

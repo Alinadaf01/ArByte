@@ -16,13 +16,16 @@ class AdminReportsApiTests(AdminApiTestMixin, APITestCase):
         # cost_price moved to ProductVariant.supplier_price in D-02.
         ProductVariant.objects.filter(pk=self.variant.pk).update(supplier_price=40000)
         customer = self.make_customer()
-        self.order = Order.objects.create(user=customer, shipping_address={}, subtotal=100000, total=100000)
+        self.order = Order.objects.create(
+            user=customer, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=100000, final_total=100000,
+        )
         OrderItem.objects.create(
             order=self.order, variant=self.variant, product_name_snapshot=self.product.name,
-            sku_snapshot=self.variant.sku, unit_price=100000, quantity=2,
+            sku_snapshot=self.variant.sku, unit_price=100000, quantity=2, final_price=200000,
         )
         self.order.paid_at = timezone.now()
-        self.order.status = "paid"
+        self.order.status = "PAID"
         self.order.save(update_fields=["paid_at", "status"])
 
     def test_sales_report(self):

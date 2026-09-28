@@ -1,8 +1,7 @@
 import secrets
 
 from django.conf import settings
-from django.db import models, transaction
-from django.utils import timezone
+from django.db import models
 
 
 class Cart(models.Model):
@@ -35,6 +34,11 @@ class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey("catalog.ProductVariant", on_delete=models.CASCADE, related_name="cart_items")
     quantity = models.PositiveIntegerField(default=1)
+    # D-05 §۲ — عیناً Prisma's CartItem.unitPriceSnapshot؛ در D-04 جا مانده
+    # بود. صرفاً نمایش سریع سبد نیست — checkout با این مقایسه می‌کند تا
+    # PRICE_CHANGED را تشخیص دهد (قیمت واقعی چک‌اوت همیشه از واریانت زنده
+    # خوانده می‌شود، این فقط برای «آیا از وقتی افزوده شد عوض شده؟» است).
+    unit_price_snapshot = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ["cart", "variant"]
@@ -44,220 +48,138 @@ class CartItem(models.Model):
 
 
 def generate_order_number() -> str:
-    return f"ARB-{timezone.now():%y%m%d}-{secrets.token_hex(3).upper()}"
+    """D-05 §۲ — `ARB-` + ۸ رقم یکتا (سند تسک). قالب قبلی وایب
+    (`ARB-YYMMDD-<6hex>`) عمداً عوض شد تا دقیقاً با سند مطابق باشد؛ چون سند
+    خودش می‌گوید «قالب شماره را مدیر پروژه تأیید کند»، این تصمیم در
+    docs/QUESTIONS.md ثبت شده — رقم‌ها همیشه لاتین (قاعده‌ی ۹)."""
+    return f"ARB-{secrets.randbelow(10**8):08d}"
 
 
+# D-05 §۱ — دقیقاً packages/contracts/src/common/enums.ts's ORDER_STATUS_VALUES
+# (و بنابراین apps/api/prisma/schema/05-order.prisma's OrderStatus). ماشین‌حالت
+# واقعی (گذارهای مجاز) در order_status.py است، نه اینجا — این فقط فهرست مقادیر.
 ORDER_STATUS_CHOICES = [
-    ("pending", "در انتظار پرداخت"),
-    ("paid", "پرداخت‌شده"),
-    ("processing", "در حال پردازش"),
-    ("shipped", "ارسال‌شده"),
-    ("delivered", "تحویل‌شده"),
-    ("canceled", "لغوشده"),
-    ("returned", "مرجوع‌شده"),
+    ("PENDING", "ثبت شده"),
+    ("AWAITING_PAYMENT", "در انتظار پرداخت"),
+    ("PAYMENT_REVIEW", "در حال بررسی پرداخت"),
+    ("PAID", "پرداخت تأیید شد"),
+    ("PROCESSING", "در حال پردازش"),
+    ("READY_TO_SHIP", "آماده ارسال"),
+    ("SHIPPED", "ارسال شد"),
+    ("DELIVERED", "تحویل داده شد"),
+    ("CANCELLED", "لغو شد"),
 ]
 
-# Allowed forward transitions. Cancel/return are handled by dedicated methods
-# with their own eligibility checks, not blind transitions.
-_FORWARD_TRANSITIONS = {
-    "pending": {"paid"},
-    "paid": {"processing"},
-    "processing": {"shipped"},
-    "shipped": {"delivered"},
-}
-_CANCELABLE_FROM = {"pending", "paid", "processing"}
-_RETURNABLE_FROM = {"delivered"}
+# مستقل از OrderStatus (تصمیم ب، T-003) — هرگز مستقیم Order.status را ست نمی‌کند.
+PAYMENT_STATUS_CHOICES = [
+    ("UNPAID", "در انتظار پرداخت"),
+    ("RECEIPT_UPLOADED", "رسید ارسال شده"),
+    ("UNDER_REVIEW", "در حال بررسی"),
+    ("CONFIRMED", "تأیید شده"),
+]
 
+PAYMENT_METHOD_CHOICES = [
+    ("MANUAL_CARD_TO_CARD", "کارت‌به‌کارت"),
+    ("GATEWAY", "درگاه"),
+]
 
-class InvalidOrderTransition(Exception):
-    pass
+# مقدار عمومی/قرارداد فقط NONE/BALEPAY است (packages/contracts/src/common/
+# enums.ts's PAYMENT_PROVIDER_VALUES) — providerهای واقعی وایب (زرین‌پال و
+# بقیه) کدشان می‌ماند (`PAYMENT_GATEWAY_CHOICES` پایین) اما در این فیلد
+# عمومی هرگز نام نمی‌شوند، چون در چک‌اوت هرگز روشن نیستند (D-05.md §۳).
+PAYMENT_PROVIDER_CHOICES = [
+    ("NONE", "بدون درگاه"),
+    ("BALEPAY", "بله‌پی"),
+]
+
+RECEIPT_STATUS_CHOICES = [
+    ("PENDING", "در انتظار بررسی"),
+    ("APPROVED", "تأییدشده"),
+    ("REJECTED", "ردشده"),
+]
+
+RETURN_STATUS_CHOICES = [
+    ("REQUESTED", "درخواست ثبت شد"),
+    ("APPROVED", "درخواست تأیید شد"),
+    ("REJECTED", "درخواست رد شد"),
+    ("RECEIVED", "کالا دریافت شد"),
+    ("REFUNDED", "مبلغ بازگردانده شد"),
+]
+
+# providerهای واقعی درگاه (identity پلاگین apps/orders/providers) — چهارتای
+# وایب می‌مانند در کد (D-05.md §۳: «می‌مانند و خاموش‌اند») + بله‌پی تازه.
+# این فیلد داخلی/پیاده‌سازی است؛ فیلد عمومی `Payment.provider` بالا
+# (NONE/BALEPAY) چیزی است که در قرارداد API دیده می‌شود.
+PAYMENT_GATEWAY_CHOICES = [
+    ("ZARINPAL", "زرین‌پال"),
+    ("IDPAY", "آیدی‌پی"),
+    ("SNAPPPAY", "اسنپ‌پی"),
+    ("DIGIPAY", "دیجی‌پی"),
+    ("BALEPAY", "بله‌پی"),
+]
 
 
 class Order(models.Model):
-    number = models.CharField(max_length=30, unique=True, default=generate_order_number, editable=False)
+    """D-05 §۱ — عیناً `apps/api/prisma/schema/05-order.prisma`'س Order.
+    آدرس به‌صورت Snapshot در خود سفارش کپی می‌شود (نه FK به Address) — اصل
+    Price Snapshot تعمیم‌یافته به آدرس، چون آدرس کاربر ممکن است بعداً
+    ویرایش/حذف شود ولی سفارش قدیمی نباید عوض شود."""
+
+    order_number = models.CharField(max_length=30, unique=True, default=generate_order_number, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="orders")
-    # Snapshot, not a FK — a later edit/delete of the Address must not alter past orders.
-    shipping_address = models.JSONField(
-        default=dict, help_text="{title, province, city, line, postalCode, receiverName, receiverPhone}"
-    )
-    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="pending")
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default="PENDING")
+    # تصمیم ب (T-003) — منبع حقیقت پرداخت Payment.status است؛ این فیلد هرگز
+    # مستقیم از Payment ست نمی‌شود، فقط توسط order_status.py synchronize می‌شود.
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="UNPAID")
 
-    subtotal = models.PositiveIntegerField(default=0)
-    discount = models.PositiveIntegerField(default=0)
+    shipping_recipient_name = models.CharField(max_length=100)
+    shipping_mobile = models.CharField(max_length=20)
+    shipping_province = models.CharField(max_length=100)
+    shipping_city = models.CharField(max_length=100)
+    shipping_address_line = models.CharField(max_length=500)
+    shipping_postal_code = models.CharField(max_length=10, blank=True, null=True)
+
+    subtotal = models.PositiveIntegerField()
+    discount_total = models.PositiveIntegerField(default=0)
     shipping_cost = models.PositiveIntegerField(default=0)
-    tax = models.PositiveIntegerField(default=0)
-    total = models.PositiveIntegerField(default=0)
-    coupon = models.ForeignKey(
-        "content.Coupon", on_delete=models.SET_NULL, blank=True, null=True, related_name="orders"
-    )
+    final_total = models.PositiveIntegerField()
+    # تصمیم ج (Prisma) — دلیل لغو، مثلاً "PAYMENT_TIMEOUT" (Celery beat خودکار).
+    cancel_reason = models.CharField(max_length=255, blank=True, null=True)
 
-    note = models.TextField(blank=True)
-    tracking_code = models.CharField(max_length=100, blank=True)
+    # الحاقیه‌ی Django (نه در Prisma — آن‌جا فقط از OrderStatusHistory
+    # استخراج می‌شود). این سه denormalize شده‌اند چون گزارش‌های ادمین وایب
+    # (dashboard.py، customer_statement.py) روی aggregate/filter در سطح
+    # دیتابیس روی این تاریخ‌ها ساخته شده‌اند — کوئری روی OrderStatusHistory
+    # برای هر گزارش scan/subquery اضافه می‌خواست بدون سود واقعی؛
+    # order_status.py تنها نویسنده است.
+    paid_at = models.DateTimeField(blank=True, null=True)
+    shipped_at = models.DateTimeField(blank=True, null=True)
+    delivered_at = models.DateTimeField(blank=True, null=True)
 
-    # Invoice PDFs are expensive to render (headless Chromium) and mostly
-    # static once paid, so the rendered file is cached here and only
-    # regenerated when invoice_pdf_generated_at is older than updated_at
-    # (e.g. a tracking code was added after shipping) — see apps/documents.
+    # Invoice PDF رندرش گران است (Playwright) و بعد از پرداخت عملاً ثابت
+    # می‌ماند — الحاقیه‌ی Django (نه در Prisma)، cache برای apps.documents.
     invoice_pdf = models.FileField(upload_to="invoices/", blank=True, null=True)
     invoice_pdf_generated_at = models.DateTimeField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    paid_at = models.DateTimeField(blank=True, null=True)
-    shipped_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["order_number"]),
+            models.Index(fields=["user"]),
+            models.Index(fields=["status"]),
+        ]
 
     def __str__(self):
-        return self.number
-
-    def _transition(self, new_status: str, *, note: str = "", user=None, extra_fields: list[str] | None = None):
-        if new_status not in _FORWARD_TRANSITIONS.get(self.status, set()) | {"canceled", "returned"}:
-            raise InvalidOrderTransition(f"{self.status} -> {new_status} مجاز نیست.")
-        previous = self.status
-        self.status = new_status
-        self.save(update_fields=["status", "updated_at", *(extra_fields or [])])
-        OrderStatusLog.objects.create(
-            order=self, from_status=previous, to_status=new_status, note=note, user=user
-        )
-
-    def _already_notified_for(self, to_status: str) -> bool:
-        """Belt-and-suspenders check on top of the InvalidOrderTransition
-        guards that already make each forward transition reachable only
-        once per order — if a status log for this transition exists, the
-        SMS for it already went out, full stop."""
-        return self.status_logs.filter(to_status=to_status).exists()
-
-    @transaction.atomic
-    def mark_paid(self, *, user=None):
-        """The only place stock leaves the ledger for a sale — never at order
-        creation. Each Inventory.objects.stock_out() call locks its
-        Inventory row (select_for_update), so concurrent payments can't
-        oversell — see apps/inventory/models.py (D-02)."""
-        from apps.inventory.models import Inventory
-
-        if self.status != "pending":
-            raise InvalidOrderTransition("فقط سفارش pending می‌تواند paid شود.")
-        already_notified = self._already_notified_for("paid")
-        for item in self.items.select_related("variant"):
-            if item.variant_id:
-                Inventory.objects.stock_out(
-                    item.variant, item.quantity, reference=self.number, user=user
-                )
-        self.paid_at = timezone.now()
-        self._transition("paid", user=user, extra_fields=["paid_at"])
-        if not already_notified:
-            transaction.on_commit(lambda: _send_order_paid_notifications(self))
-
-    @transaction.atomic
-    def start_processing(self, *, user=None):
-        if self.status != "paid":
-            raise InvalidOrderTransition("فقط سفارش paid می‌تواند processing شود.")
-        self._transition("processing", user=user)
-
-    @transaction.atomic
-    def mark_shipped(self, *, tracking_code: str, user=None):
-        if self.status != "processing":
-            raise InvalidOrderTransition("فقط سفارش processing می‌تواند shipped شود.")
-        if not tracking_code or not tracking_code.strip():
-            # Enforced here, not just in the admin form — a status change to
-            # "shipped" with no tracking code means an SMS with a blank code
-            # goes to the customer, which is worse than not shipping it yet.
-            raise InvalidOrderTransition("کد رهگیری برای ثبت ارسال الزامی است.")
-        already_notified = self._already_notified_for("shipped")
-        self.tracking_code = tracking_code
-        self.shipped_at = timezone.now()
-        self._transition("shipped", note=tracking_code, user=user, extra_fields=["tracking_code", "shipped_at"])
-        if not already_notified:
-            transaction.on_commit(lambda: _send_order_shipped_notification(self))
-
-    @transaction.atomic
-    def mark_delivered(self, *, user=None):
-        if self.status != "shipped":
-            raise InvalidOrderTransition("فقط سفارش shipped می‌تواند delivered شود.")
-        self._transition("delivered", user=user)
-
-    @transaction.atomic
-    def cancel(self, *, reason: str = "", user=None):
-        from apps.inventory.models import Inventory
-
-        if self.status not in _CANCELABLE_FROM:
-            raise InvalidOrderTransition(f"سفارش با وضعیت {self.status} قابل لغو نیست.")
-        # Stock only left the ledger once the order reached "paid" (see
-        # mark_paid) — "pending" never deducted anything, so only reverse
-        # for the two statuses reachable after payment.
-        if self.status in {"paid", "processing"}:
-            for item in self.items.select_related("variant"):
-                if item.variant_id:
-                    Inventory.objects.stock_in(
-                        item.variant, item.quantity, reference=self.number, user=user
-                    )
-        self._transition("canceled", note=reason, user=user)
-
-    @transaction.atomic
-    def mark_returned(self, *, user=None):
-        from apps.inventory.models import Inventory
-
-        if self.status not in _RETURNABLE_FROM:
-            raise InvalidOrderTransition(f"سفارش با وضعیت {self.status} قابل مرجوع‌شدن نیست.")
-        for item in self.items.select_related("variant"):
-            if item.variant_id:
-                Inventory.objects.stock_in(
-                    item.variant, item.quantity, reference=self.number, user=user
-                )
-        self._transition("returned", user=user)
-
-
-def _send_order_paid_notifications(order: "Order") -> None:
-    """Two SMS, both scoped to this exact moment — never at order creation,
-    since a pending order might just be an abandoned cart. See
-    BACKEND-TASK.md §3.5."""
-    from apps.notifications.services import NotificationService
-    from apps.settings.models import SiteSettings
-
-    NotificationService.send_sms(order.user.phone, "order_paid", {"orderNumber": order.number})
-
-    site_settings = SiteSettings.load()
-    if not site_settings.notify_owner_new_order:
-        return
-    customer_name = f"{order.user.first_name} {order.user.last_name}".strip() or order.user.phone
-    item_count = sum(order.items.values_list("quantity", flat=True))
-    context = {"orderNumber": order.number, "total": order.total, "itemCount": item_count, "customerName": customer_name}
-    for phone in site_settings.owner_notification_phone_list:
-        NotificationService.send_sms(phone, "owner_new_order", context)
-
-
-def _send_order_shipped_notification(order: "Order") -> None:
-    from apps.notifications.services import NotificationService
-
-    NotificationService.send_sms(
-        order.user.phone, "order_shipped", {"orderNumber": order.number, "trackingCode": order.tracking_code}
-    )
-
-
-class OrderStatusLog(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_logs")
-    from_status = models.CharField(max_length=20)
-    to_status = models.CharField(max_length=20)
-    note = models.CharField(max_length=255, blank=True)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_status_changes"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["created_at"]
-
-    def __str__(self):
-        return f"{self.order.number}: {self.from_status} -> {self.to_status}"
+        return self.order_number
 
 
 class OrderItem(models.Model):
-    """Snapshots variant details at order time — immune to later product
-    edits. Field names match apps/api/prisma/schema/05-order.prisma's
-    OrderItem (D-02 §۲); `variant` stays nullable so a later variant delete
-    doesn't break an old order's history (Prisma's own comment on this)."""
+    """Snapshot کامل — تغییر بعدی محصول/واریانت را تحت‌تأثیر قرار نمی‌دهد.
+    `variant` عمداً nullable می‌ماند: اگر واریانت بعداً حذف شد، سفارش قدیمی
+    باید هنوز بگوید مشتری چه خریده (الحاقیه، هشدار)."""
 
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     variant = models.ForeignKey(
@@ -270,6 +192,11 @@ class OrderItem(models.Model):
     unit_price = models.PositiveIntegerField()
     quantity = models.PositiveIntegerField(default=1)
     discount = models.PositiveIntegerField(default=0)
+    final_price = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["order"]), models.Index(fields=["variant"])]
 
     def __str__(self):
         return f"{self.product_name_snapshot} x{self.quantity}"
@@ -278,112 +205,156 @@ class OrderItem(models.Model):
     def subtotal(self) -> int:
         return self.unit_price * self.quantity
 
-    @property
-    def final_price(self) -> int:
-        return self.subtotal - self.discount
 
+class OrderStatusHistory(models.Model):
+    """§۱۱.۵۱ — هر تغییر وضعیت یک ردیف؛ `order_status.py` تنها نویسنده است."""
 
-# Values match PaymentProvider.code in apps/orders/providers/ exactly —
-# these are also what the public GET /api/payment-gateways/ endpoint and
-# frontend both call the gateway "code".
-PAYMENT_GATEWAY_CHOICES = [
-    ("ZARINPAL", "زرین‌پال"),
-    ("IDPAY", "آیدی‌پی"),
-    ("SNAPPPAY", "اسنپ‌پی"),
-    ("DIGIPAY", "دیجی‌پی"),
-]
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="status_history")
+    from_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, blank=True, null=True)
+    to_status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES)
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="order_status_changes"
+    )
+    note = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-PAYMENT_STATUS_CHOICES = [
-    ("pending", "در انتظار"),
-    ("success", "موفق"),
-    ("failed", "ناموفق"),
-]
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [models.Index(fields=["order", "created_at"])]
+
+    def __str__(self):
+        return f"{self.order.order_number}: {self.from_status} -> {self.to_status}"
 
 
 class Payment(models.Model):
+    """§۸.۴۶ + الحاقیه بخش ۴ — انتزاع درگاه، شکل داده فقط. `gateway`
+    identity واقعی پلاگین است (apps/orders/providers) — کارت‌به‌کارت
+    مقدارش خالی می‌ماند؛ `provider` مقدار عمومی/قرارداد (NONE/BALEPAY) است،
+    از `gateway` مشتق می‌شود (`sync_provider`)."""
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="payments")
-    gateway = models.CharField(max_length=20, choices=PAYMENT_GATEWAY_CHOICES)
-    # Snapshotted from PaymentProvider.display_name at creation time — the
-    # gateway's *code* is a stable Python constant, but its human-readable
-    # name is still copy that could change later, and a paid order must
-    # keep showing whatever name it showed the day it was paid.
-    gateway_name = models.CharField(max_length=50, blank=True)
+    method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    provider = models.CharField(max_length=10, choices=PAYMENT_PROVIDER_CHOICES, default="NONE")
+    # providerهای وایب (Zarinpal و بقیه) کدشان می‌ماند، اما هرگز از چک‌اوت
+    # جدید انتخاب نمی‌شوند (ApiCredential غیرفعال) — این فیلد فقط برای
+    # gateway واقعاً استفاده‌شده (بله‌پی) یا خالی (کارت‌به‌کارت) پر می‌شود.
+    gateway = models.CharField(max_length=20, choices=PAYMENT_GATEWAY_CHOICES, blank=True, null=True)
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="UNPAID")
     amount = models.PositiveIntegerField()
-    authority = models.CharField(max_length=100, blank=True)
-    ref_id = models.CharField(max_length=100, blank=True)
-    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="pending")
-    raw_response = models.JSONField(blank=True, null=True)
-    idempotency_key = models.CharField(max_length=100, unique=True)
+    provider_ref = models.CharField(max_length=100, blank=True, null=True)
+    provider_payload = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    verified_at = models.DateTimeField(blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["order"])]
 
     def __str__(self):
-        return f"{self.order.number} — {self.gateway} ({self.status})"
-
-    @transaction.atomic
-    def mark_success(self, *, ref_id: str, raw_response: dict, user=None):
-        """The only place a Payment becomes success — always followed by
-        Order.mark_paid() in the same transaction so a payment can never be
-        success while its order stays pending."""
-        if self.status == "success":
-            return  # already verified once — duplicate callback, no-op
-        self.status = "success"
-        self.ref_id = ref_id
-        self.raw_response = raw_response
-        self.verified_at = timezone.now()
-        self.save(update_fields=["status", "ref_id", "raw_response", "verified_at"])
-        self.order.mark_paid(user=user)
-
-    def mark_failed(self, *, raw_response: dict):
-        if self.status != "pending":
-            return
-        self.status = "failed"
-        self.raw_response = raw_response
-        self.save(update_fields=["status", "raw_response"])
+        return f"{self.order.order_number} — {self.method} ({self.status})"
 
 
-RETURN_STATUS_CHOICES = [
-    ("requested", "درخواست‌شده"),
-    ("approved", "تأییدشده"),
-    ("received", "دریافت‌شده"),
-    ("refunded", "بازپرداخت‌شده"),
-    ("rejected", "ردشده"),
-]
-
-_RETURN_TRANSITIONS = {
-    "requested": {"approved", "rejected"},
-    "approved": {"received"},
-    "received": {"refunded"},
-}
+def _receipt_upload_path(instance: "PaymentReceipt", filename: str) -> str:
+    return f"receipts/private/{instance.payment.order.order_number}/{filename}"
 
 
-class Return(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="returns")
-    items = models.ManyToManyField(OrderItem, related_name="returns", blank=True)
-    status = models.CharField(max_length=20, choices=RETURN_STATUS_CHOICES, default="requested")
-    reason = models.TextField(blank=True)
-    admin_note = models.TextField(blank=True)
+class PaymentReceipt(models.Model):
+    """§۸.۴۷/۸.۴۸ — رسید پرداخت دستی. `file` در `receipts/private/` ذخیره
+    می‌شود، خارج از هر مسیر public که مستقیم سرو شود (D-05 §۳: «نه عمومی»)
+    — apps/public_api/receipt_storage.py دسترسی را از طریق یک endpoint
+    احراز‌هویت‌شده می‌دهد، نه لینک مستقیم media."""
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="receipts")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="uploaded_receipts")
+    file = models.FileField(upload_to=_receipt_upload_path)
+    amount = models.PositiveIntegerField()
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=RECEIPT_STATUS_CHOICES, default="PENDING")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="reviewed_receipts",
+    )
+    reviewed_at = models.DateTimeField(blank=True, null=True)
+    rejection_reason = models.CharField(max_length=500, blank=True, null=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["payment"])]
+
+    def __str__(self):
+        return f"Receipt({self.payment.order.order_number}, {self.status})"
+
+
+class Shipment(models.Model):
+    """§۸.۴۹ تا §۸.۵۱ — یک سفارش یک Shipment (بدون مرسوله‌ی چندتکه). عمداً
+    فیلد status جدا ندارد — SHIPPED/DELIVERED همین حالا در Order.status
+    است؛ فیلد سوم یعنی نقض Single Source of Truth (همان استدلال Prisma)."""
+
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="shipment")
+    provider = models.CharField(max_length=100, help_text="نام شرکت پستی/باربری")
+    cost = models.PositiveIntegerField(default=0)
+    tracking_number = models.CharField(max_length=100, blank=True, null=True)
+    tracking_url = models.CharField(max_length=500, blank=True, null=True)
+    shipped_at = models.DateTimeField(blank=True, null=True)
+    delivered_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Return({self.order.number}, {self.status})"
+        return f"Shipment({self.order.order_number})"
 
-    def _transition(self, new_status: str):
-        if new_status not in _RETURN_TRANSITIONS.get(self.status, set()):
-            raise InvalidOrderTransition(f"{self.status} -> {new_status} مجاز نیست.")
-        self.status = new_status
-        self.save(update_fields=["status", "updated_at"])
 
-    def approve(self):
-        self._transition("approved")
+class Return(models.Model):
+    """§۸.۵۲ — قلم‌به‌قلم، از طریق `ReturnItem` (چون سفارش می‌تواند فقط
+    جزئاً مرجوع شود). مستقل از Order.status (پایانی‌ترین وضعیت DELIVERED
+    است؛ Return هیچ‌وقت Order.status را عوض نمی‌کند)."""
 
-    def reject(self):
-        self._transition("rejected")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="returns")
+    reason = models.CharField(max_length=500)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=RETURN_STATUS_CHOICES, default="REQUESTED")
+    admin_note = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def mark_received(self):
-        self._transition("received")
+    class Meta:
+        indexes = [models.Index(fields=["order"])]
 
-    @transaction.atomic
-    def mark_refunded(self):
-        self._transition("refunded")
+    def __str__(self):
+        return f"Return({self.order.order_number}, {self.status})"
+
+
+class ReturnItem(models.Model):
+    """اتصال Return↔OrderItem با تعداد — ممکن است فقط بخشی از تعداد
+    سفارش‌شده مرجوع شود، برخلاف M2M ساده‌ی نسخه‌ی قبلی."""
+
+    return_request = models.ForeignKey(Return, on_delete=models.CASCADE, related_name="items")
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="return_items")
+    quantity = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ["return_request", "order_item"]
+
+    def __str__(self):
+        return f"{self.order_item} x{self.quantity} ({self.return_request.status})"
+
+
+class CouponUsage(models.Model):
+    """D-05 §۴ — یک ردیف به ازای هر استفاده‌ی موفق؛ سقف کل/هر کاربر از
+    شمارش همین جدول enforce می‌شود (`Coupon.is_exhausted`، `content/models.py`)،
+    نه یک شمارنده‌ی جدا که می‌تواند drift کند. در apps/orders نه apps/content
+    چون به Order وابسته است (از circular import با ForeignKey رشته‌ای رد شده)."""
+
+    coupon = models.ForeignKey("content.Coupon", on_delete=models.CASCADE, related_name="usages")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="coupon_usages")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="coupon_usages")
+    discount_amount = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ["coupon", "order"]
+        indexes = [models.Index(fields=["user"])]
+
+    def __str__(self):
+        return f"{self.coupon.code} on {self.order.order_number}"

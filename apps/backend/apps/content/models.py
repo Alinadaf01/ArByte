@@ -99,31 +99,44 @@ class ProductReview(models.Model):
 
 
 COUPON_TYPE_CHOICES = [
-    ("percent", "درصدی"),
-    ("fixed", "مبلغ ثابت"),
+    ("PERCENT", "درصدی"),
+    ("AMOUNT", "مبلغ ثابت"),
 ]
 
 
 class Coupon(models.Model):
+    """D-05 §۴ — عیناً `apps/api/prisma/schema/06-marketing.prisma`'س Coupon.
+    نسخه‌ی قبلی (وایب) کوپن را به دسته/محصول محدود می‌کرد (`categories`/
+    `products` M2M) — چیزی که مدل Prisma اصلاً ندارد؛ چون D-05.md صریح گفته
+    «کوپن طبق Prisma»، این محدودسازی حذف شد (کوپن روی کل سبد اعمال می‌شود،
+    نه بخشی از آن) — یک ساده‌سازی مستند، نه گم‌شدن قابلیت اتفاقی. شمارش
+    مصرف هم از یک شمارنده‌ی ساده (`used_count`) به جدول واقعی `CouponUsage`
+    (apps/orders/models.py — چون به Order وابسته است) منتقل شد تا هم سقف کل
+    هم سقف هر کاربر از رکورد واقعی enforce شود، نه یک عدد قابل‌drift."""
+
     code = models.CharField(max_length=30, unique=True)
     type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES)
-    value = models.PositiveIntegerField(help_text="percent (1-100) or Toman amount, per `type`")
-    min_order_value = models.PositiveIntegerField(default=0)
-    max_discount = models.PositiveIntegerField(blank=True, null=True, help_text="cap for percent coupons")
+    # دقیقاً یکی از این دو باید مقدار داشته باشد (طبق `type`) — همان الگوی
+    # BigInt+basis-points که برای سود تأمین‌کننده (T-003-DECISION) به‌کار رفت.
+    amount_toman = models.PositiveIntegerField(blank=True, null=True)
+    percent_basis_points = models.PositiveIntegerField(blank=True, null=True, help_text="۱۰۰۰۰ = ۱۰۰٪")
+    minimum_order_amount = models.PositiveIntegerField(blank=True, null=True)
+    maximum_discount_amount = models.PositiveIntegerField(blank=True, null=True)
     usage_limit = models.PositiveIntegerField(blank=True, null=True)
-    used_count = models.PositiveIntegerField(default=0)
     per_user_limit = models.PositiveIntegerField(blank=True, null=True)
-    starts_at = models.DateTimeField(blank=True, null=True)
-    ends_at = models.DateTimeField(blank=True, null=True)
-    categories = models.ManyToManyField("catalog.Category", blank=True, related_name="coupons")
-    products = models.ManyToManyField("catalog.Product", blank=True, related_name="coupons")
+    start_date = models.DateTimeField(blank=True, null=True)
+    end_date = models.DateTimeField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.code
 
     def is_exhausted(self) -> bool:
-        return self.usage_limit is not None and self.used_count >= self.usage_limit
+        if self.usage_limit is None:
+            return False
+        return self.usages.count() >= self.usage_limit
 
 
 class Favorite(models.Model):

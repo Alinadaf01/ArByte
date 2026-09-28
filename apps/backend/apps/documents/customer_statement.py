@@ -13,7 +13,7 @@ def build_customer_statement_context(user: User, *, generated_by_name: str) -> d
     (BACKEND-TASK.md §3.6-ب: 'صورتحساب مشتری ... برای خریداران تکراری و عمده')."""
     orders = Order.objects.filter(user=user).order_by("-created_at")
     paid_orders = orders.filter(paid_at__isnull=False)
-    total_spent = sum(order.total for order in paid_orders)
+    total_spent = sum(order.final_total for order in paid_orders)
 
     ctx = base_context(
         doc_title="صورتحساب مشتری",
@@ -29,11 +29,11 @@ def build_customer_statement_context(user: User, *, generated_by_name: str) -> d
             "total_spent": format_toman(total_spent),
             "rows": [
                 {
-                    "number": order.number,
+                    "number": order.order_number,
                     "date": format_jalali_date(order.created_at),
                     "status": _STATUS_LABELS.get(order.status, order.status),
                     "item_count": sum(item.quantity for item in order.items.all()),
-                    "total": format_toman(order.total),
+                    "total": format_toman(order.final_total),
                 }
                 for order in orders
             ],

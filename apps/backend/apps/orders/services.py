@@ -1,24 +1,17 @@
 import secrets
 
 from django.conf import settings as django_settings
-from django.db import models, transaction
+from django.db import transaction
 from django.utils import timezone
 
-from .models import Cart, CartItem, Order, OrderItem, Payment
+from .models import Cart, CartItem, Order, OrderItem, Payment, PaymentReceipt
 
 
 @transaction.atomic
 def merge_guest_cart_into_user(session_key: str, user) -> None:
     """Called from OtpVerifyView (apps.public_api.auth_views) — 'merge on
     login' means at login, not a separate endpoint the frontend has to
-    remember to call (D-04 §۱/§۳).
-
-    D-04 rewrite: the vybeshop original matched on `product`/`color_option`,
-    neither of which exists on CartItem post-D-02 (variant-only) — this was
-    dead code (FieldError on the first call) until now. Merged quantity is
-    capped at both MAX_ITEM_QUANTITY and live stock, same rule as a normal
-    add-to-cart; a guest item that no longer fits either cap is dropped
-    rather than left over-quantity in the merged cart."""
+    remember to call (D-04 §۱/§۳)."""
     if not session_key:
         return
     guest_cart = Cart.objects.filter(user=None, session_key=session_key).first()
@@ -38,212 +31,366 @@ def merge_guest_cart_into_user(session_key: str, user) -> None:
             continue
         if existing:
             existing.quantity = merged_quantity
-            existing.save(update_fields=["quantity"])
+            existing.unit_price_snapshot = variant.final_price
+            existing.save(update_fields=["quantity", "unit_price_snapshot"])
         else:
-            CartItem.objects.create(cart=user_cart, variant=variant, quantity=merged_quantity)
+            CartItem.objects.create(
+                cart=user_cart, variant=variant, quantity=merged_quantity, unit_price_snapshot=variant.final_price
+            )
 
     guest_cart.delete()
 
 
 class CheckoutError(Exception):
-    def __init__(self, message: str, field: str | None = None):
+    """خطای عمومی چک‌اوت — کد آن مستقیم روی یک ErrorCode قرارداد نگاشت
+    می‌شود (لایه‌ی view، apps/public_api/order_views.py)."""
+
+    def __init__(self, code: str, message: str, field: str | None = None):
+        self.code = code
         self.message = message
         self.field = field
         super().__init__(message)
 
 
-def _coupon_eligible_items(coupon, items):
-    """Cart items a scoped coupon actually applies to. An unscoped coupon
-    (no products/categories set) applies to the whole cart."""
-    if not coupon.products.exists() and not coupon.categories.exists():
-        return items
-    product_ids = set(coupon.products.values_list("id", flat=True))
-    category_ids = set(coupon.categories.values_list("id", flat=True))
-    return [
-        item for item in items
-        if item.product_id in product_ids or item.product.category_id in category_ids
-    ]
+class PriceChangedError(Exception):
+    """D-05 §۲ — قیمت حداقل یک آیتم از وقتی به سبد افزوده شد عوض شده؛
+    سفارش ساخته نمی‌شود، فرانت باید سبد را دوباره نشان دهد."""
+
+    def __init__(self, changes: list[dict]):
+        self.changes = changes
+        super().__init__("قیمت برخی اقلام تغییر کرده است.")
 
 
-def validate_coupon(code: str, user, subtotal: int, items: list):
+class InsufficientStockCheckoutError(Exception):
+    def __init__(self, shortages: list[dict]):
+        self.shortages = shortages
+        super().__init__("موجودی برخی اقلام کافی نیست.")
+
+
+def validate_coupon(code: str, user, subtotal: int) -> tuple["Coupon", int]:  # noqa: F821
+    """D-05 §۴ — طبق Prisma: کوپن به کل سبد اعمال می‌شود (بدون محدودسازی
+    دسته/محصول — نسخه‌ی قبلی وایب این محدودیت را داشت، حذف شد تا دقیقاً با
+    قرارداد یکی باشد، ر.ک. apps/content/models.py's Coupon docstring)."""
     from apps.content.models import Coupon
 
     try:
         coupon = Coupon.objects.get(code__iexact=code, is_active=True)
     except Coupon.DoesNotExist:
-        raise CheckoutError("کد تخفیف معتبر نیست.", field="coupon_code")
+        raise CheckoutError("COUPON_INVALID", "کد تخفیف معتبر نیست.", field="couponCode") from None
 
     now = timezone.now()
-    if coupon.starts_at and now < coupon.starts_at:
-        raise CheckoutError("این کد هنوز فعال نشده است.", field="coupon_code")
-    if coupon.ends_at and now > coupon.ends_at:
-        raise CheckoutError("این کد منقضی شده است.", field="coupon_code")
+    if coupon.start_date and now < coupon.start_date:
+        raise CheckoutError("COUPON_INVALID", "این کد هنوز فعال نشده است.", field="couponCode")
+    if coupon.end_date and now > coupon.end_date:
+        raise CheckoutError("COUPON_INVALID", "این کد منقضی شده است.", field="couponCode")
     if coupon.is_exhausted():
-        raise CheckoutError("سقف استفاده از این کد پر شده است.", field="coupon_code")
-    if subtotal < coupon.min_order_value:
+        raise CheckoutError("COUPON_USAGE_LIMIT_REACHED", "سقف استفاده از این کد پر شده است.", field="couponCode")
+    if coupon.minimum_order_amount and subtotal < coupon.minimum_order_amount:
         raise CheckoutError(
-            f"حداقل مبلغ سفارش برای این کد {coupon.min_order_value:,} تومان است.", field="coupon_code"
+            "COUPON_MIN_ORDER_NOT_MET",
+            f"حداقل مبلغ سفارش برای این کد {coupon.minimum_order_amount:,} تومان است.",
+            field="couponCode",
         )
     if coupon.per_user_limit is not None and user is not None:
-        used = Order.objects.filter(user=user, coupon=coupon).exclude(status="canceled").count()
+        used = coupon.usages.filter(user=user).count()
         if used >= coupon.per_user_limit:
-            raise CheckoutError("شما قبلاً از این کد استفاده کرده‌اید.", field="coupon_code")
+            raise CheckoutError(
+                "COUPON_USAGE_LIMIT_REACHED", "شما قبلاً از این کد استفاده کرده‌اید.", field="couponCode"
+            )
 
-    eligible_items = _coupon_eligible_items(coupon, items)
-    eligible_subtotal = sum(item.product.price * item.quantity for item in eligible_items)
-    if eligible_subtotal == 0:
-        raise CheckoutError("این کد برای اقلام سبد شما قابل استفاده نیست.", field="coupon_code")
-
-    if coupon.type == "percent":
-        discount = eligible_subtotal * coupon.value // 100
-        if coupon.max_discount:
-            discount = min(discount, coupon.max_discount)
+    if coupon.type == "PERCENT":
+        discount = subtotal * (coupon.percent_basis_points or 0) // 10_000
+        if coupon.maximum_discount_amount:
+            discount = min(discount, coupon.maximum_discount_amount)
     else:
-        discount = min(coupon.value, eligible_subtotal)
+        discount = min(coupon.amount_toman or 0, subtotal)
 
     return coupon, discount
 
 
 @transaction.atomic
-def checkout(*, user, address, shipping_method, coupon_code: str | None = None, note: str = "") -> Order:
-    """Creates a `pending` Order from the user's cart. Never deducts stock —
-    that only happens in Order.mark_paid(). Prices are always read from the
-    live Product row, never trusted from the cart or client."""
+def checkout(
+    *, user, address, payment_method: str, shipping_method, coupon_code: str | None = None
+) -> Order:
+    """D-05 §۲ — یک تراکنش: قفل Inventory، بررسی موجودی/قیمت، ساخت سفارش
+    با snapshot، رزرو موجودی (نه STOCK_OUT — آن در order_status.py موقع
+    SHIPPED اتفاق می‌افتد)، خالی‌کردن سبد. قیمت همیشه از واریانت زنده
+    خوانده می‌شود؛ `unit_price_snapshot` فقط برای تشخیص PRICE_CHANGED است."""
+    from apps.inventory.models import InsufficientStockError, Inventory
+
+    from . import order_status
+    from .models import CouponUsage
+
     cart = Cart.objects.filter(user=user).first()
-    if not cart:
-        raise CheckoutError("سبد خرید خالی است.", field="cart")
+    if not cart or not cart.items.exists():
+        raise CheckoutError("CART_EMPTY", "سبد خرید شما خالی است.")
 
-    items = list(cart.items.select_related("product", "color_option").all())
-    if not items:
-        raise CheckoutError("سبد خرید خالی است.", field="cart")
+    items = list(
+        cart.items.select_related("variant__product", "variant__inventory").order_by("id")
+    )
 
+    # ترتیب پایدار (بر اساس pk واریانت) برای جلوگیری از deadlock وقتی دو
+    # سفارش هم‌زمان چند واریانت مشترک دارند (D-02 §۲: همان الگوی reserve()).
+    variant_ids = sorted({item.variant_id for item in items})
+    Inventory.objects.select_for_update().filter(variant_id__in=variant_ids).select_related("variant")
+
+    from apps.public_api.cart_service import available_quantity_for
+
+    price_changes: list[dict] = []
+    shortages: list[dict] = []
+    order_items_data = []
+    subtotal = 0
     for item in items:
-        if not item.product.is_active:
-            raise CheckoutError(f'"{item.product.name}" دیگر موجود نیست.', field="cart")
-        if item.product.stock_count < item.quantity:
-            raise CheckoutError(f"موجودی «{item.product.name}» کافی نیست.", field="cart")
+        variant = item.variant
+        live_price = variant.final_price
+        if live_price != item.unit_price_snapshot:
+            price_changes.append(
+                {"variantId": str(variant.id), "oldPrice": item.unit_price_snapshot, "newPrice": live_price}
+            )
+        available = available_quantity_for(variant)
+        if item.quantity > available:
+            shortages.append({"variantId": str(variant.id), "available": available})
+        final_price = live_price * item.quantity
+        subtotal += final_price
+        order_items_data.append(
+            {
+                "variant": variant,
+                "unit_price": live_price,
+                "quantity": item.quantity,
+                "final_price": final_price,
+            }
+        )
 
-    subtotal = sum(item.product.price * item.quantity for item in items)
+    if price_changes:
+        raise PriceChangedError(price_changes)
+    if shortages:
+        raise InsufficientStockCheckoutError(shortages)
 
     coupon = None
     discount = 0
     if coupon_code:
-        coupon, discount = validate_coupon(coupon_code, user, subtotal, items)
+        coupon, discount = validate_coupon(coupon_code, user, subtotal)
 
     shipping_cost = shipping_method.cost
     if shipping_method.free_above is not None and subtotal >= shipping_method.free_above:
         shipping_cost = 0
 
-    tax = 0  # no tax-rate configuration exists yet — field is here for when one does
-    total = subtotal - discount + shipping_cost + tax
+    final_total = subtotal - discount + shipping_cost
 
     order = Order.objects.create(
         user=user,
-        shipping_address={
-            "title": address.title,
-            "province": address.province,
-            "city": address.city,
-            "line": address.line,
-            "postalCode": address.postal_code,
-            "receiverName": address.receiver_name,
-            "receiverPhone": address.receiver_phone,
-        },
+        shipping_recipient_name=address.receiver_name,
+        shipping_mobile=address.receiver_phone,
+        shipping_province=address.province,
+        shipping_city=address.city,
+        shipping_address_line=address.line,
+        shipping_postal_code=address.postal_code,
         subtotal=subtotal,
-        discount=discount,
+        discount_total=discount,
         shipping_cost=shipping_cost,
-        tax=tax,
-        total=total,
-        coupon=coupon,
-        note=note,
+        final_total=final_total,
     )
 
-    for item in items:
+    for data in order_items_data:
+        variant = data["variant"]
+        product = variant.product
         OrderItem.objects.create(
             order=order,
-            product=item.product,
-            product_name=item.product.name,
-            sku=item.product.sku,
-            price=item.product.price,
-            color_name=item.color_option.name if item.color_option else "",
-            quantity=item.quantity,
+            variant=variant,
+            product_name_snapshot=product.name,
+            variant_name_snapshot=variant.sku,
+            sku_snapshot=variant.sku,
+            unit_price=data["unit_price"],
+            quantity=data["quantity"],
+            final_price=data["final_price"],
         )
+        try:
+            Inventory.objects.reserve(variant, data["quantity"], reference=order.order_number, user=user)
+        except InsufficientStockError:
+            # بین قفل بالا و همین لحظه رقیبی جلو زد — همان مسیر INSUFFICIENT_STOCK.
+            raise InsufficientStockCheckoutError(
+                [{"variantId": str(variant.id), "available": available_quantity_for(variant)}]
+            ) from None
 
     if coupon:
-        coupon.used_count = models.F("used_count") + 1
-        coupon.save(update_fields=["used_count"])
+        CouponUsage.objects.create(coupon=coupon, user=user, order=order, discount_amount=discount)
+
+    Payment.objects.create(
+        order=order,
+        method=payment_method,
+        amount=final_total,
+        status="UNPAID",
+    )
 
     cart.items.all().delete()
+
+    order_status.transition_to(order, "AWAITING_PAYMENT", user=user)
     return order
 
 
-def initiate_payment(*, order: Order, gateway_code: str) -> tuple[Payment, str]:
-    """Creates the Payment row only after the gateway itself accepts the
-    request — a failed request() call must never leave an orphan `pending`
-    Payment with no authority behind it."""
+# ---------- کارت‌به‌کارت (§۳) ----------
+
+MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024  # ۵ مگابایت
+ALLOWED_RECEIPT_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+
+
+def card_to_card_enabled() -> bool:
+    """D-05 §۳ — «خالی = روش کارت‌به‌کارت غیرفعال». اطلاعات حساب مقصد
+    (SiteSettings) را ادمین باید پر کند؛ مقدار واقعی اینجا گذاشته نمی‌شود."""
+    from apps.settings.models import SiteSettings
+
+    s = SiteSettings.load()
+    return bool(s.card_to_card_holder_name and s.card_to_card_number and s.card_to_card_sheba)
+
+
+@transaction.atomic
+def upload_receipt(*, order: Order, user, file, amount: int) -> PaymentReceipt:
+    if order.status != "AWAITING_PAYMENT":
+        raise CheckoutError("ORDER_NOT_MODIFIABLE", "این سفارش در وضعیتی نیست که بتوان رسید بارگذاری کرد.")
+    if file.size > MAX_RECEIPT_SIZE_BYTES:
+        raise CheckoutError("UPLOAD_TOO_LARGE", "حجم فایل بیش از حد مجاز است.")
+    if file.content_type not in ALLOWED_RECEIPT_CONTENT_TYPES:
+        raise CheckoutError("UPLOAD_INVALID_TYPE", "نوع فایل مجاز نیست.")
+
+    from . import order_status
+
+    payment = order.payments.filter(method="MANUAL_CARD_TO_CARD").order_by("-created_at").first()
+    if not payment:
+        payment = Payment.objects.create(
+            order=order, method="MANUAL_CARD_TO_CARD", amount=order.final_total, status="UNPAID"
+        )
+    receipt = PaymentReceipt.objects.create(payment=payment, user=user, file=file, amount=amount)
+
+    order_status.sync_payment_status(order, "RECEIPT_UPLOADED")
+    payment.status = "RECEIPT_UPLOADED"
+    payment.save(update_fields=["status", "updated_at"])
+    order_status.transition_to(order, "PAYMENT_REVIEW", user=user)
+    return receipt
+
+
+@transaction.atomic
+def approve_receipt(*, receipt: PaymentReceipt, admin_user) -> None:
+    from . import order_status
+
+    if receipt.status == "APPROVED":
+        raise CheckoutError("PAYMENT_ALREADY_CONFIRMED", "پرداخت این سفارش قبلاً تأیید شده است.")
+    receipt.status = "APPROVED"
+    receipt.reviewed_by = admin_user
+    receipt.reviewed_at = timezone.now()
+    receipt.save(update_fields=["status", "reviewed_by", "reviewed_at"])
+
+    payment = receipt.payment
+    payment.status = "CONFIRMED"
+    payment.save(update_fields=["status", "updated_at"])
+
+    order = payment.order
+    order_status.sync_payment_status(order, "CONFIRMED")
+    order_status.transition_to(order, "PAID", user=admin_user)
+
+
+@transaction.atomic
+def reject_receipt(*, receipt: PaymentReceipt, admin_user, reason: str) -> None:
+    from . import order_status
+
+    receipt.status = "REJECTED"
+    receipt.reviewed_by = admin_user
+    receipt.reviewed_at = timezone.now()
+    receipt.rejection_reason = reason
+    receipt.save(update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"])
+
+    payment = receipt.payment
+    payment.status = "UNPAID"
+    payment.save(update_fields=["status", "updated_at"])
+
+    order = payment.order
+    order_status.sync_payment_status(order, "UNPAID")
+    order_status.transition_to(order, "AWAITING_PAYMENT", user=admin_user, note=f"رسید رد شد: {reason}")
+
+
+# ---------- درگاه (§۳) ----------
+
+
+def initiate_payment(*, order: Order, provider_code: str) -> tuple[Payment, str]:
+    """Creates/reuses the Payment row only after the gateway itself accepts
+    the request — a failed request() call must never leave an orphan Payment
+    with no reference behind it."""
     from apps.settings.models import ApiCredential
 
     from .providers import PAYMENT_PROVIDERS, PaymentProviderError, get_provider
 
-    if order.status != "pending":
-        raise CheckoutError("این سفارش دیگر قابل پرداخت نیست.", field="detail")
+    if order.status != "AWAITING_PAYMENT":
+        raise CheckoutError("ORDER_NOT_MODIFIABLE", "این سفارش دیگر قابل پرداخت نیست.")
 
-    provider_class = PAYMENT_PROVIDERS.get(gateway_code)
+    provider_class = PAYMENT_PROVIDERS.get(provider_code)
     if not provider_class or not ApiCredential.objects.filter(
         service=provider_class.service, is_active=True
     ).exists():
-        raise CheckoutError(
-            "این درگاه دیگر در دسترس نیست. لطفاً درگاه دیگری انتخاب کنید.", field="gateway_code"
-        )
+        raise CheckoutError("GATEWAY_ERROR", "این درگاه در حال حاضر پیکربندی نشده است.", field="provider")
 
     try:
-        provider = get_provider(gateway_code)
+        provider = get_provider(provider_code)
     except PaymentProviderError as exc:
-        raise CheckoutError(str(exc), field="gateway_code")
+        raise CheckoutError("GATEWAY_ERROR", str(exc), field="provider") from exc
 
     callback_token = secrets.token_hex(16)
-    callback_url = f"{django_settings.BACKEND_BASE_URL}/api/payments/callback/{gateway_code}/{callback_token}/"
+    callback_url = f"{django_settings.BACKEND_BASE_URL}/api/v1/payments/callback/{provider_code}"
 
     try:
         result = provider.request(order, callback_url)
     except PaymentProviderError as exc:
-        raise CheckoutError(str(exc), field="gateway_code")
+        raise CheckoutError("GATEWAY_ERROR", str(exc), field="provider") from exc
 
     payment = Payment.objects.create(
         order=order,
-        gateway=gateway_code,
-        gateway_name=provider.display_name,
-        amount=order.total,
-        authority=result.authority,
-        idempotency_key=callback_token,
+        method="GATEWAY",
+        provider="BALEPAY" if provider_code == "BALEPAY" else "NONE",
+        gateway=provider_code,
+        amount=order.final_total,
+        provider_ref=result.authority or callback_token,
+        status="UNDER_REVIEW",
     )
+    from . import order_status
+
+    order_status.sync_payment_status(order, "UNDER_REVIEW")
     return payment, result.redirect_url
 
 
 @transaction.atomic
-def verify_payment(*, gateway_code: str, idempotency_key: str, callback_data: dict) -> Payment:
-    """Idempotent by construction: a Payment already `success` short-circuits
-    before any network call, so a duplicate/retried callback (or a user
-    refreshing the return page) can never deduct stock twice — mark_paid()
-    only ever runs once per order regardless of how many times this fires."""
+def verify_payment(*, provider_code: str, provider_ref: str, amount: int, callback_data: dict) -> Payment:
+    """Idempotent by construction: a Payment already CONFIRMED short-circuits
+    before any network call — a duplicate/retried callback can never confirm
+    an order twice."""
+    from . import order_status
     from .providers import PaymentProviderError, get_provider
 
     try:
-        payment = Payment.objects.select_for_update().get(gateway=gateway_code, idempotency_key=idempotency_key)
+        payment = Payment.objects.select_for_update().get(gateway=provider_code, provider_ref=provider_ref)
     except Payment.DoesNotExist:
-        raise CheckoutError("تراکنش یافت نشد.", field="detail")
+        raise CheckoutError("NOT_FOUND", "تراکنش یافت نشد.") from None
 
-    if payment.status == "success":
+    if payment.status == "CONFIRMED":
         return payment
+
+    if payment.amount != amount:
+        raise CheckoutError("GATEWAY_AMOUNT_MISMATCH", "مبلغ پرداختی با مبلغ سفارش مطابقت ندارد.")
 
     try:
-        provider = get_provider(gateway_code)
+        provider = get_provider(provider_code)
         result = provider.verify(callback_data, payment)
     except PaymentProviderError as exc:
-        payment.mark_failed(raw_response={"error": str(exc)})
+        payment.provider_payload = {"error": str(exc)}
+        payment.save(update_fields=["provider_payload", "updated_at"])
         return payment
 
+    order = payment.order
     if result.success:
-        payment.mark_success(ref_id=result.ref_id, raw_response=result.raw_response)
+        payment.status = "CONFIRMED"
+        payment.provider_ref = result.ref_id or payment.provider_ref
+        payment.provider_payload = result.raw_response
+        payment.save(update_fields=["status", "provider_ref", "provider_payload", "updated_at"])
+        order_status.sync_payment_status(order, "CONFIRMED")
+        order_status.transition_to(order, "PAID")
     else:
-        payment.mark_failed(raw_response=result.raw_response)
+        payment.provider_payload = result.raw_response
+        payment.save(update_fields=["provider_payload", "updated_at"])
     return payment

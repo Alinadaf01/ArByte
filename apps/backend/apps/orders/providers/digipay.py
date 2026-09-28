@@ -36,8 +36,8 @@ class DigiPayProvider(PaymentProvider):
     def request(self, order, callback_url: str) -> PaymentRequestResult:
         token = self._get_token()
         payload = {
-            "amount": order.total * _RIAL_PER_TOMAN,
-            "providerId": order.number,
+            "amount": order.final_total * _RIAL_PER_TOMAN,
+            "providerId": order.order_number,
             "redirectUrl": callback_url,
         }
         try:
@@ -60,7 +60,7 @@ class DigiPayProvider(PaymentProvider):
             return PaymentVerifyResult(success=False, ref_id="", raw_response=callback_data)
 
         token = self._get_token()
-        payload = {"ticket": payment.authority}
+        payload = {"ticket": payment.provider_ref}
         try:
             response = requests.post(
                 _VERIFY_URL, json=payload, headers={"Authorization": f"Bearer {token}"}, timeout=15

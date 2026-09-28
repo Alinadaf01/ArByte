@@ -92,6 +92,13 @@ class SiteSettings(models.Model):
         default=True, help_text="پیامک به کارفرما پس از پرداخت موفق هر سفارش (نه هنگام ثبت سفارش pending)"
     )
 
+    # D-05 §۳ — اطلاعات حساب مقصد کارت‌به‌کارت. خالی = روش کارت‌به‌کارت در
+    # چک‌اوت غیرفعال (services.card_to_card_enabled). مقدار واقعی گذاشته
+    # نشده — docs/QUESTIONS.md.
+    card_to_card_holder_name = models.CharField(max_length=100, blank=True, help_text="نام صاحب حساب")
+    card_to_card_number = models.CharField(max_length=20, blank=True, help_text="شماره کارت، بدون خط‌تیره")
+    card_to_card_sheba = models.CharField(max_length=30, blank=True, help_text="شماره شبا، با IR")
+
     class Meta:
         verbose_name_plural = "site settings"
 
@@ -121,6 +128,9 @@ API_CREDENTIAL_SERVICE_CHOICES = [
     ("idpay", "آیدی‌پی"),
     ("snapppay", "اسنپ‌پی"),
     ("digipay", "دیجی‌پی"),
+    # D-05 §۳ — اسکلت بله‌پی؛ بدون مستندات provider هیچ کلیدی معتبر نیست، پس
+    # این ردیف تا مستندات نرسد همیشه has_valid_credentials()=False می‌ماند.
+    ("balepay", "بله‌پی"),
 ]
 
 

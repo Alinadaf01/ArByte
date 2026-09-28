@@ -1,3 +1,4 @@
+from .balepay import BalePayProvider
 from .base import PaymentProvider, PaymentProviderError, PaymentRequestResult, PaymentVerifyResult
 from .digipay import DigiPayProvider
 from .idpay import IdPayProvider
@@ -6,12 +7,15 @@ from .zarinpal import ZarinpalProvider
 
 # Adding a fifth gateway means adding one class + one line here — nothing
 # else in this file, base.py, or the views/services that use get_provider()
-# needs to change.
+# needs to change. D-05 §۳ — چهارتای وایب در ثبت می‌مانند (کد موجود است)
+# اما ApiCredential غیرفعال یعنی هرگز در initiate_payment انتخاب نمی‌شوند؛
+# بله‌پی تنها گزینه‌ای است که واقعاً در دسترس (البته اسکلت) قرار دارد.
 PAYMENT_PROVIDERS: dict[str, type[PaymentProvider]] = {
     ZarinpalProvider.code: ZarinpalProvider,
     IdPayProvider.code: IdPayProvider,
     SnapPayProvider.code: SnapPayProvider,
     DigiPayProvider.code: DigiPayProvider,
+    BalePayProvider.code: BalePayProvider,
 }
 
 

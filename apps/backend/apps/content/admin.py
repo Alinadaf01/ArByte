@@ -28,9 +28,13 @@ class ProductReviewAdmin(admin.ModelAdmin):
 
 @admin.register(Coupon)
 class CouponAdmin(admin.ModelAdmin):
-    list_display = ["code", "type", "value", "used_count", "usage_limit", "is_active"]
+    list_display = ["code", "type", "amount_toman", "percent_basis_points", "used_count", "usage_limit", "is_active"]
     list_filter = ["type", "is_active"]
     search_fields = ["code"]
+
+    @admin.display(description="مصرف‌شده")
+    def used_count(self, obj: Coupon) -> int:
+        return obj.usages.count()
 
 
 @admin.register(Favorite)

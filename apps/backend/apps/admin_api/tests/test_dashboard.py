@@ -14,13 +14,16 @@ class AdminDashboardApiTests(AdminApiTestMixin, APITestCase):
         self.product = self.make_product(stock=10, price=100000)
         self.variant = self.product.variants.first()
         customer = self.make_customer()
-        self.order = Order.objects.create(user=customer, shipping_address={}, subtotal=100000, total=100000)
+        self.order = Order.objects.create(
+            user=customer, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=100000, final_total=100000,
+        )
         OrderItem.objects.create(
             order=self.order, variant=self.variant, product_name_snapshot=self.product.name,
-            sku_snapshot=self.variant.sku, unit_price=100000, quantity=1,
+            sku_snapshot=self.variant.sku, unit_price=100000, quantity=1, final_price=100000,
         )
         self.order.paid_at = timezone.now()
-        self.order.status = "paid"
+        self.order.status = "PAID"
         self.order.save(update_fields=["paid_at", "status"])
 
     def test_dashboard_shape(self):
@@ -31,7 +34,7 @@ class AdminDashboardApiTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(len(response.data["recent_orders"]), 1)
         self.assertEqual(len(response.data["trends"]["top_products_by_quantity"]), 1)
         self.assertEqual(response.data["trends"]["top_products_by_quantity"][0]["units_sold"], 1)
-        # This order is paid (status="paid"), not yet in "processing" — one of the eight needs-action counters.
+        # This order is paid (status="PAID"), not yet in "PROCESSING" — one of the needs-action counters.
         self.assertEqual(response.data["needs_action"]["paid_pending_processing"], 1)
         self.assertIn("system_health", response.data)
         self.assertIn("site_visits", response.data)
@@ -49,7 +52,10 @@ class AdminDashboardApiTests(AdminApiTestMixin, APITestCase):
 
         # A new order created after the watermark should show up in the feed.
         customer = self.make_customer(phone="09121110099")
-        Order.objects.create(user=customer, shipping_address={}, subtotal=50000, total=50000)
+        Order.objects.create(
+            user=customer, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=50000, final_total=50000,
+        )
 
         response = self.client.get(reverse("admin-dashboard"))
         feed_types = [item["type"] for item in response.data["since_last_visit"]["feed"]]

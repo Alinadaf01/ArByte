@@ -46,9 +46,9 @@ class ZarinpalProvider(PaymentProvider):
             )
         payload = {
             "merchant_id": merchant_id,
-            "amount": order.total * _RIAL_PER_TOMAN,
+            "amount": order.final_total * _RIAL_PER_TOMAN,
             "callback_url": callback_url,
-            "description": f"سفارش {order.number}",
+            "description": f"سفارش {order.order_number}",
         }
         try:
             response = requests.post(_REQUEST_URL[self.is_sandbox], json=payload, timeout=15)
@@ -74,7 +74,7 @@ class ZarinpalProvider(PaymentProvider):
         payload = {
             "merchant_id": self.credentials.get("merchantId", ""),
             "amount": payment.amount * _RIAL_PER_TOMAN,
-            "authority": payment.authority,
+            "authority": payment.provider_ref,
         }
         try:
             response = requests.post(_VERIFY_URL[self.is_sandbox], json=payload, timeout=15)

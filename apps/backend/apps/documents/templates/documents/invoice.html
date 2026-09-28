@@ -22,15 +22,15 @@
   <tbody>
     <tr>
       <td class="muted" style="width:25%;">شماره فاکتور</td>
-      <td class="mono num">{{ order.number }}</td>
+      <td class="mono num">{{ order.order_number }}</td>
       <td class="muted" style="width:25%;">شماره سفارش</td>
-      <td class="mono num">{{ order.number }}</td>
+      <td class="mono num">{{ order.order_number }}</td>
     </tr>
     <tr>
       <td class="muted">تاریخ</td>
       <td class="mono num">{{ invoice_date }}</td>
-      <td class="muted">روش و درگاه پرداخت</td>
-      <td class="num">{{ payment_gateway_display|default:"—" }}</td>
+      <td class="muted">روش پرداخت</td>
+      <td class="num">{{ payment_method_display|default:"—" }}</td>
     </tr>
     <tr>
       <td class="muted">کد رهگیری تراکنش</td>
@@ -73,7 +73,6 @@
       <tr><td>جمع اقلام</td><td class="mono num">{{ subtotal }}</td></tr>
       <tr><td>تخفیف</td><td class="mono num">{{ discount }}</td></tr>
       <tr><td>هزینه ارسال</td><td class="mono num">{{ shipping_cost }}</td></tr>
-      <tr><td>مالیات</td><td class="mono num">{{ tax }}</td></tr>
     </tbody>
     <tfoot>
       <tr style="font-size:14pt;"><td>مبلغ نهایی</td><td class="mono num">{{ total }}</td></tr>

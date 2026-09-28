@@ -24,8 +24,8 @@ class IdPayProvider(PaymentProvider):
 
     def request(self, order, callback_url: str) -> PaymentRequestResult:
         payload = {
-            "order_id": order.number,
-            "amount": order.total * _RIAL_PER_TOMAN,
+            "order_id": order.order_number,
+            "amount": order.final_total * _RIAL_PER_TOMAN,
             "callback": callback_url,
         }
         try:
@@ -46,7 +46,7 @@ class IdPayProvider(PaymentProvider):
             # status only comes from the verify call below.
             return PaymentVerifyResult(success=False, ref_id="", raw_response=callback_data)
 
-        payload = {"id": payment.authority, "order_id": payment.order.number}
+        payload = {"id": payment.provider_ref, "order_id": payment.order.order_number}
         try:
             response = requests.post(_VERIFY_URL, json=payload, headers=self._headers(), timeout=15)
             body = response.json()

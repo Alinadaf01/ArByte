@@ -129,14 +129,24 @@ class AdminCouponApiTests(AdminApiTestMixin, APITestCase):
 
     def test_create_coupon(self):
         response = self.client.post(
-            reverse("admin-coupon-list"), {"code": "SAVE10", "type": "percent", "value": 10}, format="json"
+            reverse("admin-coupon-list"),
+            {"code": "SAVE10", "type": "PERCENT", "percentBasisPoints": 1000},
+            format="json",
         )
         self.assertEqual(response.status_code, 201)
         self.assertTrue(Coupon.objects.filter(code="SAVE10").exists())
 
     def test_used_count_is_read_only(self):
-        coupon = Coupon.objects.create(code="FIXED20", type="fixed", value=20000, used_count=3)
+        from apps.orders.models import CouponUsage, Order
+
+        coupon = Coupon.objects.create(code="FIXED20", type="AMOUNT", amount_toman=20000)
+        customer = self.make_customer()
+        order = Order.objects.create(
+            user=customer, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=100000, final_total=80000,
+        )
+        CouponUsage.objects.create(coupon=coupon, user=customer, order=order, discount_amount=20000)
+
         response = self.client.patch(reverse("admin-coupon-detail", args=[coupon.pk]), {"usedCount": 999}, format="json")
         self.assertEqual(response.status_code, 200)
-        coupon.refresh_from_db()
-        self.assertEqual(coupon.used_count, 3)
+        self.assertEqual(response.data["used_count"], 1)  # از CouponUsage واقعی، نه بدنه‌ی درخواست

@@ -4,20 +4,27 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders.models import InvalidOrderTransition, Return
+from apps.orders import return_status
+from apps.orders.models import Return
+from apps.orders.order_status import InvalidOrderTransition
 
 from .activity import log_admin_action
 from .permissions import require_section
 
 
+class AdminReturnItemSerializer(serializers.Serializer):
+    order_item = serializers.IntegerField(source="order_item_id")
+    quantity = serializers.IntegerField()
+
+
 class AdminReturnSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     order = serializers.IntegerField(source="order_id")
-    items = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    items = AdminReturnItemSerializer(many=True, read_only=True)
 
     class Meta:
         model = Return
-        fields = ["id", "order", "items", "status", "reason", "admin_note", "created_at", "updated_at"]
+        fields = ["id", "order", "items", "status", "reason", "description", "admin_note", "created_at", "updated_at"]
 
     def get_id(self, obj: Return) -> str:
         return str(obj.pk)
@@ -35,18 +42,18 @@ class AdminReturnListView(ListAPIView):
     permission_classes = [require_section("returns")]
     serializer_class = AdminReturnSerializer
     filterset_class = AdminReturnFilter
-    queryset = Return.objects.select_related("order").order_by("-created_at")
+    queryset = Return.objects.select_related("order").prefetch_related("items").order_by("-created_at")
 
 
 class AdminReturnDetailView(RetrieveAPIView):
     permission_classes = [require_section("returns")]
     serializer_class = AdminReturnSerializer
-    queryset = Return.objects.select_related("order")
+    queryset = Return.objects.select_related("order").prefetch_related("items")
 
 
-def _return_transition(return_obj: Return, method_name: str) -> Response:
+def _return_transition(return_obj: Return, to_status: str, /, **kwargs) -> Response:
     try:
-        getattr(return_obj, method_name)()
+        return_status.transition_to(return_obj, to_status, **kwargs)
     except InvalidOrderTransition as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     return_obj.refresh_from_db()
@@ -58,7 +65,7 @@ class AdminReturnApproveView(APIView):
 
     def post(self, request, pk):
         return_obj = Return.objects.get(pk=pk)
-        response = _return_transition(return_obj, "approve")
+        response = _return_transition(return_obj, "APPROVED")
         if response.status_code == 200:
             log_admin_action(user=request.user, action="approve", model_name="Return", object_id=return_obj.pk)
         return response
@@ -69,7 +76,8 @@ class AdminReturnRejectView(APIView):
 
     def post(self, request, pk):
         return_obj = Return.objects.get(pk=pk)
-        response = _return_transition(return_obj, "reject")
+        admin_note = request.data.get("admin_note", "")
+        response = _return_transition(return_obj, "REJECTED", admin_note=admin_note)
         if response.status_code == 200:
             log_admin_action(user=request.user, action="reject", model_name="Return", object_id=return_obj.pk)
         return response
@@ -80,7 +88,7 @@ class AdminReturnMarkReceivedView(APIView):
 
     def post(self, request, pk):
         return_obj = Return.objects.get(pk=pk)
-        response = _return_transition(return_obj, "mark_received")
+        response = _return_transition(return_obj, "RECEIVED")
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_received", model_name="Return", object_id=return_obj.pk)
         return response
@@ -91,7 +99,7 @@ class AdminReturnMarkRefundedView(APIView):
 
     def post(self, request, pk):
         return_obj = Return.objects.get(pk=pk)
-        response = _return_transition(return_obj, "mark_refunded")
+        response = _return_transition(return_obj, "REFUNDED")
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_refunded", model_name="Return", object_id=return_obj.pk)
         return response

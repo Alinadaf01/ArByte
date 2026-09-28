@@ -32,9 +32,12 @@ def _needs_action():
     now = timezone.now()
     stale_cutoff = now - timedelta(minutes=STALE_PENDING_PAYMENT_MINUTES)
     return {
-        "paid_pending_processing": Order.objects.filter(status="paid").count(),
-        "ready_to_ship": Order.objects.filter(status="processing").count(),
-        "new_return_requests": Return.objects.filter(status="requested").count(),
+        "paid_pending_processing": Order.objects.filter(status="PAID").count(),
+        "ready_to_ship": Order.objects.filter(status="PROCESSING").count(),
+        # D-05 §۱ — رسید کارت‌به‌کارت منتظر بررسی ادمین است، دقیقاً همان چیزی
+        # که این کارت اقدام روی صفحه‌ی داشبورد باید نشان بدهد.
+        "payment_review": Order.objects.filter(status="PAYMENT_REVIEW").count(),
+        "new_return_requests": Return.objects.filter(status="REQUESTED").count(),
         "unread_messages": ContactMessage.objects.filter(is_read=False).count(),
         "pending_reviews": ProductReview.objects.filter(status="pending").count(),
         "low_stock_count": Inventory.objects.filter(
@@ -43,13 +46,17 @@ def _needs_action():
         "out_of_stock_active": Inventory.objects.filter(
             quantity=0, variant__product__status="ACTIVE"
         ).count(),
-        "stale_pending_payments": Order.objects.filter(status="pending", created_at__lt=stale_cutoff).count(),
+        # D-05 §۱ — «در انتظار پرداخت» قبلاً یک وضعیت (pending) بود، حالا دو
+        # وضعیت پشت سر هم (PENDING تازه‌ساخته + AWAITING_PAYMENT رسمی).
+        "stale_pending_payments": Order.objects.filter(
+            status__in=["PENDING", "AWAITING_PAYMENT"], created_at__lt=stale_cutoff
+        ).count(),
     }
 
 
 def _pulse_for_day(day):
     paid = Order.objects.filter(paid_at__date=day)
-    sales = paid.aggregate(total=Sum("total"))["total"] or 0
+    sales = paid.aggregate(total=Sum("final_total"))["total"] or 0
     order_count = paid.count()
     aov = round(sales / order_count) if order_count else 0
     carts_created = Cart.objects.filter(created_at__date=day).count()
@@ -141,7 +148,7 @@ def _trends():
         for row in paid_orders.filter(paid_at__date__gte=thirty_days_ago)
         .annotate(day=TruncDate("paid_at"))
         .values("day")
-        .annotate(total=Sum("total"))
+        .annotate(total=Sum("final_total"))
     }
     sales_chart = [
         {"date": (thirty_days_ago + timedelta(days=i)).isoformat(), "total": chart_rows.get(thirty_days_ago + timedelta(days=i), 0)}
@@ -181,10 +188,12 @@ def _trends():
     day_of_month = today.day
     last_month_to_date_end = min(last_month_start + timedelta(days=day_of_month - 1), last_month_end)
 
-    this_month_to_date = paid_orders.filter(paid_at__date__gte=month_start).aggregate(total=Sum("total"))["total"] or 0
+    this_month_to_date = (
+        paid_orders.filter(paid_at__date__gte=month_start).aggregate(total=Sum("final_total"))["total"] or 0
+    )
     last_month_to_date = (
         paid_orders.filter(paid_at__date__gte=last_month_start, paid_at__date__lte=last_month_to_date_end).aggregate(
-            total=Sum("total")
+            total=Sum("final_total")
         )["total"]
         or 0
     )
@@ -218,7 +227,7 @@ def _since_last_visit(user):
         add(
             Order.objects.filter(created_at__gt=last_visit).order_by("-created_at")[:20],
             "order",
-            lambda o: f"سفارش جدید #{o.number}",
+            lambda o: f"سفارش جدید #{o.order_number}",
             lambda o: {"path": "/orders", "id": str(o.pk)},
         )
         add(
@@ -243,7 +252,7 @@ def _since_last_visit(user):
         add(
             Return.objects.filter(created_at__gt=last_visit).select_related("order").order_by("-created_at")[:20],
             "return",
-            lambda r: f"درخواست مرجوعی برای سفارش #{r.order.number}",
+            lambda r: f"درخواست مرجوعی برای سفارش #{r.order.order_number}",
             lambda r: {"path": "/returns", "id": str(r.pk)},
         )
         for log in AdminActivityLog.objects.filter(created_at__gt=last_visit).select_related("user").order_by("-created_at")[:20]:
@@ -283,7 +292,16 @@ def _system_health():
         for cred in ApiCredential.objects.exclude(service="kavenegar")
     ]
 
-    payment_errors_24h = Payment.objects.filter(status="failed", created_at__gte=timezone.now() - timedelta(hours=24)).count()
+    # D-05 §۳ — Payment دیگر وضعیت «failed» ندارد (PaymentStatus قرارداد
+    # فقط UNPAID/RECEIPT_UPLOADED/UNDER_REVIEW/CONFIRMED است)؛ نزدیک‌ترین
+    # معادل «پرداخت درگاهی که بیش از یک ساعت هنوز UNPAID مانده» است — یعنی
+    # احتمالاً کاربر پرداخت را رها کرده یا وب‌هوک نرسیده.
+    payment_errors_24h = Payment.objects.filter(
+        method="GATEWAY",
+        status="UNPAID",
+        created_at__lte=timezone.now() - timedelta(hours=1),
+        created_at__gte=timezone.now() - timedelta(hours=24),
+    ).count()
 
     discrepancies = []
     for inventory in Inventory.objects.select_related("variant__product").all():
@@ -306,7 +324,8 @@ def _system_health():
     sitemap_status = SearchConsoleSitemapStatus.objects.first()
 
     paid_not_shipped = Order.objects.filter(
-        status__in=["paid", "processing"], paid_at__lt=timezone.now() - timedelta(days=PAID_NOT_SHIPPED_DAYS)
+        status__in=["PAID", "PROCESSING", "READY_TO_SHIP"],
+        paid_at__lt=timezone.now() - timedelta(days=PAID_NOT_SHIPPED_DAYS),
     ).count()
 
     return {

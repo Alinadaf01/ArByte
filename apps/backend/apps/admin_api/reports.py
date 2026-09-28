@@ -42,7 +42,7 @@ class AdminSalesReportView(APIView):
         rows = (
             qs.annotate(period=trunc("paid_at"))
             .values("period")
-            .annotate(total=Sum("total"), order_count=Count("id"))
+            .annotate(total=Sum("final_total"), order_count=Count("id"))
             .order_by("period")
         )
         series = [{"period": row["period"].isoformat(), "total": row["total"], "order_count": row["order_count"]} for row in rows]
@@ -73,7 +73,7 @@ class AdminSalesReportExportView(APIView):
         db_rows = (
             qs.annotate(period=trunc("paid_at"))
             .values("period")
-            .annotate(total=Sum("total"), order_count=Count("id"))
+            .annotate(total=Sum("final_total"), order_count=Count("id"))
             .order_by("period")
         )
         rows = [
@@ -248,11 +248,11 @@ class AdminByGatewayReportView(APIView):
 
     def get(self, request):
         from_date, to_date = _date_range(request)
-        payments = Payment.objects.filter(status="success")
+        payments = Payment.objects.filter(status="CONFIRMED")
         if from_date:
-            payments = payments.filter(verified_at__date__gte=from_date)
+            payments = payments.filter(updated_at__date__gte=from_date)
         if to_date:
-            payments = payments.filter(verified_at__date__lte=to_date)
+            payments = payments.filter(updated_at__date__lte=to_date)
         rows = (
             payments.values("gateway")
             .annotate(total=Sum("amount"), order_count=Count("order_id", distinct=True))
@@ -266,7 +266,9 @@ class AdminReturnRateReportView(APIView):
 
     def get(self, request):
         from_date, to_date = _date_range(request)
-        delivered = Order.objects.exclude(status__in=["pending", "paid", "processing"])
+        delivered = Order.objects.exclude(
+            status__in=["PENDING", "AWAITING_PAYMENT", "PAYMENT_REVIEW", "PAID", "PROCESSING", "READY_TO_SHIP"]
+        )
         returned = Return.objects.all()
         if from_date:
             delivered = delivered.filter(updated_at__date__gte=from_date)

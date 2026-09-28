@@ -17,16 +17,21 @@ def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
     No separate invoice-numbering sequence exists in this app, so the order
     number doubles as the invoice number (§5 order-info bar shows both
     labels, same value) — a deliberate simplification rather than adding a
-    second sequence purely for document display."""
-    address = order.shipping_address or {}
-    successful_payment = order.payments.filter(status="success").order_by("-verified_at").first()
+    second sequence purely for document display.
+
+    D-05 §۱/۳ — آدرس دیگر یک JSON blob نیست (فیلدهای شناخته‌شده روی خودِ
+    Order)؛ Payment موفق یعنی status="CONFIRMED" (نه "success" قدیمی)،
+    ref_id تغییر نام داد به provider_ref، tax کلاً حذف شد (نه در Prisma،
+    نرخ مالیات هیچ‌وقت پیکربندی نشد)."""
+    successful_payment = order.payments.filter(status="CONFIRMED").order_by("-updated_at").first()
     invoice_date = format_jalali_date(order.paid_at or order.created_at)
     settings_obj = SiteSettings.load()
+    shipment = getattr(order, "shipment", None)
 
     ctx = base_context(
         doc_title="فاکتور فروش",
         generated_by_name=generated_by_name,
-        doc_number=order.number,
+        doc_number=order.order_number,
         doc_date=invoice_date,
     )
     ctx.update(
@@ -35,12 +40,12 @@ def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
             "invoice_date": invoice_date,
             "seller_economic_code": settings_obj.economic_code,
             "seller_national_id": settings_obj.national_id,
-            "buyer_name": address.get("receiverName", ""),
-            "buyer_phone": address.get("receiverPhone", ""),
+            "buyer_name": order.shipping_recipient_name,
+            "buyer_phone": order.shipping_mobile,
             "shipping_address_line": ", ".join(
-                part for part in [address.get("province", ""), address.get("city", ""), address.get("line", "")] if part
+                part for part in [order.shipping_province, order.shipping_city, order.shipping_address_line] if part
             ),
-            "postal_code": address.get("postalCode", ""),
+            "postal_code": order.shipping_postal_code or "",
             "items": [
                 {
                     "name": item.product_name_snapshot
@@ -53,15 +58,14 @@ def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
                 for item in order.items.all()
             ],
             "subtotal": format_toman(order.subtotal),
-            "discount": format_toman(order.discount),
+            "discount": format_toman(order.discount_total),
             "shipping_cost": format_toman(order.shipping_cost),
-            "tax": format_toman(order.tax),
-            "total": format_toman(order.total),
-            "total_in_words": f"{amount_in_words(order.total)} تومان",
+            "total": format_toman(order.final_total),
+            "total_in_words": f"{amount_in_words(order.final_total)} تومان",
             "payment": successful_payment,
-            "payment_gateway_display": successful_payment.get_gateway_display() if successful_payment else "",
-            "payment_ref_id": successful_payment.ref_id if successful_payment else "",
-            "tracking_code": order.tracking_code,
+            "payment_method_display": successful_payment.get_method_display() if successful_payment else "",
+            "payment_ref_id": successful_payment.provider_ref if successful_payment else "",
+            "tracking_code": shipment.tracking_number if shipment else "",
         }
     )
     return ctx
@@ -82,7 +86,7 @@ def get_invoice_pdf(order: Order, *, generated_by_name: str) -> bytes:
 
     context = build_invoice_context(order, generated_by_name=generated_by_name)
     pdf_bytes = render_pdf("documents/invoice.html", context)
-    order.invoice_pdf.save(f"{order.number}.pdf", ContentFile(pdf_bytes), save=False)
+    order.invoice_pdf.save(f"{order.order_number}.pdf", ContentFile(pdf_bytes), save=False)
     order.invoice_pdf_generated_at = timezone.now()
     order.save(update_fields=["invoice_pdf", "invoice_pdf_generated_at"])
     return pdf_bytes
