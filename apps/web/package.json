@@ -11,8 +11,9 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "hero:build": "node scripts/hero-build.mjs",
-    "hero:dev-frames": "node scripts/hero-dev-frames.mjs",
-    "map:build": "node scripts/build-iran-map.mjs"
+    "hero:frames": "node scripts/hero-frames.mjs",
+    "map:build": "node scripts/build-iran-map.mjs",
+    "icons:build": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@arbyte/contracts": "workspace:*",

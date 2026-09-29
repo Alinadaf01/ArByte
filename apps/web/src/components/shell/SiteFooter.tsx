@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { siteFooter } from "@arbyte/contracts";
+import { Logo } from "./Logo";
 
 const socialLinks = [
   {
@@ -155,12 +155,10 @@ export function SiteFooter() {
 
         <div className="relative mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(168px,1fr))] gap-[clamp(24px,3vw,52px)]">
           <div className="flex flex-col gap-5">
-            <Image
+            <Logo
+              variant="horizontal-dark"
               alt={siteFooter.logoAlt}
-              src="/brand/lockup-horizontal-dark-bg.svg"
-              height={34}
-              width={147}
-              className="self-start"
+              className="h-10 self-start"
             />
             <p className="text-on-dark-tertiary max-w-[38ch] text-body leading-loose">
               {siteFooter.tagline}
@@ -353,12 +351,10 @@ function MobileFooter() {
       />
 
       <div className="relative flex flex-col gap-5.5">
-        <Image
+        <Logo
+          variant="horizontal-dark"
           alt={siteFooter.logoAlt}
-          src="/brand/lockup-horizontal-dark-bg.svg"
-          height={30}
-          width={130}
-          className="self-start"
+          className="h-8.5 self-start"
         />
         <p className="text-on-dark-tertiary text-body leading-[1.95]">
           {siteFooter.tagline}

@@ -8,6 +8,8 @@ import { faqQuestions } from "./faq";
 
 export const siteHeader = {
   logoAlt: "آربایت",
+  /** E-01 §۱ — aria-label لینک لوگو، نه صرفاً alt تصویر. */
+  homeLinkLabel: "آربایت — صفحه اصلی",
   nav: {
     products: "محصولات",
     categories: "دسته‌بندی‌ها",
@@ -498,7 +500,7 @@ export const homeCommunity = {
   statLabels: {
     deliveredOrders: "سفارش تحویل‌شده",
     satisfactionPercent: "رضایت از خرید",
-    yearsActive: "سال فعالیت",
+    activeSinceYear: "آغاز فعالیت",
   },
   legendHub: "تهران",
   legendDelivery: (provinceRange: string) => `تحویل ${provinceRange} روز کاری`,
@@ -587,7 +589,7 @@ export const categoriesPage = {
   /**
    * T-213 §۸ — سوییچر «نمی‌دانید کدام دسته؟». متن توصیفی عیناً از طراحی؛ عدد
    * دستگاه هر گزینه (مثلاً «۲۴ دستگاه گیمینگ») ساختگی بود و حذف شده — ر.ک.
-   * QUESTIONS.md.
+   * QUESTIONS.md. `href` هر گزینه در E-01 §۵ اضافه شد (جدول Q-11 سند تسک).
    */
   useCaseSwitcher: {
     title: "نمی‌دانید کدام دسته؟",
@@ -600,26 +602,31 @@ export const categoriesPage = {
       label: "بازی",
       description:
         "لپ‌تاپ گیمینگ با نمایشگر بالای ۱۶۵ هرتز و گرافیک سری ۴۰۷۰ به بالا. بودجه پیشنهادی از ۱۵۰ میلیون.",
+      href: "/category/gaming-pc",
     },
     {
       label: "رندر و تدوین",
       description:
         "نمایشگر کالیبره، رم ۳۲ گیگ به بالا و ذخیره‌سازی دو ترابایتی. تدوین چهارکی بدون افت فریم.",
+      href: "/category/laptop-new?sort=price_desc",
     },
     {
       label: "برنامه‌نویسی",
       description:
         "رم زیاد و کیبورد راحت مهم‌تر از گرافیک است. اولترابوک‌های ۱۶ اینچی با ۳۲ گیگ رم گزینه درست‌اند.",
+      href: "/category/laptop-open-box",
     },
     {
       label: "دانشجویی",
       description:
         "زیر ۶۰ میلیون، با باتری بلند و وزن کم برای بردن به دانشگاه. گارانتی و خدمات پس از فروش کامل.",
+      href: "/category/laptop-stock?sort=price_asc",
     },
     {
       label: "سفر و جلسه",
       description:
         "زیر ۱٫۳ کیلوگرم، باتری بالای ۱۲ ساعت و شارژ با USB-C. برای جلسه و پرواز طولانی.",
+      href: "/category/surface",
     },
   ],
 } as const;

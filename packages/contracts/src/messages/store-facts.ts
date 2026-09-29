@@ -6,9 +6,10 @@
  * (ر.ک. docs/QUESTIONS.md Q-3 برای منبع هر عدد).
  *
  * مقدار `null` یعنی آن تکه‌ی رابط کاربری **پنهان** می‌شود — نه صفر، نه خط
- * تیره. آمار ساختگی (مثلاً سه عدد نمونه‌ی بخش Community در Home.dc.html)
- * روی سایت فروشگاه تازه‌کار نقض بند ۲.۲۶ برند بوک است؛ برای همین
- * `support.*`/`stats.*` عمداً `null` مانده‌اند تا مدیر پروژه پرشان کند.
+ * تیره. `stats.*` قبلاً عمداً `null` بود (بند ۲.۲۶ — بدون آمار ساختگی)؛
+ * E-01 §۳ اعداد واقعی تأییدشده‌ی مدیر پروژه را داد، ردیف آمار صفحه اصلی
+ * حالا دیده می‌شود. `activeSinceYear` (نه یک شمارنده‌ی «سال‌های فعالیت»)
+ * عمدی است — «از ۱۴۰۰» با گذر زمان کهنه نمی‌شود، برخلاف یک عدد ثابت سال.
  */
 export const storeFacts = {
   policies: {
@@ -27,9 +28,9 @@ export const storeFacts = {
     avgResponseMinutes: null as number | null,
   },
   stats: {
-    deliveredOrders: null as number | null,
-    satisfactionPercent: null as number | null,
-    yearsActive: null as number | null,
+    deliveredOrders: 300 as number | null,
+    satisfactionPercent: 95 as number | null,
+    activeSinceYear: 1400 as number | null,
   },
 } as const;
 

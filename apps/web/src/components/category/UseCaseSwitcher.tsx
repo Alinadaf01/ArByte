@@ -11,10 +11,10 @@ const CHIP_OFF =
   "border-border-input bg-surface text-secondary-2 hover:border-brand-tint-2";
 
 /**
- * T-213 §۸ — سوییچر «نمی‌دانید کدام دسته؟» (`Categories.dc.html`). طراحی
- * برای هر گزینه یک CTA با عدد دستگاه ساختگی دارد («۲۴ دستگاه گیمینگ») —
- * چون فیلتر واقعی بر اساس کاربری نداریم، فقط به فروشگاه لینک می‌دهد، بدون
- * ادعای عدد (ر.ک. QUESTIONS.md).
+ * T-213 §۸ / E-01 §۵ — سوییچر «نمی‌دانید کدام دسته؟» (`Categories.dc.html`).
+ * هر گزینه حالا به دسته‌ی واقعی خودش لینک می‌دهد (`categoriesPage.useCases[].href`،
+ * جدول Q-11 سند تسک) — قبلاً همه به `/products` عمومی می‌رفتند چون فیلتر
+ * واقعی بر اساس کاربری نبود.
  */
 export function UseCaseSwitcher() {
   const [active, setActive] = useState(0);
@@ -50,7 +50,7 @@ export function UseCaseSwitcher() {
             {categoriesPage.useCases[active]?.description}
           </p>
           <Link
-            href="/products"
+            href={categoriesPage.useCases[active]?.href ?? "/products"}
             className="bg-primary text-on-dark min-h-10.5 shrink-0 rounded-pill px-5 text-caption font-emphasis whitespace-nowrap"
           >
             {categoriesPage.useCaseSwitcher.cta}

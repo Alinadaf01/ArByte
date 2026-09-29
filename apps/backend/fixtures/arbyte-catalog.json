@@ -448,8 +448,8 @@
       "priority": 100,
       "images": [
         {
-          "url": "/seed-images/msi-titan-18-hx.svg",
-          "altText": "تصویر نمونه‌ی MSI Titan 18 HX A2XWJG — عکس واقعی جایگزین می‌شود",
+          "url": "/seed-images/msi-titan-18-hx.webp",
+          "altText": "MSI Titan 18 HX A2W — نمای روبه‌رو",
           "sortOrder": 0,
           "isPrimary": true
         }
@@ -458,7 +458,7 @@
         {
           "definitionKey": "cpu-gaming",
           "value": null,
-          "customValue": "Intel Core Ultra 9 275HX",
+          "customValue": "Intel Core Ultra 9 290HX Plus",
           "numericValue": null
         },
         {
@@ -611,8 +611,8 @@
       "priority": 95,
       "images": [
         {
-          "url": "/seed-images/asus-rog-strix-scar-18.svg",
-          "altText": "تصویر نمونه‌ی ASUS ROG Strix SCAR 18 (2026) — عکس واقعی جایگزین می‌شود",
+          "url": "/seed-images/asus-rog-strix-scar-18.webp",
+          "altText": "ASUS ROG Strix SCAR 18 (2026) — نمای روبه‌رو",
           "sortOrder": 0,
           "isPrimary": true
         }
@@ -633,7 +633,7 @@
         {
           "definitionKey": "cpu-gaming",
           "value": null,
-          "customValue": "Intel Core Ultra 9 275HX",
+          "customValue": "Intel Core Ultra 9 290HX Plus",
           "numericValue": null
         },
         {

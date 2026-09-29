@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import type { CategoryTreeNode } from "@arbyte/contracts";
 import { siteHeader, toPersianDigits } from "@arbyte/contracts";
 import { useCartStore } from "@/lib/stores/cart-store";
+import { Logo } from "./Logo";
 
 export type SiteHeaderActive =
   "" | "products" | "categories" | "blog" | "about" | "support";
@@ -46,12 +46,15 @@ export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
         dir="rtl"
         className="border-border/60 font-sans text-primary sticky top-0 z-30 hidden h-18 items-center gap-[clamp(12px,2vw,30px)] border-b bg-paper/90 px-[5vw] backdrop-blur-md md:flex [@supports_not_(backdrop-filter:blur(1px))]:bg-paper [@supports_not_(backdrop-filter:blur(1px))]:backdrop-blur-none"
       >
-        <Link href="/" className="flex flex-none items-center">
-          <Image
+        <Link
+          href="/"
+          aria-label={siteHeader.homeLinkLabel}
+          className="flex flex-none items-center"
+        >
+          <Logo
+            variant="horizontal-light"
             alt={siteHeader.logoAlt}
-            src="/brand/lockup-horizontal-light-bg.svg"
-            height={30}
-            width={130}
+            className="h-8"
             priority
           />
         </Link>
@@ -253,13 +256,13 @@ export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
 
         <Link
           href="/"
+          aria-label={siteHeader.homeLinkLabel}
           className="flex min-w-0 flex-1 items-center justify-center"
         >
-          <Image
+          <Logo
+            variant="horizontal-light"
             alt={siteHeader.logoAlt}
-            src="/brand/lockup-horizontal-light-bg.svg"
-            height={26}
-            width={113}
+            className="h-6.5"
           />
         </Link>
 
@@ -326,11 +329,10 @@ export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
         style={{ visibility: drawerOpen ? "visible" : "hidden" }}
       >
         <div className="border-border-divider flex items-center justify-between gap-2.5 border-b p-3.5">
-          <Image
+          <Logo
+            variant="horizontal-light"
             alt={siteHeader.logoAlt}
-            src="/brand/lockup-horizontal-light-bg.svg"
-            height={26}
-            width={113}
+            className="h-6.5"
           />
           <button
             type="button"

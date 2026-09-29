@@ -5,6 +5,7 @@ import {
   easeStep,
   fitTransform,
   frameUrl,
+  nearestAvailableFrame,
 } from "./hero-engine";
 
 describe("frameUrl", () => {
@@ -93,7 +94,29 @@ describe("easeStep", () => {
     expect(easeStep(9.98, 10)).toBe(10);
   });
 
-  it("در غیر این صورت با ضریب ۰٫۴۲ به target نزدیک می‌شود", () => {
-    expect(easeStep(0, 10)).toBeCloseTo(4.2, 5);
+  it("در غیر این صورت با ضریب ۰٫۱۲ به target نزدیک می‌شود (E-01 §۴)", () => {
+    expect(easeStep(0, 10)).toBeCloseTo(1.2, 5);
+  });
+});
+
+describe("nearestAvailableFrame", () => {
+  it("اگر خودِ فریم موجود باشد، همان را برمی‌گرداند", () => {
+    const available = new Set([10, 20, 30]);
+    expect(nearestAvailableFrame(available, 20, 219)).toBe(20);
+  });
+
+  it("نزدیک‌ترین فریمِ بارگذاری‌شده را برمی‌گرداند، نه جای خالی", () => {
+    const available = new Set([0, 42, 50]);
+    expect(nearestAvailableFrame(available, 45, 219)).toBe(42);
+    expect(nearestAvailableFrame(available, 48, 219)).toBe(50);
+  });
+
+  it("در فاصله‌ی مساوی، سمت پایین‌تر برنده است (اولویت به قبل)", () => {
+    const available = new Set([40, 44]);
+    expect(nearestAvailableFrame(available, 42, 219)).toBe(40);
+  });
+
+  it("وقتی available خالی است، همان target را برمی‌گرداند (نگهبان)", () => {
+    expect(nearestAvailableFrame(new Set(), 42, 219)).toBe(42);
   });
 });

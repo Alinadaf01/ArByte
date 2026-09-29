@@ -272,7 +272,11 @@ interface ProductSeedInput {
   shortDescription: string;
   description: string;
   priority?: number;
+  /** بدون پسوند = placeholder سابق (`/seed-images/<image>.svg`)؛ با پسوند
+   * (مثلاً `msi-titan-18-hx.webp`) = عکس واقعی — E-01 §۲. */
   image: string;
+  /** پیش‌فرض متن placeholder سابق؛ برای عکس واقعی صریح ست شود. */
+  imageAlt?: string;
   /** مشخصات مشترک TEXT/NUMBER — customValue آزاد (سطح محصول). */
   specs: { definitionId: string; value: string }[];
   /** مشخصات مشترک SELECT — از `SpecificationValue` از پیش تعریف‌شده (سطح محصول). */
@@ -292,6 +296,14 @@ interface ProductSeedInput {
  * بند ۷ سند T-150 — یک محصول کامل با واریانت(ها)، موجودی، مشخصات، تصویر و
  * SEO پایه. idempotent (findFirst+create روی slug/sku، همان الگوی موجود).
  */
+/** E-01 §۲ — `image` بدون پسوند یعنی placeholder سابق (`.svg`)؛ با پسوند
+ * یعنی عکس واقعی از قبل در `apps/web/public/seed-images/` هست. */
+function productImageUrl(image: string): string {
+  return image.includes(".")
+    ? `/seed-images/${image}`
+    : `/seed-images/${image}.svg`;
+}
+
 async function seedProduct(input: ProductSeedInput) {
   assertConditionMatchesCategory({
     productName: input.name,
@@ -336,14 +348,17 @@ async function seedProduct(input: ProductSeedInput) {
     const primaryImage = await prisma.productImage.findFirst({
       where: { productId: product.id, isPrimary: true },
     });
-    const newUrl = `/seed-images/${input.image}.svg`;
-    if (primaryImage && primaryImage.url !== newUrl) {
+    const newUrl = productImageUrl(input.image);
+    const newAlt =
+      input.imageAlt ??
+      `تصویر نمونه‌ی ${input.name} — عکس واقعی جایگزین می‌شود`;
+    if (
+      primaryImage &&
+      (primaryImage.url !== newUrl || primaryImage.altText !== newAlt)
+    ) {
       await prisma.productImage.update({
         where: { id: primaryImage.id },
-        data: {
-          url: newUrl,
-          altText: `تصویر نمونه‌ی ${input.name} — عکس واقعی جایگزین می‌شود`,
-        },
+        data: { url: newUrl, altText: newAlt },
       });
     }
   }
@@ -377,8 +392,10 @@ async function seedProduct(input: ProductSeedInput) {
     await prisma.productImage.create({
       data: {
         productId: product.id,
-        url: `/seed-images/${input.image}.svg`,
-        altText: `تصویر نمونه‌ی ${input.name} — عکس واقعی جایگزین می‌شود`,
+        url: productImageUrl(input.image),
+        altText:
+          input.imageAlt ??
+          `تصویر نمونه‌ی ${input.name} — عکس واقعی جایگزین می‌شود`,
         sortOrder: 0,
         isPrimary: true,
       },
@@ -756,12 +773,14 @@ async function seedCatalog() {
     modelNumber: "A2XWJG",
     condition: "NEW",
     priority: 100,
-    image: "msi-titan-18-hx",
+    image: "msi-titan-18-hx.webp",
+    imageAlt: "MSI Titan 18 HX A2W — نمای روبه‌رو",
     shortDescription: "قوی‌ترین لپ‌تاپ رومیزی‌جایگزین بازار",
     description:
       "Titan 18 HX سنگین است و صدا می‌دهد، و هیچ‌کدام را پنهان نمی‌کند. در عوض زیر بار کامل رندر، فرکانس پردازنده را نگه می‌دارد. نمایشگر Mini LED در محیط روشن هم خوانا می‌ماند و برای تدوین رنگ قابل‌اتکاست.",
     specs: [
-      { definitionId: cpuGaming.id, value: "Intel Core Ultra 9 275HX" },
+      // E-01 §۳ — «Core Ultra 9 290HX Plus» طبق Home.dc.html، تأیید مدیر پروژه.
+      { definitionId: cpuGaming.id, value: "Intel Core Ultra 9 290HX Plus" },
       { definitionId: gpuGaming.id, value: "GeForce RTX 5090 Laptop ۲۴GB" },
       {
         definitionId: displayGaming.id,
@@ -817,12 +836,14 @@ async function seedCatalog() {
     modelNumber: "SCAR18-2026",
     condition: "NEW",
     priority: 95,
-    image: "asus-rog-strix-scar-18",
+    image: "asus-rog-strix-scar-18.webp",
+    imageAlt: "ASUS ROG Strix SCAR 18 (2026) — نمای روبه‌رو",
     shortDescription: "پیروزی، شتاب‌گرفته — رده‌ی بالای ROG با ۱۲۸GB رم",
     description:
       "Strix SCAR 18 (2026) رده‌ی بالای خط تولید ROG است؛ برای رقابتی‌ترین بازی‌ها روی نمایشگر ۴K Mini LED با نرخ فریم بالا ساخته شده. سقف رم تا ۱۲۸GB برای رندر و استریم همزمان جا دارد.",
     specs: [
-      { definitionId: cpuGaming.id, value: "Intel Core Ultra 9 275HX" },
+      // E-01 §۳ — «Core Ultra 9 290HX Plus» طبق Home.dc.html، تأیید مدیر پروژه.
+      { definitionId: cpuGaming.id, value: "Intel Core Ultra 9 290HX Plus" },
       { definitionId: gpuGaming.id, value: "GeForce RTX 5090 Laptop ۱۷۵W" },
       { definitionId: displayGaming.id, value: "۴K Mini LED ۲۴۰Hz" },
       { definitionId: weightGaming.id, value: "۳٫۳ کیلوگرم" },

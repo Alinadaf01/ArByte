@@ -1,12 +1,16 @@
-import { formatNumberFa, homeCommunity, storeFacts } from "@arbyte/contracts";
+import {
+  formatNumberFa,
+  homeCommunity,
+  storeFacts,
+  toPersianDigits,
+} from "@arbyte/contracts";
 import { IranMap } from "./IranMap";
 
 /**
  * T-212 §۴ — «جامعه آربایت». نقشه از `IranMap.tsx` (SVG ایستا، تولیدشده‌ی
  * آفلاین توسط `pnpm map:build` — صفر d3/topojson در این باندل). آمار
- * (`storeFacts.stats.*`) همه فعلاً `null`اند؛ طبق قاعده‌ی BATCH-01 (بدون
- * آمار ساختگی)، اگر هر سه null بود کل ردیف آمار پنهان می‌شود، نه صفر یا
- * جای خالی.
+ * (`storeFacts.stats.*`) اگر هر سه null بود کل ردیف آمار پنهان می‌شود، نه
+ * صفر یا جای خالی (اکنون هر سه مقدار واقعی دارند — E-01 §۳).
  */
 export function CommunitySection() {
   const { stats, policies } = storeFacts;
@@ -14,7 +18,7 @@ export function CommunitySection() {
     [
       { key: "deliveredOrders", value: stats.deliveredOrders },
       { key: "satisfactionPercent", value: stats.satisfactionPercent },
-      { key: "yearsActive", value: stats.yearsActive },
+      { key: "activeSinceYear", value: stats.activeSinceYear },
     ] as const
   ).filter(
     (entry): entry is { key: typeof entry.key; value: number } =>
@@ -45,7 +49,10 @@ export function CommunitySection() {
                   <span className="text-subhead text-primary font-heading tracking-tight">
                     {entry.key === "satisfactionPercent"
                       ? `${formatNumberFa(entry.value)}٪`
-                      : formatNumberFa(entry.value)}
+                      : entry.key === "deliveredOrders"
+                        ? `+${formatNumberFa(entry.value)}`
+                        : /* سال — هرگز جداکننده‌ی هزارگان (۱۴۰۰، نه ۱٬۴۰۰) */
+                          `از ${toPersianDigits(entry.value)}`}
                   </span>
                   <span className="text-caption text-secondary">
                     {homeCommunity.statLabels[entry.key]}

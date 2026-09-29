@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { aboutPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
@@ -44,8 +45,15 @@ export default function AboutPage() {
                 {aboutPage.hero.body}
               </p>
             </div>
-            <div className="aspect-[4/3] min-w-0 overflow-hidden rounded-card-lg border border-white/12 bg-white/5">
-              <ImageSlot label={aboutPage.hero.imageAlt} />
+            <div className="relative aspect-[4/3] min-w-0 overflow-hidden rounded-card-lg border border-white/12 bg-white/5">
+              <Image
+                src="/about/about-us.webp"
+                alt={aboutPage.hero.imageAlt}
+                fill
+                priority
+                sizes="(max-width: 768px) 90vw, 45vw"
+                className="object-cover object-center"
+              />
             </div>
           </div>
         </section>

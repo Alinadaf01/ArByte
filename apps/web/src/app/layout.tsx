@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { siteFooter } from "@arbyte/contracts";
 import { estedad } from "@/lib/fonts";
 import "./globals.css";
 
@@ -10,6 +11,16 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   ),
   title: "ArByte",
+  description: siteFooter.tagline,
+  // favicon.ico/apple-icon.png/icon.png/opengraph-image.png/manifest.ts —
+  // همه با قرارداد نام‌گذاری فایل Next خودکار پیوند می‌شوند (E-01 §۱)؛
+  // اینجا فقط چیزی که آن قرارداد نمی‌سازد (زبان/عنوان/توضیح OG).
+  openGraph: {
+    title: "آربایت",
+    description: siteFooter.tagline,
+    locale: "fa_IR",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

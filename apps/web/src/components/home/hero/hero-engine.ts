@@ -92,9 +92,34 @@ export function fitTransform(input: {
   return `translate(-50%, ${ty.toFixed(2)}%) scale(${sc.toFixed(3)})`;
 }
 
-/** رشته‌ی eased-ease شبیه‌سازی‌شده‌ی loop() طراحی — یک گام از disp به سمت target. */
+/**
+ * رشته‌ی eased-ease شبیه‌سازی‌شده‌ی loop() طراحی — یک گام از disp به سمت
+ * target. ضریب ۰٫۱۲ (E-01 §۴ — قبلاً ۰٫۴۲؛ چرخش نرم‌تر بدون دو برابر کردن
+ * حجم، ترکیب دو فریم مجاور در HeroScrollEngine باقی نرمی را می‌دهد).
+ */
 export function easeStep(disp: number, target: number): number {
   const d = target - disp;
   if (Math.abs(d) < 0.05) return target;
-  return disp + d * 0.42;
+  return disp + d * 0.12;
+}
+
+/**
+ * نزدیک‌ترین فریمِ از قبل بارگذاری‌شده به `target` — وقتی فریم دقیق هنوز
+ * decode نشده (E-01 §۴: «اگر فریمی هنوز نرسیده، نزدیک‌ترین فریم بارگذاری‌شده،
+ * نه جای خالی»). فریم صفر همیشه اول eager بارگذاری می‌شود، پس این تابع
+ * همیشه چیزی پیدا می‌کند مگر `available` کاملاً خالی باشد.
+ */
+export function nearestAvailableFrame(
+  available: { has(index: number): boolean },
+  target: number,
+  maxIndex: number,
+): number {
+  if (available.has(target)) return target;
+  for (let d = 1; d <= maxIndex; d++) {
+    const below = target - d;
+    if (below >= 0 && available.has(below)) return below;
+    const above = target + d;
+    if (above <= maxIndex && available.has(above)) return above;
+  }
+  return target;
 }
