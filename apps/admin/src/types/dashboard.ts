@@ -82,7 +82,7 @@ export interface GatewayStatus {
 
 export interface StockDiscrepancy {
   product: { id: number; name: string; sku: string };
-  stockCount: number;
+  quantity: number;
   ledgerBalance: number;
 }
 

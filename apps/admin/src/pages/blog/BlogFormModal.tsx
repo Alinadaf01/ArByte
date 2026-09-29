@@ -52,6 +52,7 @@ export function BlogFormModal({
       authorRole: "",
       tags: "",
       readingTime: 3,
+      coverAlt: "",
       isPublished: false,
       metaTitle: "",
       metaDescription: "",
@@ -77,6 +78,7 @@ export function BlogFormModal({
         authorRole: post.authorRole,
         tags: post.tags.join(", "),
         readingTime: post.readingTime,
+        coverAlt: post.coverAlt ?? "",
         isPublished: post.isPublished,
         metaTitle: post.metaTitle,
         metaDescription: post.metaDescription,
@@ -92,6 +94,7 @@ export function BlogFormModal({
         authorRole: "",
         tags: "",
         readingTime: 3,
+        coverAlt: "",
         isPublished: false,
         metaTitle: "",
         metaDescription: "",
@@ -167,19 +170,13 @@ export function BlogFormModal({
               ))}
             </Select>
           </Field>
-          <Field
-            label="زمان مطالعه (دقیقه)"
-            htmlFor="b-reading-time"
-            required
-            error={errors.readingTime?.message}
-          >
-            <Input
-              id="b-reading-time"
-              type="number"
-              min={1}
-              {...register("readingTime")}
-            />
-          </Field>
+          <div className="flex flex-col justify-end gap-1 pb-2 text-xs text-slate-400">
+            زمان مطالعه:{" "}
+            {post ? `${post.readingTime.toLocaleString("fa-IR")} دقیقه` : "—"}
+            <span className="text-[11px] text-slate-500">
+              بعد از ذخیره از روی متن بخش‌ها خودکار حساب می‌شود.
+            </span>
+          </div>
         </div>
 
         <SingleImageField
@@ -187,6 +184,13 @@ export function BlogFormModal({
           currentUrl={post?.resolvedCoverUrl || post?.coverImage || null}
           onFileSelected={setCoverImage}
         />
+        <Field
+          label="متن جایگزین کاور (alt)"
+          htmlFor="b-cover-alt"
+          error={errors.coverAlt?.message}
+        >
+          <Input id="b-cover-alt" {...register("coverAlt")} />
+        </Field>
 
         <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] p-4">
           <div className="flex items-center justify-between">

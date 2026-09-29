@@ -646,15 +646,23 @@ export async function listActivityLog(params: {
 async function returnTransition(
   id: string,
   action: string,
+  body?: unknown,
 ): Promise<AdminReturn> {
   const res = await authorizedFetch(`/returns/${id}/${action}/`, {
     method: "POST",
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return parseOrThrow(res, "عملیات ناموفق بود.");
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "عملیات ناموفق بود."));
+  return res.json();
 }
 
-export const approveReturn = (id: string) => returnTransition(id, "approve");
-export const rejectReturn = (id: string) => returnTransition(id, "reject");
+/** F-04 — تصمیم قلم‌به‌قلم؛ اگر همه رد شوند، سرور کل درخواست را رد می‌کند. */
+export const decideReturn = (
+  id: string,
+  items: { id: number; approved: boolean }[],
+  adminNote: string,
+) => returnTransition(id, "approve", { items, adminNote });
 export const markReturnReceived = (id: string) =>
   returnTransition(id, "mark-received");
 export const markReturnRefunded = (id: string) =>

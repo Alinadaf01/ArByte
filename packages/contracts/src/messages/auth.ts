@@ -21,3 +21,10 @@ export const authErrors = {
   invalidMobile: "شماره موبایل واردشده صحیح نیست.",
   mobileGuidance: "شماره موبایل را بررسی کنید و دوباره تلاش کنید.",
 } as const;
+
+/** F-04 — نوار هشدار سشن Impersonation (ادمین در حال مشاهده به‌جای مشتری). */
+export const impersonationBanner = {
+  viewingAs: (customer: string) => `در حال مشاهده به‌جای ${customer}`,
+  by: (admin: string) => `توسط ${admin}`,
+  exit: "خروج",
+} as const;

@@ -101,7 +101,7 @@ export function SalesReportCard({ from, to }: { from: string; to: string }) {
             <div className="h-64">
               <Bar
                 data={{
-                  labels: data!.series.map((r) => r.period),
+                  labels: data!.series.map((r) => r.label),
                   datasets: [
                     {
                       label: "فروش (تومان)",

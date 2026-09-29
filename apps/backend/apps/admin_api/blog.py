@@ -20,7 +20,7 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogPost
         fields = [
-            "id", "slug", "title", "excerpt", "category", "sections", "cover_image", "resolved_cover_url",
+            "id", "slug", "title", "excerpt", "category", "sections", "cover_image", "cover_alt", "resolved_cover_url",
             "author", "author_role", "tags", "reading_time", "is_published",
             "meta_title", "meta_description", "published_at",
         ]
@@ -41,6 +41,16 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
         has_date = validated_data.get("published_at") or (existing and existing.published_at)
         if will_be_published and not has_date:
             validated_data["published_at"] = timezone.now()
+
+    def validate(self, attrs):
+        """F-04 — زمان مطالعه خودکار از متن بخش‌ها (~۲۰۰ کلمه در دقیقه)؛ کاور بدون alt پذیرفته نمی‌شود."""
+        sections = attrs.get("sections", getattr(self.instance, "sections", None)) or []
+        words = sum(len(str(s.get("heading", "")).split()) + len(str(s.get("body", "")).split()) for s in sections if isinstance(s, dict))
+        attrs["reading_time"] = max(1, round(words / 200))
+        has_cover = attrs.get("cover_image") or getattr(self.instance, "cover_image", None) or getattr(self.instance, "external_cover_url", "")
+        if has_cover and not (attrs.get("cover_alt", getattr(self.instance, "cover_alt", "")) or "").strip():
+            raise serializers.ValidationError({"cover_alt": "برای تصویر کاور متن جایگزین (alt) لازم است."})
+        return attrs
 
     def create(self, validated_data):
         self._apply_publish_default(validated_data, existing=None)

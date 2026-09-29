@@ -114,6 +114,7 @@ urlpatterns = [
     path("admin/payments/receipts/<int:pk>/", payments.AdminPaymentReceiptReviewView.as_view(), name="admin-payment-receipt-review"),
     path("admin/payments/receipts/<int:pk>/file/", payments.AdminPaymentReceiptFileView.as_view(), name="admin-payment-receipt-file"),
     # Search Console
+    path("admin/search-console/status/", search_console.AdminSearchConsoleStatusView.as_view(), name="admin-sc-status"),
     path("admin/search-console/performance/", search_console.AdminSearchConsolePerformanceView.as_view(), name="admin-sc-performance"),
     path("admin/search-console/queries/", search_console.AdminSearchConsoleQueriesView.as_view(), name="admin-sc-queries"),
     path("admin/search-console/pages/", search_console.AdminSearchConsolePagesView.as_view(), name="admin-sc-pages"),

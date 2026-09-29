@@ -1,5 +1,5 @@
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Input } from "@/components/ui/Field";
+import { JalaliDateInput } from "@/components/ui/JalaliDateInput";
 import { useQueryFilters } from "@/lib/useQueryFilters";
 import { SalesReportCard } from "@/pages/reports/SalesReportCard";
 import { TopProductsReportCard } from "@/pages/reports/TopProductsReportCard";
@@ -26,20 +26,18 @@ export default function ReportsPage() {
       <section className="glass-card flex flex-wrap items-center gap-3 p-5">
         <label className="flex items-center gap-2 text-xs text-slate-400">
           از
-          <Input
-            type="date"
-            className="w-auto"
+          <JalaliDateInput
+            label="از تاریخ"
             value={filters.from}
-            onChange={(e) => setFilters({ from: e.target.value })}
+            onChange={(iso) => setFilters({ from: iso })}
           />
         </label>
         <label className="flex items-center gap-2 text-xs text-slate-400">
           تا
-          <Input
-            type="date"
-            className="w-auto"
+          <JalaliDateInput
+            label="تا تاریخ"
             value={filters.to}
-            onChange={(e) => setFilters({ to: e.target.value })}
+            onChange={(iso) => setFilters({ to: iso })}
           />
         </label>
       </section>

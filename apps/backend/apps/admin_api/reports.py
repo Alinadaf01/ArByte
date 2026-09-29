@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.documents.excel import COUNT_FORMAT, TOMAN_FORMAT, Column, build_workbook
-from apps.documents.persian import format_jalali_date
+from apps.documents.persian import PERSIAN_MONTHS, format_jalali_date
 from apps.documents.responses import xlsx_filename, xlsx_response
-from apps.orders.models import Cart, Order, OrderItem, Payment, Return
+from apps.orders.models import PAYMENT_GATEWAY_CHOICES, PAYMENT_METHOD_CHOICES, Cart, Order, OrderItem, Payment, Return
 from apps.users.models import User
 
 from .permissions import require_section
@@ -30,22 +30,49 @@ def _paid_orders_in_range(from_date, to_date):
     return qs
 
 
+def _sales_series(qs, group_by):
+    """F-04 — دوره‌ها به تقویم شمسی: روزانه/هفتگی با Trunc پایگاه‌داده و
+    برچسب جلالی؛ ماهانه در پایتون روی ماه جلالی (ماه میلادی با ماه
+    شمسی هم‌مرز نیست). خروجی: [{period, label, total, order_count}]."""
+    import jdatetime
+    from django.utils import timezone
+
+    if group_by == "month":
+        buckets = {}
+        for paid_at, total in qs.values_list("paid_at", "final_total").order_by("paid_at"):
+            j = jdatetime.date.fromgregorian(date=timezone.localtime(paid_at).date())
+            key = f"{j.year:04d}-{j.month:02d}"
+            b = buckets.setdefault(
+                key, {"period": key, "label": f"{PERSIAN_MONTHS[j.month - 1]} {j.year}", "total": 0, "order_count": 0}
+            )
+            b["total"] += total
+            b["order_count"] += 1
+        return list(buckets.values())
+    trunc = _TRUNC.get(group_by, TruncDate)
+    rows = (
+        qs.annotate(period=trunc("paid_at"))
+        .values("period")
+        .annotate(total=Sum("final_total"), order_count=Count("id"))
+        .order_by("period")
+    )
+    return [
+        {
+            "period": row["period"].isoformat(),
+            "label": format_jalali_date(row["period"]),
+            "total": row["total"],
+            "order_count": row["order_count"],
+        }
+        for row in rows
+    ]
+
+
 class AdminSalesReportView(APIView):
     permission_classes = [require_section("reports")]
 
     def get(self, request):
         from_date, to_date = _date_range(request)
         group_by = request.query_params.get("groupBy", "day")
-        trunc = _TRUNC.get(group_by, TruncDate)
-
-        qs = _paid_orders_in_range(from_date, to_date)
-        rows = (
-            qs.annotate(period=trunc("paid_at"))
-            .values("period")
-            .annotate(total=Sum("final_total"), order_count=Count("id"))
-            .order_by("period")
-        )
-        series = [{"period": row["period"].isoformat(), "total": row["total"], "order_count": row["order_count"]} for row in rows]
+        series = _sales_series(_paid_orders_in_range(from_date, to_date), group_by)
         order_count = sum(r["order_count"] for r in series)
         total = sum(r["total"] for r in series)
         average_order_value = round(total / order_count) if order_count else 0
@@ -67,18 +94,9 @@ class AdminSalesReportExportView(APIView):
     def get(self, request):
         from_date, to_date = _date_range(request)
         group_by = request.query_params.get("groupBy", "day")
-        trunc = _TRUNC.get(group_by, TruncDate)
-
-        qs = _paid_orders_in_range(from_date, to_date)
-        db_rows = (
-            qs.annotate(period=trunc("paid_at"))
-            .values("period")
-            .annotate(total=Sum("final_total"), order_count=Count("id"))
-            .order_by("period")
-        )
         rows = [
-            {"period": format_jalali_date(row["period"]), "total": row["total"], "order_count": row["order_count"]}
-            for row in db_rows
+            {"period": r["label"], "total": r["total"], "order_count": r["order_count"]}
+            for r in _sales_series(_paid_orders_in_range(from_date, to_date), group_by)
         ]
 
         bits = [f"تفکیک: {_GROUP_BY_LABELS.get(group_by, group_by)}"]
@@ -254,11 +272,26 @@ class AdminByGatewayReportView(APIView):
         if to_date:
             payments = payments.filter(updated_at__date__lte=to_date)
         rows = (
-            payments.values("gateway")
+            payments.values("method", "gateway")
             .annotate(total=Sum("amount"), order_count=Count("order_id", distinct=True))
             .order_by("-total")
         )
-        return Response([{"gateway": row["gateway"], "total": row["total"], "order_count": row["order_count"]} for row in rows])
+        # F-04 — روش پرداخت از snapshot خود Payment (method/gateway)، نه تنظیمات فعلی.
+        methods, gateways = dict(PAYMENT_METHOD_CHOICES), dict(PAYMENT_GATEWAY_CHOICES)
+        return Response(
+            [
+                {
+                    "method": row["method"],
+                    "gateway": row["gateway"],
+                    "label": gateways.get(row["gateway"], row["gateway"])
+                    if row["method"] == "GATEWAY" and row["gateway"]
+                    else methods.get(row["method"], row["method"]),
+                    "total": row["total"],
+                    "order_count": row["order_count"],
+                }
+                for row in rows
+            ]
+        )
 
 
 class AdminReturnRateReportView(APIView):

@@ -79,12 +79,25 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
             {
                 "slug": "post-with-cover", "title": "پست با کاور", "excerpt": "خلاصه",
                 "category": "محصول", "author": "تیم آربایت", "coverImage": _fake_image_file(),
+                "coverAlt": "کاور پست",
             },
             format="multipart",
         )
         self.assertEqual(response.status_code, 201)
         post = BlogPost.objects.get(slug="post-with-cover")
         self.assertTrue(post.cover_image)
+
+    def test_cover_without_alt_is_rejected(self):
+        # F-04 — کاور بدون متن جایگزین (alt) ذخیره نمی‌شود.
+        response = self.client.post(
+            reverse("admin-blog-list"),
+            {
+                "slug": "post-no-alt", "title": "پست", "excerpt": "خلاصه",
+                "category": "محصول", "author": "تیم آربایت", "coverImage": _fake_image_file(),
+            },
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_publishing_without_a_date_sets_published_at_to_now(self):
         # Regression: the panel only exposes an is_published switch, no date

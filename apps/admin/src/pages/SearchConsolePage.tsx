@@ -1,5 +1,9 @@
+import { useQuery } from "@tanstack/react-query";
+import { JalaliDateInput } from "@/components/ui/JalaliDateInput";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Input } from "@/components/ui/Field";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { authorizedFetch } from "@/lib/api";
+import { SearchConsoleNotConnected } from "@/pages/searchConsole/NotConnected";
 import { useQueryFilters } from "@/lib/useQueryFilters";
 import { PerformanceCard } from "@/pages/searchConsole/PerformanceCard";
 import { QueriesCard } from "@/pages/searchConsole/QueriesCard";
@@ -9,6 +13,30 @@ import { SitemapStatusCard } from "@/pages/searchConsole/SitemapStatusCard";
 
 export default function SearchConsolePage() {
   const [filters, setFilters] = useQueryFilters({ from: "", to: "" });
+  // F-04 — بدون داده (اتصال واقعی بچ ۰۵) فقط پیام «متصل نیست»؛ کارت‌ها صدا زده نمی‌شوند.
+  const status = useQuery({
+    queryKey: ["search-console-status"],
+    queryFn: async () =>
+      (
+        (await (await authorizedFetch("/search-console/status/")).json()) as {
+          hasData: boolean;
+        }
+      ).hasData,
+  });
+  if (status.isPending) return <Skeleton className="h-64 w-full" />;
+  if (!status.data) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageHeader
+          title="سرچ کنسول"
+          description="عملکرد سایت در جست‌وجوی گوگل — نمایش، کلیک، پرس‌وجوهای برتر، و وضعیت ایندکس."
+        />
+        <section className="glass-card">
+          <SearchConsoleNotConnected />
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -20,20 +48,18 @@ export default function SearchConsolePage() {
       <section className="glass-card flex flex-wrap items-center gap-3 p-5">
         <label className="flex items-center gap-2 text-xs text-slate-400">
           از
-          <Input
-            type="date"
-            className="w-auto"
+          <JalaliDateInput
+            label="از تاریخ"
             value={filters.from}
-            onChange={(e) => setFilters({ from: e.target.value })}
+            onChange={(iso) => setFilters({ from: iso })}
           />
         </label>
         <label className="flex items-center gap-2 text-xs text-slate-400">
           تا
-          <Input
-            type="date"
-            className="w-auto"
+          <JalaliDateInput
+            label="تا تاریخ"
             value={filters.to}
-            onChange={(e) => setFilters({ to: e.target.value })}
+            onChange={(iso) => setFilters({ to: iso })}
           />
         </label>
       </section>

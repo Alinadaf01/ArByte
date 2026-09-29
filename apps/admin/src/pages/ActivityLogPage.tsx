@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { JalaliDateInput } from "@/components/ui/JalaliDateInput";
 import { useQuery } from "@tanstack/react-query";
 import { History } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -96,22 +97,16 @@ export default function ActivityLogPage() {
             value={filters.model}
             onChange={(e) => setFilters({ model: e.target.value, page: "1" })}
           />
-          <Input
-            className="w-auto"
-            type="date"
-            dir="ltr"
+          <JalaliDateInput
+            label="از تاریخ"
             value={filters.dateFrom}
-            onChange={(e) =>
-              setFilters({ dateFrom: e.target.value, page: "1" })
-            }
+            onChange={(iso) => setFilters({ dateFrom: iso, page: "1" })}
           />
           <span className="text-xs text-slate-500">تا</span>
-          <Input
-            className="w-auto"
-            type="date"
-            dir="ltr"
+          <JalaliDateInput
+            label="تا تاریخ"
             value={filters.dateTo}
-            onChange={(e) => setFilters({ dateTo: e.target.value, page: "1" })}
+            onChange={(iso) => setFilters({ dateTo: iso, page: "1" })}
           />
         </div>
 

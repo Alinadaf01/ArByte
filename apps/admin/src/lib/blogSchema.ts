@@ -25,6 +25,7 @@ export const blogPostFormSchema = z.object({
     .number()
     .int()
     .min(1, "زمان مطالعه باید حداقل ۱ دقیقه باشد."),
+  coverAlt: z.string(),
   isPublished: z.boolean(),
   metaTitle: z.string(),
   metaDescription: z.string(),

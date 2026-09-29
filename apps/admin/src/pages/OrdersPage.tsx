@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { JalaliDateInput } from "@/components/ui/JalaliDateInput";
 import { useState } from "react";
 import { ShoppingCart, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -106,24 +107,18 @@ export default function OrdersPage() {
           </Select>
           <label className="flex items-center gap-2 text-xs text-slate-400">
             از
-            <Input
-              type="date"
-              className="w-auto"
+            <JalaliDateInput
+              label="از تاریخ"
               value={filters.dateFrom}
-              onChange={(e) =>
-                setFilters({ dateFrom: e.target.value, page: "1" })
-              }
+              onChange={(iso) => setFilters({ dateFrom: iso, page: "1" })}
             />
           </label>
           <label className="flex items-center gap-2 text-xs text-slate-400">
             تا
-            <Input
-              type="date"
-              className="w-auto"
+            <JalaliDateInput
+              label="تا تاریخ"
               value={filters.dateTo}
-              onChange={(e) =>
-                setFilters({ dateTo: e.target.value, page: "1" })
-              }
+              onChange={(iso) => setFilters({ dateTo: iso, page: "1" })}
             />
           </label>
         </div>

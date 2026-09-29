@@ -4,7 +4,7 @@ import { toJalaali } from "jalaali-js";
 // rather than cross-imported (see api.ts's header comment). formatDimensions
 // isn't included yet since no admin page needs it until A2's product form.
 
-const persianMonths = [
+export const persianMonths = [
   "فروردین",
   "اردیبهشت",
   "خرداد",

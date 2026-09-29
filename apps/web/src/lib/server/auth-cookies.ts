@@ -9,6 +9,9 @@ import { cookies } from "next/headers";
  */
 export const ACCESS_COOKIE = "arbyte_access";
 export const REFRESH_COOKIE = "arbyte_refresh";
+/** F-04 — نشانگر غیرحساس (نه توکن) که نوار هشدار «در حال مشاهده به‌جای …»
+ * سمت کلاینت از روی آن تصمیم می‌گیرد؛ layout ایستا می‌ماند. */
+export const IMPERSONATION_COOKIE = "arbyte_imp";
 
 const ACCESS_MAX_AGE = 30 * 60;
 const REFRESH_MAX_AGE = 14 * 24 * 60 * 60;
@@ -38,6 +41,21 @@ export async function clearAuthCookies(): Promise<void> {
   const store = await cookies();
   store.delete(ACCESS_COOKIE);
   store.delete(REFRESH_COOKIE);
+  store.delete(IMPERSONATION_COOKIE);
+}
+
+/** F-04 — سشن Impersonation: فقط access (بدون refresh، پس با انقضا تمام
+ * می‌شود) + نشانگر نوار هشدار. */
+export async function setImpersonationCookies(
+  accessToken: string,
+): Promise<void> {
+  const store = await cookies();
+  store.set(ACCESS_COOKIE, accessToken, cookieOptions(ACCESS_MAX_AGE));
+  store.delete(REFRESH_COOKIE);
+  store.set(IMPERSONATION_COOKIE, "1", {
+    ...cookieOptions(ACCESS_MAX_AGE),
+    httpOnly: false,
+  });
 }
 
 export async function getAuthCookies(): Promise<{

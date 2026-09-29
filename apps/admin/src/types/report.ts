@@ -3,6 +3,7 @@ export type TopProductsBy = "quantity" | "revenue";
 
 export interface SalesReportRow {
   period: string;
+  label: string;
   total: number;
   orderCount: number;
 }
@@ -42,7 +43,9 @@ export interface CustomersReport {
 }
 
 export interface ByGatewayRow {
-  gateway: string;
+  method: string;
+  gateway: string | null;
+  label: string;
   total: number;
   orderCount: number;
 }

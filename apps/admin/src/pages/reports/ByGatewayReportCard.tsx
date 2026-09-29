@@ -30,8 +30,8 @@ export function ByGatewayReportCard({
 
   return (
     <ReportSection
-      title="فروش به تفکیک درگاه پرداخت"
-      description="سهم هر درگاه از تراکنش‌های موفق."
+      title="فروش به تفکیک روش پرداخت"
+      description="سهم هر روش (کارت‌به‌کارت یا درگاه) از پرداخت‌های تأییدشده؛ از snapshot پرداخت."
     >
       {isPending ? (
         <ReportLoading />
@@ -48,7 +48,7 @@ export function ByGatewayReportCard({
           <div className="mx-auto size-56 shrink-0">
             <Pie
               data={{
-                labels: rows.map((r) => r.gateway),
+                labels: rows.map((r) => r.label),
                 datasets: [
                   {
                     data: rows.map((r) => r.total),
@@ -76,19 +76,16 @@ export function ByGatewayReportCard({
             <table className="w-full text-start text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06] text-[11px] text-slate-500">
-                  <th className="px-3 py-2 font-medium">درگاه</th>
+                  <th className="px-3 py-2 font-medium">روش پرداخت</th>
                   <th className="px-3 py-2 font-medium">مبلغ</th>
                   <th className="px-3 py-2 font-medium">تعداد سفارش</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {rows.map((row) => (
-                  <tr key={row.gateway}>
-                    <td
-                      className="px-3 py-2 font-semibold text-white"
-                      dir="ltr"
-                    >
-                      {row.gateway}
+                  <tr key={`${row.method}-${row.gateway ?? ""}`}>
+                    <td className="px-3 py-2 font-semibold text-white">
+                      {row.label}
                     </td>
                     <td className="px-3 py-2 text-slate-300">
                       {formatPrice(row.total)}

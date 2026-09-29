@@ -43,3 +43,49 @@ class AdminReturnApiTests(AdminApiTestMixin, APITestCase):
     def test_reject(self):
         response = self.client.post(reverse("admin-return-reject", args=[self.ret.pk]))
         self.assertEqual(response.data["status"], "REJECTED")
+
+
+class AdminReturnPerItemTests(AdminApiTestMixin, APITestCase):
+    """F-04 — تأیید/رد قلم‌به‌قلم؛ فقط قلم تأییدشده STOCK_IN می‌شود."""
+
+    def setUp(self):
+        from apps.inventory.models import Inventory
+        from apps.orders.models import Order, OrderItem, Return, ReturnItem
+
+        self.client.force_authenticate(user=self.make_staff())
+        a, b = self.make_product(sku="R-A", slug="r-a", stock=5), self.make_product(sku="R-B", slug="r-b", stock=5)
+        self.va, self.vb = a.variants.first(), b.variants.first()
+        order = Order.objects.create(
+            user=self.make_customer(), shipping_recipient_name="x", shipping_mobile="09120000000", shipping_province="t",
+            shipping_city="t", shipping_address_line="x", subtotal=2, final_total=2, status="DELIVERED",
+        )
+        ia = OrderItem.objects.create(order=order, variant=self.va, product_name_snapshot="A", sku_snapshot="R-A", unit_price=1, final_price=1)
+        ib = OrderItem.objects.create(order=order, variant=self.vb, product_name_snapshot="B", sku_snapshot="R-B", unit_price=1, final_price=1)
+        self.ret = Return.objects.create(order=order, reason="خراب")
+        self.item_a = ReturnItem.objects.create(return_request=self.ret, order_item=ia, quantity=1)
+        self.item_b = ReturnItem.objects.create(return_request=self.ret, order_item=ib, quantity=1)
+        self.Inventory = Inventory
+
+    def test_partial_approval_restocks_only_approved_items(self):
+        from django.urls import reverse
+
+        response = self.client.post(
+            reverse("admin-return-approve", args=[self.ret.pk]),
+            {"items": [{"id": self.item_a.pk, "approved": True}, {"id": self.item_b.pk, "approved": False}]},
+            format="json",
+        )
+        self.assertEqual(response.data["status"], "APPROVED")
+        self.assertEqual([i["decision"] for i in response.data["items"]], ["APPROVED", "REJECTED"])
+        self.client.post(reverse("admin-return-mark-received", args=[self.ret.pk]))
+        self.assertEqual(self.Inventory.objects.get(variant=self.va).quantity, 6)
+        self.assertEqual(self.Inventory.objects.get(variant=self.vb).quantity, 5)
+
+    def test_all_rejected_rejects_request(self):
+        from django.urls import reverse
+
+        response = self.client.post(
+            reverse("admin-return-approve", args=[self.ret.pk]),
+            {"items": [{"id": self.item_a.pk, "approved": False}, {"id": self.item_b.pk, "approved": False}], "admin_note": "خارج از مهلت"},
+            format="json",
+        )
+        self.assertEqual((response.data["status"], response.data["admin_note"]), ("REJECTED", "خارج از مهلت"))

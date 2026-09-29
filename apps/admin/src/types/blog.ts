@@ -20,6 +20,7 @@ export interface AdminBlogPost {
   category: string;
   sections: BlogSection[];
   coverImage: string | null;
+  coverAlt: string;
   resolvedCoverUrl: string;
   author: string;
   authorRole: string;
@@ -41,6 +42,7 @@ export interface BlogPostFormValues {
   authorRole: string;
   tags: string;
   readingTime: number;
+  coverAlt: string;
   isPublished: boolean;
   metaTitle: string;
   metaDescription: string;

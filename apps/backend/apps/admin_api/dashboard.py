@@ -320,7 +320,7 @@ def _system_health():
                         "name": inventory.variant.product.name,
                         "sku": inventory.variant.sku,
                     },
-                    "stock_count": inventory.quantity,
+                    "quantity": inventory.quantity,
                     "ledger_balance": latest.quantity_after,
                 }
             )

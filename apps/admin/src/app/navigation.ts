@@ -3,7 +3,6 @@ export interface NavItem {
   path: string;
   icon: string; // SVG path `d` attribute, viewBox 0 0 24 24, stroke-width 1.8
   section?: string; // permission section key (§7.5) — omitted means always visible (e.g. dashboard)
-  soon?: boolean; // «به‌زودی» — منو غیرفعال (F-02 همه را برگرداند؛ فعلاً هیچ آیتمی)
 }
 
 export interface NavGroup {

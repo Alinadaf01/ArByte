@@ -26,6 +26,8 @@ class BlogPost(models.Model):
     external_cover_url = models.CharField(
         max_length=500, blank=True, help_text="Static asset path, used until a real image is uploaded."
     )
+    # F-04 — متن جایگزین تصویر کاور (دسترس‌پذیری/سئو).
+    cover_alt = models.CharField(max_length=200, blank=True)
     author = models.CharField(max_length=100)
     author_role = models.CharField(max_length=100, blank=True)
     tags = models.JSONField(default=list)

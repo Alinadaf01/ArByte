@@ -119,7 +119,7 @@ export function SystemHealthZone({ data }: { data: SystemHealth }) {
                       {row.product.name}
                     </td>
                     <td className="px-3 py-2 text-slate-300">
-                      {row.stockCount.toLocaleString("fa-IR")}
+                      {row.quantity.toLocaleString("fa-IR")}
                     </td>
                     <td className="px-3 py-2 text-danger">
                       {row.ledgerBalance.toLocaleString("fa-IR")}

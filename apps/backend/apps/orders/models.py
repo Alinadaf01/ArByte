@@ -415,6 +415,11 @@ class ReturnItem(models.Model):
     return_request = models.ForeignKey(Return, on_delete=models.CASCADE, related_name="items")
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="return_items")
     quantity = models.PositiveIntegerField()
+    # F-04 — تأیید/رد قلم‌به‌قلم (الحاقیه‌ی Django). فقط قلم‌های تأییدشده در
+    # RECEIVED به انبار برمی‌گردند (STOCK_IN).
+    decision = models.CharField(
+        max_length=10, choices=[("PENDING", "در انتظار"), ("APPROVED", "تأیید"), ("REJECTED", "رد")], default="PENDING"
+    )
 
     class Meta:
         unique_together = ["return_request", "order_item"]

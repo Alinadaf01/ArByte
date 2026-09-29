@@ -37,3 +37,16 @@
 | `homepage/blocks/[:id/]`, `POST homepage/blocks/reorder/`                  | اعتبارسنجی `config` هر نوع طبق `block-config.ts`                                                                                    |
 
 قیمت همکار/سود واریانت فقط با مجوز `cost_price` خوانده/نوشته می‌شود. بعد از ذخیره‌ی محصول/قیمت/صفحه اصلی، Django اگر `STOREFRONT_URL` و `REVALIDATE_SECRET` ست باشند `POST {STOREFRONT_URL}/api/revalidate` را صدا می‌زند (apps/web).
+
+## فروش، محتوا و کاربران (F-04)
+
+| مسیر (`/api/admin/…`)                     | نکته                                                                                         |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST returns/:id/approve/`               | `{items: [{id, approved}], adminNote}` — قلم‌به‌قلم؛ همه رد = REJECTED (Q-38)                |
+| `POST returns/:id/mark-received/`         | فقط قلم‌های غیر-REJECTED با `STOCK_IN` به انبار برمی‌گردند                                   |
+| `coupons/[:id/]`                          | CRUD + آمار `usedCount`، `uniqueUsers`، `totalDiscount`                                      |
+| `blog/[:id/]`                             | `readingTime` خودکار از متن؛ کاور بدون `coverAlt` رد می‌شود                                  |
+| `reports/sales/?groupBy=day\|week\|month` | هر ردیف `period` + `label` شمسی؛ month = ماه شمسی (Q-39)؛ خروجی اکسل `reports/sales/export/` |
+| `reports/by-gateway/`                     | به تفکیک `method` + `gateway` از snapshot پرداخت، با `label` فارسی                           |
+| `POST users/:id/impersonate/`             | فقط superuser؛ بلیت ۶۰ ثانیه‌ای + لینک `{FRONTEND_BASE_URL}/impersonate?ticket=` (Q-40)      |
+| `search-console/status/`                  | `{hasData}` — اتصال واقعی در بچ ۰۵                                                           |

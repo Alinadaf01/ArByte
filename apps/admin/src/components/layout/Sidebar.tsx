@@ -100,64 +100,32 @@ export function Sidebar({
               <ul className="m-0 flex list-none flex-col gap-1 p-0">
                 {group.items.map((item) => (
                   <li key={item.path}>
-                    {item.soon ? (
-                      <span
-                        className="nav-item cursor-not-allowed opacity-50"
-                        aria-disabled="true"
-                        title={
-                          collapsed ? `${item.label} (به‌زودی)` : undefined
-                        }
+                    <NavLink
+                      to={item.path}
+                      end={item.path === "/"}
+                      onClick={onMobileClose}
+                      className={({ isActive }) =>
+                        cn("nav-item", isActive && "active")
+                      }
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <svg
+                        className="size-5 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.8"
+                        stroke="currentColor"
                       >
-                        <svg
-                          className="size-5 shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.8"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d={item.icon}
-                          />
-                        </svg>
-                        {!collapsed && (
-                          <>
-                            <span className="truncate">{item.label}</span>
-                            <span className="ms-auto rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] text-slate-400">
-                              به‌زودی
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    ) : (
-                      <NavLink
-                        to={item.path}
-                        end={item.path === "/"}
-                        onClick={onMobileClose}
-                        className={({ isActive }) =>
-                          cn("nav-item", isActive && "active")
-                        }
-                        title={collapsed ? item.label : undefined}
-                      >
-                        <svg
-                          className="size-5 shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="1.8"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d={item.icon}
-                          />
-                        </svg>
-                        {!collapsed && (
-                          <span className="truncate">{item.label}</span>
-                        )}
-                      </NavLink>
-                    )}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d={item.icon}
+                        />
+                      </svg>
+                      {!collapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </NavLink>
                   </li>
                 ))}
               </ul>

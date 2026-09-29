@@ -57,3 +57,24 @@ class AdminReportsApiTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(
             response["Content-Type"], "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+    def test_sales_report_monthly_uses_jalali_months(self):
+        # 2026-09-22 = ۳۱ شهریور ۱۴۰۵، 2026-09-23 = ۱ مهر ۱۴۰۵ — ماه میلادی یکی، ماه شمسی دو تا.
+        tz = timezone.get_current_timezone()
+        Order.objects.filter(pk=self.order.pk).update(paid_at=timezone.datetime(2026, 9, 22, 12, tzinfo=tz))
+        second = Order.objects.create(
+            user=self.order.user, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=50000, final_total=50000, status="PAID",
+            paid_at=timezone.datetime(2026, 9, 23, 12, tzinfo=tz),
+        )
+        self.assertTrue(second.pk)
+        series = self.client.get(reverse("admin-report-sales"), {"groupBy": "month"}).data["series"]
+        self.assertEqual([(r["label"], r["total"]) for r in series], [("شهریور 1405", 100000), ("مهر 1405", 50000)])
+
+    def test_by_payment_method_report_reads_payment_snapshot(self):
+        from apps.orders.models import Payment
+
+        Payment.objects.create(order=self.order, method="MANUAL_CARD_TO_CARD", amount=60000, status="CONFIRMED")
+        Payment.objects.create(order=self.order, method="GATEWAY", gateway="ZARINPAL", amount=40000, status="CONFIRMED")
+        rows = self.client.get(reverse("admin-report-by-gateway")).data
+        self.assertEqual([(r["label"], r["total"]) for r in rows], [("کارت‌به‌کارت", 60000), ("زرین‌پال", 40000)])

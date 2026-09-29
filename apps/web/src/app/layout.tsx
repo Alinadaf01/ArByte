@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { siteFooter } from "@arbyte/contracts";
 import { estedad } from "@/lib/fonts";
 import "./globals.css";
+import { ImpersonationBanner } from "@/components/shell/ImpersonationBanner";
 
 export const metadata: Metadata = {
   // بند ۱۰.۷۱ — پایه‌ی canonical/OG مطلق، نه نسبی؛ از env عمومی همان چیزی
@@ -43,7 +44,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           crossOrigin="anonymous"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ImpersonationBanner />
+        {children}
+      </body>
     </html>
   );
 }
