@@ -66,7 +66,7 @@ _PRODUCT_PREFETCH = [
 
 
 def _product_queryset():
-    return Product.objects.select_related("brand", "category").prefetch_related(*_PRODUCT_PREFETCH)
+    return Product.objects.select_related("brand", "category", "seo").prefetch_related(*_PRODUCT_PREFETCH)
 
 
 def get_category_tree() -> list[dict]:

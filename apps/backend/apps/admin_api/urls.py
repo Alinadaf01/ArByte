@@ -10,23 +10,25 @@ from . import (
     contact_messages,
     coupons,
     dashboard,
+    homepage,
+    inventory,
     orders,
     payments,
+    pricing,
+    products,
     reports,
     returns,
     reviews,
     roles,
     search_console,
     settings_admin,
+    specs,
+    uploads,
     users,
 )
 
-# D-02 §۲ — products/pricing/specs/inventory/homepage removed from this
-# import (and every path() below that used them) because their serialized
-# shape is vybeshop's single-price-per-product model, not ArByte's
-# variant-based one. The files themselves are untouched ("از urls برداشته
-# شوند، نه حذف کد") — see docs/backend/ADMIN-DISABLED.md for the exact
-# route list and what rebuilds them (D-08, batch-04).
+# F-02 — products/pricing/specs/inventory/homepage بازنویسی و دوباره وصل شدند
+# (روی ProductVariant/Inventory/SpecificationDefinition/HomepageBlock).
 
 urlpatterns = [
     # Auth
@@ -42,6 +44,33 @@ urlpatterns = [
     path("admin/dashboard/", dashboard.AdminDashboardView.as_view(), name="admin-dashboard"),
     path("admin/dashboard/mark-seen/", dashboard.AdminDashboardMarkSeenView.as_view(), name="admin-dashboard-mark-seen"),
     # Categories
+    path("admin/uploads/", uploads.AdminImageUploadView.as_view(), name="admin-upload"),
+    path("admin/brands/", products.AdminBrandListCreateView.as_view(), name="admin-brand-list"),
+    path("admin/brands/<int:pk>/", products.AdminBrandDetailView.as_view(), name="admin-brand-detail"),
+    path("admin/products/", products.AdminProductListCreateView.as_view(), name="admin-product-list"),
+    path("admin/products/<int:pk>/", products.AdminProductDetailView.as_view(), name="admin-product-detail"),
+    path("admin/products/<int:pk>/images/", products.AdminProductImageListView.as_view(), name="admin-product-images"),
+    path("admin/products/<int:pk>/images/reorder/", products.AdminProductImageReorderView.as_view(), name="admin-product-images-reorder"),
+    path("admin/products/<int:pk>/images/<int:image_id>/", products.AdminProductImageDetailView.as_view(), name="admin-product-image-detail"),
+    path("admin/products/<int:pk>/specs/", products.AdminProductSpecsView.as_view(), name="admin-product-specs"),
+    path("admin/products/<int:pk>/variants/", products.AdminProductVariantsView.as_view(), name="admin-product-variants"),
+    path("admin/products/<int:pk>/variants/preview/", products.AdminVariantPreviewView.as_view(), name="admin-product-variants-preview"),
+    path("admin/specifications/", specs.AdminSpecDefinitionListCreateView.as_view(), name="admin-spec-list"),
+    path("admin/specifications/<int:pk>/", specs.AdminSpecDefinitionDetailView.as_view(), name="admin-spec-detail"),
+    path("admin/specifications/<int:definition_id>/values/", specs.AdminSpecValueListCreateView.as_view(), name="admin-spec-value-list"),
+    path("admin/specifications/<int:definition_id>/values/<int:pk>/", specs.AdminSpecValueDetailView.as_view(), name="admin-spec-value-detail"),
+    path("admin/inventory/", inventory.AdminInventoryListView.as_view(), name="admin-inventory-list"),
+    path("admin/inventory/<int:variant_id>/", inventory.AdminInventoryThresholdView.as_view(), name="admin-inventory-threshold"),
+    path("admin/inventory/stocktake.pdf", inventory.AdminStocktakePdfView.as_view(), name="admin-stocktake-pdf"),
+    path("admin/inventory/transactions/", inventory.AdminInventoryTransactionListCreateView.as_view(), name="admin-inventory-transactions"),
+    path("admin/pricing/", pricing.AdminPriceListView.as_view(), name="admin-price-list"),
+    path("admin/pricing/price-list.pdf", pricing.AdminPriceListPdfView.as_view(), name="admin-price-list-pdf"),
+    path("admin/pricing/preview/", pricing.AdminBulkPricePreviewView.as_view(), name="admin-price-preview"),
+    path("admin/pricing/apply/", pricing.AdminBulkPriceApplyView.as_view(), name="admin-price-apply"),
+    path("admin/pricing/<int:variant_id>/history/", pricing.AdminPriceHistoryView.as_view(), name="admin-price-history"),
+    path("admin/homepage/blocks/", homepage.AdminHomepageBlockListCreateView.as_view(), name="admin-homepage-block-list"),
+    path("admin/homepage/blocks/reorder/", homepage.AdminHomepageBlockReorderView.as_view(), name="admin-homepage-block-reorder"),
+    path("admin/homepage/blocks/<int:pk>/", homepage.AdminHomepageBlockDetailView.as_view(), name="admin-homepage-block-detail"),
     path("admin/categories/", categories.AdminCategoryListCreateView.as_view(), name="admin-category-list"),
     path("admin/categories/<int:pk>/", categories.AdminCategoryDetailView.as_view(), name="admin-category-detail"),
     # Orders

@@ -160,8 +160,19 @@ def build_product_detail(product, global_threshold: int) -> dict:
         "variantAxes": variant_axes,
         "variants": variants,
         "specifications": build_spec_groups(product.specifications.all()),
-        "seo": _NULL_SEO,
+        "seo": _seo_of(product),
     }
+
+
+def _seo_of(product) -> dict:
+    """F-02 — ردیف SeoMetadata محصول (پنل ادمین)؛ نبودش همان null قبلی."""
+    from django.core.exceptions import ObjectDoesNotExist
+
+    try:
+        seo = product.seo
+    except ObjectDoesNotExist:
+        return _NULL_SEO
+    return {"title": seo.meta_title, "description": seo.meta_description, "canonical": seo.canonical}
 
 
 def to_category_card(category, min_price: int | None = None) -> dict:

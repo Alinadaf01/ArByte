@@ -1,155 +1,139 @@
-from djangorestframework_camel_case.parser import CamelCaseFormParser, CamelCaseJSONParser, CamelCaseMultiPartParser
-from rest_framework import serializers
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, RetrieveUpdateDestroyAPIView
+"""F-02 §۶ — ویرایشگر `HomepageBlock`: فعال/ترتیب/زمان‌بندی و `config` هر
+نوع، با همان قواعد `packages/contracts/src/content/block-config.ts`
+(HomepageBlockConfigSchema) — اسلاگ‌های واقعی و شناسه‌ی مشخصه‌ی واقعی،
+نه فقط شکل. بعد از هر ذخیره صفحه‌ی اصلی فروشگاه revalidate می‌شود."""
 
-from apps.catalog.models import Product
-from apps.content.models import CommunityTile, HeroSection, HomeShowcase
+from django.db import transaction
+from rest_framework import serializers, status
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .activity import AdminActivityLogMixin
+from apps.catalog.models import Category, Product, SpecificationDefinition
+from apps.content.models import HomepageBlock
+
+from .activity import AdminActivityLogMixin, log_admin_action
 from .permissions import require_section
+from .revalidate import revalidate_storefront
 
 
-class AdminHeroSectionSerializer(serializers.ModelSerializer):
+def _slugs(config: dict, key: str) -> list[str]:
+    value = config.get(key)
+    if not isinstance(value, list) or not all(isinstance(v, str) and v for v in value):
+        raise serializers.ValidationError({"config": f"«{key}» باید فهرست slug باشد."})
+    return value
+
+
+# CamelCaseJSONParser کلیدهای *داخل* JSON را هم snake_case می‌کند
+# (productSlugs → product_slugs)، ولی config در دیتابیس و API عمومی camelCase
+# است (block-config.ts). پس کلیدهای شناخته‌شده به شکل اصلی برمی‌گردند.
+_CONFIG_KEYS = {"product_slugs": "productSlugs", "category_slugs": "categorySlugs", "frames_manifest": "framesManifest"}
+
+
+def validate_block_config(block_type: str, config: dict | None) -> dict:
+    config = {_CONFIG_KEYS.get(k, k): v for k, v in dict(config or {}).items()}
+    config.pop("type", None)
+    if block_type == "HERO":
+        if not isinstance(config.get("framesManifest"), str) or not config["framesManifest"]:
+            raise serializers.ValidationError({"config": "برای HERO، مسیر framesManifest لازم است."})
+        return {"framesManifest": config["framesManifest"]}
+    if block_type == "CATEGORY_GRID":
+        slugs = _slugs(config, "categorySlugs")
+        if not slugs:
+            raise serializers.ValidationError({"config": "دست‌کم یک دسته انتخاب کنید."})
+        found = set(Category.objects.filter(slug__in=slugs, deleted_at__isnull=True).values_list("slug", flat=True))
+        if missing := [s for s in slugs if s not in found]:
+            raise serializers.ValidationError({"config": f"دسته‌ی ناموجود: {', '.join(missing)}"})
+        return {"categorySlugs": slugs}
+    if block_type in ("FLAGSHIP_DUEL", "PRODUCT_RAIL"):
+        slugs = _slugs(config, "productSlugs")
+        if block_type == "FLAGSHIP_DUEL" and len(slugs) != 2:
+            raise serializers.ValidationError({"config": "دوئل پرچم‌دار دقیقاً دو محصول می‌خواهد."})
+        if not slugs:
+            raise serializers.ValidationError({"config": "دست‌کم یک محصول انتخاب کنید."})
+        found = set(Product.objects.filter(slug__in=slugs, deleted_at__isnull=True).values_list("slug", flat=True))
+        if missing := [s for s in slugs if s not in found]:
+            raise serializers.ValidationError({"config": f"محصول ناموجود: {', '.join(missing)}"})
+        if block_type == "PRODUCT_RAIL":
+            return {"productSlugs": slugs}
+        metrics = config.get("metrics")
+        if not isinstance(metrics, list) or len(metrics) != 2:
+            raise serializers.ValidationError({"config": "دوئل پرچم‌دار دقیقاً دو مشخصه‌ی متریک می‌خواهد."})
+        metrics = [str(m) for m in metrics]
+        if SpecificationDefinition.objects.filter(pk__in=[int(m) for m in metrics if m.isdigit()]).count() != 2:
+            raise serializers.ValidationError({"config": "مشخصه‌ی متریک نامعتبر است."})
+        return {"productSlugs": slugs, "metrics": metrics}
+    return {}
+
+
+class AdminHomepageBlockSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+
     class Meta:
-        model = HeroSection
+        model = HomepageBlock
         fields = [
-            "image", "image_mobile", "image_alt", "title", "subtitle",
-            "caption", "cta_label", "cta_url", "is_active",
+            "id", "type", "sort_order", "is_active", "title", "subtitle", "cta_label", "cta_url",
+            "image_desktop", "image_mobile", "image_alt", "config", "starts_at", "ends_at", "updated_at",
         ]
+        read_only_fields = ["updated_at"]
 
-
-class AdminHeroSectionView(RetrieveUpdateAPIView):
-    """Singleton, same shape as AdminSiteSettingsView — always pk=1."""
-
-    permission_classes = [require_section("homepage")]
-    serializer_class = AdminHeroSectionSerializer
-    parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
-
-    def get_object(self):
-        return HeroSection.load()
-
-
-class HomeShowcaseProductSerializer(serializers.ModelSerializer):
-    """Slim read-only nested view — just enough for the admin panel to show
-    a "selected product" chip without a second round trip."""
-
-    id = serializers.SerializerMethodField()
-    thumbnail = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Product
-        fields = ["id", "name", "sku", "slug", "is_active", "thumbnail"]
-
-    def get_id(self, obj: Product) -> str:
-        return str(obj.pk)
-
-    def get_thumbnail(self, obj: Product) -> str:
-        first = obj.images.first()
-        return first.resolved_url if first else ""
-
-
-class AdminHomeShowcaseSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    # Every other entity id in this codebase is serialized as a string (see
-    # HomeShowcaseProductSerializer.get_id right above, and the same pattern
-    # on the public product/category serializers) -- ModelSerializer's
-    # auto-generated PrimaryKeyRelatedField for this FK returns a raw int
-    # instead, which the frontend's showcaseFormSchema (product: z.string())
-    # then rejects with "Expected string, received number" on every PATCH
-    # for a showcase that already has a linked product. Confirmed live: this
-    # silently blocked saving that block no matter what else was edited.
-    product = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), allow_null=True, required=False, pk_field=serializers.CharField()
-    )
-    product_detail = HomeShowcaseProductSerializer(source="product", read_only=True)
-    # Resolved (fallback-applied) values, read-only — lets the admin panel's
-    # live preview show exactly what the storefront will render, even
-    # before the manual fields below are filled in.
-    resolved_image = serializers.SerializerMethodField()
-    resolved_title = serializers.SerializerMethodField()
-    resolved_cta_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = HomeShowcase
-        fields = [
-            "id", "order", "product", "product_detail", "image", "image_alt", "title", "description",
-            "specs", "cta_label", "cta_url", "theme", "is_active",
-            "resolved_image", "resolved_title", "resolved_cta_url",
-        ]
-
-    def get_id(self, obj: HomeShowcase) -> str:
-        return str(obj.pk)
-
-    def get_resolved_image(self, obj: HomeShowcase) -> str:
-        return obj.resolved_image_url
-
-    def get_resolved_title(self, obj: HomeShowcase) -> str:
-        return obj.resolved_title
-
-    def get_resolved_cta_url(self, obj: HomeShowcase) -> str:
-        return obj.resolved_cta_url
-
-    def validate(self, attrs):
-        # Server-side cap, not just a UI limit (HOMEPAGE-ADMIN-TASK.md §3:
-        # "حداکثر دو تای فعال — اعتبارسنجی سمت سرور").
-        is_active = attrs.get("is_active", getattr(self.instance, "is_active", True))
-        if is_active:
-            qs = HomeShowcase.objects.filter(is_active=True)
-            if self.instance:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.count() >= 2:
-                raise serializers.ValidationError(
-                    {"is_active": "حداکثر دو بلوک نمایش می‌تواند هم‌زمان فعال باشد."}
-                )
-        return attrs
-
-
-class AdminHomeShowcaseListCreateView(AdminActivityLogMixin, ListCreateAPIView):
-    permission_classes = [require_section("homepage")]
-    serializer_class = AdminHomeShowcaseSerializer
-    parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
-    pagination_class = None
-    queryset = HomeShowcase.objects.select_related("product").all()
-
-
-class AdminHomeShowcaseDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
-    permission_classes = [require_section("homepage")]
-    serializer_class = AdminHomeShowcaseSerializer
-    parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
-    queryset = HomeShowcase.objects.select_related("product").all()
-
-
-class AdminCommunityTileSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-
-    class Meta:
-        model = CommunityTile
-        fields = ["id", "order", "image", "image_alt", "link_url", "is_active"]
-
-    def get_id(self, obj: CommunityTile) -> str:
+    def get_id(self, obj) -> str:
         return str(obj.pk)
 
     def validate(self, attrs):
-        is_active = attrs.get("is_active", getattr(self.instance, "is_active", True))
-        if is_active:
-            qs = CommunityTile.objects.filter(is_active=True)
-            if self.instance:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.count() >= 6:
-                raise serializers.ValidationError({"is_active": "حداکثر شش کاشی می‌تواند هم‌زمان فعال باشد."})
+        block_type = attrs.get("type", getattr(self.instance, "type", None))
+        if "config" in attrs or not self.instance or "type" in attrs:
+            attrs["config"] = validate_block_config(block_type, attrs.get("config", getattr(self.instance, "config", None)))
+        starts = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
+        ends = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        if starts and ends and ends <= starts:
+            raise serializers.ValidationError({"ends_at": "پایان نمایش باید بعد از شروع باشد."})
+        if (attrs.get("image_desktop") or attrs.get("image_mobile")) and not (attrs.get("image_alt") or getattr(self.instance, "image_alt", None)):
+            raise serializers.ValidationError({"image_alt": "برای تصویر، متن جایگزین (alt) لازم است."})
         return attrs
 
 
-class AdminCommunityTileListCreateView(AdminActivityLogMixin, ListCreateAPIView):
+class _RevalidateHomeMixin:
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        revalidate_storefront("/")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        revalidate_storefront("/")
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        revalidate_storefront("/")
+
+
+class AdminHomepageBlockListCreateView(_RevalidateHomeMixin, AdminActivityLogMixin, ListCreateAPIView):
     permission_classes = [require_section("homepage")]
-    serializer_class = AdminCommunityTileSerializer
-    parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
+    serializer_class = AdminHomepageBlockSerializer
     pagination_class = None
-    queryset = CommunityTile.objects.all()
+    queryset = HomepageBlock.objects.order_by("sort_order", "id")
 
 
-class AdminCommunityTileDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
+class AdminHomepageBlockDetailView(_RevalidateHomeMixin, AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
     permission_classes = [require_section("homepage")]
-    serializer_class = AdminCommunityTileSerializer
-    parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
-    queryset = CommunityTile.objects.all()
+    serializer_class = AdminHomepageBlockSerializer
+    queryset = HomepageBlock.objects.all()
+
+
+class AdminHomepageBlockReorderView(APIView):
+    """`POST {ids: [...]}` — ترتیب کامل بلوک‌ها."""
+
+    permission_classes = [require_section("homepage", action="edit")]
+
+    @transaction.atomic
+    def post(self, request):
+        ids = [int(i) for i in request.data.get("ids", [])]
+        blocks = {b.pk: b for b in HomepageBlock.objects.all()}
+        if set(ids) != set(blocks):
+            return Response({"detail": "فهرست بلوک‌ها ناقص است."}, status=status.HTTP_400_BAD_REQUEST)
+        for order, block_id in enumerate(ids, start=1):
+            blocks[block_id].sort_order = order
+        HomepageBlock.objects.bulk_update(blocks.values(), ["sort_order"])
+        log_admin_action(user=request.user, action="reorder", model_name="HomepageBlock", object_id="")
+        revalidate_storefront("/")
+        return Response(AdminHomepageBlockSerializer(sorted(blocks.values(), key=lambda b: b.sort_order), many=True).data)

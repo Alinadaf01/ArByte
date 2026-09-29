@@ -5,20 +5,6 @@ import {
 } from "@/lib/adminAuthStorage";
 import type { AdminLoginResponse } from "@/types/adminAuth";
 import type { PaginatedResponse } from "@/types/api";
-import type { AdminCategory, CategoryFormValues } from "@/types/category";
-import type {
-  Attribute,
-  AttributeFormValues,
-  AttributeValue,
-} from "@/types/attribute";
-import type {
-  AdminProduct,
-  ColorOption,
-  ProductFormValues,
-  ProductImage,
-  ProductSpecEntry,
-  ProductSpecRow,
-} from "@/types/product";
 import type { AdminOrder } from "@/types/order";
 import type {
   AdminSiteSettings,
@@ -36,18 +22,6 @@ import type {
   UpdateUserFormValues,
 } from "@/types/user";
 import type { AdminContactMessage } from "@/types/message";
-import type {
-  CreateStockMovementValues,
-  InventoryRow,
-  InventorySummary,
-  StockMovement,
-} from "@/types/inventory";
-import type {
-  BulkPriceEditInput,
-  PriceChange,
-  PriceHistoryEntry,
-  ProductPriceRow,
-} from "@/types/pricing";
 import type { AdminProductReview, ReviewStatus } from "@/types/review";
 import type { AdminReturn } from "@/types/return";
 import type { AdminActivityLogEntry } from "@/types/activity";
@@ -85,13 +59,6 @@ import type {
   ImpersonateResponse,
   ResetPasswordResponse,
 } from "@/types/accountAdmin";
-import type {
-  CommunityTileData,
-  HeroFormValues,
-  HeroSectionData,
-  HomeShowcaseData,
-  ShowcaseFormValues,
-} from "@/types/homepage";
 
 // No fake-data phase here, unlike the storefront's src/lib/api.ts — B6's
 // real /api/admin/ endpoints already exist, so every function below always
@@ -217,7 +184,7 @@ export async function authorizedFetch(
   return response;
 }
 
-function buildQuery(params: object): string {
+export function buildQuery(params: object): string {
   const usp = new URLSearchParams();
   for (const [key, value] of Object.entries(
     params as Record<string, unknown>,
@@ -229,7 +196,7 @@ function buildQuery(params: object): string {
   return qs ? `?${qs}` : "";
 }
 
-function buildFormData(
+export function buildFormData(
   fields: object,
   file?: File | null,
   fileKey = "image",
@@ -253,7 +220,7 @@ function buildFormData(
   return form;
 }
 
-async function parseOrThrow<T>(
+export async function parseOrThrow<T>(
   response: Response,
   fallback: string,
 ): Promise<T> {
@@ -266,292 +233,6 @@ async function throwIfError(
   fallback: string,
 ): Promise<void> {
   if (!response.ok) throw new Error(await readErrorDetail(response, fallback));
-}
-
-// ---------------------------------------------------------------------------
-// Categories (§4)
-// ---------------------------------------------------------------------------
-
-export async function listCategories(
-  params: { page?: number; pageSize?: number; parent?: number | "null" } = {},
-): Promise<PaginatedResponse<AdminCategory>> {
-  const res = await authorizedFetch(`/categories/${buildQuery(params)}`);
-  return parseOrThrow(res, "دریافت دسته‌بندی‌ها ناموفق بود.");
-}
-
-export async function createCategory(
-  data: CategoryFormValues,
-  imageFile?: File | null,
-): Promise<AdminCategory> {
-  const init: RequestInit = imageFile
-    ? { method: "POST", body: buildFormData(data, imageFile) }
-    : { method: "POST", body: JSON.stringify(data) };
-  const res = await authorizedFetch("/categories/", init);
-  return parseOrThrow(res, "ایجاد دسته‌بندی ناموفق بود.");
-}
-
-export async function updateCategory(
-  id: string,
-  data: Partial<CategoryFormValues>,
-  imageFile?: File | null,
-): Promise<AdminCategory> {
-  const init: RequestInit = imageFile
-    ? { method: "PATCH", body: buildFormData(data, imageFile) }
-    : { method: "PATCH", body: JSON.stringify(data) };
-  const res = await authorizedFetch(`/categories/${id}/`, init);
-  return parseOrThrow(res, "ویرایش دسته‌بندی ناموفق بود.");
-}
-
-export async function deleteCategory(id: string): Promise<void> {
-  const res = await authorizedFetch(`/categories/${id}/`, { method: "DELETE" });
-  await throwIfError(res, "حذف دسته‌بندی ناموفق بود.");
-}
-
-// ---------------------------------------------------------------------------
-// Attributes / EAV (§5)
-// ---------------------------------------------------------------------------
-
-export async function listAttributes(
-  categoryId?: number,
-): Promise<Attribute[]> {
-  const res = await authorizedFetch(
-    `/attributes/${buildQuery({ category: categoryId })}`,
-  );
-  return parseOrThrow(res, "دریافت مشخصات ناموفق بود.");
-}
-
-export async function createAttribute(
-  data: AttributeFormValues,
-): Promise<Attribute> {
-  const res = await authorizedFetch("/attributes/", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ایجاد مشخصه ناموفق بود.");
-}
-
-export async function updateAttribute(
-  id: string,
-  data: Partial<AttributeFormValues>,
-): Promise<Attribute> {
-  const res = await authorizedFetch(`/attributes/${id}/`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ویرایش مشخصه ناموفق بود.");
-}
-
-export async function deleteAttribute(id: string): Promise<void> {
-  const res = await authorizedFetch(`/attributes/${id}/`, { method: "DELETE" });
-  await throwIfError(res, "حذف مشخصه ناموفق بود.");
-}
-
-export async function listAttributeValues(
-  attributeId: string,
-): Promise<AttributeValue[]> {
-  const res = await authorizedFetch(`/attributes/${attributeId}/values/`);
-  return parseOrThrow(res, "دریافت مقادیر ناموفق بود.");
-}
-
-export async function createAttributeValue(
-  attributeId: string,
-  value: string,
-): Promise<AttributeValue> {
-  const res = await authorizedFetch(`/attributes/${attributeId}/values/`, {
-    method: "POST",
-    body: JSON.stringify({ value }),
-  });
-  return parseOrThrow(res, "افزودن مقدار ناموفق بود.");
-}
-
-// ---------------------------------------------------------------------------
-// Products (§2, §5 specs, images, colors)
-// ---------------------------------------------------------------------------
-
-export interface ProductListParams {
-  page?: number;
-  pageSize?: number;
-  category?: string;
-  search?: string;
-  isActive?: string;
-  productionStatus?: string;
-  inStock?: string;
-  ordering?: string;
-}
-
-export async function listProducts(
-  params: ProductListParams,
-): Promise<PaginatedResponse<AdminProduct>> {
-  const res = await authorizedFetch(`/products/${buildQuery(params)}`);
-  return parseOrThrow(res, "دریافت محصولات ناموفق بود.");
-}
-
-export async function getProduct(id: string): Promise<AdminProduct> {
-  const res = await authorizedFetch(`/products/${id}/`);
-  return parseOrThrow(res, "دریافت محصول ناموفق بود.");
-}
-
-export async function createProduct(
-  data: ProductFormValues,
-): Promise<AdminProduct> {
-  const res = await authorizedFetch("/products/", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ایجاد محصول ناموفق بود.");
-}
-
-export async function updateProduct(
-  id: string,
-  data: Partial<ProductFormValues>,
-): Promise<AdminProduct> {
-  const res = await authorizedFetch(`/products/${id}/`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ویرایش محصول ناموفق بود.");
-}
-
-export async function deleteProduct(id: string): Promise<void> {
-  const res = await authorizedFetch(`/products/${id}/`, { method: "DELETE" });
-  await throwIfError(res, "حذف محصول ناموفق بود.");
-}
-
-export async function uploadProductImage(
-  productId: string,
-  file: File,
-  order: number,
-  alt = "",
-): Promise<ProductImage> {
-  const res = await authorizedFetch(`/products/${productId}/images/`, {
-    method: "POST",
-    body: buildFormData({ alt, order }, file),
-  });
-  return parseOrThrow(res, "آپلود تصویر ناموفق بود.");
-}
-
-export async function patchProductImage(
-  productId: string,
-  imageId: string,
-  patch: { order?: number; alt?: string },
-): Promise<ProductImage> {
-  const res = await authorizedFetch(
-    `/products/${productId}/images/${imageId}/`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(patch),
-    },
-  );
-  return parseOrThrow(res, "ویرایش تصویر ناموفق بود.");
-}
-
-export async function deleteProductImage(
-  productId: string,
-  imageId: string,
-): Promise<void> {
-  const res = await authorizedFetch(
-    `/products/${productId}/images/${imageId}/`,
-    { method: "DELETE" },
-  );
-  await throwIfError(res, "حذف تصویر ناموفق بود.");
-}
-
-export async function createColor(
-  productId: string,
-  data: { name: string; hex: string; inStock?: boolean; order?: number },
-): Promise<ColorOption> {
-  const res = await authorizedFetch(`/products/${productId}/colors/`, {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "افزودن رنگ ناموفق بود.");
-}
-
-export async function updateColor(
-  productId: string,
-  colorId: string,
-  patch: Partial<{
-    name: string;
-    hex: string;
-    inStock: boolean;
-    order: number;
-  }>,
-): Promise<ColorOption> {
-  const res = await authorizedFetch(
-    `/products/${productId}/colors/${colorId}/`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(patch),
-    },
-  );
-  return parseOrThrow(res, "ویرایش رنگ ناموفق بود.");
-}
-
-export async function deleteColor(
-  productId: string,
-  colorId: string,
-): Promise<void> {
-  const res = await authorizedFetch(
-    `/products/${productId}/colors/${colorId}/`,
-    { method: "DELETE" },
-  );
-  await throwIfError(res, "حذف رنگ ناموفق بود.");
-}
-
-export async function getProductSpecs(
-  productId: string,
-): Promise<ProductSpecRow[]> {
-  const res = await authorizedFetch(`/products/${productId}/specs/`);
-  return parseOrThrow(res, "دریافت مشخصات ناموفق بود.");
-}
-
-export async function putProductSpecs(
-  productId: string,
-  entries: ProductSpecEntry[],
-): Promise<ProductSpecRow[]> {
-  const res = await authorizedFetch(`/products/${productId}/specs/`, {
-    method: "PUT",
-    body: JSON.stringify(entries),
-  });
-  return parseOrThrow(res, "ذخیره مشخصات ناموفق بود.");
-}
-
-// ---------------------------------------------------------------------------
-// Price bulk edit (§3)
-// ---------------------------------------------------------------------------
-
-export interface ProductPriceListParams {
-  page?: number;
-  pageSize?: number;
-  category?: string;
-}
-
-export async function listProductPrices(
-  params: ProductPriceListParams,
-): Promise<PaginatedResponse<ProductPriceRow>> {
-  const res = await authorizedFetch(`/products/prices/${buildQuery(params)}`);
-  return parseOrThrow(res, "دریافت قیمت‌ها ناموفق بود.");
-}
-
-export async function bulkEditPrices(
-  data: BulkPriceEditInput,
-  preview: boolean,
-): Promise<{ changes: PriceChange[] }> {
-  const res = await authorizedFetch(
-    `/products/prices/bulk/?preview=${preview}`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
-  return parseOrThrow(res, "اعمال تغییر قیمت ناموفق بود.");
-}
-
-export async function listPriceHistory(
-  productId: string,
-): Promise<PaginatedResponse<PriceHistoryEntry>> {
-  const res = await authorizedFetch(`/products/${productId}/price-history/`);
-  return parseOrThrow(res, "دریافت تاریخچه قیمت ناموفق بود.");
 }
 
 // ---------------------------------------------------------------------------
@@ -907,85 +588,6 @@ export async function updateMessage(
     body: JSON.stringify(data),
   });
   return parseOrThrow(res, "ویرایش پیام ناموفق بود.");
-}
-
-// ---------------------------------------------------------------------------
-// Inventory (§8, §13)
-// ---------------------------------------------------------------------------
-
-export interface InventoryListParams {
-  page?: number;
-  pageSize?: number;
-  category?: string;
-  isLow?: string;
-}
-
-export async function listInventory(
-  params: InventoryListParams,
-): Promise<PaginatedResponse<InventoryRow>> {
-  const res = await authorizedFetch(`/inventory/${buildQuery(params)}`);
-  return parseOrThrow(res, "دریافت موجودی ناموفق بود.");
-}
-
-export async function getInventorySummary(): Promise<InventorySummary> {
-  const res = await authorizedFetch("/inventory/summary/");
-  return parseOrThrow(res, "دریافت خلاصه موجودی ناموفق بود.");
-}
-
-export async function updateStockAlert(
-  productId: number,
-  data: { reorderPoint: number; isActive: boolean },
-): Promise<{ reorderPoint: number; isActive: boolean }> {
-  const res = await authorizedFetch(`/inventory/${productId}/alert/`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ذخیره هشدار موجودی ناموفق بود.");
-}
-
-export interface StockMovementListParams {
-  page?: number;
-  pageSize?: number;
-  product?: string;
-  type?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-export async function listStockMovements(
-  params: StockMovementListParams,
-): Promise<PaginatedResponse<StockMovement>> {
-  const res = await authorizedFetch(`/stock-movements/${buildQuery(params)}`);
-  return parseOrThrow(res, "دریافت کاردکس ناموفق بود.");
-}
-
-export async function createStockMovement(
-  data: CreateStockMovementValues,
-): Promise<StockMovement> {
-  const res = await authorizedFetch("/stock-movements/", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ثبت حرکت انبار ناموفق بود.");
-}
-
-export async function downloadStockMovementsExport(
-  params: StockMovementListParams,
-): Promise<void> {
-  const res = await authorizedFetch(
-    `/stock-movements/export/${buildQuery({ ...params, format: "xlsx" })}`,
-  );
-  if (!res.ok)
-    throw new Error(await readErrorDetail(res, "خروجی اکسل ناموفق بود."));
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "stock-movements.xlsx";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
 }
 
 // ---------------------------------------------------------------------------
@@ -1419,102 +1021,4 @@ export async function changeOwnPassword(
   });
   await throwIfError(res, "تغییر رمز عبور ناموفق بود.");
 }
-
-// ---------------------------------------------------------------------------
-// Homepage management (HOMEPAGE-ADMIN-TASK.md)
-// ---------------------------------------------------------------------------
-
-export async function getHeroSection(): Promise<HeroSectionData> {
-  const res = await authorizedFetch("/homepage/hero/");
-  return parseOrThrow(res, "دریافت اطلاعات هیرو ناموفق بود.");
-}
-
-export async function updateHeroSection(
-  data: Partial<HeroFormValues>,
-  imageFiles?: Partial<Record<"image" | "imageMobile", File>>,
-): Promise<HeroSectionData> {
-  const hasFiles = imageFiles && Object.values(imageFiles).some(Boolean);
-  let init: RequestInit;
-  if (hasFiles) {
-    const form = buildFormData(data);
-    for (const [key, file] of Object.entries(imageFiles ?? {})) {
-      if (file) form.append(key, file);
-    }
-    init = { method: "PATCH", body: form };
-  } else {
-    init = { method: "PATCH", body: JSON.stringify(data) };
-  }
-  const res = await authorizedFetch("/homepage/hero/", init);
-  return parseOrThrow(res, "ذخیره هیرو ناموفق بود.");
-}
-
-export async function listHomeShowcases(): Promise<HomeShowcaseData[]> {
-  const res = await authorizedFetch("/homepage/showcases/");
-  return parseOrThrow(res, "دریافت بلوک‌های نمایش ناموفق بود.");
-}
-
-export async function createHomeShowcase(
-  data: ShowcaseFormValues,
-  image?: File | null,
-): Promise<HomeShowcaseData> {
-  const init: RequestInit = image
-    ? { method: "POST", body: buildFormData(data, image) }
-    : { method: "POST", body: JSON.stringify(data) };
-  const res = await authorizedFetch("/homepage/showcases/", init);
-  return parseOrThrow(res, "ایجاد بلوک نمایش ناموفق بود.");
-}
-
-export async function updateHomeShowcase(
-  id: string,
-  data: Partial<ShowcaseFormValues>,
-  image?: File | null,
-): Promise<HomeShowcaseData> {
-  const init: RequestInit = image
-    ? { method: "PATCH", body: buildFormData(data, image) }
-    : { method: "PATCH", body: JSON.stringify(data) };
-  const res = await authorizedFetch(`/homepage/showcases/${id}/`, init);
-  return parseOrThrow(res, "ذخیره بلوک نمایش ناموفق بود.");
-}
-
-export async function deleteHomeShowcase(id: string): Promise<void> {
-  const res = await authorizedFetch(`/homepage/showcases/${id}/`, {
-    method: "DELETE",
-  });
-  await throwIfError(res, "حذف بلوک نمایش ناموفق بود.");
-}
-
-export async function listCommunityTiles(): Promise<CommunityTileData[]> {
-  const res = await authorizedFetch("/homepage/community-tiles/");
-  return parseOrThrow(res, "دریافت کاشی‌های جامعه ناموفق بود.");
-}
-
-export async function createCommunityTile(
-  order: number,
-  image: File,
-): Promise<CommunityTileData> {
-  const res = await authorizedFetch("/homepage/community-tiles/", {
-    method: "POST",
-    body: buildFormData({ order, isActive: true }, image),
-  });
-  return parseOrThrow(res, "افزودن کاشی ناموفق بود.");
-}
-
-export async function updateCommunityTile(
-  id: string,
-  data: Partial<
-    Pick<CommunityTileData, "order" | "imageAlt" | "linkUrl" | "isActive">
-  >,
-): Promise<CommunityTileData> {
-  const res = await authorizedFetch(`/homepage/community-tiles/${id}/`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
-  });
-  return parseOrThrow(res, "ذخیره کاشی ناموفق بود.");
-}
-
-export async function deleteCommunityTile(id: string): Promise<void> {
-  const res = await authorizedFetch(`/homepage/community-tiles/${id}/`, {
-    method: "DELETE",
-  });
-  await throwIfError(res, "حذف کاشی ناموفق بود.");
-}
+export { listCategories, listProducts } from "@/lib/catalogApi";

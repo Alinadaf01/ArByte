@@ -6,14 +6,14 @@ import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import OrdersPage from "@/pages/OrdersPage";
 import OrderDetailPage from "@/pages/orders/OrderDetailPage";
-// F-02: import ProductsPage from "@/pages/ProductsPage";
-// F-02: import ProductFormPage from "@/pages/products/ProductFormPage";
-// F-02: import HomepagePage from "@/pages/HomepagePage";
-// F-02: import PricingPage from "@/pages/PricingPage";
+import ProductsPage from "@/pages/ProductsPage";
+import ProductFormPage from "@/pages/products/ProductFormPage";
+import HomepagePage from "@/pages/HomepagePage";
+import PricingPage from "@/pages/PricingPage";
 import CategoriesPage from "@/pages/CategoriesPage";
-// F-02: import SpecsPage from "@/pages/SpecsPage";
-// F-02: import InventoryPage from "@/pages/InventoryPage";
-// F-02: import StockLedgerPage from "@/pages/StockLedgerPage";
+import SpecsPage from "@/pages/SpecsPage";
+import InventoryPage from "@/pages/InventoryPage";
+import StockLedgerPage from "@/pages/StockLedgerPage";
 import UsersPage from "@/pages/UsersPage";
 import UserDetailPage from "@/pages/users/UserDetailPage";
 import MessagesPage from "@/pages/MessagesPage";
@@ -28,7 +28,7 @@ import SearchConsolePage from "@/pages/SearchConsolePage";
 import RolesPage from "@/pages/RolesPage";
 import ActivityLogPage from "@/pages/ActivityLogPage";
 import NotFoundPage from "@/pages/NotFoundPage";
-import ComingSoonPage from "@/pages/ComingSoonPage";
+import BrandsPage from "@/pages/BrandsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -44,15 +44,16 @@ export const router = createBrowserRouter([
           { index: true, element: <DashboardPage /> },
           { path: "orders", element: <OrdersPage /> },
           { path: "orders/:id", element: <OrderDetailPage /> },
-          { path: "products", element: <ComingSoonPage /> },
-          { path: "products/new", element: <ComingSoonPage /> },
-          { path: "products/:id", element: <ComingSoonPage /> },
-          { path: "pricing", element: <ComingSoonPage /> },
-          { path: "homepage", element: <ComingSoonPage /> },
+          { path: "products", element: <ProductsPage /> },
+          { path: "products/new", element: <ProductFormPage /> },
+          { path: "products/:id", element: <ProductFormPage /> },
+          { path: "pricing", element: <PricingPage /> },
+          { path: "homepage", element: <HomepagePage /> },
           { path: "categories", element: <CategoriesPage /> },
-          { path: "specs", element: <ComingSoonPage /> },
-          { path: "inventory", element: <ComingSoonPage /> },
-          { path: "stock-ledger", element: <ComingSoonPage /> },
+          { path: "brands", element: <BrandsPage /> },
+          { path: "specs", element: <SpecsPage /> },
+          { path: "inventory", element: <InventoryPage /> },
+          { path: "stock-ledger", element: <StockLedgerPage /> },
           { path: "users", element: <UsersPage /> },
           { path: "users/:id", element: <UserDetailPage /> },
           { path: "messages", element: <MessagesPage /> },

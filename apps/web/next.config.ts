@@ -36,6 +36,17 @@ const nextConfig: NextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
   },
+  // F-02 — تصاویری که از پنل ادمین آپلود می‌شوند (Django، WebP) مسیر نسبی
+  // `/media/...` دارند؛ این rewrite آن‌ها را هم‌مبدأ از بک‌اند می‌آورد تا
+  // next/image و CSP بدون دامنه‌ی خارجی کار کنند.
+  async rewrites() {
+    const apiOrigin = (
+      process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1"
+    ).replace(/\/api\/v1\/?$/, "");
+    return [
+      { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
+    ];
+  },
   async headers() {
     return [
       {

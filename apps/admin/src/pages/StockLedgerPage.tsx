@@ -1,130 +1,89 @@
-import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList } from "lucide-react";
+import { FileSpreadsheet, FileText, ScrollText } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Field";
 import { Chip } from "@/components/ui/Chip";
+import { Input, Select } from "@/components/ui/Field";
+import { Pagination } from "@/components/ui/Pagination";
 import { TableSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/Stateviews";
-import { Pagination } from "@/components/ui/Pagination";
-import { CreateMovementModal } from "@/pages/inventory/CreateMovementModal";
-import {
-  listStockMovements,
-  listProducts,
-  downloadStockMovementsExport,
-} from "@/lib/api";
-import { useQueryFilters } from "@/lib/useQueryFilters";
+import { exportLedger, listTransactions } from "@/lib/catalogApi";
 import { formatJalaliDateTime } from "@/lib/formatters";
-import {
-  STOCK_MOVEMENT_TYPE_LABELS,
-  type StockMovementType,
-} from "@/types/inventory";
+import { useQueryFilters } from "@/lib/useQueryFilters";
 import { useToast } from "@/lib/ToastContext";
+import { TRANSACTION_LABELS, type TransactionType } from "@/types/catalog";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 12;
 
 export default function StockLedgerPage() {
   const toast = useToast();
-  const [formOpen, setFormOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [filters, setFilters] = useQueryFilters({
     page: "1",
-    product: "",
+    search: "",
     type: "",
     dateFrom: "",
     dateTo: "",
   });
   const page = Number(filters.page) || 1;
-
-  const { data: products } = useQuery({
-    queryKey: ["products", "for-movement-picker"],
-    queryFn: () => listProducts({ pageSize: 100 }),
-  });
-  const productsById = useMemo(
-    () => new Map((products?.results ?? []).map((p) => [Number(p.id), p])),
-    [products],
-  );
-
+  const params = {
+    search: filters.search || undefined,
+    type: filters.type || undefined,
+    dateFrom: filters.dateFrom || undefined,
+    dateTo: filters.dateTo || undefined,
+  };
   const { data, isPending, isError, refetch } = useQuery({
-    queryKey: ["stock-movements", filters],
-    queryFn: () =>
-      listStockMovements({
-        page,
-        pageSize: PAGE_SIZE,
-        product: filters.product || undefined,
-        type: filters.type || undefined,
-        dateFrom: filters.dateFrom || undefined,
-        dateTo: filters.dateTo || undefined,
-      }),
+    queryKey: ["ledger", filters],
+    queryFn: () => listTransactions({ page, ...params }),
   });
-
-  const movements = data?.results ?? [];
-
-  async function handleExport() {
-    setExporting(true);
-    try {
-      await downloadStockMovementsExport({
-        product: filters.product || undefined,
-        type: filters.type || undefined,
-        dateFrom: filters.dateFrom || undefined,
-        dateTo: filters.dateTo || undefined,
-      });
-    } catch (error) {
-      toast.showError(
-        error instanceof Error ? error.message : "خروجی اکسل ناموفق بود.",
-      );
-    } finally {
-      setExporting(false);
-    }
-  }
+  const rows = data?.results ?? [];
+  const exportAs = (format: "xlsx" | "pdf") =>
+    exportLedger(params, format).catch((e: Error) =>
+      toast.showError(e.message),
+    );
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="کاردکس"
-        description="تاریخچه حرکت موجودی با مانده و فیلتر بازه."
+        description="همه‌ی گردش‌های موجودی هر واریانت: ورود، خروج، اصلاح، رزرو و آزادسازی."
         actions={
           <>
             <Button
               variant="secondary"
-              onClick={handleExport}
-              disabled={exporting}
+              size="sm"
+              onClick={() => exportAs("xlsx")}
             >
-              {exporting ? "در حال آماده‌سازی…" : "خروجی Excel"}
+              <FileSpreadsheet className="size-4" /> Excel
             </Button>
-            <Button onClick={() => setFormOpen(true)}>+ ثبت حرکت دستی</Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportAs("pdf")}
+            >
+              <FileText className="size-4" /> PDF
+            </Button>
           </>
         }
       />
-
       <section className="glass-card overflow-hidden p-0">
         <div className="flex flex-wrap items-center gap-3 border-b border-white/[0.06] px-6 py-4">
-          <Select
-            className="w-auto"
-            value={filters.product}
-            onChange={(e) => setFilters({ product: e.target.value, page: "1" })}
-          >
-            <option value="">همه محصولات</option>
-            {(products?.results ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </Select>
+          <Input
+            className="w-56"
+            placeholder="SKU، محصول یا مرجع…"
+            defaultValue={filters.search}
+            onBlur={(e) => setFilters({ search: e.target.value, page: "1" })}
+          />
           <Select
             className="w-auto"
             value={filters.type}
             onChange={(e) => setFilters({ type: e.target.value, page: "1" })}
           >
-            <option value="">همه انواع</option>
-            {Object.entries(STOCK_MOVEMENT_TYPE_LABELS).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
+            <option value="">همه‌ی انواع</option>
+            {Object.entries(TRANSACTION_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Select>
           <label className="flex items-center gap-2 text-xs text-slate-400">
             از
@@ -149,72 +108,77 @@ export default function StockLedgerPage() {
             />
           </label>
         </div>
-
         {isError ? (
           <ErrorState
             description="دریافت کاردکس ناموفق بود."
             onRetry={() => refetch()}
           />
-        ) : !isPending && movements.length === 0 ? (
+        ) : !isPending && rows.length === 0 ? (
           <EmptyState
-            icon={ClipboardList}
-            title="حرکتی یافت نشد"
-            description="با فیلترهای فعلی حرکتی ثبت نشده."
+            icon={ScrollText}
+            title="گردشی یافت نشد"
+            description="با فیلترهای فعلی تراکنشی نیست."
           />
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[42rem] text-start text-sm">
+              <table className="w-full min-w-[52rem] text-start text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.06] text-[11px] text-slate-500">
-                    <th className="px-6 py-3 font-medium">تاریخ</th>
-                    <th className="px-4 py-3 font-medium">محصول</th>
+                    <th className="px-6 py-3 font-medium">زمان</th>
+                    <th className="px-4 py-3 font-medium">واریانت</th>
                     <th className="px-4 py-3 font-medium">نوع</th>
-                    <th className="px-4 py-3 font-medium">تعداد</th>
-                    <th className="px-4 py-3 font-medium">مانده بعد</th>
-                    <th className="px-4 py-3 font-medium">مرجع / یادداشت</th>
+                    <th className="px-4 py-3 font-medium">تغییر</th>
+                    <th className="px-4 py-3 font-medium">قبل ← بعد</th>
+                    <th className="px-4 py-3 font-medium">مرجع / دلیل</th>
                   </tr>
                 </thead>
                 {isPending ? (
-                  <TableSkeleton rows={8} cols={6} />
+                  <TableSkeleton rows={6} cols={6} />
                 ) : (
                   <tbody className="divide-y divide-white/[0.04]">
-                    {movements.map((movement) => (
-                      <tr key={movement.id}>
+                    {rows.map((t) => (
+                      <tr key={t.id}>
                         <td className="px-6 py-3 text-slate-400">
-                          {formatJalaliDateTime(movement.createdAt)}
+                          {formatJalaliDateTime(t.createdAt)}
                         </td>
-                        <td className="px-4 py-3 font-semibold text-white">
-                          {productsById.get(movement.product)?.name ??
-                            `#${movement.product}`}
+                        <td className="px-4 py-3">
+                          <p className="m-0 text-white">{t.productName}</p>
+                          <p
+                            className="m-0 font-mono text-[11px] text-slate-500"
+                            dir="ltr"
+                          >
+                            {t.sku}
+                          </p>
                         </td>
                         <td className="px-4 py-3">
                           <Chip
-                            tone={movement.quantity >= 0 ? "success" : "danger"}
+                            tone={t.quantityChange >= 0 ? "success" : "danger"}
                           >
-                            {
-                              STOCK_MOVEMENT_TYPE_LABELS[
-                                movement.type as StockMovementType
-                              ]
-                            }
+                            {TRANSACTION_LABELS[t.type as TransactionType]}
                           </Chip>
                         </td>
                         <td
-                          className={
-                            movement.quantity >= 0
-                              ? "px-4 py-3 font-bold text-success"
-                              : "px-4 py-3 font-bold text-danger"
-                          }
+                          className="px-4 py-3 font-bold text-white"
+                          dir="ltr"
                         >
-                          {movement.quantity >= 0 ? "+" : ""}
-                          {movement.quantity.toLocaleString("fa-IR")}
+                          {t.quantityChange > 0
+                            ? `+${t.quantityChange}`
+                            : t.quantityChange}
                         </td>
-                        <td className="px-4 py-3 text-slate-300">
-                          {movement.balanceAfter.toLocaleString("fa-IR")}
+                        <td className="px-4 py-3 text-slate-400">
+                          {t.quantityBefore.toLocaleString("fa-IR")} ←{" "}
+                          {t.quantityAfter.toLocaleString("fa-IR")}
                         </td>
-                        <td className="px-4 py-3 text-slate-500">
-                          {movement.reference || "—"}
-                          {movement.note && ` · ${movement.note}`}
+                        <td className="px-4 py-3 text-xs text-slate-400">
+                          {t.reference && <span dir="ltr">{t.reference} </span>}
+                          {t.note}
+                          {t.userName && (
+                            <span className="text-slate-600">
+                              {" "}
+                              · {t.userName}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -233,8 +197,6 @@ export default function StockLedgerPage() {
           </>
         )}
       </section>
-
-      <CreateMovementModal open={formOpen} onClose={() => setFormOpen(false)} />
     </div>
   );
 }

@@ -37,7 +37,7 @@ class AdminCategorySerializer(serializers.ModelSerializer):
 class AdminCategoryListCreateView(AdminActivityLogMixin, ListCreateAPIView):
     permission_classes = [require_section("categories")]
     serializer_class = AdminCategorySerializer
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(deleted_at__isnull=True).order_by("sort_order", "id")
 
 
 class AdminCategoryDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):

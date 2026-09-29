@@ -226,3 +226,27 @@ class HomepageBlock(models.Model):
             raise ValidationError(
                 {"config": f"برای بلوک {self.type} کلیدهای {', '.join(missing)} در config لازم است."}
             )
+
+
+class SeoMetadata(models.Model):
+    """F-02 — عیناً `07-content.prisma`'s SeoMetadata (یک ردیف به ازای هر
+    محصول/دسته/برند). API عمومی محصول از قبل فیلد `seo` (title/description/
+    canonical) دارد که تا اینجا همیشه null بود؛ حالا از این ردیف پر می‌شود."""
+
+    meta_title = models.CharField(max_length=200, blank=True, null=True)
+    meta_description = models.CharField(max_length=320, blank=True, null=True)
+    canonical = models.CharField(max_length=500, blank=True, null=True)
+    robots = models.CharField(max_length=100, blank=True, null=True)
+    og_title = models.CharField(max_length=200, blank=True, null=True)
+    og_description = models.CharField(max_length=320, blank=True, null=True)
+    og_image = models.CharField(max_length=500, blank=True, null=True)
+    category = models.OneToOneField(
+        "catalog.Category", on_delete=models.CASCADE, blank=True, null=True, related_name="seo"
+    )
+    brand = models.OneToOneField("catalog.Brand", on_delete=models.CASCADE, blank=True, null=True, related_name="seo")
+    product = models.OneToOneField(
+        "catalog.Product", on_delete=models.CASCADE, blank=True, null=True, related_name="seo"
+    )
+
+    def __str__(self):
+        return self.meta_title or f"SEO #{self.pk}"

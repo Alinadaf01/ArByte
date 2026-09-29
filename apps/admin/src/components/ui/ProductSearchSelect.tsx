@@ -122,9 +122,9 @@ export function ProductSearchSelect({
                   onChange({
                     id: product.id,
                     name: product.name,
-                    sku: product.sku,
+                    sku: product.skus[0] ?? "",
                     slug: product.slug,
-                    thumbnail: product.images[0]?.image,
+                    thumbnail: product.primaryImage ?? undefined,
                   });
                   setQuery("");
                   setOpen(false);
@@ -135,9 +135,9 @@ export function ProductSearchSelect({
                 )}
               >
                 <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-ink-800/60">
-                  {product.images[0]?.image && (
+                  {product.primaryImage && (
                     <img
-                      src={product.images[0].image}
+                      src={product.primaryImage}
                       alt=""
                       className="h-full w-full object-cover"
                     />
@@ -151,7 +151,7 @@ export function ProductSearchSelect({
                     className="block truncate text-[11px] text-slate-500"
                     dir="ltr"
                   >
-                    {product.sku}
+                    {product.skus.join("، ")}
                   </span>
                 </span>
               </button>

@@ -1,257 +1,224 @@
-import django_filters
-from django.db.models import F
-from django.utils.dateparse import parse_date
+"""F-02 §۴ — موجودی هر واریانت (موجود/رزرو/قابل فروش/آستانه)، تراکنش دستی
+(STOCK_IN/STOCK_OUT/ADJUSTMENT با دلیل) و کاردکس با خروجی Excel/PDF. رزرو و
+آزادسازی فقط سیستمی‌اند (چک‌اوت/لغو) — از این مسیرها ساخته نمی‌شوند."""
+
+import datetime
+
+from django.db.models import F, Q
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.catalog.models import Product
-from apps.documents.excel import COUNT_FORMAT, Column, build_workbook
-from apps.documents.persian import format_jalali_date
-from apps.documents.responses import xlsx_filename, xlsx_response
-from apps.documents.stock_ledger import TYPE_LABELS
-from apps.inventory.models import StockAlert, StockMovement
+from apps.catalog.models import ProductVariant
+from apps.inventory.models import InsufficientStockError, Inventory, InventoryTransaction
 
 from .activity import log_admin_action
 from .permissions import require_section
-from .sections import perm_string
+
+_MANUAL_TYPES = {"STOCK_IN", "STOCK_OUT", "ADJUSTMENT"}
 
 
-def _can_view_cost_price(request) -> bool:
-    user = getattr(request, "user", None)
-    return bool(user and (user.is_superuser or user.has_perm(perm_string("cost_price", "view"))))
-
-
-class AdminInventoryRowSerializer(serializers.Serializer):
-    product = serializers.SerializerMethodField()
-    stock_count = serializers.IntegerField()
-    reorder_point = serializers.SerializerMethodField()
+class AdminInventoryRowSerializer(serializers.ModelSerializer):
+    variant_id = serializers.CharField(source="variant.pk")
+    sku = serializers.CharField(source="variant.sku")
+    variant_name = serializers.CharField(source="variant.name", allow_null=True)
+    product_id = serializers.CharField(source="variant.product_id")
+    product_name = serializers.CharField(source="variant.product.name")
     is_low = serializers.SerializerMethodField()
-    stock_value = serializers.SerializerMethodField()
-
-    def get_product(self, obj: Product) -> dict:
-        return {"id": obj.pk, "name": obj.name, "sku": obj.sku}
-
-    def get_reorder_point(self, obj: Product) -> int | None:
-        alert = getattr(obj, "stock_alert", None)
-        return alert.reorder_point if alert else None
-
-    def get_is_low(self, obj: Product) -> bool:
-        alert = getattr(obj, "stock_alert", None)
-        return bool(alert and alert.is_triggered)
-
-    def get_stock_value(self, obj: Product) -> int | None:
-        # cost_price-derived — same "cost_price" permission as the product
-        # serializer's own field (§7.5 sensitive sections).
-        if not _can_view_cost_price(self.context.get("request")):
-            return None
-        return obj.stock_count * obj.cost_price if obj.cost_price is not None else None
-
-
-class AdminInventoryFilter(django_filters.FilterSet):
-    category = django_filters.NumberFilter(field_name="category_id")
-    isLow = django_filters.BooleanFilter(method="filter_is_low")
 
     class Meta:
-        model = Product
-        fields = []
+        model = Inventory
+        fields = [
+            "variant_id", "sku", "variant_name", "product_id", "product_name",
+            "quantity", "reserved_quantity", "available_quantity", "low_stock_threshold", "is_low", "updated_at",
+        ]
 
-    def filter_is_low(self, queryset, name, value):
-        if not value:
-            return queryset
-        return queryset.filter(stock_alert__is_active=True, stock_count__lte=F("stock_alert__reorder_point"))
+    def get_is_low(self, obj) -> bool:
+        return obj.low_stock_threshold is not None and obj.available_quantity <= obj.low_stock_threshold
 
 
 class AdminInventoryListView(ListAPIView):
     permission_classes = [require_section("inventory")]
     serializer_class = AdminInventoryRowSerializer
-    filterset_class = AdminInventoryFilter
-    queryset = Product.objects.select_related("stock_alert")
+
+    def get_queryset(self):
+        qs = Inventory.objects.select_related("variant__product").filter(
+            variant__deleted_at__isnull=True, variant__product__deleted_at__isnull=True
+        )
+        params = self.request.query_params
+        if params.get("search"):
+            term = params["search"].strip()
+            qs = qs.filter(Q(variant__sku__icontains=term) | Q(variant__product__name__icontains=term))
+        if params.get("category"):
+            qs = qs.filter(variant__product__category_id=params["category"])
+        if params.get("isLow") in ("true", "1"):
+            qs = qs.filter(low_stock_threshold__isnull=False, available_quantity__lte=F("low_stock_threshold"))
+        if params.get("outOfStock") in ("true", "1"):
+            qs = qs.filter(available_quantity__lte=0)
+        return qs.order_by("variant__product__name", "variant__sku")
 
 
-class AdminInventorySummaryView(APIView):
-    permission_classes = [require_section("inventory")]
+class AdminInventoryThresholdView(APIView):
+    """`PATCH /admin/inventory/<variant_id>/ {lowStockThreshold}` — null = بدون هشدار."""
 
-    def get(self, request):
-        low_stock_count = StockAlert.objects.filter(
-            is_active=True, product__stock_count__lte=F("reorder_point")
-        ).count()
-        total_stock_value = None
-        if _can_view_cost_price(request):
-            priced = Product.objects.exclude(cost_price=None)
-            if priced.exists():
-                total_stock_value = sum(p.stock_count * p.cost_price for p in priced)
-        return Response({"total_stock_value": total_stock_value, "low_stock_count": low_stock_count})
+    permission_classes = [require_section("inventory", action="edit")]
 
-
-class StockAlertSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StockAlert
-        fields = ["reorder_point", "is_active"]
-
-
-class AdminInventoryAlertView(APIView):
-    permission_classes = [require_section("inventory")]
-
-    def patch(self, request, product_id):
-        product = Product.objects.get(pk=product_id)
-        alert, _ = StockAlert.objects.get_or_create(product=product)
-        serializer = StockAlertSerializer(alert, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        log_admin_action(user=request.user, action="update", model_name="StockAlert", object_id=product.pk)
-        return Response(serializer.data)
+    def patch(self, request, variant_id):
+        inventory, _ = Inventory.objects.get_or_create(variant_id=variant_id)
+        raw = request.data.get("low_stock_threshold")
+        if raw in (None, ""):
+            inventory.low_stock_threshold = None
+        else:
+            try:
+                value = int(raw)
+            except (TypeError, ValueError):
+                value = -1
+            if value < 0:
+                return Response({"detail": "آستانه باید عدد صفر یا مثبت باشد."}, status=status.HTTP_400_BAD_REQUEST)
+            inventory.low_stock_threshold = value
+        inventory.save(update_fields=["low_stock_threshold", "updated_at"])
+        log_admin_action(user=request.user, action="set_low_stock_threshold", model_name="Inventory", object_id=inventory.pk)
+        inventory.refresh_from_db()
+        return Response(AdminInventoryRowSerializer(inventory).data)
 
 
-class AdminStockMovementSerializer(serializers.ModelSerializer):
+class AdminInventoryTransactionSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    user = serializers.SerializerMethodField()
+    sku = serializers.CharField(source="variant.sku")
+    product_name = serializers.CharField(source="variant.product.name")
+    user_name = serializers.SerializerMethodField()
 
     class Meta:
-        model = StockMovement
-        fields = ["id", "product", "type", "quantity", "balance_after", "reference", "note", "user", "created_at"]
+        model = InventoryTransaction
+        fields = [
+            "id", "sku", "product_name", "type", "quantity_change", "quantity_before", "quantity_after",
+            "reference", "note", "user_name", "created_at",
+        ]
 
-    def get_id(self, obj: StockMovement) -> str:
+    def get_id(self, obj) -> str:
         return str(obj.pk)
 
-    def get_user(self, obj: StockMovement) -> str | None:
+    def get_user_name(self, obj) -> str | None:
         return obj.user.get_full_name() if obj.user else None
 
 
-class AdminStockMovementFilter(django_filters.FilterSet):
-    product = django_filters.NumberFilter(field_name="product_id")
-    type = django_filters.CharFilter(field_name="type")
-    dateFrom = django_filters.DateFilter(field_name="created_at", lookup_expr="date__gte")
-    dateTo = django_filters.DateFilter(field_name="created_at", lookup_expr="date__lte")
-
-    class Meta:
-        model = StockMovement
-        fields = []
-
-
-# Only these types can be created manually — sale/return_in are exclusively
-# written by the order state machine (ADMIN-API-CONTRACT.md §13).
-_MANUAL_MOVEMENT_TYPES = {"purchase", "production", "adjustment", "scrap"}
-
-
-class CreateStockMovementSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
-    type = serializers.ChoiceField(choices=sorted(_MANUAL_MOVEMENT_TYPES))
-    quantity = serializers.IntegerField()
-    note = serializers.CharField(required=False, allow_blank=True, default="")
+def _ledger_queryset(params):
+    qs = InventoryTransaction.objects.select_related("variant__product", "user").order_by("-created_at", "-id")
+    if params.get("variant"):
+        qs = qs.filter(variant_id=params["variant"])
+    if params.get("type"):
+        qs = qs.filter(type=params["type"])
+    if params.get("search"):
+        term = params["search"].strip()
+        qs = qs.filter(Q(variant__sku__icontains=term) | Q(variant__product__name__icontains=term) | Q(reference__icontains=term))
+    date_from = params.get("dateFrom")
+    date_to = params.get("dateTo")
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
+    return qs
 
 
-class AdminStockMovementListCreateView(ListAPIView):
-    permission_classes = [require_section("stock_ledger")]
-    serializer_class = AdminStockMovementSerializer
-    filterset_class = AdminStockMovementFilter
-    queryset = StockMovement.objects.select_related("user").order_by("-created_at")
-
-    def post(self, request):
-        serializer = CreateStockMovementSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        try:
-            product = Product.objects.get(pk=data["product_id"])
-            movement = StockMovement.objects.record(
-                product, data["type"], abs(data["quantity"]), note=data.get("note", ""), user=request.user
-            )
-        except ValueError as exc:
-            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        log_admin_action(user=request.user, action="create", model_name="StockMovement", object_id=movement.pk)
-        return Response(AdminStockMovementSerializer(movement).data, status=status.HTTP_201_CREATED)
-
-
-class AdminStockMovementExportView(APIView):
-    """Respects the same filters the stock-ledger table has active (§6: 'هر
-    خروجی باید فیلترهای فعال جدول را رعایت کند') — same filterset the list
-    view itself uses, applied to the same base queryset."""
+class AdminInventoryTransactionListCreateView(ListAPIView):
+    """`GET` کاردکس با فیلتر (`?format=xlsx` یا `?format=pdf` برای خروجی)؛
+    `POST {variant, type, quantity, note}` تراکنش دستی."""
 
     permission_classes = [require_section("stock_ledger")]
+    serializer_class = AdminInventoryTransactionSerializer
 
-    _COLUMNS = [
-        Column("date", "تاریخ"),
-        Column("product", "محصول"),
-        Column("sku", "کد کالا"),
-        Column("type", "نوع تراکنش"),
-        Column("quantity", "مقدار", COUNT_FORMAT),
-        Column("balance_after", "مانده پس از تراکنش", COUNT_FORMAT),
-        Column("reference", "مرجع"),
-        Column("note", "یادداشت"),
-        Column("user", "کاربر"),
-    ]
+    def get_queryset(self):
+        return _ledger_queryset(self.request.query_params)
 
-    def get(self, request):
-        base_qs = StockMovement.objects.select_related("user", "product").order_by("-created_at")
-        qs = AdminStockMovementFilter(request.query_params, queryset=base_qs).qs
+    def list(self, request, *args, **kwargs):
+        export = request.query_params.get("format")
+        if export == "xlsx":
+            return self._xlsx(request)
+        if export == "pdf":
+            return self._pdf(request)
+        return super().list(request, *args, **kwargs)
 
-        bits = []
-        date_from = parse_date(request.query_params.get("dateFrom", "")) if request.query_params.get("dateFrom") else None
-        date_to = parse_date(request.query_params.get("dateTo", "")) if request.query_params.get("dateTo") else None
-        if date_from:
-            bits.append(f"از {format_jalali_date(date_from)}")
-        if date_to:
-            bits.append(f"تا {format_jalali_date(date_to)}")
-        filter_summary = " ".join(bits) or "همه بازه‌ها"
+    def _xlsx(self, request):
+        from apps.documents.excel import COUNT_FORMAT, Column, build_workbook
+        from apps.documents.responses import xlsx_filename, xlsx_response
 
+        type_labels = dict(InventoryTransaction._meta.get_field("type").choices)
         rows = [
             {
-                "date": format_jalali_date(movement.created_at),
-                "product": movement.product.name,
-                "sku": movement.product.sku,
-                "type": TYPE_LABELS.get(movement.type, movement.type),
-                "quantity": movement.quantity,
-                "balance_after": movement.balance_after,
-                "reference": movement.reference,
-                "note": movement.note,
-                "user": movement.user.get_full_name() if movement.user else "",
+                "date": t.created_at.strftime("%Y-%m-%d %H:%M"), "sku": t.variant.sku, "product": t.variant.product.name,
+                "type": type_labels.get(t.type, t.type), "change": t.quantity_change, "before": t.quantity_before,
+                "after": t.quantity_after, "reference": t.reference or "", "note": t.note or "",
+                "user": t.user.get_full_name() if t.user else "",
             }
-            for movement in qs
+            for t in self.get_queryset()[:5000]
         ]
         workbook = build_workbook(
-            sheet_name="کاردکس انبار",
-            report_title="کاردکس انبار",
-            columns=self._COLUMNS,
-            rows=rows,
-            filter_summary=filter_summary,
-            generated_by=request.user.get_full_name(),
+            sheet_name="کاردکس", report_title="کاردکس کالا", rows=rows, generated_by=request.user.get_full_name(),
+            columns=[
+                Column("date", "تاریخ"), Column("sku", "SKU"), Column("product", "محصول"), Column("type", "نوع"),
+                Column("change", "تغییر", COUNT_FORMAT), Column("before", "قبل", COUNT_FORMAT),
+                Column("after", "بعد", COUNT_FORMAT), Column("reference", "مرجع"), Column("note", "توضیح"),
+                Column("user", "کاربر"),
+            ],
         )
-        return xlsx_response(workbook, xlsx_filename("stock-movements"))
+        return xlsx_response(workbook, xlsx_filename("stock-ledger"))
 
-
-class AdminStockLedgerPdfView(APIView):
-    """Same filters as AdminStockMovementListCreateView — BACKEND-TASK.md
-    §3.6: 'همان فیلترهای فعال را روی سند اعمال کند'."""
-
-    permission_classes = [require_section("stock_ledger")]
-
-    def get(self, request):
-        from django.utils.dateparse import parse_date
-
+    def _pdf(self, request):
         from apps.documents.responses import pdf_filename, pdf_response
         from apps.documents.stock_ledger import render_stock_ledger_pdf
 
-        base_qs = StockMovement.objects.select_related("user", "product").order_by("-created_at")
-        movements = AdminStockMovementFilter(request.query_params, queryset=base_qs).qs
-
-        date_from = parse_date(request.query_params.get("dateFrom", "")) if request.query_params.get("dateFrom") else None
-        date_to = parse_date(request.query_params.get("dateTo", "")) if request.query_params.get("dateTo") else None
-
+        params = request.query_params
+        parse = lambda v: datetime.date.fromisoformat(v) if v else None  # noqa: E731
         pdf_bytes = render_stock_ledger_pdf(
-            movements, date_from=date_from, date_to=date_to, generated_by_name=request.user.get_full_name()
+            self.get_queryset(), date_from=parse(params.get("dateFrom")), date_to=parse(params.get("dateTo")),
+            generated_by_name=request.user.get_full_name(),
         )
         return pdf_response(pdf_bytes, pdf_filename("stock-ledger"))
 
+    def post(self, request, *args, **kwargs):
+        tx_type = request.data.get("type")
+        note = str(request.data.get("note") or "").strip()
+        if tx_type not in _MANUAL_TYPES:
+            return Response({"detail": "فقط ورود، خروج یا اصلاح دستی مجاز است."}, status=status.HTTP_400_BAD_REQUEST)
+        if not note:
+            return Response({"detail": "دلیل تراکنش الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            quantity = int(request.data.get("quantity"))
+        except (TypeError, ValueError):
+            return Response({"detail": "تعداد باید عدد صحیح باشد."}, status=status.HTTP_400_BAD_REQUEST)
+        variant = ProductVariant.objects.filter(pk=request.data.get("variant"), deleted_at__isnull=True).first()
+        if variant is None:
+            return Response({"detail": "واریانت پیدا نشد."}, status=status.HTTP_400_BAD_REQUEST)
+        Inventory.objects.get_or_create(variant=variant)
+        try:
+            if tx_type == "STOCK_IN":
+                if quantity <= 0:
+                    raise ValueError("تعداد ورود باید مثبت باشد.")
+                tx = Inventory.objects.stock_in(variant, quantity, note=note, user=request.user)
+            elif tx_type == "STOCK_OUT":
+                if quantity <= 0:
+                    raise ValueError("تعداد خروج باید مثبت باشد.")
+                tx = Inventory.objects.stock_out(variant, quantity, note=note, user=request.user)
+            else:
+                tx = Inventory.objects.adjust(variant, quantity, note=note, user=request.user)
+        except (ValueError, InsufficientStockError) as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        log_admin_action(user=request.user, action=f"inventory:{tx_type}", model_name="InventoryTransaction", object_id=tx.pk)
+        return Response(AdminInventoryTransactionSerializer(tx).data, status=status.HTTP_201_CREATED)
+
 
 class AdminStocktakePdfView(APIView):
+    """برگه‌ی انبارگردانی — موجودی سیستمی هر واریانت با ستون شمارش دستی."""
+
     permission_classes = [require_section("inventory")]
 
     def get(self, request):
         from apps.documents.responses import pdf_filename, pdf_response
         from apps.documents.stocktake import render_stocktake_pdf
 
-        base_qs = Product.objects.select_related("category").order_by("name")
-        products = AdminInventoryFilter(request.query_params, queryset=base_qs).qs
-        pdf_bytes = render_stocktake_pdf(products, generated_by_name=request.user.get_full_name())
+        variants = ProductVariant.objects.filter(deleted_at__isnull=True, product__deleted_at__isnull=True)
+        if request.query_params.get("category"):
+            variants = variants.filter(product__category_id=request.query_params["category"])
+        pdf_bytes = render_stocktake_pdf(variants.order_by("product__name", "sku"), generated_by_name=request.user.get_full_name())
         return pdf_response(pdf_bytes, pdf_filename("stocktake-sheet"))

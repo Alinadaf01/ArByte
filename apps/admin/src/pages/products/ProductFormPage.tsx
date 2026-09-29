@@ -1,418 +1,459 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Field, Input, Textarea, Select, Switch } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { ErrorState } from "@/components/ui/Stateviews";
+import { Field, Input, Select, Switch, Textarea } from "@/components/ui/Field";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { ProductImagesSection } from "@/pages/products/ProductImagesSection";
-import { ProductColorsSection } from "@/pages/products/ProductColorsSection";
-import { ProductSpecsSection } from "@/pages/products/ProductSpecsSection";
+import { ErrorState } from "@/components/ui/Stateviews";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { ImagesCard } from "@/pages/products/ImagesCard";
+import { SpecsCard } from "@/pages/products/SpecsCard";
+import { VariantEditor } from "@/pages/products/VariantEditor";
 import {
+  deleteProduct,
   getProduct,
-  createProduct,
-  updateProduct,
+  listBrands,
   listCategories,
-  ApiFieldError,
-} from "@/lib/api";
-import {
-  productFormSchema,
-  PRODUCTION_STATUS_LABELS,
-  type ProductFormSchemaValues,
-} from "@/lib/productSchema";
-import { useUnsavedChangesGuard } from "@/lib/useUnsavedChangesGuard";
+  saveProduct,
+} from "@/lib/catalogApi";
 import { useToast } from "@/lib/ToastContext";
+import {
+  CONDITION_LABELS,
+  type AdminProduct,
+  type ProductFormValues,
+  type ProductSeo,
+} from "@/types/catalog";
 
-const EMPTY_VALUES: ProductFormSchemaValues = {
-  sku: "",
-  slug: "",
-  name: "",
-  shortDescription: "",
-  description: "",
-  price: 0,
-  costPrice: null,
-  category: null,
-  material: "",
-  dimensions: { w: 0, h: 0, d: 0 },
-  weight: 0,
-  order: 0,
-  isActive: true,
-  shippingTime: "",
-  warrantyTerms: "",
-  productionStatus: "in_stock",
-  metaTitle: "",
-  metaDescription: "",
+const STOREFRONT_URL = (
+  (import.meta.env.VITE_STOREFRONT_URL as string | undefined) ||
+  "http://localhost:3000"
+).replace(/\/+$/, "");
+
+const EMPTY_SEO: ProductSeo = {
+  metaTitle: null,
+  metaDescription: null,
+  canonical: null,
+  robots: null,
+  ogTitle: null,
+  ogDescription: null,
+  ogImage: null,
 };
+
+function toForm(p: AdminProduct | null): ProductFormValues {
+  return {
+    name: p?.name ?? "",
+    slug: p?.slug ?? "",
+    brand: p?.brand ?? "",
+    category: p?.category ?? "",
+    condition: p?.condition ?? "NEW",
+    status: p?.status ?? "ACTIVE",
+    isVisibleOnSite: p?.isVisibleOnSite ?? true,
+    isVisibleInSearch: p?.isVisibleInSearch ?? true,
+    isVisibleInCategory: p?.isVisibleInCategory ?? true,
+    priority: p?.priority ?? 0,
+    shortDescription: p?.shortDescription ?? "",
+    description: p?.description ?? "",
+    modelNumber: p?.modelNumber ?? "",
+    gtin: p?.gtin ?? "",
+    partNumber: p?.partNumber ?? "",
+    warrantyMonths: p?.warrantyMonths ?? null,
+    warrantyProvider: p?.warrantyProvider ?? "",
+    requiresSerial: p?.requiresSerial ?? true,
+    shippingNote: p?.shippingNote ?? "",
+    returnPolicyNote: p?.returnPolicyNote ?? "",
+    seo: { ...EMPTY_SEO, ...(p?.seo ?? {}) },
+  };
+}
 
 export default function ProductFormPage() {
   const { id } = useParams<{ id: string }>();
-  const isEdit = !!id && id !== "new";
+  const isNew = !id;
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const toast = useToast();
-
-  const {
-    data: product,
-    isPending: productPending,
-    isError: productError,
-  } = useQuery({
+  const queryClient = useQueryClient();
+  const product = useQuery({
     queryKey: ["product", id],
     queryFn: () => getProduct(id!),
-    enabled: isEdit,
+    enabled: !isNew,
   });
-
   const { data: categories } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => listCategories({ pageSize: 100 }),
+    queryFn: () => listCategories(),
   });
-  const categoryList = useMemo(() => categories?.results ?? [], [categories]);
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setError,
-    setValue,
-    watch,
-    formState: { errors, isSubmitting, isDirty },
-  } = useForm<ProductFormSchemaValues>({
-    resolver: zodResolver(productFormSchema),
-    defaultValues: EMPTY_VALUES,
+  const { data: brands } = useQuery({
+    queryKey: ["brands"],
+    queryFn: () => listBrands(),
   });
+  const [form, setForm] = useState<ProductFormValues>(toForm(null));
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (!product) return;
-    reset({
-      sku: product.sku,
-      slug: product.slug,
-      name: product.name,
-      shortDescription: product.shortDescription,
-      description: product.description,
-      price: product.price,
-      costPrice: product.costPrice,
-      category: product.category,
-      material: product.material,
-      dimensions: product.dimensions,
-      weight: product.weight,
-      order: product.order,
-      isActive: product.isActive,
-      shippingTime: product.shippingTime,
-      warrantyTerms: product.warrantyTerms,
-      productionStatus: product.productionStatus,
-      metaTitle: product.metaTitle,
-      metaDescription: product.metaDescription,
-    });
-  }, [product, reset]);
+    if (product.data) setForm(toForm(product.data));
+  }, [product.data]);
 
-  const mutation = useMutation({
-    mutationFn: async (values: ProductFormSchemaValues) =>
-      isEdit ? updateProduct(id!, values) : createProduct(values),
-    onSuccess: (saved, variables) => {
+  const set = <K extends keyof ProductFormValues>(
+    key: K,
+    value: ProductFormValues[K],
+  ) => setForm((f) => ({ ...f, [key]: value }));
+  const setSeo = <K extends keyof ProductSeo>(key: K, value: string) =>
+    setForm((f) => ({ ...f, seo: { ...f.seo, [key]: value || null } }));
+
+  const save = useMutation({
+    mutationFn: () => saveProduct(isNew ? null : id!, form),
+    onSuccess: (saved) => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.invalidateQueries({ queryKey: ["product", saved.id] });
-      // Clear the dirty flag using the just-submitted values *before*
-      // navigating — otherwise the unsaved-changes blocker below sees
-      // isDirty still true and intercepts this very navigation.
-      reset(variables);
+      queryClient.setQueryData(["product", saved.id], saved);
       toast.showSuccess(
-        isEdit
-          ? "محصول ذخیره شد."
-          : "محصول ایجاد شد — اکنون می‌توانید تصویر، رنگ و مشخصات اضافه کنید.",
+        isNew
+          ? "محصول ساخته شد؛ حالا تصاویر و واریانت‌ها را اضافه کنید."
+          : "محصول ذخیره شد.",
       );
-      if (!isEdit) navigate(`/products/${saved.id}`, { replace: true });
+      if (isNew) navigate(`/products/${saved.id}`, { replace: true });
     },
-    onError: (error: unknown) => {
-      if (error instanceof ApiFieldError && error.field !== "detail") {
-        setError(error.field as keyof ProductFormSchemaValues, {
-          message: error.message,
-        });
-      } else {
-        toast.showError(
-          error instanceof Error ? error.message : "ذخیره ناموفق بود.",
-        );
-      }
+    onError: (error: unknown) =>
+      toast.showError(
+        error instanceof Error ? error.message : "ذخیره ناموفق بود.",
+      ),
+  });
+  const remove = useMutation({
+    mutationFn: () => deleteProduct(id!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.showSuccess("محصول حذف شد.");
+      navigate("/products");
     },
+    onError: (error: unknown) =>
+      toast.showError(
+        error instanceof Error ? error.message : "حذف ناموفق بود.",
+      ),
   });
 
-  const blocker = useUnsavedChangesGuard(isDirty && !isSubmitting);
-
-  if (isEdit && productError) {
-    return <ErrorState description="دریافت محصول ناموفق بود." />;
-  }
-
-  if (isEdit && productPending) {
+  if (!isNew && product.isError)
     return (
-      <div className="flex flex-col gap-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-64 w-full" />
-      </div>
+      <ErrorState
+        description="دریافت محصول ناموفق بود."
+        onRetry={() => product.refetch()}
+      />
     );
-  }
-
-  const categoryValue = watch("category");
+  if (!isNew && product.isPending) return <Skeleton className="h-96 w-full" />;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title={isEdit ? `ویرایش «${product?.name ?? ""}»` : "افزودن محصول"}
-        description="اطلاعات پایه، تصاویر، رنگ‌ها و مشخصات فنی محصول."
+        title={isNew ? "محصول جدید" : form.name || "ویرایش محصول"}
+        description={
+          isNew
+            ? "اول اطلاعات پایه را ذخیره کنید؛ بعد تصاویر، مشخصات و واریانت‌ها باز می‌شوند."
+            : "اطلاعات، تصاویر، مشخصات و واریانت‌های محصول."
+        }
+        actions={
+          !isNew && product.data ? (
+            <>
+              <a
+                href={`${STOREFRONT_URL}${product.data.storefrontUrl}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-300 hover:text-brand-200"
+              >
+                <ExternalLink className="size-4" /> مشاهده در سایت
+              </a>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setConfirmDelete(true)}
+              >
+                حذف محصول
+              </Button>
+            </>
+          ) : null
+        }
       />
 
       <form
-        onSubmit={handleSubmit((values) => mutation.mutate(values))}
         className="flex flex-col gap-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          save.mutate();
+        }}
       >
         <section className="glass-card flex flex-col gap-4 p-6">
           <h2 className="m-0 text-sm font-bold text-white">اطلاعات پایه</h2>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              label="نام محصول"
-              htmlFor="p-name"
-              required
-              error={errors.name?.message}
-            >
-              <Input id="p-name" {...register("name")} />
+            <Field label="نام محصول" htmlFor="p-name">
+              <Input
+                id="p-name"
+                required
+                value={form.name}
+                onChange={(e) => set("name", e.target.value)}
+              />
+            </Field>
+            <Field label="slug (لاتین، در آدرس صفحه)" htmlFor="p-slug">
+              <Input
+                id="p-slug"
+                dir="ltr"
+                required
+                value={form.slug}
+                onChange={(e) => set("slug", e.target.value)}
+              />
+            </Field>
+            <Field label="برند" htmlFor="p-brand">
+              <Select
+                id="p-brand"
+                required
+                value={form.brand}
+                onChange={(e) => set("brand", e.target.value)}
+              >
+                <option value="">انتخاب برند</option>
+                {brands?.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </Select>
             </Field>
             <Field
-              label="اسلاگ"
-              htmlFor="p-slug"
-              required
-              error={errors.slug?.message}
-            >
-              <Input id="p-slug" dir="ltr" {...register("slug")} />
-            </Field>
-            <Field
-              label="کد کالا (SKU)"
-              htmlFor="p-sku"
-              required
-              error={errors.sku?.message}
-            >
-              <Input id="p-sku" dir="ltr" {...register("sku")} />
-            </Field>
-            <Field
-              label="دسته‌بندی"
+              label="دسته"
               htmlFor="p-category"
-              required
-              error={errors.category?.message}
+              hint="مشخصات و محورهای واریانت از دسته می‌آیند."
             >
               <Select
                 id="p-category"
-                value={categoryValue ?? ""}
-                onChange={(e) =>
-                  setValue(
-                    "category",
-                    e.target.value ? Number(e.target.value) : null,
-                    { shouldDirty: true },
-                  )
-                }
+                required
+                value={form.category}
+                onChange={(e) => set("category", e.target.value)}
               >
-                <option value="">— انتخاب کنید —</option>
-                {categoryList.map((c) => (
+                <option value="">انتخاب دسته</option>
+                {categories?.results.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>
                 ))}
               </Select>
             </Field>
-          </div>
-
-          <Field
-            label="توضیح کوتاه"
-            htmlFor="p-short-desc"
-            error={errors.shortDescription?.message}
-            hint="حداکثر ۱۶۰ کاراکتر — در باکس کارت محصول جا می‌شود."
-          >
-            <Input
-              id="p-short-desc"
-              maxLength={160}
-              {...register("shortDescription")}
-            />
-          </Field>
-          <Field
-            label="توضیحات کامل"
-            htmlFor="p-desc"
-            error={errors.description?.message}
-          >
-            <Textarea id="p-desc" {...register("description")} />
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field
-              label="قیمت (تومان)"
-              htmlFor="p-price"
-              required
-              error={errors.price?.message}
-            >
-              <Input id="p-price" type="number" {...register("price")} />
+            <Field label="وضعیت کالا" htmlFor="p-condition">
+              <Select
+                id="p-condition"
+                value={form.condition}
+                onChange={(e) =>
+                  set(
+                    "condition",
+                    e.target.value as ProductFormValues["condition"],
+                  )
+                }
+              >
+                {Object.entries(CONDITION_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
             </Field>
-            <Field
-              label="قیمت تمام‌شده"
-              htmlFor="p-cost"
-              error={errors.costPrice?.message}
-              hint="اختیاری"
-            >
-              <Input
-                id="p-cost"
-                type="number"
-                {...register("costPrice", {
-                  setValueAs: (v) => (v === "" ? null : Number(v)),
-                })}
-              />
+            <Field label="وضعیت" htmlFor="p-status">
+              <Select
+                id="p-status"
+                value={form.status}
+                onChange={(e) =>
+                  set("status", e.target.value as ProductFormValues["status"])
+                }
+              >
+                <option value="ACTIVE">فعال</option>
+                <option value="INACTIVE">غیرفعال</option>
+              </Select>
             </Field>
             <Field
               label="اولویت نمایش"
-              htmlFor="p-order"
-              error={errors.order?.message}
+              htmlFor="p-priority"
+              hint="عدد بزرگ‌تر بالاتر نمایش داده می‌شود."
             >
-              <Input id="p-order" type="number" {...register("order")} />
-            </Field>
-            <Field
-              label="وضعیت تولید"
-              htmlFor="p-production"
-              error={errors.productionStatus?.message}
-            >
-              <Select id="p-production" {...register("productionStatus")}>
-                {Object.entries(PRODUCTION_STATUS_LABELS).map(
-                  ([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ),
-                )}
-              </Select>
+              <Input
+                id="p-priority"
+                type="number"
+                value={form.priority}
+                onChange={(e) => set("priority", Number(e.target.value))}
+              />
             </Field>
           </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Field
-              label="عرض (mm)"
-              htmlFor="p-w"
-              error={errors.dimensions?.w?.message}
-            >
-              <Input id="p-w" type="number" {...register("dimensions.w")} />
-            </Field>
-            <Field
-              label="ارتفاع (mm)"
-              htmlFor="p-h"
-              error={errors.dimensions?.h?.message}
-            >
-              <Input id="p-h" type="number" {...register("dimensions.h")} />
-            </Field>
-            <Field
-              label="عمق (mm)"
-              htmlFor="p-d"
-              error={errors.dimensions?.d?.message}
-            >
-              <Input id="p-d" type="number" {...register("dimensions.d")} />
-            </Field>
-            <Field
-              label="وزن (گرم)"
-              htmlFor="p-weight"
-              error={errors.weight?.message}
-            >
-              <Input id="p-weight" type="number" {...register("weight")} />
-            </Field>
+          <div className="flex flex-wrap gap-6">
+            <Switch
+              checked={form.isVisibleOnSite}
+              onChange={(v) => set("isVisibleOnSite", v)}
+              label="نمایش در سایت"
+            />
+            <Switch
+              checked={form.isVisibleInSearch}
+              onChange={(v) => set("isVisibleInSearch", v)}
+              label="نمایش در جستجو"
+            />
+            <Switch
+              checked={form.isVisibleInCategory}
+              onChange={(v) => set("isVisibleInCategory", v)}
+              label="نمایش در دسته"
+            />
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              label="متریال"
-              htmlFor="p-material"
-              error={errors.material?.message}
-            >
-              <Input id="p-material" {...register("material")} />
-            </Field>
-            <Field
-              label="زمان ارسال"
-              htmlFor="p-shipping"
-              error={errors.shippingTime?.message}
-              hint="مثال: ۳ تا ۵ روز کاری"
-            >
-              <Input id="p-shipping" {...register("shippingTime")} />
-            </Field>
-          </div>
-
-          <Field
-            label="شرایط گارانتی"
-            htmlFor="p-warranty"
-            error={errors.warrantyTerms?.message}
-            hint='مثلاً "۶ ماه گارانتی تعویض در صورت نقص ساخت."'
-          >
-            <Textarea id="p-warranty" {...register("warrantyTerms")} />
+          <Field label="توضیح کوتاه" htmlFor="p-short" hint="حداکثر ۱۶۰ نویسه.">
+            <Input
+              id="p-short"
+              maxLength={160}
+              value={form.shortDescription ?? ""}
+              onChange={(e) => set("shortDescription", e.target.value)}
+            />
           </Field>
+          <Field label="توضیح کامل" htmlFor="p-desc">
+            <Textarea
+              id="p-desc"
+              rows={6}
+              value={form.description ?? ""}
+              onChange={(e) => set("description", e.target.value)}
+            />
+          </Field>
+        </section>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field
-              label="عنوان متا (SEO)"
-              htmlFor="p-meta-title"
-              error={errors.metaTitle?.message}
-            >
-              <Input id="p-meta-title" {...register("metaTitle")} />
+        <section className="glass-card flex flex-col gap-4 p-6">
+          <h2 className="m-0 text-sm font-bold text-white">
+            شناسه‌ها، گارانتی و ارسال
+          </h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="مدل" htmlFor="p-model">
+              <Input
+                id="p-model"
+                dir="ltr"
+                value={form.modelNumber ?? ""}
+                onChange={(e) => set("modelNumber", e.target.value)}
+              />
+            </Field>
+            <Field label="GTIN" htmlFor="p-gtin">
+              <Input
+                id="p-gtin"
+                dir="ltr"
+                value={form.gtin ?? ""}
+                onChange={(e) => set("gtin", e.target.value)}
+              />
+            </Field>
+            <Field label="پارت‌نامبر" htmlFor="p-part">
+              <Input
+                id="p-part"
+                dir="ltr"
+                value={form.partNumber ?? ""}
+                onChange={(e) => set("partNumber", e.target.value)}
+              />
             </Field>
             <Field
-              label="توضیح متا (SEO)"
-              htmlFor="p-meta-desc"
-              error={errors.metaDescription?.message}
+              label="گارانتی (ماه)"
+              htmlFor="p-warranty"
+              hint="خالی = بدون گارانتی جدا"
             >
-              <Input id="p-meta-desc" {...register("metaDescription")} />
+              <Input
+                id="p-warranty"
+                type="number"
+                min={0}
+                value={form.warrantyMonths ?? ""}
+                onChange={(e) =>
+                  set(
+                    "warrantyMonths",
+                    e.target.value ? Number(e.target.value) : null,
+                  )
+                }
+              />
             </Field>
+            <Field label="ارائه‌دهنده‌ی گارانتی" htmlFor="p-wprov">
+              <Input
+                id="p-wprov"
+                value={form.warrantyProvider ?? ""}
+                onChange={(e) => set("warrantyProvider", e.target.value)}
+              />
+            </Field>
+            <div className="flex items-end pb-2">
+              <Switch
+                checked={form.requiresSerial}
+                onChange={(v) => set("requiresSerial", v)}
+                label="سریال‌دار (ثبت سریال قبل از ارسال)"
+              />
+            </div>
           </div>
-
-          <Switch
-            checked={watch("isActive")}
-            onChange={(v) => setValue("isActive", v, { shouldDirty: true })}
-            label="فعال"
-          />
-
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting
-                ? "در حال ذخیره…"
-                : isEdit
-                  ? "ذخیره تغییرات"
-                  : "ذخیره و ادامه"}
-            </Button>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="یادداشت ارسال" htmlFor="p-ship">
+              <Textarea
+                id="p-ship"
+                value={form.shippingNote ?? ""}
+                onChange={(e) => set("shippingNote", e.target.value)}
+              />
+            </Field>
+            <Field label="یادداشت مرجوعی" htmlFor="p-return">
+              <Textarea
+                id="p-return"
+                value={form.returnPolicyNote ?? ""}
+                onChange={(e) => set("returnPolicyNote", e.target.value)}
+              />
+            </Field>
           </div>
         </section>
 
-        {!isEdit && (
-          <section className="glass-card flex flex-col items-center gap-2 p-10 text-center">
-            <p className="m-0 text-sm text-slate-400">
-              برای افزودن تصویر، رنگ و مشخصات، ابتدا اطلاعات پایه را ذخیره کنید.
-            </p>
-          </section>
-        )}
+        <section className="glass-card flex flex-col gap-4 p-6">
+          <h2 className="m-0 text-sm font-bold text-white">سئو</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="عنوان متا" htmlFor="s-title" hint="خالی = نام محصول">
+              <Input
+                id="s-title"
+                value={form.seo.metaTitle ?? ""}
+                onChange={(e) => setSeo("metaTitle", e.target.value)}
+              />
+            </Field>
+            <Field label="آدرس canonical" htmlFor="s-canonical">
+              <Input
+                id="s-canonical"
+                dir="ltr"
+                value={form.seo.canonical ?? ""}
+                onChange={(e) => setSeo("canonical", e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="توضیح متا" htmlFor="s-desc">
+            <Textarea
+              id="s-desc"
+              rows={2}
+              maxLength={320}
+              value={form.seo.metaDescription ?? ""}
+              onChange={(e) => setSeo("metaDescription", e.target.value)}
+            />
+          </Field>
+        </section>
+
+        <div className="flex justify-end">
+          <Button type="submit" disabled={save.isPending}>
+            {save.isPending
+              ? "در حال ذخیره…"
+              : isNew
+                ? "ساخت محصول"
+                : "ذخیره‌ی اطلاعات"}
+          </Button>
+        </div>
       </form>
 
-      {isEdit && product && (
+      {!isNew && product.data && (
         <>
-          <ProductImagesSection
-            productId={product.id}
-            images={product.images}
+          <ImagesCard product={product.data} />
+          <SpecsCard
+            productId={product.data.id}
+            categoryId={product.data.category}
           />
-          <ProductColorsSection
-            productId={product.id}
-            colors={product.colors}
-          />
-          <ProductSpecsSection
-            productId={product.id}
-            categoryId={product.category}
+          <VariantEditor
+            productId={product.data.id}
+            productSlug={product.data.slug}
+            categoryId={product.data.category}
           />
         </>
       )}
 
       <ConfirmDialog
-        open={blocker.state === "blocked"}
-        title="تغییرات ذخیره‌نشده"
-        description="اگر خارج شوید، تغییرات اطلاعات پایه ذخیره نخواهد شد."
-        confirmLabel="خروج بدون ذخیره"
-        onConfirm={() => blocker.proceed?.()}
-        onCancel={() => blocker.reset?.()}
+        open={confirmDelete}
+        title="حذف محصول"
+        description="محصول و واریانت‌هایش از فروشگاه برداشته می‌شوند (حذف نرم؛ سفارش‌های قبلی دست نمی‌خورند)."
+        confirmLabel="حذف"
+        pending={remove.isPending}
+        onConfirm={() => remove.mutate()}
+        onCancel={() => setConfirmDelete(false)}
       />
     </div>
   );

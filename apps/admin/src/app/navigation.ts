@@ -3,7 +3,7 @@ export interface NavItem {
   path: string;
   icon: string; // SVG path `d` attribute, viewBox 0 0 24 24, stroke-width 1.8
   section?: string; // permission section key (§7.5) — omitted means always visible (e.g. dashboard)
-  soon?: boolean; // F-01 — backend endpoint still disabled (docs/backend/ADMIN-DISABLED.md), rebuilt in F-02
+  soon?: boolean; // «به‌زودی» — منو غیرفعال (F-02 همه را برگرداند؛ فعلاً هیچ آیتمی)
 }
 
 export interface NavGroup {
@@ -63,6 +63,12 @@ export const navGroups: NavGroup[] = [
         path: "/categories",
         section: "categories",
         icon: "M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122",
+      },
+      {
+        label: "برندها",
+        path: "/brands",
+        section: "categories",
+        icon: "M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z M6 6h.008v.008H6V6z",
       },
       {
         label: "مشخصات محصولات",
@@ -155,20 +161,6 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
-
-// F-01 — مسیرهایی که اندپوینتشان هنوز خاموش است (F-02 بازسازی می‌کند):
-// در منو «به‌زودی» و غیرفعال، و روتر به‌جای صفحه‌ی خطا ComingSoonPage نشان می‌دهد.
-export const SOON_PATHS = new Set([
-  "/products",
-  "/pricing",
-  "/homepage",
-  "/specs",
-  "/inventory",
-  "/stock-ledger",
-]);
-for (const group of navGroups) {
-  for (const item of group.items) item.soon = SOON_PATHS.has(item.path);
-}
 
 export const flatNavItems: NavItem[] = navGroups.flatMap(
   (group) => group.items,
