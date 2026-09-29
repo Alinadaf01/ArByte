@@ -1,6 +1,7 @@
 import datetime
 
 import django_filters
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -8,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.orders import order_status
-from apps.orders.models import Order, Shipment
+from apps.orders.models import Order, OrderItemUnit, Shipment
 from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
 
 from .activity import log_admin_action
@@ -19,14 +20,33 @@ from .permissions import require_section
 # discount->discount_total، OrderStatusLog->status_history، gateway->method/
 # provider/gateway، ref_id->provider_ref. tax حذف شد (نه در Prisma، پیکربندی
 # نرخ مالیات هیچ‌وقت نبود).
-ORDER_PREFETCH = ("items", "payments", "status_history")
+ORDER_PREFETCH = ("items__units", "payments__receipts", "status_history")
+
+# F-01 §۳ — گذارهایی که ادمین دستی از پنل می‌زند. PENDING→AWAITING_PAYMENT
+# سیستمی است (چک‌اوت)؛ PAYMENT_REVIEW→AWAITING_PAYMENT فقط با رد رسید
+# (payments.py) تا دلیل رد ثبت و پیامک/وضعیت پرداخت هم‌گام بماند.
+_SYSTEM_ONLY_TRANSITIONS = {("PENDING", "AWAITING_PAYMENT"), ("PAYMENT_REVIEW", "AWAITING_PAYMENT")}
+
+
+def admin_transitions(from_status: str) -> list[str]:
+    return [
+        to for to in order_status.ORDER_STATUS_TRANSITIONS.get(from_status, ())
+        if (from_status, to) not in _SYSTEM_ONLY_TRANSITIONS
+    ]
 
 # سفارش‌هایی که فاکتور رسمی معنا دارد — بعد از تأیید پرداخت.
 _INVOICEABLE_STATUSES = {"PAID", "PROCESSING", "READY_TO_SHIP", "SHIPPED", "DELIVERED"}
 
 
+class AdminOrderUnitSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    serial_number = serializers.CharField(allow_null=True)
+    certificate_id = serializers.CharField()
+
+
 class AdminOrderItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    units = AdminOrderUnitSerializer(many=True, read_only=True)
     variant = serializers.IntegerField(source="variant_id", allow_null=True)
     product_name = serializers.CharField(source="product_name_snapshot")
     variant_name = serializers.CharField(source="variant_name_snapshot", allow_null=True)
@@ -38,8 +58,22 @@ class AdminOrderItemSerializer(serializers.Serializer):
     final_price = serializers.IntegerField()
 
 
+class AdminOrderReceiptSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+    status = serializers.CharField()
+    uploaded_at = serializers.DateTimeField()
+    reviewed_at = serializers.DateTimeField(allow_null=True)
+    rejection_reason = serializers.CharField(allow_null=True)
+    file_url = serializers.SerializerMethodField()
+
+    def get_file_url(self, obj) -> str:
+        return f"/api/admin/payments/receipts/{obj.pk}/file/"
+
+
 class AdminPaymentSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+    receipts = AdminOrderReceiptSerializer(many=True, read_only=True)
     method = serializers.CharField()
     provider = serializers.CharField()
     gateway = serializers.CharField(allow_null=True)
@@ -77,6 +111,9 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     payments = AdminPaymentSerializer(many=True, read_only=True)
     status_history = AdminOrderStatusHistorySerializer(many=True, read_only=True)
     shipment = serializers.SerializerMethodField()
+    user_phone = serializers.CharField(source="user.phone", default=None)
+    allowed_transitions = serializers.SerializerMethodField()
+    missing_serial_item_ids = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -85,12 +122,20 @@ class AdminOrderSerializer(serializers.ModelSerializer):
             "shipping_recipient_name", "shipping_mobile", "shipping_province",
             "shipping_city", "shipping_address_line", "shipping_postal_code",
             "subtotal", "discount_total", "shipping_cost", "final_total", "cancel_reason",
+            "shipping_method_name", "invoice_type", "company_name", "national_id", "economic_code",
+            "registration_number", "user_phone", "allowed_transitions", "missing_serial_item_ids",
             "items", "payments", "shipment", "status_history",
             "created_at", "updated_at", "paid_at", "shipped_at", "delivered_at",
         ]
 
     def get_id(self, obj: Order) -> str:
         return str(obj.pk)
+
+    def get_allowed_transitions(self, obj: Order) -> list[str]:
+        return admin_transitions(obj.status)
+
+    def get_missing_serial_item_ids(self, obj: Order) -> list[int]:
+        return order_status._missing_serial_item_ids(obj)
 
     def get_shipment(self, obj: Order) -> dict | None:
         shipment = getattr(obj, "shipment", None)
@@ -102,11 +147,29 @@ class AdminOrderFilter(django_filters.FilterSet):
     user = django_filters.NumberFilter(field_name="user_id")
     dateFrom = django_filters.DateFilter(field_name="created_at", lookup_expr="date__gte")
     dateTo = django_filters.DateFilter(field_name="created_at", lookup_expr="date__lte")
-    search = django_filters.CharFilter(field_name="order_number", lookup_expr="icontains")
+    search = django_filters.CharFilter(method="filter_search")
+    readyWithoutSerial = django_filters.BooleanFilter(method="filter_ready_without_serial")
 
     class Meta:
         model = Order
         fields = []
+
+    def filter_search(self, queryset, name, value):
+        """F-01 §۳ — شماره سفارش یا موبایل (گیرنده یا صاحب حساب)."""
+        value = value.strip()
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(order_number__icontains=value) | Q(shipping_mobile__icontains=value) | Q(user__phone__icontains=value)
+        )
+
+    def filter_ready_without_serial(self, queryset, name, value):
+        """داشبورد — «آماده‌ی ارسال بدون سریال»: در حال پردازش با دست‌کم یک واحد بی‌سریال."""
+        if not value:
+            return queryset
+        return queryset.filter(
+            Q(items__units__serial_number__isnull=True) | Q(items__units__serial_number=""), status="PROCESSING"
+        ).distinct()
 
 
 class AdminOrderListView(ListAPIView):
@@ -298,3 +361,58 @@ class AdminOrderCancelView(APIView):
         if response.status_code == 200:
             log_admin_action(user=request.user, action="cancel", model_name="Order", object_id=order.pk)
         return response
+
+
+class AdminOrderTransitionView(APIView):
+    """F-01 §۳ — یک مسیر برای همه‌ی گذارهای دستی پنل: `{to, note}`؛ برای
+    SHIPPED `provider` و `trackingNumber` هم لازم است. فقط گذارهای
+    `admin_transitions()` مجازند (همان فهرستی که پنل دکمه‌اش را نشان می‌دهد)."""
+
+    permission_classes = [require_section("orders", action="edit")]
+
+    def post(self, request, pk):
+        order = Order.objects.get(pk=pk)
+        to_status = str(request.data.get("to", ""))
+        note = str(request.data.get("note", "") or "").strip()
+        if to_status not in admin_transitions(order.status):
+            return Response({"detail": f"گذار {order.status} → {to_status} از پنل مجاز نیست."}, status=status.HTTP_400_BAD_REQUEST)
+        if to_status == "SHIPPED":
+            tracking_number = str(request.data.get("tracking_number", "") or "").strip()
+            provider = str(request.data.get("provider", "") or "").strip()
+            if not tracking_number or not provider:
+                return Response({"detail": "شرکت ارسال و کد رهگیری برای ثبت ارسال الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+            Shipment.objects.update_or_create(
+                order=order,
+                defaults={"provider": provider, "cost": order.shipping_cost, "tracking_number": tracking_number,
+                          "shipped_at": timezone.now()},
+            )
+        response = _transition_response(order, to_status, user=request.user, note=note)
+        if response.status_code == 200:
+            if to_status == "PAID":
+                order_status.sync_payment_status(order, "CONFIRMED")
+            log_admin_action(user=request.user, action=f"transition:{to_status}", model_name="Order", object_id=order.pk)
+        return response
+
+
+class AdminOrderSerialsView(APIView):
+    """F-01 §۳ — ورود سریال هر واحد: `{units: [{id, serialNumber}]}`. فقط
+    تا قبل از READY_TO_SHIP (بعد از آن کارت گارانتی/بسته‌بندی چاپ شده‌اند)."""
+
+    permission_classes = [require_section("orders", action="edit")]
+    _EDITABLE_STATUSES = {"PAID", "PROCESSING"}
+
+    def post(self, request, pk):
+        order = Order.objects.get(pk=pk)
+        if order.status not in self._EDITABLE_STATUSES:
+            return Response({"detail": "سریال فقط در وضعیت پرداخت‌شده یا در حال پردازش قابل ثبت است."}, status=status.HTTP_400_BAD_REQUEST)
+        rows = request.data.get("units") or []
+        units = {u.pk: u for u in OrderItemUnit.objects.filter(order_item__order=order)}
+        for row in rows:
+            unit = units.get(int(row.get("id", 0) or 0))
+            if unit is None:
+                return Response({"detail": "واحد متعلق به این سفارش نیست."}, status=status.HTTP_400_BAD_REQUEST)
+            unit.serial_number = str(row.get("serial_number", "") or "").strip() or None
+            unit.save(update_fields=["serial_number"])
+        log_admin_action(user=request.user, action="set_serials", model_name="Order", object_id=order.pk)
+        order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
+        return Response(AdminOrderSerializer(order).data)

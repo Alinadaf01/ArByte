@@ -301,7 +301,7 @@ def card_to_card_enabled() -> bool:
     from apps.settings.models import SiteSettings
 
     s = SiteSettings.load()
-    return bool(s.card_to_card_holder_name and s.card_to_card_number and s.card_to_card_sheba)
+    return bool(s.card_to_card_active and s.card_to_card_holder_name and s.card_to_card_number and s.card_to_card_sheba)
 
 
 @transaction.atomic

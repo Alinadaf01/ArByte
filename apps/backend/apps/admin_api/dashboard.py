@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Count, F, Sum
+from django.db.models import Count, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 from rest_framework.response import Response
@@ -37,6 +37,10 @@ def _needs_action():
         # D-05 §۱ — رسید کارت‌به‌کارت منتظر بررسی ادمین است، دقیقاً همان چیزی
         # که این کارت اقدام روی صفحه‌ی داشبورد باید نشان بدهد.
         "payment_review": Order.objects.filter(status="PAYMENT_REVIEW").count(),
+        # F-01 §۲ — در حال پردازش ولی دست‌کم یک واحد هنوز بی‌سریال (READY_TO_SHIP را مسدود می‌کند).
+        "ready_without_serial": Order.objects.filter(
+            Q(items__units__serial_number__isnull=True) | Q(items__units__serial_number=""), status="PROCESSING"
+        ).distinct().count(),
         "new_return_requests": Return.objects.filter(status="REQUESTED").count(),
         "unread_messages": ContactMessage.objects.filter(is_read=False).count(),
         "pending_reviews": ProductReview.objects.filter(status="pending").count(),

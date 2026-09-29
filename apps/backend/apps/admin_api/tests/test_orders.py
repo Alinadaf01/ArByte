@@ -104,3 +104,78 @@ class AdminOrderApiTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.status_code, 200)
         inventory.refresh_from_db()
         self.assertEqual(inventory.reserved_quantity, reserved_before_cancel - 1)
+
+
+class AdminOrderF01Tests(AdminApiTestMixin, APITestCase):
+    """F-01 §۳ — گذار واحد با یادداشت، سریال واحدها، جستجوی موبایل."""
+
+    def setUp(self):
+        from apps.orders.models import OrderItemUnit
+
+        self.client.force_authenticate(user=self.make_staff())
+        self.customer = self.make_customer()
+        product = self.make_product(stock=10, requires_serial=True)
+        variant = product.variants.first()
+        Inventory.objects.reserve(variant, 1, reference="TEST")
+        self.order = Order.objects.create(
+            user=self.customer, shipping_recipient_name="مشتری", shipping_mobile="09123334455",
+            shipping_province="تهران", shipping_city="تهران", shipping_address_line="...",
+            subtotal=100000, final_total=100000, status="PAID",
+        )
+        item = OrderItem.objects.create(
+            order=self.order, variant=variant, product_name_snapshot=product.name,
+            sku_snapshot=variant.sku, unit_price=100000, quantity=1, final_price=100000,
+        )
+        self.unit = OrderItemUnit.objects.create(order_item=item)
+
+    def _transition(self, **body):
+        return self.client.post(reverse("admin-order-transition", args=[self.order.pk]), body, format="json")
+
+    def test_detail_exposes_allowed_transitions_and_units(self):
+        data = self.client.get(reverse("admin-order-detail", args=[self.order.pk])).data
+        self.assertEqual(data["allowed_transitions"], ["PROCESSING", "CANCELLED"])
+        self.assertEqual(data["missing_serial_item_ids"], [self.unit.order_item_id])
+        self.assertEqual(data["items"][0]["units"][0]["id"], self.unit.pk)
+
+    def test_transition_records_note_and_rejects_disallowed(self):
+        response = self._transition(to="PROCESSING", note="شروع بسته‌بندی")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(self.order.status_history.last().note, "شروع بسته‌بندی")
+        self.assertEqual(self._transition(to="DELIVERED").status_code, 400)
+
+    def test_ready_to_ship_blocked_until_serials_saved(self):
+        self._transition(to="PROCESSING")
+        self.assertEqual(self._transition(to="READY_TO_SHIP").status_code, 400)
+        response = self.client.post(
+            reverse("admin-order-serials", args=[self.order.pk]),
+            {"units": [{"id": self.unit.pk, "serial_number": " SN-777 "}]}, format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        self.unit.refresh_from_db()
+        self.assertEqual(self.unit.serial_number, "SN-777")
+        self.assertEqual(self._transition(to="READY_TO_SHIP").status_code, 200)
+
+    def test_shipped_requires_provider_and_tracking(self):
+        self.unit.serial_number = "SN-1"
+        self.unit.save()
+        self._transition(to="PROCESSING")
+        self._transition(to="READY_TO_SHIP")
+        self.assertEqual(self._transition(to="SHIPPED", provider="پست").status_code, 400)
+        response = self._transition(to="SHIPPED", provider="پست", tracking_number="TRK-9")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["shipment"]["tracking_number"], "TRK-9")
+
+    def test_serials_rejected_after_ready_to_ship(self):
+        self.order.status = "SHIPPED"
+        self.order.save(update_fields=["status"])
+        response = self.client.post(
+            reverse("admin-order-serials", args=[self.order.pk]), {"units": [{"id": self.unit.pk, "serial_number": "X"}]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_search_by_mobile(self):
+        response = self.client.get(reverse("admin-order-list"), {"search": "3334455"})
+        self.assertEqual(response.data["count"], 1)
+        response = self.client.get(reverse("admin-order-list"), {"search": "09999999999"})
+        self.assertEqual(response.data["count"], 0)
