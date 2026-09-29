@@ -908,3 +908,140 @@ export const notFoundPage = {
     support: "پشتیبانی",
   },
 } as const;
+
+/** E-02 §۲ — Login.dc.html، عیناً. */
+export const loginPage = {
+  logoHomeLabel: "بازگشت به صفحه‌ی اصلی آربایت",
+  title: {
+    phone: "ورود به حساب کاربری",
+    otp: "کد تایید را وارد کنید",
+  },
+  subtitle: {
+    phone: "شماره موبایل خود را وارد کنید تا کد ورود برایتان ارسال شود.",
+    otp: (digitCount: string) =>
+      `کد تایید ${digitCount} رقمی به شماره شما ارسال شد.`,
+  },
+  phonePrefix: "+۹۸",
+  phonePlaceholder: "912 000 0000",
+  phoneAriaLabel: "شماره موبایل",
+  sendCodeCta: "دریافت کد ورود",
+  otpHelperNote: "کد ورود پیامک می‌شود. رمز عبوری لازم نیست.",
+  otpAriaLabel: "کد تایید چهار رقمی",
+  otpErrorNote: "کد وارد شده درست نیست. دوباره تلاش کنید.",
+  verifyCta: {
+    idle: "تایید و ورود",
+    busy: "در حال بررسی…",
+  },
+  resendPrompt: "کد را دریافت نکردید؟",
+  resendCta: "ارسال مجدد کد",
+  resendTimer: (mmss: string) => `امکان ارسال مجدد تا ${mmss}`,
+  resendReady: "می‌توانید کد جدید بگیرید",
+  editNumberCta: "ویرایش شماره موبایل",
+  success: {
+    title: "خوش آمدید",
+    body: "وارد حساب کاربری خود شدید",
+    maskedNote: (masked: string) => `شماره ${masked} تأیید شد`,
+    continueCta: "رفتن به پنل کاربری",
+    otherNumberCta: "ورود با شماره دیگر",
+  },
+  legalPrefix: "با ورود،",
+  legalConnector: "و",
+  legalSuffix: "را می‌پذیرید.",
+  legalTermsLink: "قوانین آربایت",
+  legalPrivacyLink: "حریم خصوصی",
+} as const;
+
+/** E-02 §۳ — Cart.dc.html، عیناً (بدون «برآورد اقساط»، ر.ک. DEVIATIONS.md). */
+export const cartPage = {
+  breadcrumbHome: "خانه",
+  breadcrumbCurrent: "سبد خرید",
+  title: "سبد خرید شما",
+  lineCountNote: (count: string) =>
+    `${count} قلم · قیمت‌ها تا ۲۴ ساعت رزرو می‌ماند`,
+  steps: ["سبد خرید", "پرداخت", "ثبت سفارش"] as const,
+  emptyState: {
+    title: "سبد خرید خالی است",
+    body: "هنوز چیزی اضافه نکرده‌اید. از فروشگاه شروع کنید یا سبد قبلی را برگردانید.",
+    shopCta: "رفتن به فروشگاه",
+    restoreCta: "برگرداندن سبد قبلی",
+  },
+  removeAriaLabel: "حذف از سبد",
+  decreaseAriaLabel: "کم کردن",
+  increaseAriaLabel: "اضافه کردن",
+  unitPriceLabel: "قیمت واحد",
+  unitPriceMultiple: (price: string) => `واحدی ${price}`,
+  supportNote:
+    "برای ارتقای رم یا SSD پیش از ارسال، با پشتیبانی تماس بگیرید؛ نصب روی دستگاه رایگان انجام می‌شود.",
+  supportCta: "تماس با پشتیبانی",
+  shippingSectionTitle: "روش ارسال",
+  freeLabel: "رایگان",
+  couponLabel: "کد تخفیف",
+  couponPlaceholder: "کد تخفیف را وارد کنید",
+  couponApplyCta: "اعمال",
+  couponRemoveCta: "حذف کد",
+  couponAppliedNote: (code: string) => `کد ${code} اعمال شد.`,
+  couponDefaultNote: "کد تخفیف دارید؟ همین‌جا وارد کنید.",
+  subtotalLabel: "جمع کالاها",
+  discountLabel: "تخفیف",
+  shippingLabel: "هزینه ارسال",
+  totalLabel: "مبلغ قابل پرداخت",
+  continueCta: "ادامه و پرداخت",
+  secureNote: "پرداخت امن از درگاه بانکی",
+} as const;
+
+/** E-02 §۴ — Checkout.dc.html، عیناً؛ «یادداشت برای ما» حذف شد (بدون
+ * فیلد مدل نگه‌داری‌اش در Order، ساختن آن ادعای دروغ می‌بود — قانون «بدون
+ * ادعای بی‌پشتوانه»). فیلد «استان» به فرم آدرس اضافه شد (طراحی نداشت، اما
+ * apps/users/models.py's Address آن را الزامی می‌خواهد) — docs/QUESTIONS.md. */
+export const checkoutPage = {
+  title: "تکمیل خرید",
+  steps: ["سبد خرید", "پرداخت", "ثبت سفارش"] as const,
+  addressSectionTitle: "آدرس تحویل",
+  newAddressCta: { open: "آدرس جدید", close: "بستن فرم" },
+  addressDefaultBadge: "پیش‌فرض",
+  addressForm: {
+    recipientNameLabel: "نام گیرنده",
+    recipientNamePlaceholder: "نام و نام خانوادگی",
+    mobileLabel: "شماره موبایل",
+    mobilePlaceholder: "۰۹۱۲۰۰۰۰۰۰۰",
+    provinceLabel: "استان",
+    provincePlaceholder: "تهران",
+    cityLabel: "شهر",
+    cityPlaceholder: "تهران",
+    postalCodeLabel: "کد پستی",
+    postalCodePlaceholder: "۱۰ رقم",
+    addressLineLabel: "نشانی کامل",
+    addressLinePlaceholder: "خیابان، کوچه، پلاک و واحد",
+    saveCta: "ذخیره آدرس",
+  },
+  paymentSectionTitle: "روش پرداخت",
+  noPaymentMethodsNote: "پرداخت موقتاً در دسترس نیست",
+  invoiceSectionTitle: "فاکتور",
+  invoicePersonalCta: "شخصی",
+  invoiceCorporateCta: "حقوقی",
+  invoiceForm: {
+    companyNameLabel: "نام شرکت",
+    companyNamePlaceholder: "نام ثبتی شرکت",
+    nationalIdLabel: "شناسه ملی",
+    nationalIdPlaceholder: "۱۱ رقم",
+    economicCodeLabel: "کد اقتصادی",
+    economicCodePlaceholder: "اختیاری",
+  },
+  summaryTitle: "سفارش شما",
+  editCta: "ویرایش",
+  subtotalLabel: "جمع کالاها",
+  discountLabel: "تخفیف",
+  shippingLabel: "هزینه ارسال",
+  totalLabel: "مبلغ قابل پرداخت",
+  placeOrderCta: {
+    idle: "پرداخت و ثبت سفارش",
+    placingGateway: "در حال انتقال به درگاه…",
+    placingCardToCard: "در حال ثبت سفارش…",
+  },
+  legalNote: "با ثبت سفارش، قوانین آربایت را می‌پذیرید.",
+  legalLink: "قوانین آربایت",
+  /** فقط برای GATEWAY نشان داده می‌شود — کارت‌به‌کارت واقعاً «نزد درگاه» نمی‌ماند. */
+  escrowNote:
+    "مبلغ تا زمان تحویل و تأیید شما نزد درگاه می‌ماند. در صورت مغایرت، بازگشت وجه تا ۷۲ ساعت انجام می‌شود.",
+  emptyCartRedirectNote: "سبد خرید شما خالی است.",
+} as const;

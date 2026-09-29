@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account_views, auth_views, cart_views, order_views, payment_views, views
+from . import account_views, auth_views, cart_views, checkout_views, order_views, payment_views, views
 
 # Mounted at /api/v1/ (config/urls.py). Mirrors
 # apps/api/src/modules/catalog/catalog.controller.ts +
@@ -52,6 +52,13 @@ urlpatterns = [
     path("cart", cart_views.CartView.as_view(), name="public-cart"),
     path("cart/items", cart_views.CartItemsView.as_view(), name="public-cart-items"),
     path("cart/items/<int:pk>", cart_views.CartItemDetailView.as_view(), name="public-cart-item-detail"),
+    # E-02 §۳ — کوپن/روش ارسال روی سبد
+    path("cart/coupon", cart_views.CartCouponView.as_view(), name="public-cart-coupon"),
+    path("cart/shipping-method", cart_views.CartShippingMethodView.as_view(), name="public-cart-shipping-method"),
+
+    # E-02 §۳/۴ — گزینه‌های عمومی چک‌اوت
+    path("shipping-methods", checkout_views.ShippingMethodListView.as_view(), name="public-shipping-methods"),
+    path("payment-methods", checkout_views.PaymentMethodListView.as_view(), name="public-payment-methods"),
 
     # D-05 §۲/۵ — سفارش. track باید قبل از <str:order_number> ثبت شود.
     path("orders/track", order_views.OrderTrackView.as_view(), name="public-order-track"),

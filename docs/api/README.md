@@ -102,6 +102,16 @@ X-Cart-Session یا با ورود — فقط سبد، D-04 §۳)، یا کلید
 رخ می‌دهد، نه یک endpoint جدا — جمع تعداد هر واریانت، سقف ۵ عدد و سقف
 موجودی لحظه‌ای هر دو رعایت می‌شوند.
 
+`POST /cart/coupon` (`{code}`) · `DELETE /cart/coupon` (بدون بدنه) ·
+`PATCH /cart/shipping-method` (`{shippingMethodId}`) — E-02 §۳، جدید.
+انتخاب کوپن/روش‌ارسال روی خودِ سبد ذخیره می‌شود (نه فقط لحظه‌ی ثبت
+سفارش)؛ `GET /cart` هر بار زنده دوباره اعتبارسنجی می‌کند و اگر منقضی/
+غیرفعال شده باشد خاموش پاکش می‌کند (خطا نمی‌دهد). `CartSchema` هم
+`discountTotal`/`coupon`/`shippingCost`/`shippingMethod`/`finalTotal` را
+اضافه کرد — همه سرور-محاسبه، فرانت هرگز این‌ها را خودش جمع نمی‌زند.
+`PATCH /cart/shipping-method` مسیرش در سند تسک صریح نیامده بود، افزوده‌ی
+لازم این تسک است (docs/QUESTIONS.md Q-25).
+
 ### order — `src/order/` (همه auth مگر ذکرشده)
 
 `POST /orders` · `GET /orders` · `GET /orders/:orderNumber` ·
@@ -111,14 +121,38 @@ X-Cart-Session یا با ورود — فقط سبد، D-04 §۳)، یا کلید
 `POST /orders/:orderNumber/payment/initiate` ·
 `POST /orders/track` (**public** — پیگیری مهمان، rate-limit سخت)
 
-`CreateOrderBodySchema` (D-05): `addressId`، `paymentMethod`،
-`shippingMethodId?`، `couponCode?`. قیمت/محاسبات همیشه سرور — بدنه هرگز
-عدد قیمت نمی‌فرستد.
+`CreateOrderBodySchema`: `addressId`، `paymentMethod`،
+`shippingMethodId?`، `couponCode?` (هر دو نبودن یعنی سرور به انتخاب
+ذخیره‌شده روی سبد برمی‌گردد، E-02 §۴)، `invoiceType?` (`PERSONAL`
+پیش‌فرض یا `CORPORATE`)، و برای فاکتور حقوقی `companyName`/`nationalId`
+الزامی + `economicCode?`/`registrationNumber?` اختیاری — این فیلدها حل‌
+کننده‌ی D-05 §۲'s Q-22 (تناقض سند/مدل) هستند؛ مدل مرجع Django است، نه
+Prisma. قیمت/محاسبات همیشه سرور — بدنه هرگز عدد قیمت نمی‌فرستد.
+
+**Idempotency-Key.** هدر اختیاری `Idempotency-Key` روی `POST /orders` —
+اگر همان کاربر با همان کلید دوباره درخواست بدهد (کلیک دوم روی «ثبت
+سفارش» در شبکه‌ی کند)، سرور بدون لمس دوباره‌ی سبد/موجودی همان سفارش اول
+را برمی‌گرداند (یکتایی جزئی روی `(user, idempotencyKey)`، NULL نامحدود
+مجاز است). `OrderSchema` هم یک `invoice: {type, companyName, nationalId,
+economicCode, registrationNumber}` دارد.
 
 ### payment — `src/payment/`
 
 `POST /payments/callback/:provider` (public، وب‌هوک درگاه) ·
-`GET /payments/return/:provider` (public، فقط UX)
+`GET /payments/return/:provider` (public، فقط UX) ·
+`GET /payment-methods` (public — E-02 §۴، جدید)
+
+`GET /payment-methods` فهرست واقعاً در دسترس را برمی‌گرداند، نه همه‌ی
+گزینه‌های طراحی‌شده: کارت‌به‌کارت فقط اگر `SiteSettings` کامل پر شده،
+`GATEWAY` فقط اگر حداقل یک `ApiCredential` فعال با credentials معتبر
+داشته باشد (در عمل فقط بله‌پی، چهارتای دیگر مستندات ندارند).
+
+### shipping — `src/shipping/`
+
+`GET /shipping-methods` (public — E-02 §۳، جدید؛ D-05 تصمیم گرفته بود
+این endpoint لازم نیست، اما `/cart` و `/checkout` واقعی به یک فهرست
+انتخاب‌پذیر نیاز داشتند). فهرست فقط شامل روش‌های فعال، مرتب‌شده بر اساس
+`order` سپس `cost`.
 
 ### account — `src/account/` (همه auth)
 
@@ -276,16 +310,17 @@ JSON، نه رشته‌ی BigInt؛ چون مبالغ تومانی هرگز به 
   درگاه (شروع پرداخت) صادق است؛ هر دو یعنی «کاربر یک اقدام پرداخت مشخص
   انجام داد، حالا منتظر تأیید». یک باگ واقعی همین‌جا پیدا و رفع شد (تست
   `test_duplicate_callback_confirms_only_once`).
-- **نوع فاکتور (شخصی/حقوقی، `Checkout.dc.html`) به مدل/قرارداد اضافه
-  نشد.** سند تسک §۲ آن را جزو ورودی سفارش می‌شمارد، اما §۱ همان سند مدل
-  را «طبق Prisma» می‌خواهد و Prisma's `Order` هیچ فیلد فاکتور/شرکتی
-  ندارد. تناقض حل‌نشده در `docs/QUESTIONS.md` ثبت شد؛ صفحه‌ی Checkout
-  واقعی بچ ۰۳ است، تصمیم مدل آن‌جا یا با تأیید مدیر پروژه می‌آید.
-- **`GET /shipping-methods` عمومی ساخته نشد.** سند تسک فقط seed dev سه
-  روش ارسال را می‌خواست، نه یک endpoint فهرست؛ `POST /orders` بدون
-  `shippingMethodId` روی ارزان‌ترین روش فعال fallback می‌کند. صفحه‌ی
-  Checkout واقعی (بچ ۰۳) برای انتخاب کاربر به این endpoint نیاز خواهد
-  داشت — یادداشت برای آن بچ.
+- **نوع فاکتور (شخصی/حقوقی) — حل‌شده در E-02.** آن‌موقع (D-05) این
+  تناقض بدون تصمیم مانده بود چون مدل مرجع اشتباهاً Prisma فرض شده بود؛
+  از D-01 به بعد مدل مرجع Django است (`apps.orders.models.Order`)، پس
+  E-02 یک migration جدید اضافه کرد (`invoice_type`، `company_name`،
+  `national_id`، `economic_code`، `registration_number`) — دیگر انحراف
+  نیست، بخش «order» بالا را ببینید.
+- **`GET /shipping-methods` عمومی — ساخته شد در E-02.** در D-05 این
+  endpoint لازم فرض نشده بود (`POST /orders` بدون `shippingMethodId` روی
+  ارزان‌ترین روش فعال fallback می‌کرد)، اما صفحه‌ی `/cart`/`/checkout`
+  واقعی (E-02) به یک فهرست انتخاب‌پذیر نیاز داشت — بخش «shipping» بالا
+  را ببینید.
 - **رسید پرداخت بدون MinIO/presigned URL واقعی.** این پروژه هیچ
   `django-storages`/`boto3` سیم‌کشی ندارد؛ فایل رسید در
   `MEDIA_ROOT/receipts/private/` (خارج از هر مسیر public) ذخیره و فقط از

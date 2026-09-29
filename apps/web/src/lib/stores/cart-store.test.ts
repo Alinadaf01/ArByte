@@ -37,11 +37,17 @@ function makeCartItem(variantId: string, qty: number): CartItem {
 }
 
 function makeCart(items: CartItem[]): Cart {
+  const subtotal = items.reduce((sum, i) => sum + i.lineTotal, 0);
   return {
     id: `cart-${nextId++}`,
     items,
     itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
-    subtotal: items.reduce((sum, i) => sum + i.lineTotal, 0),
+    subtotal,
+    discountTotal: 0,
+    coupon: null,
+    shippingCost: 0,
+    shippingMethod: null,
+    finalTotal: subtotal,
   };
 }
 

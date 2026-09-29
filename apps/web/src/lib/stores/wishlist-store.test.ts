@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { wishlistStore } from "./wishlist-store";
 
 beforeEach(() => {
@@ -47,5 +47,45 @@ describe("wishlistStore", () => {
   it("روی localStorage با کلید نسخه‌دار ذخیره می‌کند", () => {
     wishlistStore.addItem("product-a", 150_000_000);
     expect(window.localStorage.getItem("arbyte:wishlist:v1")).not.toBeNull();
+  });
+
+  describe("syncAfterLogin — E-02 §۱", () => {
+    it("از /api/proxy رد می‌شود (نه مستقیم Django) و بعد از موفقیت store محلی را پاک می‌کند", async () => {
+      wishlistStore.addItem("product-a", 150_000_000);
+      const fetchMock = vi
+        .spyOn(global, "fetch")
+        .mockResolvedValue(new Response(null, { status: 200 }));
+
+      const ok = await wishlistStore.syncAfterLogin();
+
+      expect(ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/proxy/account/wishlist/merge",
+        expect.objectContaining({ method: "POST" }),
+      );
+      expect(wishlistStore.getSnapshot()).toHaveLength(0);
+      fetchMock.mockRestore();
+    });
+
+    it("سبد خالی → true بدون هیچ فراخوانی شبکه", async () => {
+      const fetchMock = vi.spyOn(global, "fetch");
+      const ok = await wishlistStore.syncAfterLogin();
+      expect(ok).toBe(true);
+      expect(fetchMock).not.toHaveBeenCalled();
+      fetchMock.mockRestore();
+    });
+
+    it("خطای شبکه/سرور → false، store محلی دست‌نخورده می‌ماند", async () => {
+      wishlistStore.addItem("product-a", 150_000_000);
+      const fetchMock = vi
+        .spyOn(global, "fetch")
+        .mockResolvedValue(new Response(null, { status: 500 }));
+
+      const ok = await wishlistStore.syncAfterLogin();
+
+      expect(ok).toBe(false);
+      expect(wishlistStore.getSnapshot()).toHaveLength(1);
+      fetchMock.mockRestore();
+    });
   });
 });

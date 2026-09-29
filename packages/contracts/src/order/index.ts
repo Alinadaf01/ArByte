@@ -47,6 +47,22 @@ export const OrderPaymentSummarySchema = z.object({
   status: PaymentStatusSchema,
 });
 
+/**
+ * فاکتور — E-02 §۴ (Checkout.dc.html: تاگل شخصی/حقوقی). شخصی هیچ فیلد
+ * تکمیلی ندارد؛ حقوقی نام‌شرکت/شناسه‌ملی الزامی، کد‌اقتصادی/شماره‌ثبت
+ * اختیاری‌اند — همان اعتبارسنجی سرور (apps/orders/services.py's checkout()).
+ */
+export const InvoiceTypeSchema = z.enum(["PERSONAL", "CORPORATE"]);
+export type InvoiceType = z.infer<typeof InvoiceTypeSchema>;
+
+export const OrderInvoiceSchema = z.object({
+  type: InvoiceTypeSchema,
+  companyName: z.string().nullable(),
+  nationalId: z.string().nullable(),
+  economicCode: z.string().nullable(),
+  registrationNumber: z.string().nullable(),
+});
+
 export const OrderShipmentSummarySchema = z
   .object({
     provider: z.string(),
@@ -68,6 +84,7 @@ export const OrderSchema = z.object({
   discountTotal: MoneyAmountSchema,
   shippingCost: MoneyAmountSchema,
   finalTotal: MoneyAmountSchema,
+  invoice: OrderInvoiceSchema,
   payment: OrderPaymentSummarySchema.nullable(),
   shipment: OrderShipmentSummarySchema,
   createdAt: z.string().datetime(),
@@ -75,23 +92,40 @@ export const OrderSchema = z.object({
 export type Order = z.infer<typeof OrderSchema>;
 
 /**
- * `POST /orders` — کاربر آدرس، روش پرداخت، و اختیاری روش ارسال/کد تخفیف
- * می‌فرستد (§۸.۵۵)؛ قیمت‌ها سرور از سبد فعلی بازمحاسبه می‌کند. اگر قیمت
- * زودتر عوض شده باشد، سرور خطای PRICE_CHANGED می‌دهد نه ثبت بی‌صدا با
- * قیمت جدید (T-004 بخش ۲، هشدار).
+ * `POST /orders` — کاربر آدرس، روش پرداخت، و اختیاری روش ارسال/کد تخفیف/
+ * فاکتور می‌فرستد (§۸.۵۵)؛ قیمت‌ها سرور از سبد فعلی بازمحاسبه می‌کند. اگر
+ * قیمت زودتر عوض شده باشد، سرور خطای PRICE_CHANGED می‌دهد نه ثبت بی‌صدا با
+ * قیمت جدید (T-004 بخش ۲، هشدار). shippingMethodId/couponCode نبودن یعنی
+ * سرور به انتخاب ذخیره‌شده روی سبد برمی‌گردد (E-02 §۴).
  *
- * ⚠️ D-05 §۲ سند تسک «نوع فاکتور (شخصی/شرکتی)» را هم جزو ورودی می‌شمارد
- * (طبق Checkout.dc.html)، اما Prisma's Order مدل هیچ فیلد فاکتور/شرکتی
- * ندارد (§۱ همین سند: «مدل طبق Prisma»). این تناقض حل‌نشده در
- * docs/QUESTIONS.md ثبت شده — عمداً اینجا اضافه نشده تا مدل از Prisma
- * منحرف نشود؛ صفحه‌ی Checkout واقعی بچ ۰۳ است.
+ * فیلدهای فاکتور (نوع شخصی/شرکتی) که در D-05 هنوز حل‌نشده مانده بود
+ * (docs/QUESTIONS.md Q-22) با E-02 اضافه شدند — یک migration جدید،
+ * Prisma دیگر مرجع نیست (D-01 به بعد Django/apps.orders.models است).
+ *
+ * `idempotencyKey` بدنه نیست — هدر `Idempotency-Key` است (کلیک دوم روی
+ * «ثبت سفارش» در شبکه‌ی کند نباید سفارش تکراری بسازد).
  */
-export const CreateOrderBodySchema = z.object({
-  addressId: z.string(),
-  paymentMethod: PaymentMethodSchema,
-  shippingMethodId: z.string().optional(),
-  couponCode: z.string().optional(),
-});
+export const CreateOrderBodySchema = z
+  .object({
+    addressId: z.string(),
+    paymentMethod: PaymentMethodSchema,
+    shippingMethodId: z.string().optional(),
+    couponCode: z.string().optional(),
+    invoiceType: InvoiceTypeSchema.default("PERSONAL"),
+    companyName: z.string().optional(),
+    nationalId: z.string().length(11).optional(),
+    economicCode: z.string().optional(),
+    registrationNumber: z.string().optional(),
+  })
+  .refine(
+    (body) =>
+      body.invoiceType !== "CORPORATE" ||
+      (!!body.companyName && !!body.nationalId),
+    {
+      message: "برای فاکتور حقوقی، نام شرکت و شناسه ملی الزامی است.",
+      path: ["companyName"],
+    },
+  );
 export const CreateOrderResponseSchema = successResponseSchema(OrderSchema);
 
 // GET /orders

@@ -1,8 +1,36 @@
 import { z } from "zod";
 import { successResponseSchema } from "../common/response";
+import { PaymentMethodSchema } from "../common/enums";
 import { MoneyAmountSchema } from "../validators";
 
 export * from "./scrub-payload";
+
+/**
+ * `GET /payment-methods` — E-02 §۴. فهرست واقعاً در دسترس، نه همه‌ی
+ * گزینه‌های طراحی‌شده: کارت‌به‌کارت فقط اگر SiteSettings کامل پر شده،
+ * درگاه فقط اگر حداقل یک ApiCredential فعال با credentials معتبر داشته
+ * باشد (apps/public_api/checkout_views.py's PaymentMethodListView). چهارتای
+ * غیر از بله‌پی همیشه در عمل غایب‌اند (مستندات نرسیده) — این enum اسمی
+ * وسیع‌تر است تا اگر یکی مستند شد، قرارداد از قبل جا داشته باشد.
+ */
+export const GATEWAY_CODE_VALUES = [
+  "ZARINPAL",
+  "IDPAY",
+  "SNAPPPAY",
+  "DIGIPAY",
+  "BALEPAY",
+] as const;
+export const GatewayCodeSchema = z.enum(GATEWAY_CODE_VALUES);
+export type GatewayCode = z.infer<typeof GatewayCodeSchema>;
+
+export const PaymentMethodOptionSchema = z.object({
+  method: PaymentMethodSchema,
+  provider: GatewayCodeSchema.nullable(),
+  label: z.string(),
+});
+export const PaymentMethodListResponseSchema = successResponseSchema(
+  z.array(PaymentMethodOptionSchema),
+);
 
 /**
  * درگاه پرداخت — الحاقیه T-004 §۷: فقط شکل، بدون منطق (مستندات بله‌پی

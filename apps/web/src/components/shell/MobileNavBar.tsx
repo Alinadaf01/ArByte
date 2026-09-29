@@ -9,6 +9,7 @@ export type MobileNavActive =
 
 interface MobileNavBarProps {
   active?: MobileNavActive;
+  isAuthenticated?: boolean;
 }
 
 interface NavItem {
@@ -22,7 +23,7 @@ function iconStroke(active: boolean) {
   return active ? "2.1" : "1.7";
 }
 
-const items = (cartCount: string): NavItem[] => [
+const items = (cartCount: string, accountHref: string): NavItem[] => [
   {
     key: "home",
     href: "/",
@@ -117,7 +118,7 @@ const items = (cartCount: string): NavItem[] => [
   },
   {
     key: "account",
-    href: "/login",
+    href: accountHref,
     label: mobileNavBar.account,
     icon: (active) => (
       <svg
@@ -138,9 +139,13 @@ const items = (cartCount: string): NavItem[] => [
   },
 ];
 
-export function MobileNavBar({ active = "" }: MobileNavBarProps) {
+export function MobileNavBar({
+  active = "",
+  isAuthenticated = false,
+}: MobileNavBarProps) {
   const { totalQty } = useCartStore();
   const cartCount = toPersianDigits(totalQty);
+  const accountHref = isAuthenticated ? "/account" : "/login";
 
   return (
     <>
@@ -150,7 +155,7 @@ export function MobileNavBar({ active = "" }: MobileNavBarProps) {
         className="shadow-bottom-nav border-border fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 gap-0.5 border-t bg-surface px-1.5 pt-1.5 font-sans md:hidden"
         style={{ paddingBottom: "calc(6px + env(safe-area-inset-bottom))" }}
       >
-        {items(cartCount).map((item) => {
+        {items(cartCount, accountHref).map((item) => {
           const isActive = active === item.key;
           return (
             <Link

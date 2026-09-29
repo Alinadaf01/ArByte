@@ -10,4 +10,5 @@ export * from "./account";
 export * from "./admin";
 export * from "./content";
 export * from "./payment";
+export * from "./shipping";
 export * from "./permissions-map";

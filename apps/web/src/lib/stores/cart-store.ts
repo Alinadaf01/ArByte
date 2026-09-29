@@ -150,6 +150,15 @@ async function clear() {
   applyCart(cart);
 }
 
+/** E-02 §۱ — بعد از ورود صدا زده می‌شود: سبد مهمان سرور-محور همین لحظه
+ * (otp/verify) در سبد کاربر ادغام شده — state این ماژول (بین ناوبری‌های
+ * کلاینتی، singleton سطح ماژول) باید دوباره از سرور خوانده شود، وگرنه
+ * هدر/سبد هنوز آیتم‌های پیش از ادغام (با سقف/تعداد قدیمی) را نشان می‌دهد. */
+async function refresh(): Promise<void> {
+  const cart = await fetchCart();
+  applyCart(cart);
+}
+
 export const cartStore = {
   subscribe,
   getSnapshot,
@@ -158,6 +167,7 @@ export const cartStore = {
   setQty,
   removeItem,
   clear,
+  refresh,
 };
 
 /** خواندن سبد در هر کامپوننت کلاینت — بدون prop-drilling از شل سرور. */

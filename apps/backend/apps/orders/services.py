@@ -110,20 +110,67 @@ def validate_coupon(code: str, user, subtotal: int) -> tuple["Coupon", int]:  # 
 
 @transaction.atomic
 def checkout(
-    *, user, address, payment_method: str, shipping_method, coupon_code: str | None = None
+    *,
+    user,
+    address,
+    payment_method: str,
+    shipping_method_id: str | None = None,
+    coupon_code: str | None = None,
+    idempotency_key: str | None = None,
+    invoice_type: str = "PERSONAL",
+    company_name: str | None = None,
+    national_id: str | None = None,
+    economic_code: str | None = None,
+    registration_number: str | None = None,
 ) -> Order:
-    """D-05 §۲ — یک تراکنش: قفل Inventory، بررسی موجودی/قیمت، ساخت سفارش
-    با snapshot، رزرو موجودی (نه STOCK_OUT — آن در order_status.py موقع
-    SHIPPED اتفاق می‌افتد)، خالی‌کردن سبد. قیمت همیشه از واریانت زنده
-    خوانده می‌شود؛ `unit_price_snapshot` فقط برای تشخیص PRICE_CHANGED است."""
+    """D-05 §۲ / E-02 §۴ — یک تراکنش: قفل Inventory، بررسی موجودی/قیمت،
+    ساخت سفارش با snapshot، رزرو موجودی (نه STOCK_OUT — آن در order_status.py
+    موقع SHIPPED اتفاق می‌افتد)، خالی‌کردن سبد. قیمت همیشه از واریانت زنده
+    خوانده می‌شود؛ `unit_price_snapshot` فقط برای تشخیص PRICE_CHANGED است.
+
+    `idempotency_key`: اگر سفارشی قبلاً با همین (user, key) ساخته شده، همان
+    برگردانده می‌شود — بدون لمس دوباره‌ی سبد/موجودی (کلیک دوم روی «ثبت سفارش»
+    در شبکه‌ی کند نباید سفارش تکراری بسازد). `shipping_method_id`/`coupon_code`
+    وقتی صریح داده نشوند، به انتخاب ذخیره‌شده روی خودِ سبد برمی‌گردند (همان
+    چیزی که کاربر در صفحه‌ی سبد انتخاب کرده) — چک‌اوت هرگز مقدار حاضری از
+    کلاینت را بدون اعتبارسنجی زنده نمی‌پذیرد."""
     from apps.inventory.models import InsufficientStockError, Inventory
+    from apps.settings.models import ShippingMethod
 
     from . import order_status
     from .models import CouponUsage
 
+    if idempotency_key:
+        existing = Order.objects.filter(user=user, idempotency_key=idempotency_key).first()
+        if existing:
+            return existing
+
+    if invoice_type not in {"PERSONAL", "CORPORATE"}:
+        raise CheckoutError("VALIDATION_ERROR", "نوع فاکتور نامعتبر است.", field="invoiceType")
+    if invoice_type == "CORPORATE":
+        if not company_name or not national_id:
+            raise CheckoutError(
+                "VALIDATION_ERROR", "برای فاکتور حقوقی، نام شرکت و شناسه ملی الزامی است.", field="companyName"
+            )
+    else:
+        company_name = None
+        national_id = None
+        economic_code = None
+        registration_number = None
+
     cart = Cart.objects.filter(user=user).first()
     if not cart or not cart.items.exists():
         raise CheckoutError("CART_EMPTY", "سبد خرید شما خالی است.")
+
+    shipping_method = None
+    if shipping_method_id:
+        shipping_method = ShippingMethod.objects.filter(pk=shipping_method_id, is_active=True).first()
+    if not shipping_method and cart.shipping_method_id and cart.shipping_method.is_active:
+        shipping_method = cart.shipping_method
+    if not shipping_method:
+        shipping_method = ShippingMethod.objects.filter(is_active=True).order_by("order", "cost").first()
+    if not shipping_method:
+        raise CheckoutError("VALIDATION_ERROR", "روش ارسالی در دسترس نیست.", field="shippingMethodId")
 
     items = list(
         cart.items.select_related("variant__product", "variant__inventory").order_by("id")
@@ -166,10 +213,11 @@ def checkout(
     if shortages:
         raise InsufficientStockCheckoutError(shortages)
 
+    effective_coupon_code = coupon_code or (cart.coupon.code if cart.coupon_id else None)
     coupon = None
     discount = 0
-    if coupon_code:
-        coupon, discount = validate_coupon(coupon_code, user, subtotal)
+    if effective_coupon_code:
+        coupon, discount = validate_coupon(effective_coupon_code, user, subtotal)
 
     shipping_cost = shipping_method.cost
     if shipping_method.free_above is not None and subtotal >= shipping_method.free_above:
@@ -189,6 +237,12 @@ def checkout(
         discount_total=discount,
         shipping_cost=shipping_cost,
         final_total=final_total,
+        invoice_type=invoice_type,
+        company_name=company_name,
+        national_id=national_id,
+        economic_code=economic_code,
+        registration_number=registration_number,
+        idempotency_key=idempotency_key,
     )
 
     for data in order_items_data:
@@ -223,6 +277,9 @@ def checkout(
     )
 
     cart.items.all().delete()
+    cart.coupon = None
+    cart.shipping_method = None
+    cart.save(update_fields=["coupon", "shipping_method", "updated_at"])
 
     order_status.transition_to(order, "AWAITING_PAYMENT", user=user)
     return order

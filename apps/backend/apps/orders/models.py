@@ -11,6 +11,17 @@ class Cart(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True, related_name="carts"
     )
     session_key = models.CharField(max_length=40, blank=True)
+    # E-02 §۳ — انتخاب کوپن/روش ارسال روی خودِ سبد نگه داشته می‌شود (نه فقط
+    # پارامتر لحظه‌ی ثبت سفارش) تا کاربر آن‌ها را روی صفحه‌ی /cart انتخاب کند
+    # و در /checkout همان انتخاب اثر کند. اعتبارسنجی همیشه دوباره و زنده در
+    # to_cart_response()/checkout() انجام می‌شود — نگه‌داشتن یک FK نامعتبر
+    # (کوپن منقضی‌شده، روش غیرفعال‌شده) هرگز به‌تنهایی چیزی تأیید نمی‌کند.
+    coupon = models.ForeignKey(
+        "content.Coupon", on_delete=models.SET_NULL, blank=True, null=True, related_name="cart_applications"
+    )
+    shipping_method = models.ForeignKey(
+        "settings.ShippingMethod", on_delete=models.SET_NULL, blank=True, null=True, related_name="carts"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -118,6 +129,14 @@ PAYMENT_GATEWAY_CHOICES = [
     ("BALEPAY", "بله‌پی"),
 ]
 
+# E-02 §۴ — فاکتور شخصی/حقوقی (Q-22 D-05 حل شد؛ سند تسک صریح می‌خواهد).
+# بدون معادل Prisma (الحاقیه‌ی Django) — طراحی (Checkout.dc.html) این را
+# می‌خواهد، مدل داده باید عقب بماند تا آن، نه برعکس.
+INVOICE_TYPE_CHOICES = [
+    ("PERSONAL", "شخصی"),
+    ("CORPORATE", "حقوقی"),
+]
+
 
 class Order(models.Model):
     """D-05 §۱ — عیناً `apps/api/prisma/schema/05-order.prisma`'س Order.
@@ -161,6 +180,20 @@ class Order(models.Model):
     invoice_pdf = models.FileField(upload_to="invoices/", blank=True, null=True)
     invoice_pdf_generated_at = models.DateTimeField(blank=True, null=True)
 
+    # E-02 §۴ — فاکتور. corporate_* فقط وقتی invoice_type=CORPORATE پر می‌شوند
+    # (اعتبارسنجی در CreateOrderBodySchema/سریالایزر، نه CHECK دیتابیس —
+    # سفارش‌های PERSONAL همیشه این‌ها را خالی می‌گذارند).
+    invoice_type = models.CharField(max_length=10, choices=INVOICE_TYPE_CHOICES, default="PERSONAL")
+    company_name = models.CharField(max_length=200, blank=True, null=True)
+    national_id = models.CharField(max_length=11, blank=True, null=True, help_text="شناسه ملی شرکت، ۱۱ رقم")
+    economic_code = models.CharField(max_length=30, blank=True, null=True)
+    registration_number = models.CharField(max_length=30, blank=True, null=True)
+
+    # E-02 §۴ — ضد دوبار کلیک: کلاینت هدر Idempotency-Key می‌فرستد؛ تلاش
+    # دوم با همان کلید همان سفارش را برمی‌گرداند، سفارش دوم نمی‌سازد.
+    # بدون هدر (کلاینت‌های قدیمی‌تر) همچنان کار می‌کند — null یعنی بدون کلید.
+    idempotency_key = models.CharField(max_length=100, blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -170,6 +203,13 @@ class Order(models.Model):
             models.Index(fields=["order_number"]),
             models.Index(fields=["user"]),
             models.Index(fields=["status"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "idempotency_key"],
+                condition=models.Q(idempotency_key__isnull=False),
+                name="unique_order_idempotency_key_per_user",
+            ),
         ]
 
     def __str__(self):

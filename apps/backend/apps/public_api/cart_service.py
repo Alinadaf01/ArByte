@@ -79,16 +79,89 @@ def to_cart_item(item: CartItem) -> dict:
 
 
 def to_cart_response(cart: Cart) -> dict:
+    """E-02 §۳ — علاوه بر ردیف‌ها، خلاصه‌ی کامل (تخفیف/ارسال/جمع نهایی) از
+    سرور — فرانت هرگز این‌ها را خودش حساب نمی‌کند (قانون ۴). کوپن/روش ارسالِ
+    ذخیره‌شده روی سبد هر بار زنده دوباره اعتبارسنجی می‌شود؛ اگر دیگر معتبر
+    نبود (منقضی/غیرفعال‌شده)، به‌جای خطا روی GET، خاموش از سبد پاک می‌شود."""
     items = [
         to_cart_item(item)
         for item in cart.items.select_related("variant__product", "variant__inventory").order_by("id")
     ]
+    subtotal = sum(i["lineTotal"] for i in items)
+
+    discount_total = 0
+    coupon_data = None
+    if cart.coupon_id:
+        from apps.orders.services import CheckoutError, validate_coupon
+
+        try:
+            coupon, discount_total = validate_coupon(cart.coupon.code, cart.user, subtotal)
+            coupon_data = {"code": coupon.code, "discountAmount": discount_total}
+        except CheckoutError:
+            Cart.objects.filter(pk=cart.pk).update(coupon=None)
+            cart.coupon = None
+
+    shipping_cost = 0
+    shipping_method_data = None
+    if cart.shipping_method_id and cart.shipping_method.is_active:
+        method = cart.shipping_method
+        free_above = method.free_above
+        shipping_cost = 0 if free_above is not None and subtotal >= free_above else method.cost
+        shipping_method_data = {"id": str(method.id), "name": method.name}
+    elif cart.shipping_method_id:
+        # روش ارسال بعداً از ادمین غیرفعال شده — همان الگوی کوپن، خاموش پاک شود.
+        Cart.objects.filter(pk=cart.pk).update(shipping_method=None)
+        cart.shipping_method = None
+
+    final_total = max(subtotal - discount_total + shipping_cost, 0)
+
     return {
         "id": str(cart.id),
         "items": items,
         "itemCount": sum(i["quantity"] for i in items),
-        "subtotal": sum(i["lineTotal"] for i in items),
+        "subtotal": subtotal,
+        "discountTotal": discount_total,
+        "coupon": coupon_data,
+        "shippingCost": shipping_cost,
+        "shippingMethod": shipping_method_data,
+        "finalTotal": final_total,
     }
+
+
+def apply_coupon(cart: Cart, code: str) -> Cart:
+    """اعتبارسنجی همان منطق checkout() (validate_coupon) — سقف هر کاربر فقط
+    وقتی cart.user موجود باشد چک می‌شود؛ سبد مهمان صرفاً آن بخش را رد می‌کند،
+    نه کل اعتبارسنجی را (چک نهایی واقعی هنوز در checkout() است)."""
+    from apps.orders.services import validate_coupon
+
+    items = cart.items.select_related("variant").order_by("id")
+    subtotal = sum(item.variant.final_price * item.quantity for item in items)
+    validate_coupon(code, cart.user, subtotal)  # raises CheckoutError if invalid — propagates to view
+
+    from apps.content.models import Coupon
+
+    coupon = Coupon.objects.get(code__iexact=code, is_active=True)
+    cart.coupon = coupon
+    cart.save(update_fields=["coupon", "updated_at"])
+    return cart
+
+
+def remove_coupon(cart: Cart) -> Cart:
+    cart.coupon = None
+    cart.save(update_fields=["coupon", "updated_at"])
+    return cart
+
+
+def set_shipping_method(cart: Cart, shipping_method_id) -> Cart:
+    from apps.settings.models import ShippingMethod
+
+    try:
+        method = ShippingMethod.objects.get(pk=shipping_method_id, is_active=True)
+    except (ShippingMethod.DoesNotExist, ValueError, TypeError):
+        raise ApiError("NOT_FOUND", status=404, message="روش ارسال پیدا نشد.") from None
+    cart.shipping_method = method
+    cart.save(update_fields=["shipping_method", "updated_at"])
+    return cart
 
 
 def _get_live_variant(variant_id) -> ProductVariant:

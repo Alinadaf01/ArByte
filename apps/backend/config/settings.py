@@ -251,6 +251,15 @@ if not DEBUG and OTP_DEV_MODE:
         "OTP_DEV_MODE=True با DEBUG=False مجاز نیست — کد OTP در لاگ سرور واقعی نوشته می‌شود."
     )
 
+# E-02 §۲ — طول کد OTP قابل‌تنظیم؛ پیش‌فرض ۴ همان چیزی است که از قبل هاردکد
+# بود (Login.dc.html، packages/contracts/src/validators.ts's OtpCodeSchema) —
+# اگر این عدد عوض شود، OtpCodeSchema/OTP_REGEX هم باید دستی هم‌راستا شوند.
+OTP_LENGTH = config("OTP_LENGTH", default=4, cast=int)
+
+# E-02 §۵ — کد ثابت dev برای e2e (بدون scrape کردن لاگ سرور برای کد تصادفی).
+# فقط وقتی OTP_DEV_MODE=True مؤثر است (پس همان گارد بالا — هرگز با DEBUG=False).
+OTP_DEV_FIXED_CODE = config("OTP_DEV_FIXED_CODE", default="", cast=str)
+
 
 # Celery — background jobs (SMS, email, reports)
 REDIS_URL = config("REDIS_URL", default="redis://localhost:6379/0")

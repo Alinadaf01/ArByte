@@ -13,12 +13,20 @@ export type SiteHeaderActive =
 interface SiteHeaderProps {
   active?: SiteHeaderActive;
   categories: CategoryTreeNode[];
+  /** E-02 §۱ — فقط حضور کوکی httpOnly (نه یک ادعای اعتبار واقعی)؛ کنترل
+   * می‌کند آیکون حساب به `/account` برود یا `/login`. */
+  isAuthenticated?: boolean;
 }
 
 const navLinkColor = (isActive: boolean) =>
   isActive ? "text-brand-active" : "text-secondary-2";
 
-export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
+export function SiteHeader({
+  active = "",
+  categories,
+  isAuthenticated = false,
+}: SiteHeaderProps) {
+  const accountHref = isAuthenticated ? "/account" : "/login";
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { totalQty } = useCartStore();
   const cartCount = toPersianDigits(totalQty);
@@ -183,7 +191,7 @@ export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
             </svg>
           </Link>
           <Link
-            href="/login"
+            href={accountHref}
             aria-label={siteHeader.account}
             className="hover:bg-brand-tint-4 flex h-11 w-11 items-center justify-center rounded-icon-button transition-colors duration-200"
           >
@@ -356,7 +364,7 @@ export function SiteHeader({ active = "", categories }: SiteHeaderProps) {
         </div>
 
         <Link
-          href="/login"
+          href={accountHref}
           className="bg-primary text-on-dark m-3 mb-1.5 flex items-center gap-3 rounded-tile p-3.5"
         >
           <span className="flex h-9.5 w-9.5 flex-none items-center justify-center rounded-full bg-white/12">

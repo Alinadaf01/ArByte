@@ -24,7 +24,12 @@ OTP_REQUEST_PER_MOBILE_WINDOW_MINUTES = config("OTP_REQUEST_PER_MOBILE_WINDOW_MI
 
 
 def _generate_code() -> str:
-    return f"{random.randint(0, 9999):04d}"
+    # E-02 §۵ — کد ثابت dev برای e2e، فقط وقتی OTP_DEV_MODE روشن است (همان
+    # گارد settings.py's OTP_DEV_MODE — هرگز با DEBUG=False قابل‌دسترس).
+    if settings.OTP_DEV_MODE and settings.OTP_DEV_FIXED_CODE:
+        return settings.OTP_DEV_FIXED_CODE
+    length = settings.OTP_LENGTH
+    return f"{random.randint(0, 10**length - 1):0{length}d}"
 
 
 def request_otp(mobile: str) -> int:

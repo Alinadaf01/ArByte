@@ -57,6 +57,18 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
     path: "/cart/items/:id",
     access: "guest-or-authenticated",
   },
+  /** E-02 §۳ — کوپن/روش ارسال روی سبد؛ همان الگوی سبد مهمان/کاربر. */
+  { method: "POST", path: "/cart/coupon", access: "guest-or-authenticated" },
+  { method: "DELETE", path: "/cart/coupon", access: "guest-or-authenticated" },
+  {
+    method: "PATCH",
+    path: "/cart/shipping-method",
+    access: "guest-or-authenticated",
+  },
+
+  // ---------- shipping / payment methods (عمومی — E-02 §۳/۴) ----------
+  { method: "GET", path: "/shipping-methods", access: "public" },
+  { method: "GET", path: "/payment-methods", access: "public" },
 
   // ---------- order ----------
   /** الحاقیه §۶ — سشن جعل‌هویت این را رد می‌کند (orders.create مسدود است). */

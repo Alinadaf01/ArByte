@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { env } from "@/lib/env";
 import { createLocalArrayStore } from "./create-local-store";
 
 /**
@@ -54,38 +53,34 @@ function replace(items: readonly WishlistItem[]) {
 }
 
 /**
- * D-04 §۴ — آماده برای صدا زدن از صفحه‌ی ورود (بچ ۰۳، هنوز ساخته نشده).
+ * D-04 §۴ / E-02 §۱ — بعد از ورود صدا زده می‌شود (صفحه‌ی `/login`).
  * علاقه‌مندی محلی (localStorage، قبل از ورود) را با
  * `POST /account/wishlist/merge` (apps/public_api/account_views.py،
  * WishlistMergeView) در حساب کاربر ادغام می‌کند — آیتمی که از قبل در
  * حساب بود دست نمی‌خورد، فقط چیزهای تازه اضافه می‌شوند. بعد از merge
  * موفق، منبع حقیقت حساب سرور می‌شود؛ store محلی پاک می‌شود تا دوبار
- * نمایش داده نشود (صفحه‌ی /wishlist واقعی، بچ ۰۳، از سرور می‌خواند).
- * توکن نگه‌داشته نمی‌شود — فراخوان (صفحه‌ی ورود) آن را می‌دهد
- * (D-04 §۶: تصمیم کوکی httpOnly بچ ۰۳ است، نه اینجا).
+ * نمایش داده نشود (صفحه‌ی /wishlist واقعی از سرور می‌خواند).
+ *
+ * از `/api/proxy/account/wishlist/merge` رد می‌شود، نه مستقیم Django —
+ * توکن دیگر در دسترس این کد نیست (کوکی httpOnly، E-02 §۱)؛ پراکسی خودش
+ * Authorization را از کوکی می‌سازد. پارامتر ورودی هم برای همین حذف شد.
  */
-async function syncAfterLogin(accessToken: string): Promise<boolean> {
+async function syncAfterLogin(): Promise<boolean> {
   const items = store.getItems();
   if (items.length === 0) return true;
 
   try {
-    const res = await fetch(
-      `${env.NEXT_PUBLIC_API_BASE_URL}/account/wishlist/merge`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(
-          items.map((item) => ({
-            productSlug: item.productSlug,
-            variantId: item.variantId,
-            priceAtSave: item.priceAtSave,
-          })),
-        ),
-      },
-    );
+    const res = await fetch("/api/proxy/account/wishlist/merge", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        items.map((item) => ({
+          productSlug: item.productSlug,
+          variantId: item.variantId,
+          priceAtSave: item.priceAtSave,
+        })),
+      ),
+    });
     if (!res.ok) return false;
     clear();
     return true;

@@ -9,7 +9,6 @@ from rest_framework.response import Response
 from apps.orders import services as order_services
 from apps.orders.models import Order, Return, ReturnItem
 from apps.orders.services import CheckoutError, InsufficientStockCheckoutError, PriceChangedError
-from apps.settings.models import ShippingMethod
 from apps.users.models import Address
 
 from .envelope import PublicAPIView, paginated_response, success_response
@@ -55,6 +54,13 @@ def _order_to_dict(order: Order) -> dict:
         "discountTotal": order.discount_total,
         "shippingCost": order.shipping_cost,
         "finalTotal": order.final_total,
+        "invoice": {
+            "type": order.invoice_type,
+            "companyName": order.company_name,
+            "nationalId": order.national_id,
+            "economicCode": order.economic_code,
+            "registrationNumber": order.registration_number,
+        },
         "payment": (
             {"method": payment.method, "provider": payment.provider, "status": payment.status} if payment else None
         ),
@@ -123,6 +129,10 @@ class OrderListCreateView(PublicAPIView):
         payment_method = request.data.get("payment_method")
         coupon_code = request.data.get("coupon_code") or None
         shipping_method_id = request.data.get("shipping_method_id")
+        invoice_type = request.data.get("invoice_type") or "PERSONAL"
+        # E-02 §۴ — کلید idempotency از هدر می‌آید نه بدنه (تکرار همان
+        # درخواست شبکه، نه فیلد فرم)؛ نبودش یعنی سفارش همیشه تازه ساخته شود.
+        idempotency_key = request.headers.get("Idempotency-Key") or None
 
         if payment_method not in {"MANUAL_CARD_TO_CARD", "GATEWAY"}:
             raise validation_error({"paymentMethod": "روش پرداخت نامعتبر است."})
@@ -134,18 +144,19 @@ class OrderListCreateView(PublicAPIView):
         except (Address.DoesNotExist, ValueError, TypeError):
             raise not_found("آدرس پیدا نشد.") from None
 
-        shipping_method = None
-        if shipping_method_id:
-            shipping_method = ShippingMethod.objects.filter(pk=shipping_method_id, is_active=True).first()
-        if not shipping_method:
-            shipping_method = ShippingMethod.objects.filter(is_active=True).order_by("order", "cost").first()
-        if not shipping_method:
-            raise validation_error({"shippingMethodId": "روش ارسالی در دسترس نیست."})
-
         try:
             order = order_services.checkout(
-                user=request.user, address=address, payment_method=payment_method,
-                shipping_method=shipping_method, coupon_code=coupon_code,
+                user=request.user,
+                address=address,
+                payment_method=payment_method,
+                shipping_method_id=shipping_method_id,
+                coupon_code=coupon_code,
+                idempotency_key=idempotency_key,
+                invoice_type=invoice_type,
+                company_name=request.data.get("company_name") or None,
+                national_id=request.data.get("national_id") or None,
+                economic_code=request.data.get("economic_code") or None,
+                registration_number=request.data.get("registration_number") or None,
             )
         except PriceChangedError as exc:
             raise ApiError(
