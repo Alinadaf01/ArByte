@@ -19,6 +19,7 @@ from . import (
     payments,
     pricing,
     products,
+    redirects,
     reports,
     returns,
     reviews,
@@ -131,6 +132,8 @@ urlpatterns = [
     path("admin/users/<int:user_id>/impersonate/", account_admin.AdminImpersonateView.as_view(), name="admin-user-impersonate"),
     path("admin/users/<int:user_id>/force-logout/", account_admin.AdminForceLogoutView.as_view(), name="admin-user-force-logout"),
     # Messages
+    path("admin/redirects/", redirects.AdminRedirectListCreateView.as_view(), name="admin-redirect-list"),
+    path("admin/redirects/<int:pk>/", redirects.AdminRedirectDetailView.as_view(), name="admin-redirect-detail"),
     path("admin/pages/about/", content_pages.AdminAboutPageView.as_view(), name="admin-page-about"),
     path("admin/pages/legal/", content_pages.AdminLegalDocumentListView.as_view(), name="admin-page-legal-list"),
     path("admin/pages/legal/<str:key>/", content_pages.AdminLegalDocumentDetailView.as_view(), name="admin-page-legal-detail"),

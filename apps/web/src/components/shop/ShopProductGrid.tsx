@@ -72,6 +72,8 @@ export async function ShopProductGrid({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* G-02 — ترتیب سرتیترها: کارت‌ها h3 دارند، پس یک h2 (فقط برای صفحه‌خوان) لازم است. */}
+      <h2 className="sr-only">{productsPage.title}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((product, index) => (
           <ProductCard

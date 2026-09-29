@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
-import { isOriginAllowed } from "@/lib/server/bff-shared";
+import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
 import {
   clearAuthCookies,
   getAuthCookies,
@@ -38,7 +38,7 @@ async function forward(
   accessToken: string | null,
 ): Promise<Response> {
   const url = `${env.NEXT_PUBLIC_API_BASE_URL}/${path.join("/")}${request.nextUrl.search}`;
-  const headers = new Headers();
+  const headers = upstreamHeaders(request);
   for (const key of FORWARD_REQUEST_HEADERS) {
     const value = request.headers.get(key);
     if (value) headers.set(key, value);
@@ -104,7 +104,10 @@ async function handle(
     if (value) responseHeaders.set(key, value);
   }
 
-  return new Response(await upstream.arrayBuffer(), {
+  // G-02 — 204/205/304 بدنه ندارند؛ `new Response(body, {status: 204})`
+  // خطا می‌دهد و هر پاسخ 204 (حذف آدرس/علاقه‌مندی، ثبت بازدید) 500 می‌شد.
+  const nullBody = [204, 205, 304].includes(upstream.status);
+  return new Response(nullBody ? null : await upstream.arrayBuffer(), {
     status: upstream.status,
     headers: responseHeaders,
   });

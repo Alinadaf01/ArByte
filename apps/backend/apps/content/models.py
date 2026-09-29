@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import F
 
 # G-01 — دسته‌های Blog.dc.html (قبلاً دسته‌های وایب بود؛ هیچ نوشته‌ای با آن‌ها نبود).
 BLOG_CATEGORY_CHOICES = [
@@ -368,3 +369,57 @@ class LegalDocument(models.Model):
 
     def __str__(self):
         return self.get_key_display()
+
+
+REDIRECT_STATUS_CHOICES = [(301, "دائمی (301)"), (302, "موقت (302)")]
+
+
+class Redirect(models.Model):
+    """G-02 — ریدایرکت مسیرهای فروشگاه؛ middleware فروشگاه (Next) اعمال می‌کند.
+    تغییر slug محصول/دسته/نوشته و حذف محصول خودکار یک 301 می‌سازد (signals.py)."""
+
+    from_path = models.CharField(max_length=500, unique=True)
+    to_path = models.CharField(max_length=500)
+    status_code = models.PositiveSmallIntegerField(choices=REDIRECT_STATUS_CHOICES, default=301)
+    is_active = models.BooleanField(default=True)
+    is_auto = models.BooleanField(default=False, help_text="ساخته‌شده خودکار با تغییر slug/حذف")
+    hits = models.PositiveIntegerField(default=0)
+    last_hit_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.from_path} → {self.to_path} ({self.status_code})"
+
+    @staticmethod
+    def normalize(path: str) -> str:
+        path = (path or "").strip()
+        if path.startswith(("http://", "https://")):
+            return path
+        path = "/" + path.lstrip("/")
+        return path.rstrip("/") or "/"
+
+    def clean(self):
+        self.from_path = self.normalize(self.from_path)
+        self.to_path = self.normalize(self.to_path)
+        if self.from_path.startswith("http"):
+            raise ValidationError({"from_path": "مسیر مبدأ باید نسبی باشد (مثلاً /products/old)."})
+        if self.from_path == self.to_path:
+            raise ValidationError({"to_path": "مقصد نمی‌تواند با مبدأ یکی باشد."})
+
+    @classmethod
+    def point(cls, old: str, new: str) -> None:
+        """old → new با جلوگیری از زنجیره و حلقه: ریدایرکت‌هایی که به old
+        می‌رفتند مستقیم به new می‌روند و ریدایرکتِ «از new» حذف می‌شود."""
+        old, new = cls.normalize(old), cls.normalize(new)
+        if old == new:
+            return
+        cls.objects.filter(from_path=new).delete()
+        cls.objects.filter(to_path=old).update(to_path=new)
+        cls.objects.filter(from_path=F("to_path")).delete()
+        cls.objects.update_or_create(
+            from_path=old, defaults={"to_path": new, "status_code": 301, "is_active": True, "is_auto": True}
+        )

@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: `${legalPage.breadcrumb.current} | آربایت`,
   description: legalPage.subtitle,
   alternates: { canonical: "/legal" },
+  openGraph: {
+    title: `${legalPage.breadcrumb.current} | آربایت`,
+    description: legalPage.subtitle,
+    url: "/legal",
+  },
 };
 
 export default async function LegalPage() {

@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
+import { siteFooter } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
+import { absoluteUrl, jsonLd } from "@/lib/json-ld";
 import { getBlogPosts, getHomepage } from "@/lib/content";
 import { toJournalCards } from "@/content/home-journal";
 import { HeroSection } from "@/components/home/hero/HeroSection";
@@ -20,6 +23,33 @@ import { BenefitsSection } from "@/components/home/BenefitsSection";
  * BENEFITS رندر می‌شوند نه بعد از کل آرایه. بلوکی که پیدا نشود ساکت رد
  * می‌شود — صفحه نمی‌شکند.
  */
+export const metadata: Metadata = {
+  title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار تست‌شده",
+  description: siteFooter.tagline,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار تست‌شده",
+    description: siteFooter.tagline,
+    url: "/",
+  },
+};
+
+/** G-02 — WebSite + SearchAction (جعبه‌ی جستجوی نتایج گوگل). */
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "آربایت",
+  url: absoluteUrl("/"),
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${absoluteUrl("/search")}?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default async function HomePage() {
   const [blocks, journal] = await Promise.all([
     getHomepage(),
@@ -34,6 +64,10 @@ export default async function HomePage() {
 
   return (
     <StorefrontShell navActive="home">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={jsonLd(websiteLd)}
+      />
       <main>
         {hero ? <HeroSection block={hero} /> : null}
         {categoryGrid ? <CategoriesAccordion block={categoryGrid} /> : null}

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
-import { isOriginAllowed } from "@/lib/server/bff-shared";
+import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
 import {
   clearAuthCookies,
   getAuthCookies,
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   const upstream = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: upstreamHeaders(request, { "content-type": "application/json" }),
     body: JSON.stringify({ refreshToken }),
     cache: "no-store",
   });

@@ -63,6 +63,7 @@ import type {
   AboutPageContent,
   LegalDocumentContent,
 } from "@/types/contentPages";
+import type { AdminRedirect, RedirectFormValues } from "@/types/redirect";
 
 // No fake-data phase here, unlike the storefront's src/lib/api.ts — B6's
 // real /api/admin/ endpoints already exist, so every function below always
@@ -1069,4 +1070,33 @@ export async function updateLegalDocument(
     body: JSON.stringify(data),
   });
   return parseOrThrow(res, "ذخیره‌ی سند ناموفق بود.");
+}
+
+// G-02 — ریدایرکت‌ها.
+export async function listRedirects(params: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  isAuto?: string;
+}): Promise<PaginatedResponse<AdminRedirect>> {
+  return parseOrThrow(
+    await authorizedFetch(`/redirects/${buildQuery(params)}`),
+    "دریافت ریدایرکت‌ها ناموفق بود.",
+  );
+}
+
+export async function saveRedirect(
+  id: number | null,
+  data: RedirectFormValues,
+): Promise<AdminRedirect> {
+  const res = await authorizedFetch(id ? `/redirects/${id}/` : "/redirects/", {
+    method: id ? "PATCH" : "POST",
+    body: JSON.stringify(data),
+  });
+  return parseOrThrow(res, "ذخیره‌ی ریدایرکت ناموفق بود.");
+}
+
+export async function deleteRedirect(id: number): Promise<void> {
+  const res = await authorizedFetch(`/redirects/${id}/`, { method: "DELETE" });
+  if (!res.ok) throw new Error("حذف ریدایرکت ناموفق بود.");
 }

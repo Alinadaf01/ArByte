@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: `${supportPage.breadcrumb.current} | آربایت`,
   description: supportPage.subtitle,
   alternates: { canonical: "/support" },
+  openGraph: {
+    title: `${supportPage.breadcrumb.current} | آربایت`,
+    description: supportPage.subtitle,
+    url: "/support",
+  },
 };
 
 export default async function SupportPage() {

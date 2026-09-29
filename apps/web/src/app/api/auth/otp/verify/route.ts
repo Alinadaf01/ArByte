@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
-import { isOriginAllowed } from "@/lib/server/bff-shared";
+import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
 import { setAuthCookies } from "@/lib/server/auth-cookies";
 
 interface VerifyBody {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     `${env.NEXT_PUBLIC_API_BASE_URL}/auth/otp/verify`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: upstreamHeaders(request, { "content-type": "application/json" }),
       body,
       cache: "no-store",
     },

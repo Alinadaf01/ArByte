@@ -129,6 +129,12 @@ export const navGroups: NavGroup[] = [
         icon: "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12",
       },
       {
+        label: "ریدایرکت‌ها",
+        path: "/redirects",
+        section: "settings",
+        icon: "M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3",
+      },
+      {
         label: "کمپین‌ها",
         path: "/campaigns",
         section: "coupons",

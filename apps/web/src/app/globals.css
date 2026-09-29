@@ -6,8 +6,43 @@
    packages/ui کلاس‌ها را با ابزار سمنتیک همین توکن‌ها می‌نویسد. */
 @source "../../../../packages/ui/src";
 
+/* G-02 — فونت خودمیزبان از /public (قبلاً next/font کپی hashed می‌ساخت و
+   preload دستی ۴۰۰/۷۰۰ فایل دیگری را دوباره دانلود می‌کرد). */
+@font-face {
+  font-family: "Estedad";
+  src: url("/fonts/estedad/Estedad-400.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Estedad";
+  src: url("/fonts/estedad/Estedad-500.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Estedad";
+  src: url("/fonts/estedad/Estedad-600.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Estedad";
+  src: url("/fonts/estedad/Estedad-700.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-estedad: "Estedad";
+}
+
 body {
-  font-family: var(--font-estedad), sans-serif;
+  font-family: var(--font-estedad), Tahoma, sans-serif;
 }
 
 /* T-201 — ریل‌های افقی (محصولات منتخب): اسکرول‌بار مرورگر پنهان می‌شود، نه

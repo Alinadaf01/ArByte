@@ -11,7 +11,9 @@ export async function fetchJson(
   path: string,
 ): Promise<RawResponse> {
   const response = await fetch(`${baseUrl}${path}`);
-  const body = await response.json();
+  // G-02 — پاسخ 204 بدنه ندارد.
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
   return { status: response.status, body, headers: response.headers };
 }
 
@@ -29,7 +31,9 @@ export async function requestJson(
     headers: { "Content-Type": "application/json", ...init?.headers },
     body: init?.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  const body = await response.json();
+  // G-02 — پاسخ 204 بدنه ندارد.
+  const text = await response.text();
+  const body = text ? JSON.parse(text) : null;
   return { status: response.status, body, headers: response.headers };
 }
 

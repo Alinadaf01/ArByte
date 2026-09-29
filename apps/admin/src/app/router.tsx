@@ -23,6 +23,7 @@ import SettingsPage from "@/pages/SettingsPage";
 import ReviewsPage from "@/pages/ReviewsPage";
 import BlogPage from "@/pages/BlogPage";
 import ContentPagesPage from "@/pages/ContentPagesPage";
+import RedirectsPage from "@/pages/RedirectsPage";
 import CouponsPage from "@/pages/CouponsPage";
 import ReturnsPage from "@/pages/ReturnsPage";
 import SearchConsolePage from "@/pages/SearchConsolePage";
@@ -70,6 +71,7 @@ export const router = createBrowserRouter([
           { path: "reviews", element: <ReviewsPage /> },
           { path: "blog", element: <BlogPage /> },
           { path: "content-pages", element: <ContentPagesPage /> },
+          { path: "redirects", element: <RedirectsPage /> },
           { path: "coupons", element: <CouponsPage /> },
           { path: "returns", element: <ReturnsPage /> },
           { path: "search-console", element: <SearchConsolePage /> },

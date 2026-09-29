@@ -13,7 +13,8 @@
     "hero:build": "node scripts/hero-build.mjs",
     "hero:frames": "node scripts/hero-frames.mjs",
     "map:build": "node scripts/build-iran-map.mjs",
-    "icons:build": "node scripts/generate-icons.mjs"
+    "icons:build": "node scripts/generate-icons.mjs",
+    "seo:audit": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@arbyte/contracts": "workspace:*",

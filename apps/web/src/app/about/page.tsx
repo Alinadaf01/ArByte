@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   title: `${aboutPage.breadcrumb.current} | آربایت`,
   description: aboutPage.metaDescription,
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: `${aboutPage.breadcrumb.current} | آربایت`,
+    description: aboutPage.metaDescription,
+    url: "/about",
+  },
 };
 
 const H2 =

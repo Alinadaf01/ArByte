@@ -10,10 +10,12 @@ const VARIANT_GRADIENT: Record<JournalCardData["variant"], string> = {
   dark: "from-surface-dark to-secondary-2",
   cyan: "from-accent-deep to-accent",
 };
+// G-02 — `!` لازم است: `text-caption` در Tailwind v4 رنگ `--color-caption` را
+// هم می‌دهد و روی این رنگ می‌نشست (کنتراست ۳٫۴ روی پشت تیره‌ی کارت).
 const VARIANT_CTA_TEXT: Record<JournalCardData["variant"], string> = {
-  violet: "text-brand-on-dark-alt",
-  dark: "text-brand-on-dark-alt",
-  cyan: "text-accent",
+  violet: "!text-brand-on-dark-alt",
+  dark: "!text-brand-on-dark-alt",
+  cyan: "!text-accent",
 };
 
 interface JournalCardProps {

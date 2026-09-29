@@ -1,3 +1,4 @@
+import { upstreamHeaders } from "@/lib/server/bff-shared";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest): Promise<Response> {
     `${env.NEXT_PUBLIC_API_BASE_URL}/auth/impersonate/exchange`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: upstreamHeaders(request, { "content-type": "application/json" }),
       body: JSON.stringify({ ticket }),
       cache: "no-store",
     },

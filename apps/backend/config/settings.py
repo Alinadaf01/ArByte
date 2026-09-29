@@ -55,6 +55,8 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     # D-03 §2 — global (harmless for /api/admin/, which ignores request_id).
     "apps.public_api.middleware.RequestIdMiddleware",
+    # G-02 — Cache-Control/ETag برای GETهای عمومی /api/v1/ (بیرونی‌تر از CommonMiddleware).
+    "apps.public_api.middleware.PublicCacheMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -152,6 +154,11 @@ CORS_ALLOW_HEADERS = [*default_headers, "x-cart-session"]
 BACKEND_BASE_URL = config("BACKEND_BASE_URL", default="http://localhost:8000")
 FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:3000")
 
+# G-02/G-03 — آی‌پی واقعی کاربر (apps/public_api/client_ip.py): BFF فروشگاه
+# `X-Client-IP` را با این secret مشترک امضا می‌کند؛ nginx `X-Real-IP` را.
+BFF_SHARED_SECRET = config("BFF_SHARED_SECRET", default="")
+TRUST_X_REAL_IP = config("TRUST_X_REAL_IP", default=False, cast=bool)
+
 
 # Django REST Framework
 REST_FRAMEWORK = {
@@ -217,6 +224,9 @@ REST_FRAMEWORK = {
         # throttle_scope (apps/public_api/envelope.py) — not global, so
         # /api/admin/'s own scoped throttles above are unaffected.
         "public_api": "100/min",
+        # G-02 — ثبت بازدید و شمارش ریدایرکت (از مرورگر/میدل‌ور فروشگاه).
+        "pageview": "120/min",
+        "redirect_hit": "120/min",
     },
 }
 

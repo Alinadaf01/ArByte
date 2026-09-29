@@ -36,12 +36,32 @@ export async function generateMetadata({
   const product = await getProductBySlug(slug);
   if (!product) return {};
 
+  const title = product.seo.title || `${product.name} | آربایت`;
+  // G-02 — بدون متن سئو/توضیح کوتاه هم description یکتا داشته باشد.
+  const description =
+    product.seo.description ||
+    product.shortDescription ||
+    `خرید ${product.name} (${product.brand.name}) از آربایت؛ تست‌شده پیش از ارسال، با قیمت و مشخصات کامل.`;
+  const url = `/products/${slug}`;
+  const image = product.images[0];
   return {
-    title: product.seo.title ?? product.name,
-    description:
-      product.seo.description ?? product.shortDescription ?? undefined,
+    title,
+    description,
     // بند ۳ سند تسک — canonical همیشه بدون `?v=`.
-    alternates: { canonical: product.seo.canonical ?? `/products/${slug}` },
+    alternates: { canonical: product.seo.canonical ?? url },
+    openGraph: {
+      title,
+      description,
+      url,
+      images: image
+        ? [{ url: image.url, alt: image.alt ?? product.name }]
+        : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+    },
   };
 }
 

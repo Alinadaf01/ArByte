@@ -39,12 +39,18 @@ const nextConfig: NextConfig = {
   // F-02 — تصاویری که از پنل ادمین آپلود می‌شوند (Django، WebP) مسیر نسبی
   // `/media/...` دارند؛ این rewrite آن‌ها را هم‌مبدأ از بک‌اند می‌آورد تا
   // next/image و CSP بدون دامنه‌ی خارجی کار کنند.
+  // G-02 — Next 15 متادیتا را برای کاربرِ «غیربات» استریم و در <body> می‌گذارد؛
+  // ابزارها/خزنده‌هایی که در فهرست پیش‌فرض بات Next نیستند (Lighthouse،
+  // ترب، …) description را نمی‌دیدند. متادیتا همیشه در <head> رندر شود.
+  htmlLimitedBots: /.*/,
   async rewrites() {
     const apiOrigin = (
       process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1"
     ).replace(/\/api\/v1\/?$/, "");
     return [
       { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
+      // G-02 — فید ترب روی دامنه‌ی فروشگاه (arbyte.ir/feeds/torob)، ساخته‌شده در Django.
+      { source: "/feeds/:path*", destination: `${apiOrigin}/feeds/:path*` },
     ];
   },
   async headers() {

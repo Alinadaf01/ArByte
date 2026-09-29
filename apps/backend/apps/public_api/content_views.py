@@ -22,6 +22,7 @@ from apps.content.models import (
 )
 from apps.orders.models import OrderItem
 
+from .client_ip import client_ip
 from .envelope import PublicAPIView, paginated_response, success_response
 from .errors import ApiError, not_found, validation_error
 from .impersonation import assert_not_impersonating
@@ -247,7 +248,7 @@ class ContactView(PublicAPIView):
             subject=topic,
             order_number=order_number,
             message=message[:5000],
-            ip_address=request.META.get("REMOTE_ADDR"),
+            ip_address=client_ip(request),
         )
         return Response(success_response({"trackingCode": msg.tracking_code}, request.request_id), status=201)
 

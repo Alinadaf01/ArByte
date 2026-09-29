@@ -174,3 +174,26 @@ export const SiteInfoSchema = z.object({
 });
 export type SiteInfo = z.infer<typeof SiteInfoSchema>;
 export const SiteInfoResponseSchema = successResponseSchema(SiteInfoSchema);
+
+/** G-02 — `GET /seo/redirects` (جدول middleware فروشگاه) و `GET /seo/sitemap`. */
+export const RedirectRuleSchema = z.object({
+  id: z.string(),
+  from: z.string().startsWith("/"),
+  to: z.string(),
+  status: z.union([z.literal(301), z.literal(302)]),
+});
+export const RedirectListResponseSchema = successResponseSchema(
+  z.array(RedirectRuleSchema),
+);
+
+const SitemapEntrySchema = z.object({
+  slug: z.string(),
+  updatedAt: z.string(),
+});
+export const SitemapDataResponseSchema = successResponseSchema(
+  z.object({
+    products: z.array(SitemapEntrySchema),
+    categories: z.array(SitemapEntrySchema),
+    posts: z.array(SitemapEntrySchema),
+  }),
+);
