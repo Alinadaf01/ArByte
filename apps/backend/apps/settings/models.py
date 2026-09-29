@@ -18,7 +18,17 @@ class SiteSettings(models.Model):
     phone_href = models.CharField(max_length=30, blank=True, help_text='e.g. "+982112345678" for tel:')
     email = models.EmailField(blank=True)
     address = models.CharField(max_length=300, blank=True)
+    # E-03 §۳ — سند تسک store_postal_code را برای فاکتور/کارت گارانتی
+    # می‌خواست؛ نام/شناسه‌ی حقوقی/کد اقتصادی/آدرس/تلفن از قبل به همین
+    # منظور بالا موجود بودند (business_name/national_id/economic_code/
+    # address/phone_display، «Legal seller identity for PDF invoices») —
+    # این‌ها دوباره ساخته نشدند، فقط کد پستی که واقعاً جا افتاده بود اضافه شد.
+    postal_code = models.CharField(max_length=10, blank=True, help_text="کد پستی ۱۰ رقمی برای فاکتور/کارت گارانتی")
     business_hours = models.JSONField(default=list, help_text="[{day, time}, ...]")
+
+    # E-03 §۳ — مهلت تست/شروع گارانتی، از تاریخ DELIVERED (docs/QUESTIONS.md).
+    test_period_days = models.PositiveIntegerField(default=7, help_text="storeFacts.policies.returnDays پیش‌فرض")
+    warranty_terms = models.TextField(blank=True, help_text="متن شرایط گارانتی؛ خالی = بخش شرایط در کارت پنهان می‌شود")
 
     instagram_url = models.URLField(blank=True, help_text="لینک کامل، مثلاً https://instagram.com/arbyte — خالی بگذار تا در فوتر/تماس با ما نمایش داده نشود.")
     telegram_url = models.URLField(blank=True, help_text="لینک کامل — خالی بگذار تا نمایش داده نشود.")

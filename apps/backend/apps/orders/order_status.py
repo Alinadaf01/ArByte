@@ -25,17 +25,14 @@ ORDER_STATUS_TRANSITIONS: dict[str, tuple[str, ...]] = {
 # وضعیت‌هایی که رزرو موجودی هنوز باز است (RELEASE لازم دارند اگر لغو شوند).
 _RESERVED_STATUSES = {"PENDING", "AWAITING_PAYMENT", "PAYMENT_REVIEW", "PAID", "PROCESSING", "READY_TO_SHIP"}
 
-# پیامک هر گذار — SmsTemplate.key معادل (apps/notifications). گذارهایی که
-# اینجا نیستند پیامک نمی‌فرستند (مثلاً PENDING->AWAITING_PAYMENT، چون هنوز
-# اتفاق قابل‌اطلاع‌رسانی برای مشتری نیست).
+# پیامک هر گذار — SmsTemplate.key معادل (apps/notifications). E-03 §۲: فقط
+# چهار الگوی واقعی («سه گیرنده‌ی مشتری + یک مدیر») فعال‌اند؛ گذارهای دیگر
+# (PROCESSING، READY_TO_SHIP، DELIVERED، CANCELLED) دیگر پیامک نمی‌فرستند —
+# هفت قالب قبلی D-05 در دیتابیس غیرفعال ماندند (migration
+# 0005_e03_kavenegar_templates)، نه اینجا حذف شدند.
 _SMS_TEMPLATE_BY_TRANSITION: dict[tuple[str, str], str] = {
-    ("AWAITING_PAYMENT", "PAYMENT_REVIEW"): "order_payment_review",
-    ("PAYMENT_REVIEW", "PAID"): "order_paid",
-    ("PAID", "PROCESSING"): "order_processing",
-    ("PROCESSING", "READY_TO_SHIP"): "order_ready_to_ship",
+    ("PAYMENT_REVIEW", "PAID"): "order_confirmed",
     ("READY_TO_SHIP", "SHIPPED"): "order_shipped",
-    ("SHIPPED", "DELIVERED"): "order_delivered",
-    (None, "CANCELLED"): "order_cancelled",
 }
 
 
@@ -43,8 +40,29 @@ class InvalidOrderTransition(Exception):
     pass
 
 
+class MissingSerialNumbers(Exception):
+    """E-03 §۳ — گذار به READY_TO_SHIP بدون سریال برای قلمی که
+    requires_serial=True دارد. `order_item_ids` برای پیام خطای دقیق در
+    لایه‌ی view (کدام قلم‌ها کم دارند)."""
+
+    def __init__(self, order_item_ids: list[int]):
+        self.order_item_ids = order_item_ids
+        super().__init__("برای برخی اقلام این سفارش هنوز سریال ثبت نشده است.")
+
+
 def is_valid_transition(from_status: str, to_status: str) -> bool:
     return to_status in ORDER_STATUS_TRANSITIONS.get(from_status, ())
+
+
+def _missing_serial_item_ids(order) -> list[int]:
+    missing = []
+    for item in order.items.select_related("variant__product").prefetch_related("units"):
+        if not item.variant or not item.variant.product.requires_serial:
+            continue
+        serialed_count = sum(1 for u in item.units.all() if u.serial_number)
+        if serialed_count < item.quantity:
+            missing.append(item.id)
+    return missing
 
 
 @transaction.atomic
@@ -60,6 +78,11 @@ def transition_to(order, to_status: str, *, user=None, note: str = "") -> None:
     if not is_valid_transition(from_status, to_status):
         raise InvalidOrderTransition(f"{from_status} -> {to_status} مجاز نیست.")
 
+    if to_status == "READY_TO_SHIP":
+        missing = _missing_serial_item_ids(order)
+        if missing:
+            raise MissingSerialNumbers(missing)
+
     if to_status == "CANCELLED" and from_status in _RESERVED_STATUSES:
         for item in order.items.select_related("variant").filter(variant__isnull=False):
             Inventory.objects.release(item.variant, item.quantity, reference=order.order_number, user=user)
@@ -67,7 +90,16 @@ def transition_to(order, to_status: str, *, user=None, note: str = "") -> None:
     now = timezone.now()
     update_fields = ["status", "updated_at"]
     order.status = to_status
+    notify_admin = False
 
+    if to_status == "PAYMENT_REVIEW" and order.admin_notified_at is None:
+        # E-03 §۲ — «هر کدام زودتر، یک بار». تنها راه رسیدن به PAID از
+        # PAYMENT_REVIEW می‌گذرد، پس همیشه همین‌جا اولین بار اتفاق می‌افتد؛
+        # پرچم admin_notified_at جلوی تکرار را می‌گیرد اگر رسید رد شد و
+        # سفارش دوباره به PAYMENT_REVIEW برگشت.
+        order.admin_notified_at = now
+        update_fields.append("admin_notified_at")
+        notify_admin = True
     if to_status == "PAID":
         order.paid_at = now
         update_fields.append("paid_at")
@@ -94,15 +126,47 @@ def transition_to(order, to_status: str, *, user=None, note: str = "") -> None:
     order.save(update_fields=update_fields)
     order.status_history.create(from_status=from_status, to_status=to_status, changed_by=user, note=note)
 
-    template_key = _SMS_TEMPLATE_BY_TRANSITION.get((from_status, to_status)) or _SMS_TEMPLATE_BY_TRANSITION.get(
-        (None, to_status)
-    )
+    template_key = _SMS_TEMPLATE_BY_TRANSITION.get((from_status, to_status))
     if template_key:
+        context = _sms_context_for(template_key, order)
         transaction.on_commit(
-            lambda: NotificationService.send_sms(
-                order.shipping_mobile, template_key, {"orderNumber": order.order_number}
-            )
+            lambda: NotificationService.send_sms(order.shipping_mobile, template_key, context)
         )
+    if notify_admin:
+        transaction.on_commit(lambda: _notify_admins_new_order(order))
+
+
+def _sms_context_for(template_key: str, order) -> dict:
+    from apps.notifications.formatting import first_name_fa
+
+    if template_key == "order_confirmed":
+        return {
+            "orderNumber": order.order_number,
+            "firstName": first_name_fa(order.shipping_recipient_name),
+        }
+    if template_key == "order_shipped":
+        shipment = getattr(order, "shipment", None)
+        return {
+            "orderNumber": order.order_number,
+            "trackingCode": shipment.tracking_number if shipment else "",
+            "postalCode": order.shipping_postal_code or "",
+            "carrierName": shipment.provider if shipment else "",
+        }
+    return {"orderNumber": order.order_number}
+
+
+def _notify_admins_new_order(order) -> None:
+    from apps.notifications.formatting import format_money_fa, full_name_fa
+    from apps.notifications.services import NotificationService
+    from apps.settings.models import SiteSettings
+
+    context = {
+        "orderNumber": order.order_number,
+        "amount": format_money_fa(order.final_total),
+        "customerName": full_name_fa(order.shipping_recipient_name),
+    }
+    for phone in SiteSettings.load().owner_notification_phone_list:
+        NotificationService.send_sms(phone, "order_new_admin", context)
 
 
 def sync_payment_status(order, payment_status: str) -> None:

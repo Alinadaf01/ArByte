@@ -1,3 +1,4 @@
+from .kavenegar_tokens import build_kavenegar_tokens
 from .models import SmsLog, SmsTemplate
 from .tasks import send_sms_task
 
@@ -18,21 +19,13 @@ class NotificationService:
             )
 
         if template.kavenegar_template_name:
-            token = context.get(template.kavenegar_token_field)
-            if token is None:
-                return SmsLog.objects.create(
-                    phone=phone,
-                    template=template,
-                    body="",
-                    status="failed",
-                    error=f'کلید «{template.kavenegar_token_field}» (kavenegar_token_field) در context پیدا نشد.',
-                )
+            tokens = build_kavenegar_tokens(template.kavenegar_token_map, context)
             log = SmsLog.objects.create(
                 phone=phone,
                 template=template,
                 body="",
                 kavenegar_template_name=template.kavenegar_template_name,
-                kavenegar_token=str(token),
+                kavenegar_tokens=tokens,
                 status="queued",
             )
             send_sms_task.delay(log.id)

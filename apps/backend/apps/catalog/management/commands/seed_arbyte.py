@@ -63,6 +63,7 @@ class Command(BaseCommand):
         )
         blocks_count = self._seed_homepage_blocks(data["homepageBlocks"], defs_by_key)
         self._seed_superuser()
+        self._seed_site_settings_from_env()
 
         self.stdout.write(
             self.style.SUCCESS(
@@ -295,3 +296,33 @@ class Command(BaseCommand):
             return
         User.objects.create_superuser(phone=phone, password=password)
         self.stdout.write(self.style.SUCCESS(f"سوپریوزر {phone} ساخته شد."))
+
+    def _seed_site_settings_from_env(self) -> None:
+        """E-03 §۱.۳/§۲ — مقدار اولیه‌ی کارت‌به‌کارت/شماره‌های مدیر از env
+        (هرگز کامیت نمی‌شوند، فقط .env محلی). فقط وقتی مقدار فعلی خالی
+        است override می‌شود -- یک بار تنظیم‌شده‌ی دستی توسط ادمین هرگز با
+        seed دوباره پاک نمی‌شود. از decouple.config می‌خواند (نه
+        os.environ مستقیم) چون این مقادیر در فایل .env هستند، نه env
+        واقعی پوسته — decouple آن‌ها را در os.environ کپی نمی‌کند."""
+        from decouple import config as env_config
+
+        from apps.settings.models import SiteSettings
+
+        site_settings = SiteSettings.load()
+        updated_fields = []
+
+        env_to_field = {
+            "BALEPAY_CARD_NUMBER": "card_to_card_number",
+            "STORE_BANK_SHEBA": "card_to_card_sheba",
+            "STORE_BANK_OWNER": "card_to_card_holder_name",
+            "ADMIN_NOTIFY_PHONES": "owner_notification_phone",
+        }
+        for env_key, field in env_to_field.items():
+            value = env_config(env_key, default="").strip()
+            if value and not getattr(site_settings, field):
+                setattr(site_settings, field, value)
+                updated_fields.append(field)
+
+        if updated_fields:
+            site_settings.save(update_fields=updated_fields)
+            self.stdout.write(self.style.SUCCESS(f"SiteSettings از env به‌روزرسانی شد: {', '.join(updated_fields)}"))

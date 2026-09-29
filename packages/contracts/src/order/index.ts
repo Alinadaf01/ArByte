@@ -20,6 +20,17 @@ import { MoneyAmountSchema } from "../validators";
  * واقعی (به‌جز ماشین‌حالت، ر.ک. order/status-transitions.ts).
  */
 
+/**
+ * E-03 §۳/۴ — یک ردیف سریال/شناسه‌ی گارانتی به ازای هر واحد. فقط در
+ * `GET /orders/:orderNumber` پر می‌شود (مالک سفارش) — فهرست/پیگیری مهمان
+ * این فیلد را برنمی‌گردانند (نه اینکه نداشته باشند، `units` در آن پاسخ‌ها
+ * `undefined` است، نه آرایه‌ی خالی).
+ */
+export const OrderItemUnitSchema = z.object({
+  serialNumber: z.string().nullable(),
+  certificateId: z.string(),
+});
+
 export const OrderItemSchema = z.object({
   id: z.string(),
   variantId: z.string().nullable(),
@@ -30,6 +41,7 @@ export const OrderItemSchema = z.object({
   quantity: z.number().int().positive(),
   discount: MoneyAmountSchema.default(0),
   finalPrice: MoneyAmountSchema,
+  units: z.array(OrderItemUnitSchema).optional(),
 });
 
 export const ShippingAddressSnapshotSchema = z.object({

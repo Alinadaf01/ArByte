@@ -104,6 +104,16 @@ class Product(models.Model):
     return_policy_note = models.TextField(blank=True, null=True)
     shipping_note = models.TextField(blank=True, null=True)
     priority = models.IntegerField(default=0)
+
+    # E-03 §۳ — گارانتی/سریال حالا قابلیت واقعی است (کارت گارانتی، E-04).
+    # null یعنی بدون گارانتی جدا (نه صفر ماه، ادعای غلط)؛ داده‌ی seed عمداً
+    # null می‌ماند مگر در fixture تست (بدون عدد ساختگی، سند تسک §۳).
+    warranty_months = models.PositiveIntegerField(blank=True, null=True, help_text="مدت گارانتی به ماه؛ خالی = بدون گارانتی جدا")
+    warranty_provider = models.CharField(max_length=150, blank=True, null=True, help_text="مثلاً «گارانتی شرکتی»")
+    # پیش‌فرض True چون فعلاً تمام پنج دسته‌ی فروشگاه (لپ‌تاپ×۳، سرفیس،
+    # کیس گیمینگ) سریال‌دارند — اگر دسته‌ی بدون‌سریال (لوازم جانبی مثلاً)
+    # بعداً اضافه شد، همان محصول‌ها دستی False می‌شوند.
+    requires_serial = models.BooleanField(default=True)
     deleted_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

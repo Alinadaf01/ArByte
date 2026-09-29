@@ -20,7 +20,7 @@ class SmsLogAdmin(admin.ModelAdmin):
         "template",
         "body",
         "kavenegar_template_name",
-        "kavenegar_token",
+        "kavenegar_tokens",
         "status",
         "provider_message_id",
         "error",

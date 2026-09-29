@@ -6,6 +6,7 @@ from .models import (
     CouponUsage,
     Order,
     OrderItem,
+    OrderItemUnit,
     OrderStatusHistory,
     Payment,
     PaymentReceipt,
@@ -30,6 +31,34 @@ class OrderItemInline(admin.TabularInline):
     model = OrderItem
     extra = 0
     readonly_fields = ["product_name_snapshot", "sku_snapshot", "unit_price", "quantity", "final_price"]
+    show_change_link = True  # E-03 §۳ — سریال از صفحه‌ی جدای OrderItem وارد می‌شود، پایین.
+
+
+class OrderItemUnitInline(admin.TabularInline):
+    """E-03 §۳ — ورود سریال. `quantity` قلم چند ردیف دارد (auto-create
+    پایین‌تر، هنگام باز شدن صفحه‌ی OrderItem)."""
+
+    model = OrderItemUnit
+    extra = 0
+    readonly_fields = ["certificate_id", "created_at"]
+
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ["product_name_snapshot", "order", "quantity", "final_price"]
+    search_fields = ["order__order_number", "product_name_snapshot", "sku_snapshot"]
+    readonly_fields = ["order", "variant", "product_name_snapshot", "sku_snapshot", "unit_price", "quantity", "final_price"]
+    inlines = [OrderItemUnitInline]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # هر بار صفحه باز می‌شود، تعداد ردیف OrderItemUnit را با quantity
+        # قلم برابر می‌کند (کم بود می‌سازد) — ادمین فقط serial_number را پر
+        # می‌کند، نه خودش ردیف اضافه کند.
+        if obj:
+            existing = obj.units.count()
+            for _ in range(obj.quantity - existing):
+                OrderItemUnit.objects.create(order_item=obj)
+        return super().get_form(request, obj, **kwargs)
 
 
 class OrderStatusHistoryInline(admin.TabularInline):

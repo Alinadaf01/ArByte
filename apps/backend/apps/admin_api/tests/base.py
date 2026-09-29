@@ -29,17 +29,23 @@ class AdminApiTestMixin:
         return User.objects.create_user(phone=phone, **kwargs)
 
     def make_product(
-        self, *, sku="TEST-001", slug="test-product", name="Test Product", price=100000, stock=10, category=None
+        self, *, sku="TEST-001", slug="test-product", name="Test Product", price=100000, stock=10, category=None,
+        requires_serial=False,
     ) -> Product:
         """D-02 §۲ — builds the whole Brand/Category/Product/ProductVariant/
         Inventory chain and returns the Product (kept for callers that only
         need `.pk`/`.name`/`.slug`); the default variant is reachable via
-        `product.default_variant` or `product.variants.first()`."""
+        `product.default_variant` or `product.variants.first()`.
+
+        E-03 §۳ — requires_serial پیش‌فرض مدل True است (اکثر دسته‌های واقعی
+        سریال‌دارند)، ولی این fixture عمداً False پیش‌فرض می‌گیرد چون بیشتر
+        تست‌های ادمین گذار وضعیت را تست می‌کنند نه سریال — کدی که واقعاً
+        سریال را تست می‌کند صریح `requires_serial=True` می‌دهد."""
         if category is None:
             category, _ = Category.objects.get_or_create(slug="desktop-stands", defaults={"name": "Desktop Stands"})
         brand, _ = Brand.objects.get_or_create(name="Test Brand", defaults={"slug": "test-brand"})
         product = Product.objects.create(
-            slug=slug, name=name, brand=brand, category=category, condition="NEW"
+            slug=slug, name=name, brand=brand, category=category, condition="NEW", requires_serial=requires_serial,
         )
         variant = ProductVariant.objects.create(
             product=product, sku=sku, is_default=True, final_price=price

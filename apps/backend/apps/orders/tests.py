@@ -27,7 +27,11 @@ class OrderStatusServiceTests(TestCase):
         brand = Brand.objects.create(name="Test Brand", slug="test-brand")
         category = Category.objects.create(slug="desktop-stands", name="Desktop Stands")
         self.product = Product.objects.create(
-            slug="test-product", name="Test Product", brand=brand, category=category, condition="NEW"
+            # E-03 §۳ — این کلاس گذارهای FSM را تست می‌کند، نه سریال؛
+            # requires_serial=False تا READY_TO_SHIP بدون OrderItemUnit
+            # جلوی حرکت نگیرد (پیش‌فرض مدل الان True است).
+            slug="test-product", name="Test Product", brand=brand, category=category, condition="NEW",
+            requires_serial=False,
         )
         self.variant = ProductVariant.objects.create(
             product=self.product, sku="TEST-001", is_default=True, final_price=390000
@@ -151,15 +155,150 @@ class OrderStatusServiceTests(TestCase):
         self.assertEqual(self.order.status, "PENDING")  # مستقل — تصمیم ب
 
     def test_every_transition_sms_template_is_seeded_and_active(self):
-        """بدون این seed (notifications/migrations/0003)، هر پیامک واقعی
+        """بدون این seed (notifications/migrations/0005)، هر پیامک واقعی
         بی‌صدا SmsLog(status="failed") می‌شود — این تست همان چیزی است که
-        enum-label test's الگو برای enum مقایسه می‌کند، اینجا برای پیامک."""
+        enum-label test's الگو برای enum مقایسه می‌کند، اینجا برای پیامک.
+        E-03 §۲: هر دو الگوی گذار حالا Lookup-محورند (kavenegar_template_name
+        پر، body خالی) — دیگر placeholder متنی چک نمی‌شود."""
         from apps.notifications.models import SmsTemplate
 
         for template_key in order_status._SMS_TEMPLATE_BY_TRANSITION.values():
             template = SmsTemplate.objects.filter(key=template_key, is_active=True).first()
             self.assertIsNotNone(template, f'قالب پیامک "{template_key}" seed نشده یا غیرفعال است.')
-            self.assertIn("{orderNumber}", template.body)
+            self.assertTrue(template.kavenegar_template_name, f'قالب "{template_key}" نام Lookup ندارد.')
+            self.assertIn("token", template.kavenegar_token_map)
+
+    def test_seven_old_transition_templates_deactivated_or_repurposed(self):
+        """هفت قالب D-05 — شش‌تا غیرفعال، order_shipped بازاستفاده شد
+        (docs/QUESTIONS.md Q-29 مجاور، migration 0005 کامنت)."""
+        from apps.notifications.models import SmsTemplate
+
+        deactivated = [
+            "order_payment_review", "order_paid", "order_processing",
+            "order_ready_to_ship", "order_delivered", "order_cancelled",
+        ]
+        for key in deactivated:
+            template = SmsTemplate.objects.filter(key=key).first()
+            self.assertIsNotNone(template)
+            self.assertFalse(template.is_active, f'قالب قدیمی "{key}" باید غیرفعال باشد.')
+
+    def test_admin_notify_sms_fires_once_despite_payment_review_reentry(self):
+        """رسید رد شد و کاربر دوباره رسید فرستاد -> PAYMENT_REVIEW دوبار طی
+        می‌شود، ولی پیامک مدیر فقط یک بار باید برود (E-03 §۲ admin_notified_at)."""
+        from apps.settings.models import SiteSettings
+
+        site_settings = SiteSettings.load()
+        site_settings.owner_notification_phone = "09120000001,09120000002"
+        site_settings.save(update_fields=["owner_notification_phone"])
+
+        with patch("apps.notifications.services.NotificationService.send_sms") as mock_send:
+            with self.captureOnCommitCallbacks(execute=True):
+                order_status.transition_to(self.order, "AWAITING_PAYMENT")
+                order_status.transition_to(self.order, "PAYMENT_REVIEW")
+            with self.captureOnCommitCallbacks(execute=True):
+                order_status.transition_to(self.order, "AWAITING_PAYMENT", note="رسید رد شد")
+                order_status.transition_to(self.order, "PAYMENT_REVIEW")
+
+        admin_calls = [c for c in mock_send.call_args_list if c.args[1] == "order_new_admin"]
+        self.assertEqual(len(admin_calls), 2)  # دو شماره‌ی مدیر، فقط یک دور اطلاع‌رسانی
+        self.order.refresh_from_db()
+        self.assertIsNotNone(self.order.admin_notified_at)
+
+    def test_order_confirmed_sms_sent_on_paid(self):
+        with patch("apps.notifications.services.NotificationService.send_sms") as mock_send:
+            with self.captureOnCommitCallbacks(execute=True):
+                order_status.transition_to(self.order, "AWAITING_PAYMENT")
+                order_status.transition_to(self.order, "PAYMENT_REVIEW")
+                order_status.transition_to(self.order, "PAID")
+
+        customer_calls = [c for c in mock_send.call_args_list if c.args[1] == "order_confirmed"]
+        self.assertEqual(len(customer_calls), 1)
+        phone, key, context = customer_calls[0].args
+        self.assertEqual(phone, self.order.shipping_mobile)
+        self.assertEqual(context["orderNumber"], self.order.order_number)
+        self.assertEqual(context["firstName"], "علی")  # first_name_fa("علی رضایی")
+
+
+class OrderItemUnitSerialGuardTests(TestCase):
+    """E-03 §۳ — سریال/گارانتی."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(phone="09121234599", password="test-pass")
+        brand = Brand.objects.create(name="Test Brand 2", slug="test-brand-2")
+        category = Category.objects.create(slug="laptops-serial-test", name="Laptops Serial Test")
+        self.product = Product.objects.create(
+            slug="serial-test-product", name="Serial Test Product", brand=brand, category=category,
+            condition="NEW", requires_serial=True,
+        )
+        self.variant = ProductVariant.objects.create(
+            product=self.product, sku="SERIAL-001", is_default=True, final_price=390000
+        )
+        Inventory.objects.create(variant=self.variant)
+        Inventory.objects.stock_in(self.variant, 10, reference="PO-2")
+        Inventory.objects.reserve(self.variant, 2, reference="ARB-SERIAL-TEST")
+        self.order = Order.objects.create(
+            user=self.user,
+            shipping_recipient_name="مریم احمدی",
+            shipping_mobile="09121234599",
+            shipping_province="تهران",
+            shipping_city="تهران",
+            shipping_address_line="خیابان انقلاب",
+            subtotal=780000,
+            final_total=780000,
+        )
+        self.item = OrderItem.objects.create(
+            order=self.order,
+            variant=self.variant,
+            product_name_snapshot=self.product.name,
+            sku_snapshot=self.variant.sku,
+            unit_price=self.variant.final_price,
+            quantity=2,
+            final_price=780000,
+        )
+        order_status.transition_to(self.order, "AWAITING_PAYMENT")
+        order_status.transition_to(self.order, "PAYMENT_REVIEW")
+        order_status.transition_to(self.order, "PAID")
+        order_status.transition_to(self.order, "PROCESSING")
+
+    def test_ready_to_ship_blocked_without_serials(self):
+        from apps.orders.order_status import MissingSerialNumbers
+
+        with self.assertRaises(MissingSerialNumbers) as ctx:
+            order_status.transition_to(self.order, "READY_TO_SHIP")
+        self.assertEqual(ctx.exception.order_item_ids, [self.item.id])
+
+    def test_ready_to_ship_blocked_when_partially_serialed(self):
+        from apps.orders.models import OrderItemUnit
+        from apps.orders.order_status import MissingSerialNumbers
+
+        OrderItemUnit.objects.create(order_item=self.item, serial_number="SN-0001")
+        with self.assertRaises(MissingSerialNumbers):
+            order_status.transition_to(self.order, "READY_TO_SHIP")
+
+    def test_ready_to_ship_succeeds_once_fully_serialed(self):
+        from apps.orders.models import OrderItemUnit
+
+        OrderItemUnit.objects.create(order_item=self.item, serial_number="SN-0001")
+        OrderItemUnit.objects.create(order_item=self.item, serial_number="SN-0002")
+        order_status.transition_to(self.order, "READY_TO_SHIP")
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "READY_TO_SHIP")
+
+    def test_non_serial_product_never_blocks(self):
+        self.product.requires_serial = False
+        self.product.save(update_fields=["requires_serial"])
+        order_status.transition_to(self.order, "READY_TO_SHIP")
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "READY_TO_SHIP")
+
+    def test_certificate_id_generated_unique_and_prefixed(self):
+        from apps.orders.models import OrderItemUnit
+
+        unit = OrderItemUnit.objects.create(order_item=self.item, serial_number="SN-0003")
+        self.assertTrue(unit.certificate_id.startswith("ARB-W-"))
+        self.assertEqual(len(unit.certificate_id), len("ARB-W-") + 10)
+        other = OrderItemUnit.objects.create(order_item=self.item, serial_number="SN-0004")
+        self.assertNotEqual(unit.certificate_id, other.certificate_id)
 
 
 def _zarinpal_request_response(authority="A-TEST-AUTHORITY"):

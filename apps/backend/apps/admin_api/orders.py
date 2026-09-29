@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from apps.orders import order_status
 from apps.orders.models import Order, Shipment
-from apps.orders.order_status import InvalidOrderTransition
+from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
 
 from .activity import log_admin_action
 from .permissions import require_section
@@ -127,6 +127,11 @@ def _transition_response(order: Order, to_status: str, /, **kwargs) -> Response:
         order_status.transition_to(order, to_status, **kwargs)
     except InvalidOrderTransition as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except MissingSerialNumbers as exc:
+        return Response(
+            {"detail": str(exc), "orderItemIds": exc.order_item_ids},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     order.refresh_from_db()
     return Response(AdminOrderSerializer(order).data)
 

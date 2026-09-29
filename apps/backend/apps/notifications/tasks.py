@@ -13,9 +13,9 @@ def send_sms_task(sms_log_id: int) -> None:
             response = client.verify_lookup(
                 {
                     "receptor": log.phone,
-                    "token": log.kavenegar_token,
                     "template": log.kavenegar_template_name,
                     "type": "sms",
+                    **log.kavenegar_tokens,
                 }
             )
         else:

@@ -175,6 +175,14 @@ class Order(models.Model):
     shipped_at = models.DateTimeField(blank=True, null=True)
     delivered_at = models.DateTimeField(blank=True, null=True)
 
+    # E-03 §۲ — پیامک «سفارش تازه» به مدیر دقیقاً یک بار می‌رود، نه به ازای
+    # هر گذار. چون تنها راه رسیدن به PAID از PAYMENT_REVIEW می‌گذرد
+    # (order_status.py's ORDER_STATUS_TRANSITIONS)، معمولاً همان اولین بار
+    # که PAYMENT_REVIEW می‌شود کافی است؛ اما رسید ردشده می‌تواند سفارش را
+    # AWAITING_PAYMENT→PAYMENT_REVIEW چند بار برگرداند، پس یک پرچم واقعی
+    # لازم است، نه فقط تکیه به لبه‌ی گذار.
+    admin_notified_at = models.DateTimeField(blank=True, null=True)
+
     # Invoice PDF رندرش گران است (Playwright) و بعد از پرداخت عملاً ثابت
     # می‌ماند — الحاقیه‌ی Django (نه در Prisma)، cache برای apps.documents.
     invoice_pdf = models.FileField(upload_to="invoices/", blank=True, null=True)
@@ -244,6 +252,34 @@ class OrderItem(models.Model):
     @property
     def subtotal(self) -> int:
         return self.unit_price * self.quantity
+
+
+def _generate_certificate_id() -> str:
+    # E-03 §۳ — «یکتا، غیرقابل‌حدس» — secrets (نه random) روی الفبای بدون
+    # حرف/رقم شبیه‌به‌هم (بدون 0/O/1/I/L) تا هم امن باشد هم روی کارت چاپی
+    # قابل‌خواندن با دست بماند.
+    import secrets
+
+    alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    suffix = "".join(secrets.choice(alphabet) for _ in range(10))
+    return f"ARB-W-{suffix}"
+
+
+class OrderItemUnit(models.Model):
+    """E-03 §۳ — یک ردیف به ازای هر عدد از هر قلم سفارش (quantity=2 یعنی دو
+    ردیف)، هر کدام سریال/شناسه‌ی کارت گارانتی خودش را دارد. ورود سریال از
+    پنل ادمین (بچ ۰۴) — فعلاً Django admin هم کافی است (سند تسک §۳)."""
+
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="units")
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
+    certificate_id = models.CharField(max_length=20, unique=True, default=_generate_certificate_id)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["order_item"])]
+
+    def __str__(self):
+        return self.certificate_id
 
 
 class OrderStatusHistory(models.Model):

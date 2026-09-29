@@ -19,13 +19,13 @@ class SmsTemplate(models.Model):
       pre-approved-pattern API instead -- required for OTP and any SMS
       Kavenegar classifies as transactional, since providers increasingly
       reject/throttle plain-text SMS for these. `body` is ignored;
-      kavenegar_token_field names which single key in the caller's context
-      dict becomes Kavenegar's %token%. Kavenegar's Lookup API supports up
-      to 3 tokens (token/token2/token3), but every pattern actually
-      registered for this project only uses one, so only one is wired up.
+      kavenegar_token_map (E-02 §۲) نگاشت چندتوکنی است -- کلیدهایش نام
+      واقعی پارامتر کاوه‌نگار (token/token2/token3/token10/token20)،
+      مقدارش کلید متناظر در context caller. کاوه‌نگار حداکثر همین پنج
+      پارامتر را در Lookup API می‌پذیرد.
     """
 
-    key = models.SlugField(unique=True, help_text='e.g. "otp_login", "order_paid", "order_shipped"')
+    key = models.SlugField(unique=True, help_text='e.g. "otp_login", "order_confirmed", "order_shipped"')
     title = models.CharField(max_length=150)
     body = models.TextField(help_text="Use {placeholders} like {code}, {orderNumber}", blank=True)
     is_active = models.BooleanField(default=True)
@@ -34,10 +34,10 @@ class SmsTemplate(models.Model):
         blank=True,
         help_text="نام الگوی Lookup در پنل کاوه‌نگار (نه شناسه عددی). خالی = ارسال متن معمولی با body.",
     )
-    kavenegar_token_field = models.CharField(
-        max_length=50,
+    kavenegar_token_map = models.JSONField(
+        default=dict,
         blank=True,
-        help_text="کدام کلید از context به‌عنوان %token% به کاوه‌نگار فرستاده شود، مثلاً code یا orderNumber.",
+        help_text='نگاشت پارامتر کاوه‌نگار به کلید context، مثلاً {"token": "orderNumber", "token10": "firstName"}.',
     )
 
     def __str__(self):
@@ -58,7 +58,7 @@ class SmsLog(models.Model):
     # claims was actually sent -- same reasoning as `body` being a copy,
     # not a live read through `template.body`.
     kavenegar_template_name = models.CharField(max_length=100, blank=True)
-    kavenegar_token = models.CharField(max_length=100, blank=True)
+    kavenegar_tokens = models.JSONField(default=dict, blank=True, help_text="مقادیر پاک‌سازی‌شده‌ی token/token2/... در لحظه‌ی ارسال.")
     status = models.CharField(max_length=10, choices=SMS_STATUS_CHOICES, default="queued")
     provider_message_id = models.CharField(max_length=100, blank=True)
     error = models.TextField(blank=True)

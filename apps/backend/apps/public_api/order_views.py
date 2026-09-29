@@ -20,8 +20,8 @@ from .validation import _parse_positive_int, parse_mobile
 RETURN_WINDOW_DAYS = 7
 
 
-def _order_item_to_dict(item) -> dict:
-    return {
+def _order_item_to_dict(item, *, include_units: bool = False) -> dict:
+    data = {
         "id": str(item.id),
         "variantId": str(item.variant_id) if item.variant_id else None,
         "productName": item.product_name_snapshot,
@@ -32,16 +32,23 @@ def _order_item_to_dict(item) -> dict:
         "discount": item.discount,
         "finalPrice": item.final_price,
     }
+    if include_units:
+        # E-03 §۴ — فقط جزئیات سفارش (مالک سفارش)، نه فهرست/پیگیری مهمان.
+        data["units"] = [
+            {"serialNumber": u.serial_number, "certificateId": u.certificate_id}
+            for u in item.units.all()
+        ]
+    return data
 
 
-def _order_to_dict(order: Order) -> dict:
+def _order_to_dict(order: Order, *, include_units: bool = False) -> dict:
     payment = order.payments.order_by("-created_at").first()
     shipment = getattr(order, "shipment", None)
     return {
         "orderNumber": order.order_number,
         "status": order.status,
         "paymentStatus": order.payment_status,
-        "items": [_order_item_to_dict(item) for item in order.items.all()],
+        "items": [_order_item_to_dict(item, include_units=include_units) for item in order.items.all()],
         "shippingAddress": {
             "recipientName": order.shipping_recipient_name,
             "mobile": order.shipping_mobile,
@@ -180,7 +187,7 @@ class OrderDetailView(PublicAPIView):
     def _get_order(self, request, order_number):
         # مال دیگری = ۴۰۴ نه ۴۰۳ (D-05 §۵) — وجود سفارش برای غریبه فاش نمی‌شود.
         order = Order.objects.filter(order_number=order_number, user=request.user).prefetch_related(
-            "items", "payments", "shipment"
+            "items__units", "payments", "shipment"
         ).first()
         if not order:
             raise not_found("سفارش پیدا نشد.")
@@ -188,7 +195,7 @@ class OrderDetailView(PublicAPIView):
 
     def get(self, request, order_number):
         order = self._get_order(request, order_number)
-        return Response(success_response(_order_to_dict(order), request.request_id))
+        return Response(success_response(_order_to_dict(order, include_units=True), request.request_id))
 
 
 class OrderReceiptUploadView(PublicAPIView):

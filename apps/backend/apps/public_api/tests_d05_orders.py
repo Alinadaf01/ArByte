@@ -21,8 +21,11 @@ from apps.users.models import Address, User
 def _make_variant(sku="ORD-1", quantity=10, price=10_000_000) -> ProductVariant:
     brand = Brand.objects.create(name=f"Brand {sku}", slug=f"{sku.lower()}-brand")
     category = Category.objects.create(slug=f"{sku.lower()}-cat", name="دسته")
+    # E-03 §۳ — requires_serial پیش‌فرض مدل True است؛ این fixture برای
+    # تست‌های خارج از دامنه‌ی سریال (پرداخت/کوپن/مرجوعی) است، پس صریح False.
     product = Product.objects.create(
-        slug=f"{sku.lower()}-product", name="محصول سفارش", brand=brand, category=category, condition="NEW"
+        slug=f"{sku.lower()}-product", name="محصول سفارش", brand=brand, category=category, condition="NEW",
+        requires_serial=False,
     )
     variant = ProductVariant.objects.create(product=product, sku=sku, is_default=True, final_price=price)
     Inventory.objects.create(variant=variant, quantity=quantity)
@@ -151,6 +154,10 @@ class OrderListDetailTests(OrderTestBase):
 
         own_response = self.client.get(f"/api/v1/orders/{order_number}")
         self.assertEqual(own_response.status_code, 200)
+        # E-03 §۴ — units فقط در جزئیات (مالک سفارش) پر می‌شود؛ بدون سریال
+        # ثبت‌شده هنوز، آرایه‌ی خالی است ولی کلید هست (نه undefined).
+        self.assertIn("units", own_response.data["data"]["items"][0])
+        self.assertEqual(own_response.data["data"]["items"][0]["units"], [])
 
         other_response = other_client.get(f"/api/v1/orders/{order_number}")
         self.assertEqual(other_response.status_code, 404)  # نه ۴۰۳
