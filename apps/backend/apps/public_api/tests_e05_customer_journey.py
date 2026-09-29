@@ -9,7 +9,6 @@ apps.orders.tests's captureOnCommitCallbacks (برای دیدن پیامک بد�
 from unittest.mock import MagicMock, patch
 
 from django.test import TransactionTestCase
-from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.catalog.models import Brand, Category, Product, ProductVariant

@@ -191,8 +191,8 @@ class DeviceListView(PublicAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from apps.orders.models import OrderItemUnit
         from apps.documents.warranty_card import build_warranty_card
+        from apps.orders.models import OrderItemUnit
 
         units = (
             OrderItemUnit.objects.filter(order_item__order__user=request.user, order_item__order__status="DELIVERED")
