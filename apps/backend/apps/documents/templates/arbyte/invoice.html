@@ -66,11 +66,12 @@
 </div>
 <div class="footnote" style="text-align:end; margin-top:2mm;">{{ total_in_words }}</div>
 
-{% if payment or tracking_code %}
+{% if payment or tracking_code or shipping_method_name %}
 <div class="section-title">پرداخت و ارسال</div>
 <div class="card" style="display:grid; grid-template-columns:1fr 1fr; gap:2mm 6mm; font-size:9pt;">
   {% if payment_method_display %}<div>روش پرداخت: {{ payment_method_display }}</div>{% endif %}
   {% if payment_ref_id %}<div>شناسه تراکنش: <span class="ltr">{{ payment_ref_id }}</span></div>{% endif %}
+  {% if shipping_method_name %}<div>روش ارسال: {{ shipping_method_name }}</div>{% endif %}
   {% if tracking_code %}<div>کد رهگیری: <span class="ltr">{{ tracking_code }}</span></div>{% endif %}
 </div>
 {% endif %}

@@ -8,6 +8,14 @@ from .arbyte_formatting import amount_in_words_fa, format_jalali_date_fa, format
 from .pdf import arbyte_footer_template, render_pdf
 
 
+def _payment_method_display(payment) -> str:
+    """«درگاه (زرین‌پال)» / «کارت‌به‌کارت» — از snapshot خود Payment."""
+    if not payment:
+        return ""
+    label = payment.get_method_display()
+    return f"{label} ({payment.get_gateway_display()})" if payment.gateway else label
+
+
 def build_invoice_context(order: Order) -> dict:
     """E-04 §۱ — بازسازی با هویت آربایت (فونت Estedad، ارقام فارسی، پالت
     برند). فروشنده از SiteSettings؛ خریدار شخصی یا حقوقی (E-02 §۴ فیلدهای
@@ -53,9 +61,10 @@ def build_invoice_context(order: Order) -> dict:
             "total": format_toman_fa(order.final_total),
             "total_in_words": amount_in_words_fa(order.final_total),
             "payment": successful_payment,
-            "payment_method_display": successful_payment.get_method_display() if successful_payment else "",
+            "payment_method_display": _payment_method_display(successful_payment),
             "payment_ref_id": successful_payment.provider_ref if successful_payment else "",
             "tracking_code": shipment.tracking_number if shipment else "",
+            "shipping_method_name": order.shipping_method_name,
         }
     )
     return ctx
@@ -69,7 +78,11 @@ def get_invoice_pdf(order: Order, *, generated_by_name: str = "") -> bytes:
     کش روی Order.invoice_pdf -- فقط بار اول یا اگر سفارش بعد از آخرین
     تولید تغییر کرده باشد دوباره رندر می‌شود (E-04 §۱: «کش شود، با تغییر
     سفارش باطل شود»)."""
-    is_stale = not order.invoice_pdf or not order.invoice_pdf_generated_at or order.invoice_pdf_generated_at < order.updated_at
+    is_stale = (
+        not order.invoice_pdf
+        or not order.invoice_pdf_generated_at
+        or order.invoice_pdf_generated_at < order.updated_at
+    )
     if not is_stale:
         order.invoice_pdf.open("rb")
         try:
@@ -79,7 +92,10 @@ def get_invoice_pdf(order: Order, *, generated_by_name: str = "") -> bytes:
 
     context = build_invoice_context(order)
     pdf_bytes = render_pdf(
-        "arbyte/invoice.html", context, margin="12mm", footer_html=arbyte_footer_template(generated_at=context["generated_at"])
+        "arbyte/invoice.html",
+        context,
+        margin="12mm",
+        footer_html=arbyte_footer_template(generated_at=context["generated_at"]),
     )
     order.invoice_pdf.save(f"{order.order_number}.pdf", ContentFile(pdf_bytes), save=False)
     order.invoice_pdf_generated_at = timezone.now()
