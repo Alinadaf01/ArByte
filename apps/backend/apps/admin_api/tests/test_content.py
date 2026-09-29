@@ -65,7 +65,7 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
     def test_create_and_publish(self):
         response = self.client.post(
             reverse("admin-blog-list"),
-            {"slug": "post-1", "title": "پست اول", "excerpt": "خلاصه", "category": "محصول", "author": "تیم آربایت", "isPublished": True},
+            {"slug": "post-1", "title": "پست اول", "excerpt": "خلاصه", "category": "بررسی", "author": "تیم آربایت", "isPublished": True},
             format="json",
         )
         self.assertEqual(response.status_code, 201)
@@ -78,13 +78,26 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
             reverse("admin-blog-list"),
             {
                 "slug": "post-with-cover", "title": "پست با کاور", "excerpt": "خلاصه",
-                "category": "محصول", "author": "تیم آربایت", "coverImage": _fake_image_file(),
+                "category": "بررسی", "author": "تیم آربایت", "coverImage": _fake_image_file(),
+                "coverAlt": "کاور پست",
             },
             format="multipart",
         )
         self.assertEqual(response.status_code, 201)
         post = BlogPost.objects.get(slug="post-with-cover")
         self.assertTrue(post.cover_image)
+
+    def test_cover_without_alt_is_rejected(self):
+        # F-04 — کاور بدون متن جایگزین (alt) ذخیره نمی‌شود.
+        response = self.client.post(
+            reverse("admin-blog-list"),
+            {
+                "slug": "post-no-alt", "title": "پست", "excerpt": "خلاصه",
+                "category": "بررسی", "author": "تیم آربایت", "coverImage": _fake_image_file(),
+            },
+            format="multipart",
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_publishing_without_a_date_sets_published_at_to_now(self):
         # Regression: the panel only exposes an is_published switch, no date
@@ -93,7 +106,7 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
         # moment anyone visited it (BLOG-SEED-TASK.md §5 verification).
         response = self.client.post(
             reverse("admin-blog-list"),
-            {"slug": "post-no-date", "title": "پست بدون تاریخ", "excerpt": "خلاصه", "category": "محصول", "author": "تیم آربایت", "isPublished": True},
+            {"slug": "post-no-date", "title": "پست بدون تاریخ", "excerpt": "خلاصه", "category": "بررسی", "author": "تیم آربایت", "isPublished": True},
             format="json",
         )
         self.assertEqual(response.status_code, 201)
@@ -103,7 +116,7 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
     def test_unpublished_post_still_has_no_default_date(self):
         response = self.client.post(
             reverse("admin-blog-list"),
-            {"slug": "post-draft", "title": "پیش‌نویس", "excerpt": "خلاصه", "category": "محصول", "author": "تیم آربایت", "isPublished": False},
+            {"slug": "post-draft", "title": "پیش‌نویس", "excerpt": "خلاصه", "category": "بررسی", "author": "تیم آربایت", "isPublished": False},
             format="json",
         )
         self.assertEqual(response.status_code, 201)
@@ -112,7 +125,7 @@ class AdminBlogApiTests(AdminApiTestMixin, APITestCase):
 
     def test_resolved_cover_url_falls_back_to_external(self):
         post = BlogPost.objects.create(
-            slug="post-external", title="پست خارجی", excerpt="خلاصه", category="محصول",
+            slug="post-external", title="پست خارجی", excerpt="خلاصه", category="بررسی",
             author="تیم آربایت", external_cover_url="/images/fallback.jpg",
         )
         response = self.client.get(reverse("admin-blog-detail", args=[post.pk]))

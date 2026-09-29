@@ -1,135 +1,151 @@
-import math
+"""F-02 §۵ — قیمت‌گذاری انبوه روی واریانت: جدول قابل ویرایش، تغییر گروهی
+درصدی/مبلغی با **پیش‌نمایش قبل از اعمال** (یک منطق مشترک برای preview و
+apply، پس آنچه پیش‌نمایش نشان می‌دهد دقیقاً همان است که ذخیره می‌شود)، و
+تاریخچه‌ی قیمت هر واریانت (`PriceHistory`)."""
 
-import django_filters
+from decimal import ROUND_CEILING, Decimal
+
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.catalog.models import PriceHistory, Product
+from apps.catalog.models import PriceHistory, ProductVariant
 
 from .activity import log_admin_action
 from .permissions import require_section
+from .revalidate import revalidate_storefront
+
+ROUND_TO = 1000  # تومان — قیمت‌های گرد، همان گرد کردن موتور قیمت F-03
 
 
-class AdminProductPriceSerializer(serializers.ModelSerializer):
+class AdminPriceRowSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    category = serializers.IntegerField(source="category_id")
+    product_id = serializers.CharField(source="product.pk")
+    product_name = serializers.CharField(source="product.name")
+    product_slug = serializers.CharField(source="product.slug")
 
     class Meta:
-        model = Product
-        fields = ["id", "name", "sku", "category", "price"]
+        model = ProductVariant
+        fields = ["id", "sku", "name", "product_id", "product_name", "product_slug", "final_price", "compare_at_price", "price_model"]
 
-    def get_id(self, obj: Product) -> str:
+    def get_id(self, obj) -> str:
         return str(obj.pk)
 
 
-class AdminProductPriceFilter(django_filters.FilterSet):
-    category = django_filters.NumberFilter(field_name="category_id")
+def _variant_queryset(params):
+    qs = ProductVariant.objects.select_related("product").filter(deleted_at__isnull=True, product__deleted_at__isnull=True)
+    if params.get("search"):
+        term = str(params["search"]).strip()
+        qs = qs.filter(Q(sku__icontains=term) | Q(product__name__icontains=term))
+    if params.get("category"):
+        qs = qs.filter(product__category_id=params["category"])
+    if params.get("brand"):
+        qs = qs.filter(product__brand_id=params["brand"])
+    return qs.order_by("product__name", "sku")
 
-    class Meta:
-        model = Product
-        fields = ["category"]
 
-
-class AdminProductPriceListView(ListAPIView):
+class AdminPriceListView(ListAPIView):
     permission_classes = [require_section("pricing")]
-    serializer_class = AdminProductPriceSerializer
-    filterset_class = AdminProductPriceFilter
-    queryset = Product.objects.all()
-
-
-class BulkPriceEditSerializer(serializers.Serializer):
-    product_ids = serializers.ListField(child=serializers.IntegerField(), allow_empty=False)
-    mode = serializers.ChoiceField(choices=["percent", "fixed", "set"])
-    direction = serializers.ChoiceField(choices=["increase", "decrease"], required=False)
-    value = serializers.IntegerField(min_value=0)
-    round_to_nearest_1000 = serializers.BooleanField(required=False, default=False)
-    reason = serializers.CharField(required=False, allow_blank=True, default="")
-
-    def validate(self, attrs):
-        if attrs["mode"] in ("percent", "fixed") and not attrs.get("direction"):
-            raise serializers.ValidationError({"direction": "برای این حالت الزامی است."})
-        return attrs
-
-
-def _compute_new_price(old_price: int, input_data: dict) -> int:
-    mode = input_data["mode"]
-    value = input_data["value"]
-    direction = input_data.get("direction")
-    sign = 1 if direction == "increase" else -1
-
-    if mode == "set":
-        new_price = value
-    elif mode == "percent":
-        new_price = old_price + sign * round(old_price * value / 100)
-    else:  # fixed
-        new_price = old_price + sign * value
-
-    new_price = max(new_price, 0)
-    if input_data.get("round_to_nearest_1000"):
-        new_price = int(math.floor(new_price / 1000 + 0.5) * 1000)
-    return new_price
-
-
-class AdminBulkPriceEditView(APIView):
-    # POST here is a bulk *edit*, not a create — pricing has no "create" action.
-    permission_classes = [require_section("pricing", action="edit")]
-
-    def post(self, request):
-        serializer = BulkPriceEditSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-        preview = request.query_params.get("preview") == "true"
-
-        products = list(Product.objects.filter(pk__in=data["product_ids"]))
-        changes = []
-        for product in products:
-            new_price = _compute_new_price(product.price, data)
-            if new_price != product.price:
-                changes.append({"product_id": product.pk, "name": product.name, "old_price": product.price, "new_price": new_price})
-
-        if not preview:
-            with transaction.atomic():
-                for change in changes:
-                    Product.objects.filter(pk=change["product_id"]).update(price=change["new_price"])
-                    PriceHistory.objects.create(
-                        product_id=change["product_id"],
-                        old_price=change["old_price"],
-                        new_price=change["new_price"],
-                        changed_by=request.user,
-                        reason=data.get("reason", ""),
-                    )
-                log_admin_action(
-                    user=request.user,
-                    action="bulk_price_edit",
-                    model_name="Product",
-                    object_id=",".join(str(c["product_id"]) for c in changes) or "none",
-                    changes={"count": len(changes), "mode": data["mode"], "value": data["value"]},
-                )
-
-        return Response({"changes": changes}, status=status.HTTP_200_OK)
-
-
-class AdminPriceHistorySerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    changed_by = serializers.SerializerMethodField()
-
-    class Meta:
-        model = PriceHistory
-        fields = ["id", "old_price", "new_price", "changed_by", "reason", "created_at"]
-
-    def get_id(self, obj: PriceHistory) -> str:
-        return str(obj.pk)
-
-    def get_changed_by(self, obj: PriceHistory) -> str:
-        return obj.changed_by.get_full_name() if obj.changed_by else ""
-
-
-class AdminPriceHistoryListView(ListAPIView):
-    permission_classes = [require_section("pricing")]
-    serializer_class = AdminPriceHistorySerializer
+    serializer_class = AdminPriceRowSerializer
 
     def get_queryset(self):
-        return PriceHistory.objects.filter(product_id=self.kwargs["product_id"])
+        return _variant_queryset(self.request.query_params)
+
+
+def _compute_changes(data) -> tuple[list[dict], str | None]:
+    """ورودی: یا `changes: [{variant, newPrice}]` (ویرایش جدولی)، یا
+    `mode: percent|amount` + `value` + (`variantIds` یا فیلتر). خروجی: ردیف‌های
+    {variant, sku, productName, oldPrice, newPrice} فقط برای قیمت‌هایی که واقعاً عوض می‌شوند."""
+    if data.get("changes"):
+        explicit = {int(c["variant"]): int(c["new_price"]) for c in data["changes"]}
+        variants = ProductVariant.objects.select_related("product").filter(pk__in=explicit, deleted_at__isnull=True)
+        target = {v: explicit[v.pk] for v in variants}
+    else:
+        mode = data.get("mode")
+        try:
+            value = float(data.get("value"))
+        except (TypeError, ValueError):
+            return [], "مقدار تغییر باید عدد باشد."
+        if mode not in ("percent", "amount") or value == 0:
+            return [], "نوع تغییر (درصد/مبلغ) و مقدار غیرصفر لازم است."
+        ids = data.get("variant_ids")
+        variants = _variant_queryset(data if not ids else {}).filter(**({"pk__in": ids} if ids else {}))
+        target = {}
+        for v in variants:
+            # Decimal، نه float — ۱٬۲۰۰٬۰۰۰×۱٫۱ در float از ۱٬۳۲۰٬۰۰۰ کمی بیشتر است و یک پله بالاتر گرد می‌شد.
+            step = Decimal(str(value))
+            raw = Decimal(v.final_price) * (1 + step / 100) if mode == "percent" else Decimal(v.final_price) + step
+            target[v] = int((raw / ROUND_TO).to_integral_value(rounding=ROUND_CEILING)) * ROUND_TO if raw > 0 else 0
+    rows = []
+    for v, new_price in target.items():
+        if new_price <= 0:
+            return [], f"قیمت جدید «{v.sku}» صفر یا منفی می‌شود."
+        if new_price != v.final_price:
+            rows.append({"variant": str(v.pk), "sku": v.sku, "product_name": v.product.name, "old_price": v.final_price, "new_price": new_price})
+    return rows, None
+
+
+class AdminBulkPricePreviewView(APIView):
+    permission_classes = [require_section("pricing")]
+
+    def post(self, request):
+        rows, error = _compute_changes(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"count": len(rows), "changes": rows})
+
+
+class AdminBulkPriceApplyView(APIView):
+    permission_classes = [require_section("pricing", action="edit")]
+
+    @transaction.atomic
+    def post(self, request):
+        rows, error = _compute_changes(request.data)
+        if error:
+            return Response({"detail": error}, status=status.HTTP_400_BAD_REQUEST)
+        reason = str(request.data.get("reason") or "").strip() or "ویرایش گروهی قیمت"
+        variants = {str(v.pk): v for v in ProductVariant.objects.select_for_update().select_related("product").filter(pk__in=[r["variant"] for r in rows])}
+        slugs = set()
+        for row in rows:
+            variant = variants[row["variant"]]
+            PriceHistory.objects.create(
+                variant=variant, previous_price=variant.final_price, new_price=row["new_price"],
+                changed_by=request.user, reason=reason,
+            )
+            variant.final_price = row["new_price"]
+            variant.save(update_fields=["final_price", "updated_at"])
+            slugs.add(variant.product.slug)
+        log_admin_action(user=request.user, action="bulk_price_update", model_name="ProductVariant", object_id="",
+                         changes={"count": len(rows), "reason": reason})
+        revalidate_storefront("/", *(f"/products/{s}" for s in slugs))
+        return Response({"count": len(rows), "changes": rows})
+
+
+class AdminPriceHistoryView(APIView):
+    permission_classes = [require_section("pricing")]
+
+    def get(self, request, variant_id):
+        entries = PriceHistory.objects.filter(variant_id=variant_id).select_related("changed_by").order_by("-created_at")[:100]
+        return Response([
+            {
+                "previous_price": e.previous_price, "new_price": e.new_price, "reason": e.reason,
+                "changed_by": e.changed_by.get_full_name() if e.changed_by else None, "created_at": e.created_at,
+            }
+            for e in entries
+        ])
+
+
+class AdminPriceListPdfView(APIView):
+    """لیست قیمت PDF با همان فیلترهای جدول قیمت (search/category/brand)."""
+
+    permission_classes = [require_section("pricing")]
+
+    def get(self, request):
+        from apps.documents.price_list import render_price_list_pdf
+        from apps.documents.responses import pdf_filename, pdf_response
+
+        pdf_bytes = render_price_list_pdf(_variant_queryset(request.query_params), generated_by_name=request.user.get_full_name())
+        return pdf_response(pdf_bytes, pdf_filename("price-list"))

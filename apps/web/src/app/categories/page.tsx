@@ -12,6 +12,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${categoriesPage.breadcrumb.current} | آربایت`,
     description: categoriesPage.subtitle(categories.length),
+    alternates: { canonical: "/categories" },
+    openGraph: {
+      title: `${categoriesPage.breadcrumb.current} | آربایت`,
+      description: categoriesPage.subtitle(categories.length),
+      url: "/categories",
+    },
   };
 }
 

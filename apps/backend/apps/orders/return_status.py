@@ -30,7 +30,7 @@ def transition_to(return_request, to_status: str, *, admin_note: str = "") -> No
         raise InvalidOrderTransition(f"{from_status} -> {to_status} مجاز نیست.")
 
     if to_status == "RECEIVED":
-        for return_item in return_request.items.select_related("order_item__variant"):
+        for return_item in return_request.items.select_related("order_item__variant").exclude(decision="REJECTED"):
             variant = return_item.order_item.variant
             if variant is not None:
                 Inventory.objects.stock_in(

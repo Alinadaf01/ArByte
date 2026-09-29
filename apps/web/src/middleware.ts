@@ -1,5 +1,59 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
+
+/**
+ * G-02 — ریدایرکت‌های پنل (و خودکارِ تغییر slug/حذف محصول). جدول کامل هر
+ * ۶۰ ثانیه از API گرفته و در حافظه‌ی همین نمونه نگه داشته می‌شود؛ API در
+ * دسترس نبود = بدون ریدایرکت (صفحه نمی‌شکند). شمارش بازدید بعد از پاسخ.
+ */
+interface RedirectRule {
+  id: string;
+  from: string;
+  to: string;
+  status: number;
+}
+const REDIRECT_TTL_MS = 60_000;
+let redirectTable: { at: number; map: Map<string, RedirectRule> } | null = null;
+let redirectLoading: Promise<Map<string, RedirectRule>> | null = null;
+
+function apiBase(): string {
+  return process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL!;
+}
+
+async function loadRedirects(): Promise<Map<string, RedirectRule>> {
+  if (redirectTable && Date.now() - redirectTable.at < REDIRECT_TTL_MS) {
+    return redirectTable.map;
+  }
+  redirectLoading ??= (async () => {
+    try {
+      const res = await fetch(`${apiBase()}/seo/redirects`, {
+        cache: "no-store",
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const body = (await res.json()) as { data: RedirectRule[] };
+      const map = new Map(body.data.map((r) => [r.from, r]));
+      redirectTable = { at: Date.now(), map };
+      return map;
+    } catch {
+      return redirectTable?.map ?? new Map<string, RedirectRule>();
+    } finally {
+      redirectLoading = null;
+    }
+  })();
+  return redirectLoading;
+}
+
+function normalizePath(pathname: string): string {
+  let path = pathname;
+  try {
+    path = decodeURIComponent(pathname);
+  } catch {
+    /* مسیر خراب: همان خام */
+  }
+  return path.length > 1 ? path.replace(/\/+$/, "") : path;
+}
+
+const SKIP_REDIRECT = /^\/(api|_next|media|feeds)\b/;
 
 /**
  * تولید nonce برای CSP — بند ۱۱.۱۰۳ برند بوک.
@@ -11,7 +65,27 @@ import type { NextRequest } from "next/server";
  * میزبان Node.js کار می‌کند، طبق ADR-002) و یک nonce واقعی به هر درخواست
  * می‌دهد؛ Next.js خودش آن را به اسکریپت‌های داخلی‌اش اعمال می‌کند.
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, event: NextFetchEvent) {
+  const { pathname } = request.nextUrl;
+  if (
+    !SKIP_REDIRECT.test(pathname) &&
+    (request.method === "GET" || request.method === "HEAD")
+  ) {
+    const rule = (await loadRedirects()).get(normalizePath(pathname));
+    if (rule) {
+      const target = rule.to.startsWith("http")
+        ? new URL(rule.to)
+        : new URL(rule.to, request.url);
+      if (!rule.to.startsWith("http")) target.search = request.nextUrl.search;
+      event.waitUntil(
+        fetch(`${apiBase()}/seo/redirects/${rule.id}/hit`, {
+          method: "POST",
+        }).catch(() => undefined),
+      );
+      return NextResponse.redirect(target, rule.status === 302 ? 302 : 301);
+    }
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   // webpack دِو-مود Next.js (eval-source-map) به eval() نیاز دارد؛ بدون
   // 'unsafe-eval' در dev کل باندل کلاینت silently شکست می‌خورد (هیچ خطای
@@ -31,10 +105,12 @@ export function middleware(request: NextRequest) {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    // G-01 — نماد اعتماد اینماد باید مستقیم از سرور خودش بارگذاری شود.
+    "img-src 'self' data: blob: https://trustseal.enamad.ir",
     "font-src 'self'",
     `connect-src 'self' ${apiOrigin}`,
     "frame-ancestors 'none'",
+    "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");

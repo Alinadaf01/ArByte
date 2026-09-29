@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { siteFooter } from "@arbyte/contracts";
-import { estedad } from "@/lib/fonts";
 import "./globals.css";
+import { ImpersonationBanner } from "@/components/shell/ImpersonationBanner";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
+import { absoluteUrl, jsonLd } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
   // بند ۱۰.۷۱ — پایه‌ی canonical/OG مطلق، نه نسبی؛ از env عمومی همان چیزی
@@ -10,22 +12,35 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   ),
-  title: "ArByte",
+  title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار",
   description: siteFooter.tagline,
+  applicationName: "آربایت",
   // favicon.ico/apple-icon.png/icon.png/opengraph-image.png/manifest.ts —
   // همه با قرارداد نام‌گذاری فایل Next خودکار پیوند می‌شوند (E-01 §۱)؛
   // اینجا فقط چیزی که آن قرارداد نمی‌سازد (زبان/عنوان/توضیح OG).
   openGraph: {
     title: "آربایت",
     description: siteFooter.tagline,
+    siteName: "آربایت",
     locale: "fa_IR",
     type: "website",
   },
+  twitter: { card: "summary_large_image" },
+};
+
+/** G-02 — بند ۱۰.۷۲ برندبوک: Organization با لوگو در همه‌ی صفحه‌ها. */
+const organizationLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "آربایت",
+  alternateName: "ArByte",
+  url: absoluteUrl("/"),
+  logo: absoluteUrl("/icon.png"),
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fa" dir="rtl" className={estedad.variable}>
+    <html lang="fa" dir="rtl">
       <head>
         {/* preload انتخابی فقط ۴۰۰ و ۷۰۰ — بند ۴.۲۹ برند بوک */}
         <link
@@ -43,7 +58,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           crossOrigin="anonymous"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(organizationLd)}
+        />
+        <PageViewTracker />
+        <ImpersonationBanner />
+        {children}
+      </body>
     </html>
   );
 }

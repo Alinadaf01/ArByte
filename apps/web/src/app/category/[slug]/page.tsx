@@ -36,10 +36,16 @@ export async function generateMetadata({
     canonicalPath,
   );
 
+  const title = category.seo.title || `${category.name} | آربایت`;
+  const description =
+    category.seo.description ||
+    category.description ||
+    `خرید ${category.name} از آربایت؛ مقایسه‌ی قیمت و مشخصات، با تست پیش از ارسال.`;
   return {
-    title: category.seo.title ?? category.name,
-    description: category.seo.description ?? category.description ?? undefined,
+    title,
+    description,
     alternates: { canonical },
+    openGraph: { title, description, url: canonicalPath },
     robots: index ? undefined : { index: false, follow: true },
   };
 }

@@ -55,6 +55,8 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     # D-03 §2 — global (harmless for /api/admin/, which ignores request_id).
     "apps.public_api.middleware.RequestIdMiddleware",
+    # G-02 — Cache-Control/ETag برای GETهای عمومی /api/v1/ (بیرونی‌تر از CommonMiddleware).
+    "apps.public_api.middleware.PublicCacheMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -122,9 +124,21 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# G-03 — فایل‌های خصوصی (رسید کارت‌به‌کارت) خارج از MEDIA_ROOT تا nginx یا
+# rewrite `/media` فروشگاه هرگز مستقیم سروشان نکند؛ فقط endpoint ادمین.
+PRIVATE_MEDIA_ROOT = config("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private_media"))
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+
+# G-03 — در تولید فقط دامنه‌های خودمان (arbyte.ir، admin.arbyte.ir) از env.
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="", cast=Csv())
+X_FRAME_OPTIONS = "DENY"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
+# Django admin داخلی (/admin/) در تولید فقط با مسیر مخفی از env فعال است؛
+# پنل اصلی apps/admin است.
+DJANGO_ADMIN_URL = config("DJANGO_ADMIN_URL", default="admin/" if DEBUG else "")
 
 # CORS — apps/web (3000) and apps/admin (3001) dev servers. Both call this
 # backend directly only from D-03 onward; harmless to have configured early.
@@ -151,6 +165,15 @@ CORS_ALLOW_HEADERS = [*default_headers, "x-cart-session"]
 # original browser session.
 BACKEND_BASE_URL = config("BACKEND_BASE_URL", default="http://localhost:8000")
 FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:3000")
+
+# G-02/G-03 — آی‌پی واقعی کاربر (apps/public_api/client_ip.py): BFF فروشگاه
+# `X-Client-IP` را با این secret مشترک امضا می‌کند؛ nginx `X-Real-IP` را.
+BFF_SHARED_SECRET = config("BFF_SHARED_SECRET", default="")
+TRUST_X_REAL_IP = config("TRUST_X_REAL_IP", default=False, cast=bool)
+
+# G-03 — قفل موقت ورود پنل بعد از N تلاش ناموفق (به ازای شماره و آی‌پی).
+ADMIN_LOGIN_MAX_FAILURES = config("ADMIN_LOGIN_MAX_FAILURES", default=5, cast=int)
+ADMIN_LOGIN_LOCK_MINUTES = config("ADMIN_LOGIN_LOCK_MINUTES", default=15, cast=int)
 
 
 # Django REST Framework
@@ -204,19 +227,22 @@ REST_FRAMEWORK = {
         # دلخواه در بدنه) — apps/public_api/otp.py دستی چک می‌کند، با ثابت‌های
         # env-پذیر خودش (OTP_REQUEST_PER_MOBILE_LIMIT/WINDOW_MINUTES).
         "otp_request": config("OTP_REQUEST_PER_IP_RATE", default="10/hour"),
-        "otp_verify": "20/hour",
-        "admin_login": "10/min",
-        "contact_form": "5/hour",
-        "checkout": "20/hour",
+        "otp_verify": config("OTP_VERIFY_RATE", default="20/hour"),
+        "admin_login": config("ADMIN_LOGIN_RATE", default="10/min"),
+        "contact_form": config("CONTACT_FORM_RATE", default="5/hour"),
+        "receipt_upload": config("RECEIPT_UPLOAD_RATE", default="10/hour"),
         # D-05 §۵ — پیگیری مهمان (POST /orders/track) پاسخ یکسان برای «نیست»
         # و «موبایل نمی‌خورد» می‌دهد، اما بدون نرخ سخت، حدس‌زدن شماره سفارش
         # با brute-force ممکن می‌شد؛ سخت‌گیرتر از سایر مسیرهای عمومی.
-        "order_track": "10/hour",
+        "order_track": config("ORDER_TRACK_RATE", default="10/hour"),
         # D-03 §2 — packages/contracts/src/common/rate-limits.ts's
         # publicApiPerIp (100 req/60s/ip), applied via PublicAPIView's
         # throttle_scope (apps/public_api/envelope.py) — not global, so
         # /api/admin/'s own scoped throttles above are unaffected.
-        "public_api": "100/min",
+        "public_api": config("PUBLIC_API_RATE", default="100/min"),
+        # G-02 — ثبت بازدید و شمارش ریدایرکت (از مرورگر/میدل‌ور فروشگاه).
+        "pageview": config("PAGEVIEW_RATE", default="120/min"),
+        "redirect_hit": config("REDIRECT_HIT_RATE", default="120/min"),
     },
 }
 
@@ -226,6 +252,9 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "CAMELIZE_NAMES": True,
+    # G-03 — هشدارهای تولید schema (W001/W002) جزو «check --deploy» نیستند؛
+    # schema فقط در DEBUG سرو می‌شود (config/urls.py).
+    "ENABLE_DJANGO_DEPLOY_CHECK": False,
 }
 
 SIMPLE_JWT = {
@@ -284,6 +313,11 @@ CELERY_BEAT_SCHEDULE = {
     "cancel-stale-unpaid-orders": {
         "task": "apps.orders.tasks.cancel_stale_unpaid_orders",
         "schedule": crontab(minute="*/15"),
+    },
+    # F-03 §۳ — شروع/پایان کمپین‌ها → revalidate صفحه‌های فروشگاه.
+    "revalidate-campaign-boundaries": {
+        "task": "apps.catalog.tasks.revalidate_campaign_boundaries",
+        "schedule": crontab(minute="*/5"),
     },
 }
 

@@ -158,3 +158,63 @@ class AdminShippingMethodApiTests(AdminApiTestMixin, APITestCase):
         delete = self.client.delete(reverse("admin-settings-shipping-detail", args=[method_id]))
         self.assertEqual(delete.status_code, 204)
         self.assertFalse(ShippingMethod.objects.filter(pk=method_id).exists())
+
+
+class AdminSettingsF01Tests(AdminApiTestMixin, APITestCase):
+    """F-01 §۴ — فیلدهای بچ ۰۳، کلید ماسک‌شده، پیامک آزمایشی، قالب‌ها/لاگ پیامک."""
+
+    def setUp(self):
+        self.client.force_authenticate(user=self.make_staff())
+
+    def test_batch03_fields_editable_and_card_to_card_toggle(self):
+        from apps.orders.services import card_to_card_enabled
+
+        response = self.client.patch(
+            reverse("admin-settings-site"),
+            {
+                "postal_code": "1234567890", "test_period_days": 10, "warranty_terms": "خط ۱\nخط ۲",
+                "card_to_card_holder_name": "آربایت", "card_to_card_number": "6037000000000000",
+                "card_to_card_sheba": "IR000000000000000000000000",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+        s = SiteSettings.load()
+        self.assertEqual((s.postal_code, s.test_period_days, s.warranty_terms), ("1234567890", 10, "خط ۱\nخط ۲"))
+        self.assertTrue(card_to_card_enabled())
+        self.client.patch(reverse("admin-settings-site"), {"card_to_card_active": False}, format="json")
+        self.assertFalse(card_to_card_enabled())
+
+    def test_credentials_are_masked_never_returned_in_full(self):
+        ApiCredential.objects.create(service="kavenegar", is_active=True, credentials=json.dumps({"apiKey": "SECRETKEY-ABCD1234"}))
+        response = self.client.get(reverse("admin-settings-credential-list"))
+        body = json.dumps(response.data, ensure_ascii=False)
+        self.assertNotIn("SECRETKEY", body)
+        self.assertEqual(response.data[0]["masked_credentials"], {"apiKey": "••••1234"})
+
+    def test_test_sms_reports_provider_result(self):
+        from unittest.mock import patch
+
+        from apps.notifications.models import SmsLog
+
+        with patch("apps.notifications.kavenegar_client.get_kavenegar_client") as client:
+            client.return_value.verify_lookup.return_value = [{"messageid": 42}]
+            response = self.client.post(reverse("admin-settings-test-sms"), {"phone": "09121234567"}, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(response.data["status"], "sent")
+        self.assertEqual(SmsLog.objects.get().phone, "09121234567")
+        self.assertEqual(
+            self.client.post(reverse("admin-settings-test-sms"), {"phone": "123"}, format="json").status_code, 400
+        )
+
+    def test_sms_templates_and_logs(self):
+        from apps.notifications.models import SmsLog, SmsTemplate
+
+        templates = self.client.get(reverse("admin-settings-sms-templates")).data
+        keys = {t["key"] for t in templates if t["is_active"]}
+        self.assertTrue({"otp_login", "order_confirmed", "order_shipped"} <= keys)
+        tpl = SmsTemplate.objects.get(key="order_shipped")
+        SmsLog.objects.create(phone="09120000001", template=tpl, status="failed", error="x")
+        SmsLog.objects.create(phone="09120000002", template=tpl, status="sent")
+        response = self.client.get(reverse("admin-settings-sms-logs"), {"status": "failed"})
+        self.assertEqual(response.data["count"], 1)

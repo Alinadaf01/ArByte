@@ -34,7 +34,7 @@ export function FaqSection() {
     <section className="bg-paper border-border border-t px-[5vw] py-14 md:py-20">
       <div className="mx-auto grid max-w-[1240px] items-start gap-8 md:grid-cols-[minmax(260px,1fr)_2fr]">
         <aside className="border-border flex flex-col gap-4.5 md:sticky md:top-24">
-          <span className="bg-brand-tint-1 text-caption text-brand inline-flex w-fit items-center gap-1.5 rounded-pill px-3 py-1 font-emphasis">
+          <span className="bg-brand-tint-1 text-caption !text-brand-active inline-flex w-fit items-center gap-1.5 rounded-pill px-3 py-1 font-emphasis">
             {homeFaq.badge}
           </span>
           <div>

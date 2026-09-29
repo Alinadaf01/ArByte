@@ -24,10 +24,20 @@ const securityHeaders = [
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
+  // G-03 — سخت‌سازی: بدون MIME sniffing، بدون دسترسی به حسگرها/دوربین،
+  // جداسازی پنجره‌ی باز‌شده از مبدأ دیگر.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  {
+    key: "Permissions-Policy",
+    value:
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   images: {
     // بهینه‌سازی خودمیزبان با sharp (بدون سرویس ابری Vercel) — بند ۷.۱۶ و ۱۰.۵۶ برند بوک.
     formats: ["image/avif", "image/webp"],
@@ -35,6 +45,23 @@ const nextConfig: NextConfig = {
     // خودمان تولیدشان کرده‌ایم (نه آپلود کاربر) — امن برای فعال‌سازی.
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
+  },
+  // F-02 — تصاویری که از پنل ادمین آپلود می‌شوند (Django، WebP) مسیر نسبی
+  // `/media/...` دارند؛ این rewrite آن‌ها را هم‌مبدأ از بک‌اند می‌آورد تا
+  // next/image و CSP بدون دامنه‌ی خارجی کار کنند.
+  // G-02 — Next 15 متادیتا را برای کاربرِ «غیربات» استریم و در <body> می‌گذارد؛
+  // ابزارها/خزنده‌هایی که در فهرست پیش‌فرض بات Next نیستند (Lighthouse،
+  // ترب، …) description را نمی‌دیدند. متادیتا همیشه در <head> رندر شود.
+  htmlLimitedBots: /.*/,
+  async rewrites() {
+    const apiOrigin = (
+      process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1"
+    ).replace(/\/api\/v1\/?$/, "");
+    return [
+      { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
+      // G-02 — فید ترب روی دامنه‌ی فروشگاه (arbyte.ir/feeds/torob)، ساخته‌شده در Django.
+      { source: "/feeds/:path*", destination: `${apiOrigin}/feeds/:path*` },
+    ];
   },
   async headers() {
     return [

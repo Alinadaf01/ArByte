@@ -5,6 +5,7 @@
 import secrets
 
 from apps.catalog.models import ProductVariant
+from apps.catalog.pricing import live_price
 from apps.orders.models import Cart, CartItem
 
 from .errors import ApiError
@@ -62,6 +63,7 @@ def to_cart_item(item: CartItem) -> dict:
     variant = item.variant
     product = variant.product
     primary_image = product.images.filter(is_primary=True).first() or product.images.order_by("sort_order").first()
+    final_price, compare_at = live_price(variant)
     return {
         "id": str(item.id),
         "variant": {
@@ -71,10 +73,10 @@ def to_cart_item(item: CartItem) -> dict:
             "productSlug": product.slug,
             "label": _variant_label(variant),
             "image": primary_image.url if primary_image else None,
-            "price": {"final": variant.final_price, "compareAt": variant.compare_at_price},
+            "price": {"final": final_price, "compareAt": compare_at},
         },
         "quantity": item.quantity,
-        "lineTotal": variant.final_price * item.quantity,
+        "lineTotal": final_price * item.quantity,
     }
 
 
@@ -135,7 +137,7 @@ def apply_coupon(cart: Cart, code: str) -> Cart:
     from apps.orders.services import validate_coupon
 
     items = cart.items.select_related("variant").order_by("id")
-    subtotal = sum(item.variant.final_price * item.quantity for item in items)
+    subtotal = sum(live_price(item.variant)[0] * item.quantity for item in items)
     validate_coupon(code, cart.user, subtotal)  # raises CheckoutError if invalid — propagates to view
 
     from apps.content.models import Coupon
@@ -194,11 +196,11 @@ def add_item(cart: Cart, variant_id, quantity: int) -> CartItem:
         # D-05 §۲ — عکس‌فوری قیمت هم روی هر افزودن تازه می‌شود؛ منظور از
         # PRICE_CHANGED «از وقتی این آیتم آخرین‌بار به سبد نگاه شد» است.
         existing.quantity = new_quantity
-        existing.unit_price_snapshot = variant.final_price
+        existing.unit_price_snapshot = live_price(variant)[0]
         existing.save(update_fields=["quantity", "unit_price_snapshot"])
         return existing
     return CartItem.objects.create(
-        cart=cart, variant=variant, quantity=new_quantity, unit_price_snapshot=variant.final_price
+        cart=cart, variant=variant, quantity=new_quantity, unit_price_snapshot=live_price(variant)[0]
     )
 
 
@@ -209,7 +211,7 @@ def update_item_quantity(cart: Cart, item_id, quantity: int) -> CartItem:
         raise ApiError("NOT_FOUND", status=404) from None
     _check_quantity_against_stock(item.variant, quantity)
     item.quantity = quantity
-    item.unit_price_snapshot = item.variant.final_price
+    item.unit_price_snapshot = live_price(item.variant)[0]
     item.save(update_fields=["quantity", "unit_price_snapshot"])
     return item
 

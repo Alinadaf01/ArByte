@@ -1,17 +1,52 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { aboutPage } from "@arbyte/contracts";
+import {
+  aboutPage,
+  formatNumberFa,
+  homeCommunity,
+  storeFacts,
+  toPersianDigits,
+} from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
-import { ImageSlot } from "@/components/ImageSlot";
+import { getAboutContent } from "@/lib/content";
+
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${aboutPage.breadcrumb.current} | آربایت`,
+  description: aboutPage.metaDescription,
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: `${aboutPage.breadcrumb.current} | آربایت`,
+    description: aboutPage.metaDescription,
+    url: "/about",
+  },
 };
 
-const dotColor = { brand: "bg-brand", accent: "bg-accent" } as const;
+const H2 =
+  "text-[clamp(22px,2.6vw,32px)] leading-[1.45] font-heading tracking-[-0.025em]";
 
-export default function AboutPage() {
+/**
+ * G-01 — About.dc.html. متن هر بخش از پنل (`GET /content/about`)؛ بخش خالی
+ * پنهان. آمار فقط از `storeFacts.stats` (null = پنهان)، تیم فقط اگر عضوی
+ * تعریف شده باشد.
+ */
+export default async function AboutPage() {
+  const about = await getAboutContent();
+  const { stats } = storeFacts;
+  const statEntries = (
+    [
+      ["deliveredOrders", stats.deliveredOrders],
+      ["satisfactionPercent", stats.satisfactionPercent],
+      ["activeSinceYear", stats.activeSinceYear],
+    ] as const
+  ).filter((e): e is [(typeof e)[0], number] => e[1] != null);
+  const story = about?.story;
+  const principles = about?.principles;
+  const timeline = about?.timeline;
+  const team = about?.team;
+
   return (
     <StorefrontShell headerActive="about">
       <div dir="rtl" className="bg-paper text-primary font-sans">
@@ -24,7 +59,7 @@ export default function AboutPage() {
             aria-hidden="true"
             className="bg-glow-cyan absolute -bottom-55 -start-25 h-115 w-115 rounded-full"
           />
-          <div className="relative mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(290px,1fr))] items-center gap-[clamp(24px,4vw,56px)]">
+          <div className="relative mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(min(290px,100%),1fr))] items-center gap-[clamp(24px,4vw,56px)]">
             <div className="min-w-0">
               <nav
                 aria-label="مسیر"
@@ -39,11 +74,13 @@ export default function AboutPage() {
                 </span>
               </nav>
               <h1 className="max-w-[20ch] text-pretty text-[clamp(28px,3.8vw,50px)] leading-[1.35] font-heading tracking-[-0.03em] text-on-dark">
-                {aboutPage.hero.title}
+                {about?.hero.title || aboutPage.breadcrumb.current}
               </h1>
-              <p className="text-on-dark-secondary mt-4 max-w-[56ch] text-[clamp(15px,1.7vw,18px)] leading-loose">
-                {aboutPage.hero.body}
-              </p>
+              {about?.hero.body ? (
+                <p className="text-on-dark-secondary mt-4 max-w-[56ch] text-[clamp(15px,1.7vw,18px)] leading-loose">
+                  {about.hero.body}
+                </p>
+              ) : null}
             </div>
             <div className="relative aspect-[4/3] min-w-0 overflow-hidden rounded-card-lg border border-white/12 bg-white/5">
               <Image
@@ -58,139 +95,148 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="border-border bg-surface border-b px-[5vw] py-[clamp(24px,4vh,40px)]">
-          <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-[clamp(16px,2.5vw,32px)]">
-            {aboutPage.stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col gap-1.5">
-                <span className="text-[clamp(26px,3vw,36px)] leading-none font-heading tracking-[-0.03em]">
-                  {stat.value}
-                </span>
-                <span className="text-secondary text-caption leading-relaxed">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <div className="mx-auto flex max-w-[1240px] flex-col gap-[clamp(28px,5vh,60px)] px-[5vw] py-[clamp(28px,4vh,48px)] pb-[clamp(48px,7vh,80px)]">
-          <section className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] items-start gap-[clamp(22px,4vw,56px)]">
-            <h2 className="text-[clamp(22px,2.6vw,32px)] leading-[1.45] font-heading tracking-[-0.025em]">
-              {aboutPage.story.title}
-            </h2>
-            <div className="flex max-w-[60ch] flex-col gap-4">
-              {aboutPage.story.paragraphs.map((p) => (
-                <p
-                  key={p}
-                  className="text-secondary-2 text-[15.5px] leading-[2.1]"
-                >
-                  {p}
-                </p>
-              ))}
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
-            <div className="max-w-[52ch]">
-              <h2 className="text-[clamp(22px,2.6vw,32px)] leading-[1.45] font-heading tracking-[-0.025em]">
-                {aboutPage.principles.title}
-              </h2>
-              <p className="text-secondary mt-2.5 text-caption leading-relaxed">
-                {aboutPage.principles.subtitle}
-              </p>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(172px,1fr))] gap-[clamp(14px,2vw,20px)]">
-              {aboutPage.principles.items.map((item) => (
-                <article
-                  key={item.num}
-                  className="border-border bg-surface flex flex-col gap-2.5 rounded-card border p-5.5"
-                >
-                  <span
-                    dir="ltr"
-                    className="text-secondary text-caption font-heading tracking-[0.08em]"
-                  >
-                    {item.num}
+        {statEntries.length > 0 ? (
+          <section className="border-border bg-surface border-b px-[5vw] py-[clamp(24px,4vh,40px)]">
+            <div className="mx-auto grid max-w-[1240px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-[clamp(16px,2.5vw,32px)]">
+              {statEntries.map(([key, value]) => (
+                <div key={key} className="flex flex-col gap-1.5">
+                  <span className="text-[clamp(26px,3vw,36px)] leading-none font-heading tracking-[-0.03em]">
+                    {key === "satisfactionPercent"
+                      ? `${formatNumberFa(value)}٪`
+                      : key === "deliveredOrders"
+                        ? `+${formatNumberFa(value)}`
+                        : `از ${toPersianDigits(value)}`}
                   </span>
-                  <h3 className="text-[16px] leading-relaxed font-heading">
-                    {item.title}
-                  </h3>
-                  <p className="text-secondary text-caption leading-relaxed">
-                    {item.body}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
-            <h2 className="text-[clamp(22px,2.6vw,32px)] leading-[1.45] font-heading tracking-[-0.025em]">
-              {aboutPage.timeline.title}
-            </h2>
-            <div className="border-border bg-surface grid grid-cols-[repeat(auto-fit,minmax(152px,1fr))] overflow-hidden rounded-card border">
-              {aboutPage.timeline.milestones.map((m) => (
-                <div
-                  key={m.year}
-                  className="border-border-divider flex flex-col gap-2.5 border-e p-5.5 last:border-e-0"
-                >
-                  <span className="flex items-center gap-2.5">
-                    <i
-                      className={`h-2.5 w-2.5 flex-none rounded-full ${dotColor[m.dot]}`}
-                      aria-hidden="true"
-                    />
-                    <span className="text-[15px] leading-none font-heading tracking-[-0.01em]">
-                      {m.year}
-                    </span>
+                  <span className="text-secondary text-caption leading-relaxed">
+                    {homeCommunity.statLabels[key]}
                   </span>
-                  <p className="text-secondary text-caption leading-relaxed">
-                    {m.note}
-                  </p>
                 </div>
               ))}
             </div>
           </section>
+        ) : null}
 
-          <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="max-w-[48ch]">
-                <h2 className="text-[clamp(22px,2.6vw,32px)] leading-[1.45] font-heading tracking-[-0.025em]">
-                  {aboutPage.team.title}
-                </h2>
-                <p className="text-secondary mt-2.5 text-caption leading-relaxed">
-                  {aboutPage.team.subtitle}
-                </p>
-              </div>
-              <Link
-                href="/support"
-                className="text-body font-emphasis whitespace-nowrap"
-              >
-                {aboutPage.team.contactCta}
-              </Link>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(176px,1fr))] gap-[clamp(14px,2vw,20px)]">
-              {aboutPage.team.members.map((member, i) => (
-                <article
-                  key={member.name}
-                  className="border-border hover:border-border-done group flex flex-col overflow-hidden rounded-card border bg-surface transition-[border-color,transform] duration-300 hover:-translate-y-1"
-                >
-                  <div
-                    className={`aspect-square ${i % 2 ? "bg-brand-tint-3" : "bg-brand-tint-1"}`}
+        <div className="mx-auto flex max-w-[1240px] flex-col gap-[clamp(28px,5vh,60px)] px-[5vw] py-[clamp(28px,4vh,48px)] pb-[clamp(48px,7vh,80px)]">
+          {story && story.paragraphs.length > 0 ? (
+            <section className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] items-start gap-[clamp(22px,4vw,56px)]">
+              {story.title ? <h2 className={H2}>{story.title}</h2> : <span />}
+              <div className="flex max-w-[60ch] flex-col gap-4">
+                {story.paragraphs.map((p, i) => (
+                  <p
+                    key={i}
+                    className="text-secondary-2 text-[15.5px] leading-[2.1]"
                   >
-                    <ImageSlot label={member.name} />
-                  </div>
-                  <div className="flex flex-col gap-1 p-4">
-                    <span className="text-[14.5px] font-heading">
-                      {member.name}
-                    </span>
-                    <span className="text-secondary text-caption leading-relaxed">
-                      {member.role}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+                    {p}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ) : null}
 
-          <section className="bg-surface-dark relative grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] items-center gap-[clamp(20px,3vw,44px)] overflow-hidden rounded-card-lg p-[clamp(26px,4vw,44px)] text-on-dark">
+          {principles && principles.items.length > 0 ? (
+            <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
+              {principles.title ? (
+                <h2 className={`${H2} max-w-[52ch]`}>{principles.title}</h2>
+              ) : null}
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(172px,1fr))] gap-[clamp(14px,2vw,20px)]">
+                {principles.items.map((item, i) => (
+                  <article
+                    key={i}
+                    className="border-border bg-surface flex flex-col gap-2.5 rounded-card border p-5.5"
+                  >
+                    <span
+                      dir="ltr"
+                      className="text-secondary text-caption font-heading tracking-[0.08em]"
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="text-[16px] leading-relaxed font-heading">
+                      {item.title}
+                    </h3>
+                    {item.body ? (
+                      <p className="text-secondary text-caption leading-relaxed">
+                        {item.body}
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {timeline && timeline.items.length > 0 ? (
+            <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
+              {timeline.title ? <h2 className={H2}>{timeline.title}</h2> : null}
+              <ol className="border-border bg-surface m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(152px,1fr))] overflow-hidden rounded-card border p-0">
+                {timeline.items.map((m, i) => (
+                  <li
+                    key={i}
+                    className="border-border-divider flex flex-col gap-2.5 border-e p-5.5 last:border-e-0"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <i
+                        className={`h-2.5 w-2.5 flex-none rounded-full ${i % 3 === 2 ? "bg-accent" : "bg-brand"}`}
+                        aria-hidden="true"
+                      />
+                      <span className="text-[15px] leading-none font-heading tracking-[-0.01em]">
+                        {m.year}
+                      </span>
+                    </span>
+                    {m.note ? (
+                      <p className="text-secondary text-caption leading-relaxed">
+                        {m.note}
+                      </p>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+
+          {team && team.members.length > 0 ? (
+            <section className="flex flex-col gap-[clamp(16px,2.5vh,24px)]">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                {team.title ? (
+                  <h2 className={`${H2} max-w-[48ch]`}>{team.title}</h2>
+                ) : (
+                  <span />
+                )}
+                <Link
+                  href="/support"
+                  className="text-body font-emphasis whitespace-nowrap"
+                >
+                  {aboutPage.team.contactCta}
+                </Link>
+              </div>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(176px,1fr))] gap-[clamp(14px,2vw,20px)]">
+                {team.members.map((member, i) => (
+                  <article
+                    key={i}
+                    className="border-border flex flex-col gap-3 rounded-card border bg-surface p-4"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`font-heading flex size-12 items-center justify-center rounded-full text-[18px] ${i % 2 ? "bg-brand-tint-3" : "bg-brand-tint-1"} text-brand-active`}
+                    >
+                      {member.name.trim().charAt(0)}
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[14.5px] font-heading">
+                        {member.name}
+                      </span>
+                      {member.role ? (
+                        <span className="text-secondary text-caption leading-relaxed">
+                          {member.role}
+                        </span>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          <section className="bg-surface-dark relative grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] items-center gap-[clamp(20px,3vw,44px)] overflow-hidden rounded-card-lg p-[clamp(26px,4vw,44px)] text-on-dark">
             <div
               aria-hidden="true"
               className="bg-glow-violet absolute -top-35 -end-22.5 h-95 w-95 rounded-full"

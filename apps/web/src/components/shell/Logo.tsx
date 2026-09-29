@@ -47,6 +47,9 @@ export function Logo({ variant, alt, className, priority }: LogoProps) {
       width={asset.width}
       height={asset.height}
       priority={priority}
+      // G-02 — لوگو هرگز پهن‌تر از ~۲۴۰px نمایش داده نمی‌شود؛ بدون `sizes`،
+      // next/image از عرض درونی (۱۵۷۰) نسخه‌ی ۳۸۴۰px را می‌خواست.
+      sizes="240px"
       className={`w-auto ${className}`}
     />
   );

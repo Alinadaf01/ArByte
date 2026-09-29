@@ -54,6 +54,8 @@ export const PublicProductDetailSchema = z.object({
   specifications: z.array(SpecificationGroupSchema),
 
   seo: SeoSchema,
+  /** G-01 — خلاصه‌ی نظرهای تأییدشده؛ AggregateRating فقط با count ≥ ۳. */
+  rating: z.object({ average: z.number().nullable(), count: z.number().int() }),
 });
 export type PublicProductDetail = z.infer<typeof PublicProductDetailSchema>;
 

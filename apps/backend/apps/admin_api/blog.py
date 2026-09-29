@@ -7,6 +7,7 @@ from apps.content.models import BlogPost
 
 from .activity import AdminActivityLogMixin
 from .permissions import require_section
+from .revalidate import revalidate_storefront
 
 
 class AdminBlogPostSerializer(serializers.ModelSerializer):
@@ -20,7 +21,7 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogPost
         fields = [
-            "id", "slug", "title", "excerpt", "category", "sections", "cover_image", "resolved_cover_url",
+            "id", "slug", "title", "excerpt", "category", "sections", "cover_image", "cover_alt", "resolved_cover_url",
             "author", "author_role", "tags", "reading_time", "is_published",
             "meta_title", "meta_description", "published_at",
         ]
@@ -42,6 +43,16 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
         if will_be_published and not has_date:
             validated_data["published_at"] = timezone.now()
 
+    def validate(self, attrs):
+        """F-04 — زمان مطالعه خودکار از متن بخش‌ها (~۲۰۰ کلمه در دقیقه)؛ کاور بدون alt پذیرفته نمی‌شود."""
+        sections = attrs.get("sections", getattr(self.instance, "sections", None)) or []
+        words = sum(len(str(s.get("heading", "")).split()) + len(str(s.get("body", "")).split()) for s in sections if isinstance(s, dict))
+        attrs["reading_time"] = max(1, round(words / 200))
+        has_cover = attrs.get("cover_image") or getattr(self.instance, "cover_image", None) or getattr(self.instance, "external_cover_url", "")
+        if has_cover and not (attrs.get("cover_alt", getattr(self.instance, "cover_alt", "")) or "").strip():
+            raise serializers.ValidationError({"cover_alt": "برای تصویر کاور متن جایگزین (alt) لازم است."})
+        return attrs
+
     def create(self, validated_data):
         self._apply_publish_default(validated_data, existing=None)
         return super().create(validated_data)
@@ -51,14 +62,33 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class AdminBlogPostListCreateView(AdminActivityLogMixin, ListCreateAPIView):
+class _BlogRevalidateMixin:
+    """G-01 — بعد از ذخیره/حذف، فهرست وبلاگ، خود نوشته و مجله‌ی صفحه اصلی تازه شوند."""
+
+    def _revalidate(self, post):
+        revalidate_storefront("/", "/blog", f"/blog/{post.slug}")
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._revalidate(serializer.instance)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self._revalidate(serializer.instance)
+
+    def perform_destroy(self, instance):
+        self._revalidate(instance)
+        super().perform_destroy(instance)
+
+
+class AdminBlogPostListCreateView(_BlogRevalidateMixin, AdminActivityLogMixin, ListCreateAPIView):
     permission_classes = [require_section("blog")]
     serializer_class = AdminBlogPostSerializer
     parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
     queryset = BlogPost.objects.all()
 
 
-class AdminBlogPostDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
+class AdminBlogPostDetailView(_BlogRevalidateMixin, AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
     permission_classes = [require_section("blog")]
     serializer_class = AdminBlogPostSerializer
     parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]

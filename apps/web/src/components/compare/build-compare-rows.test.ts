@@ -39,6 +39,7 @@ function makeProduct(
       },
     ],
     seo: { title: null, description: null, canonical: null },
+    rating: { average: null, count: 0 },
   };
 }
 

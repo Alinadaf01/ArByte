@@ -108,6 +108,9 @@ class SiteSettings(models.Model):
     card_to_card_holder_name = models.CharField(max_length=100, blank=True, help_text="نام صاحب حساب")
     card_to_card_number = models.CharField(max_length=20, blank=True, help_text="شماره کارت، بدون خط‌تیره")
     card_to_card_sheba = models.CharField(max_length=30, blank=True, help_text="شماره شبا، با IR")
+    # F-01 §۴ — کلید روشن/خاموش جدا از پر بودن سه فیلد بالا (مثلاً توقف موقت
+    # بدون پاک کردن اطلاعات حساب).
+    card_to_card_active = models.BooleanField(default=True, help_text="روش کارت‌به‌کارت در چک‌اوت فعال باشد")
 
     class Meta:
         verbose_name_plural = "site settings"

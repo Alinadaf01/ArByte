@@ -16,6 +16,7 @@ from apps.catalog.models import (
     ProductVariant,
     SpecificationDefinition,
 )
+from apps.catalog.pricing import live_price
 from apps.content.models import HomepageBlock
 
 from .availability import GLOBAL_LOW_STOCK_THRESHOLD
@@ -66,7 +67,7 @@ _PRODUCT_PREFETCH = [
 
 
 def _product_queryset():
-    return Product.objects.select_related("brand", "category").prefetch_related(*_PRODUCT_PREFETCH)
+    return Product.objects.select_related("brand", "category", "seo").prefetch_related(*_PRODUCT_PREFETCH)
 
 
 def get_category_tree() -> list[dict]:
@@ -173,9 +174,10 @@ def get_product_cards_by_slugs(slugs: list[str]) -> list[dict]:
 
 
 def _variant_matches(variant: ProductVariant, query: dict) -> bool:
-    if query.get("minPrice") is not None and variant.final_price < query["minPrice"]:
+    price = live_price(variant)[0]
+    if query.get("minPrice") is not None and price < query["minPrice"]:
         return False
-    if query.get("maxPrice") is not None and variant.final_price > query["maxPrice"]:
+    if query.get("maxPrice") is not None and price > query["maxPrice"]:
         return False
     if query.get("spec"):
         variant_axis_values = {}
@@ -296,7 +298,7 @@ def get_filters(category_slug: str | None = None) -> dict:
 
         all_specs = list(p.specifications.all())
         for v in p.variants.all():
-            price = v.final_price
+            price = live_price(v)[0]
             price_min = min(price_min, price)
             price_max = max(price_max, price)
             all_specs.extend(v.specifications.all())

@@ -2,8 +2,8 @@ packages:
   - "apps/*"
   - "packages/*"
 allowBuilds:
-  '@nestjs/core': true
-  '@prisma/engines': true
+  '@nestjs/core': set this to true or false
+  '@prisma/engines': set this to true or false
   '@scarf/scarf': false
   esbuild: true
   ffmpeg-static: true
@@ -11,7 +11,15 @@ allowBuilds:
   # نیاز دارد — workerd یعنی ران‌تایم Cloudflare Workers که طبق ADR-002 اصلاً
   # استفاده نمی‌شود). عمداً build نمی‌شوند تا اسکریپت native غیرضروری اجرا نشود.
   msgpackr-extract: false
-  prisma: true
+  prisma: set this to true or false
   sharp: true
   unrs-resolver: true
   workerd: false
+
+# G-03 — وابستگی‌های گذرا با آسیب‌پذیری high (pnpm audit): فقط به نسخه‌ی وصله‌شده‌ی همان major.
+overrides:
+  postcss@<8.5.18: ^8.5.18
+  fast-uri@<3.1.7: ^3.1.7
+  js-yaml@>=4.0.0 <4.3.2: ^4.3.2
+  vite@>=6.0.0 <6.4.3: ^6.4.3
+  sharp@<0.35.4: ^0.35.4

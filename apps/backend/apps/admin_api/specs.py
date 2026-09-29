@@ -1,144 +1,119 @@
-from django.db import transaction
+"""F-02 §۳ — CRUD `SpecificationDefinition` و مقادیرش (`SpecificationValue`،
+با `swatch_hex` برای رنگ). جایگزین Attribute/AttributeValue وایب."""
+
+from django.db.models import Count
 from rest_framework import serializers, status
-from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from apps.catalog.models import Attribute, AttributeValue, Product, ProductAttribute
+from apps.catalog.models import Category, SpecificationDefinition, SpecificationValue
 
-from .activity import AdminActivityLogMixin, log_admin_action
+from .activity import AdminActivityLogMixin
 from .permissions import require_section
 
 
-class AdminAttributeSerializer(serializers.ModelSerializer):
+class AdminSpecValueSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
 
     class Meta:
-        model = Attribute
-        fields = ["id", "name", "slug", "unit", "input_type", "categories", "is_required", "order"]
+        model = SpecificationValue
+        fields = ["id", "value", "swatch_hex", "sort_order"]
 
-    def get_id(self, obj: Attribute) -> str:
+    def get_id(self, obj) -> str:
         return str(obj.pk)
 
-
-class AdminAttributeListCreateView(AdminActivityLogMixin, ListCreateAPIView):
-    permission_classes = [require_section("specs")]
-    serializer_class = AdminAttributeSerializer
-    pagination_class = None
-
-    def get_queryset(self):
-        qs = Attribute.objects.all()
-        category_id = self.request.query_params.get("category")
-        if category_id:
-            qs = qs.filter(categories__id=category_id)
-        return qs
+    def validate_swatch_hex(self, value):
+        if value and not (len(value) == 7 and value.startswith("#")):
+            raise serializers.ValidationError("رنگ باید به شکل #RRGGBB باشد.")
+        return value or None
 
 
-class AdminAttributeDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
-    permission_classes = [require_section("specs")]
-    serializer_class = AdminAttributeSerializer
-    queryset = Attribute.objects.all()
-
-
-class AdminAttributeValueSerializer(serializers.ModelSerializer):
+class AdminSpecDefinitionSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(deleted_at__isnull=True), allow_null=True, required=False
+    )
+    values = AdminSpecValueSerializer(many=True, read_only=True)
+    usage_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
-        model = AttributeValue
-        fields = ["id", "value", "order"]
+        model = SpecificationDefinition
+        fields = [
+            "id", "key", "name_fa", "type", "unit", "category", "is_required", "is_filterable",
+            "is_searchable", "is_variant_axis", "sort_order", "values", "usage_count",
+        ]
 
-    def get_id(self, obj: AttributeValue) -> str:
+    def get_id(self, obj) -> str:
         return str(obj.pk)
 
-
-class AdminAttributeValueListCreateView(APIView):
-    """The 'promote a custom value to a reusable dropdown entry' action —
-    see ADMIN-API-CONTRACT.md §5."""
-
-    permission_classes = [require_section("specs")]
-
-    def get(self, request, attribute_id):
-        values = AttributeValue.objects.filter(attribute_id=attribute_id)
-        return Response(AdminAttributeValueSerializer(values, many=True).data)
-
-    def post(self, request, attribute_id):
-        serializer = AdminAttributeValueSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        value = AttributeValue.objects.create(attribute_id=attribute_id, **serializer.validated_data)
-        log_admin_action(user=request.user, action="create", model_name="AttributeValue", object_id=value.pk)
-        return Response(AdminAttributeValueSerializer(value).data, status=status.HTTP_201_CREATED)
-
-
-class ProductSpecInputSerializer(serializers.Serializer):
-    attribute_id = serializers.IntegerField()
-    value_option_id = serializers.IntegerField(required=False, allow_null=True)
-    value_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["category"] = str(instance.category_id) if instance.category_id else None
+        return data
 
     def validate(self, attrs):
-        has_option = attrs.get("value_option_id") is not None
-        has_text = bool(attrs.get("value_text"))
-        if has_option == has_text:
-            raise ValidationError("دقیقاً یکی از value_option_id یا value_text باید مقدار داشته باشد.")
+        spec_type = attrs.get("type", getattr(self.instance, "type", None))
+        if attrs.get("is_variant_axis", getattr(self.instance, "is_variant_axis", False)) and spec_type not in (
+            "SELECT", "COLOR"
+        ):
+            raise serializers.ValidationError({"is_variant_axis": "محور واریانت فقط برای مشخصه‌ی انتخابی یا رنگ ممکن است."})
         return attrs
 
 
-class AdminProductSpecsView(APIView):
-    """PUT /api/admin/products/{id}/specs/ — replaces all ProductAttribute
-    rows for the product in one transaction (delete-then-recreate), exactly
-    as specified in ADMIN-API-CONTRACT.md §5.
-
-    GET returns the same raw {id, attributeId, valueOptionId, valueText}
-    shape (not the AdminProductSerializer.specs display triple, which only
-    has label/value/unit) — the product edit form needs the underlying
-    attribute/value ids to pre-populate its spec inputs, not just text to
-    display."""
-
+class AdminSpecDefinitionListCreateView(AdminActivityLogMixin, ListCreateAPIView):
     permission_classes = [require_section("specs")]
+    serializer_class = AdminSpecDefinitionSerializer
+    pagination_class = None
 
-    def get(self, request, product_id):
-        rows = ProductAttribute.objects.filter(product_id=product_id).select_related("attribute", "value_option")
-        return Response(
-            [
-                {
-                    "id": pa.pk,
-                    "attribute_id": pa.attribute_id,
-                    "value_option_id": pa.value_option_id,
-                    "value_text": pa.value_text or None,
-                }
-                for pa in rows
-            ]
-        )
+    def get_queryset(self):
+        qs = SpecificationDefinition.objects.prefetch_related("values").annotate(usage_count=Count("product_specifications"))
+        category = self.request.query_params.get("category")
+        if category == "global":
+            qs = qs.filter(category__isnull=True)
+        elif category:
+            qs = qs.filter(category_id=category)
+        return qs.order_by("sort_order", "id")
 
-    def put(self, request, product_id):
-        product = Product.objects.get(pk=product_id)
-        serializer = ProductSpecInputSerializer(data=request.data, many=True)
-        serializer.is_valid(raise_exception=True)
 
-        with transaction.atomic():
-            ProductAttribute.objects.filter(product=product).delete()
-            created = []
-            for entry in serializer.validated_data:
-                pa = ProductAttribute.objects.create(
-                    product=product,
-                    attribute_id=entry["attribute_id"],
-                    value_option_id=entry.get("value_option_id"),
-                    value_text=entry.get("value_text") or "",
-                )
-                created.append(pa)
+class AdminSpecDefinitionDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
+    permission_classes = [require_section("specs")]
+    serializer_class = AdminSpecDefinitionSerializer
 
-        log_admin_action(
-            user=request.user, action="update", model_name="ProductAttribute", object_id=product.pk,
-            changes={"specCount": len(created)},
-        )
-        return Response(
-            [
-                {
-                    "id": pa.pk,
-                    "attribute_id": pa.attribute_id,
-                    "value_option_id": pa.value_option_id,
-                    "value_text": pa.value_text or None,
-                }
-                for pa in created
-            ]
-        )
+    def get_queryset(self):
+        return SpecificationDefinition.objects.prefetch_related("values").annotate(usage_count=Count("product_specifications"))
+
+    def destroy(self, request, *args, **kwargs):
+        definition = self.get_object()
+        if definition.product_specifications.exists():
+            return Response(
+                {"detail": "این مشخصه روی محصولات استفاده شده؛ ابتدا از محصولات حذفش کنید."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+
+class AdminSpecValueListCreateView(AdminActivityLogMixin, ListCreateAPIView):
+    permission_classes = [require_section("specs")]
+    serializer_class = AdminSpecValueSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return SpecificationValue.objects.filter(definition_id=self.kwargs["definition_id"]).order_by("sort_order", "id")
+
+    def perform_create(self, serializer):
+        serializer.validated_data["definition_id"] = self.kwargs["definition_id"]
+        super().perform_create(serializer)
+
+
+class AdminSpecValueDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
+    permission_classes = [require_section("specs")]
+    serializer_class = AdminSpecValueSerializer
+
+    def get_queryset(self):
+        return SpecificationValue.objects.filter(definition_id=self.kwargs["definition_id"])
+
+    def destroy(self, request, *args, **kwargs):
+        value = self.get_object()
+        if value.product_specifications.exists():
+            return Response({"detail": "این مقدار روی محصولات استفاده شده است."}, status=status.HTTP_400_BAD_REQUEST)
+        return super().destroy(request, *args, **kwargs)

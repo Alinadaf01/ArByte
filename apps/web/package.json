@@ -13,16 +13,17 @@
     "hero:build": "node scripts/hero-build.mjs",
     "hero:frames": "node scripts/hero-frames.mjs",
     "map:build": "node scripts/build-iran-map.mjs",
-    "icons:build": "node scripts/generate-icons.mjs"
+    "icons:build": "node scripts/generate-icons.mjs",
+    "seo:audit": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@arbyte/contracts": "workspace:*",
     "@arbyte/tokens": "workspace:*",
     "@arbyte/ui": "workspace:*",
-    "next": "^15.0.3",
+    "next": "^15.5.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "^0.33.5",
+    "sharp": "^0.35.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -39,7 +40,7 @@
     "tailwindcss": "^4.0.0",
     "topojson-client": "^3.1.0",
     "typescript": "^5.6.3",
-    "vitest": "^2.1.4",
+    "vitest": "^3.2.6",
     "world-atlas": "^2.0.2"
   }
 }

@@ -1,172 +1,67 @@
-# ERD — مدل داده‌ی ArByte (T-003)
+# ERD — آربایت
 
-نمودار زیر همه‌ی ۵۰+ موجودیت اسکیمای `apps/api/prisma/schema/` را با روابطشان
-نشان می‌دهد. برای خوانایی فقط فیلدهای کلیدی (PK/FK و چند فیلد کسب‌وکاری مهم)
-آمده — لیست کامل فیلدها در خودِ schema.prisma و توضیح تصمیم‌ها در
-[data-model.md](./data-model.md) است.
+> خودکار از مدل‌های Django (`generate_data_model`).
 
 ```mermaid
 erDiagram
-  %% ---------- کاربر و دسترسی ----------
-  User ||--o{ UserAddress : "has"
-  User ||--o{ UserRole : "has"
-  Role ||--o{ UserRole : "has"
-  Role ||--o{ RolePermission : "has"
-  Permission ||--o{ RolePermission : "has"
-  User ||--o{ OtpRequest : "requests"
-  User ||--o{ Session : "has"
-
-  User {
-    string id PK
-    string mobile UK
-    enum status
-  }
-  UserAddress {
-    string id PK
-    string userId FK
-    bool isDefault "پارشال یونیک: یکی per user"
-  }
-  Role { string id PK; string name UK }
-  Permission { string id PK; string key UK }
-
-  %% ---------- کاتالوگ ----------
-  Category ||--o{ Category : "parent/children"
-  Category ||--o{ Product : "has"
-  Brand ||--o{ Product : "has"
-  Product ||--o{ ProductVariant : "has (>=1)"
-  Product ||--o{ ProductImage : "has"
-  Category ||--o{ SpecificationDefinition : "scopes"
-  SpecificationDefinition ||--o{ SpecificationValue : "has"
-  SpecificationDefinition ||--o{ ProductSpecification : "used by"
-  SpecificationValue ||--o{ ProductSpecification : "used by"
-  Product ||--o{ ProductSpecification : "shared specs"
-  ProductVariant ||--o{ ProductSpecification : "variant-axis specs"
-
-  Product {
-    string id PK
-    string slug UK "پارشال، WHERE deletedAt IS NULL"
-    string categoryId FK
-    string brandId FK
-    enum condition
-    enum status
-  }
-  ProductVariant {
-    string id PK
-    string productId FK
-    string sku UK "پارشال، WHERE deletedAt IS NULL"
-    bigint finalPrice
-    bool isDefault
-  }
-  SpecificationDefinition {
-    string id PK
-    string key UK
-    enum type
-    bool isVariantAxis
-  }
-
-  %% ---------- قیمت و تأمین‌کننده ----------
-  Supplier ||--o{ SupplierProduct : "quotes"
-  ProductVariant ||--o{ SupplierProduct : "quoted by"
-  Supplier ||--o{ PriceRule : "supplier rule"
-  Category ||--o{ PriceRule : "category rule"
-  ProductVariant ||--o{ PriceHistory : "logs"
-
-  PriceRule {
-    string id PK
-    string supplierId FK "null=global"
-    string categoryId FK "null=global"
-    enum profitType
-    decimal profitValue
-  }
-
-  %% ---------- موجودی ----------
-  ProductVariant ||--o| Inventory : "stocked as"
-  ProductVariant ||--o{ InventoryTransaction : "kardex"
-
-  Inventory {
-    string variantId PK_FK
-    int quantity
-    int reservedQuantity
-    int availableQuantity "GENERATED ALWAYS AS quantity-reservedQuantity"
-    int version "optimistic locking"
-  }
-
-  %% ---------- سبد، سفارش، پرداخت، ارسال، مرجوعی ----------
-  User ||--o| Cart : "has"
-  Cart ||--o{ CartItem : "has"
-  ProductVariant ||--o{ CartItem : "in"
-  User ||--o{ Order : "places"
-  UserAddress ||--o{ Order : "ships to (snapshot)"
-  Order ||--o{ OrderItem : "has"
-  ProductVariant ||--o{ OrderItem : "purchased as"
-  Order ||--o{ OrderStatusHistory : "logs"
-  Order ||--o{ Payment : "has"
-  Payment ||--o{ PaymentReceipt : "has"
-  Order ||--o| Shipment : "has"
-  Order ||--o{ Return : "has"
-  Return ||--o{ ReturnItem : "covers"
-  OrderItem ||--o{ ReturnItem : "returned via"
-
-  Order {
-    string id PK
-    string orderNumber UK "ARB-YYYY-NNNNNN"
-    string userId FK
-    enum status "PENDING..CANCELLED، بدون RETURNED"
-    enum paymentStatus "مستقل از status"
-  }
-  OrderItem {
-    string id PK
-    string orderId FK
-    string variantId FK "nullable — snapshot کافی است"
-    string productNameSnapshot
-    string skuSnapshot
-    json specSnapshot
-  }
-  Payment {
-    string id PK
-    string orderId FK
-    enum method "MANUAL_CARD_TO_CARD|GATEWAY"
-    enum provider "NONE|BALEPAY"
-    json providerPayload "اسکراب‌شده"
-  }
-
-  %% ---------- تخفیف و بازاریابی ----------
-  Coupon ||--o{ CouponUsage : "used"
-  User ||--o{ CouponUsage : "used by"
-  Order ||--o{ CouponUsage : "on"
-  Campaign ||--o{ CampaignProduct : "targets"
-  Product ||--o{ CampaignProduct : "targeted"
-  Category ||--o{ CampaignProduct : "targeted"
-
-  %% ---------- محتوا ----------
-  User ||--o{ Review : "writes"
-  Product ||--o{ Review : "reviewed"
-  Order ||--o{ Review : "verified via"
-  User ||--o{ WishlistItem : "saves"
-  Product ||--o{ WishlistItem : "saved"
-  ProductVariant ||--o{ WishlistItem : "saved config"
-  BlogCategory ||--o{ BlogPost : "has"
-  User ||--o{ BlogPost : "authors"
-  Category ||--o| SeoMetadata : "has"
-  Product ||--o| SeoMetadata : "has"
-  BlogPost ||--o| SeoMetadata : "has"
-
-  %% ---------- سیستم ----------
-  User ||--o{ Notification : "receives"
-  User ||--o{ AuditLog : "acts (immutable — trigger)"
-  User ||--o{ ImportJob : "runs"
-  ImportJob ||--o{ ImportJobRow : "has"
-  User ||--o{ ImpersonationTicket : "admin/customer"
+  Address }o--|| User : "user"
+  ImpersonationTicket }o--|| User : "target_user"
+  ImpersonationTicket }o--|| User : "issued_by"
+  Category }o--|| Category : "parent"
+  ImportJob }o--|| User : "created_by"
+  ImportJobRow }o--|| ImportJob : "import_job"
+  PriceHistory }o--|| ProductVariant : "variant"
+  PriceHistory }o--|| User : "changed_by"
+  PriceRule }o--|| Supplier : "supplier"
+  PriceRule }o--|| Category : "category"
+  Product }o--|| Brand : "brand"
+  Product }o--|| Category : "category"
+  ProductImage }o--|| Product : "product"
+  ProductSpecification }o--|| SpecificationDefinition : "definition"
+  ProductSpecification }o--|| SpecificationValue : "value"
+  ProductSpecification }o--|| Product : "product"
+  ProductSpecification }o--|| ProductVariant : "variant"
+  ProductVariant }o--|| Product : "product"
+  SpecificationDefinition }o--|| Category : "category"
+  SpecificationValue }o--|| SpecificationDefinition : "definition"
+  SupplierProduct }o--|| Supplier : "supplier"
+  SupplierProduct }o--|| ProductVariant : "variant"
+  Cart }o--|| User : "user"
+  Cart }o--|| Coupon : "coupon"
+  Cart }o--|| ShippingMethod : "shipping_method"
+  CartItem }o--|| Cart : "cart"
+  CartItem }o--|| ProductVariant : "variant"
+  CouponUsage }o--|| Coupon : "coupon"
+  CouponUsage }o--|| User : "user"
+  CouponUsage }o--|| Order : "order"
+  Order }o--|| User : "user"
+  OrderItem }o--|| Order : "order"
+  OrderItem }o--|| ProductVariant : "variant"
+  OrderItemUnit }o--|| OrderItem : "order_item"
+  OrderStatusHistory }o--|| Order : "order"
+  OrderStatusHistory }o--|| User : "changed_by"
+  Payment }o--|| Order : "order"
+  PaymentReceipt }o--|| Payment : "payment"
+  PaymentReceipt }o--|| User : "user"
+  PaymentReceipt }o--|| User : "reviewed_by"
+  Return }o--|| Order : "order"
+  ReturnItem }o--|| Return : "return_request"
+  ReturnItem }o--|| OrderItem : "order_item"
+  Shipment ||--|| Order : "order"
+  Inventory ||--|| ProductVariant : "variant"
+  InventoryTransaction }o--|| ProductVariant : "variant"
+  InventoryTransaction }o--|| User : "user"
+  CampaignProduct }o--|| Campaign : "campaign"
+  CampaignProduct }o--|| Product : "product"
+  CampaignProduct }o--|| Category : "category"
+  Favorite }o--|| User : "user"
+  Favorite }o--|| Product : "product"
+  Favorite }o--|| ProductVariant : "variant"
+  ProductReview }o--|| Product : "product"
+  ProductReview }o--|| User : "user"
+  SeoMetadata ||--|| Category : "category"
+  SeoMetadata ||--|| Brand : "brand"
+  SeoMetadata ||--|| Product : "product"
+  AdminActivityLog }o--|| User : "user"
+  SmsLog }o--|| SmsTemplate : "template"
 ```
-
-## نکات خارج از قابلیت Mermaid/Prisma DSL
-
-این‌ها در نمودار بالا به‌صورت متنی اشاره شده‌اند، چون Mermaid/Prisma راه
-استانداردی برای نمایش‌شان ندارند — جزئیات در data-model.md:
-
-- **۴ Partial Unique Index** (`slug`/`sku` با `WHERE "deletedAt" IS NULL`) —
-  `Category`, `Brand`, `Product`, `ProductVariant`.
-- **۱ Partial Unique Index دیگر** — `UserAddress` (`WHERE "isDefault" = true`).
-- **AuditLog Trigger** — `BEFORE UPDATE/DELETE` رد می‌شود (immutability در سطح DB).
-- **`Inventory.availableQuantity`** — `GENERATED ALWAYS AS ... STORED`، نه یک
-  ستون معمولی.

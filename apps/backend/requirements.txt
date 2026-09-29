@@ -18,6 +18,7 @@ requests==2.34.2
 openpyxl==3.1.5
 playwright==1.63.0
 jdatetime==6.1.0
+nh3==0.3.7
 gunicorn==26.2.0
 qrcode==8.0
 python-barcode==0.15.1

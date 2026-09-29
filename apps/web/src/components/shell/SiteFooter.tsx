@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { siteFooter } from "@arbyte/contracts";
+import type { SiteInfo } from "@arbyte/contracts";
 import { Logo } from "./Logo";
 
 const socialLinks = [
   {
+    key: "instagram" as const,
     label: siteFooter.social.instagram,
     icon: (
       <svg
@@ -25,6 +27,7 @@ const socialLinks = [
     ),
   },
   {
+    key: "telegram" as const,
     label: siteFooter.social.telegram,
     icon: (
       <svg
@@ -43,6 +46,7 @@ const socialLinks = [
     ),
   },
   {
+    key: "whatsapp" as const,
     label: siteFooter.social.whatsapp,
     icon: (
       <svg
@@ -62,6 +66,7 @@ const socialLinks = [
     ),
   },
   {
+    key: "youtube" as const,
     label: siteFooter.social.youtube,
     icon: (
       <svg
@@ -136,7 +141,12 @@ const PinIcon = (
   </svg>
 );
 
-export function SiteFooter() {
+/** G-01 — تماس/شبکه‌ها/نماد اعتماد از `GET /content/site-info`؛ مورد خالی پنهان (بدون شماره/نشانی نمونه). */
+export function SiteFooter({ info }: { info: SiteInfo }) {
+  const socials = socialLinks.filter((s) => info.socials[s.key]);
+  const hasContact = Boolean(
+    info.email || info.phone || info.address || info.trustBadge,
+  );
   return (
     <>
       {/* دسکتاپ */}
@@ -164,10 +174,12 @@ export function SiteFooter() {
               {siteFooter.tagline}
             </p>
             <div className="flex flex-wrap gap-2.5">
-              {socialLinks.map((s) => (
+              {socials.map((s) => (
                 <a
                   key={s.label}
-                  href="#"
+                  href={info.socials[s.key]}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={s.label}
                   className="hover:border-brand-on-dark flex h-9.5 w-9.5 items-center justify-center rounded-tile border border-white/14 transition-colors duration-250 hover:bg-brand/30"
                 >
@@ -252,55 +264,54 @@ export function SiteFooter() {
                   className="text-on-dark-tertiary hover:text-on-dark inline-flex items-center gap-1.5 transition-colors duration-250"
                 >
                   {siteFooter.supportColumn.onlineChat}
-                  <i
-                    className="bg-accent animate-pulse block h-1.5 w-1.5 rounded-full"
-                    aria-hidden="true"
-                  />
                 </Link>
               </li>
             </ul>
           </nav>
 
-          <div className="flex flex-col gap-4.5">
-            <p className="text-on-dark text-[15px] font-emphasis">
-              {siteFooter.contactColumn.title}
-            </p>
-            <ul className="flex flex-col gap-3.5 text-body">
-              <li className="flex items-start gap-2.5">
-                {MailIcon}
-                <a
-                  dir="ltr"
-                  href={`mailto:${siteFooter.contactColumn.email}`}
-                  className="text-on-dark-tertiary hover:text-on-dark transition-colors duration-250"
-                >
-                  {siteFooter.contactColumn.email}
-                </a>
-              </li>
-              <li className="flex items-start gap-2.5">
-                {PhoneIcon}
-                <a
-                  href={siteFooter.contactColumn.phoneHref}
-                  className="text-on-dark-tertiary hover:text-on-dark transition-colors duration-250"
-                >
-                  {siteFooter.contactColumn.phone}
-                </a>
-              </li>
-              <li className="flex items-start gap-2.5">
-                {PinIcon}
-                <address className="text-on-dark-tertiary text-body leading-[1.85] not-italic">
-                  {siteFooter.contactColumn.address}
-                </address>
-              </li>
-            </ul>
-            <div className="mt-0.5 flex items-center gap-2.5">
-              <div className="flex h-16 w-16 items-center justify-center rounded-tile-sm border border-dashed border-white/22 bg-white/4 p-1.5 text-center text-[10.5px] leading-snug text-white/60">
-                {siteFooter.contactColumn.trustBadge}
-              </div>
-              <div className="flex h-9.5 w-20 items-center justify-center rounded-icon-button-sm border border-dashed border-white/22 bg-white/4 text-[10.5px] text-white/60">
-                {siteFooter.contactColumn.paymentGateway}
-              </div>
+          {hasContact ? (
+            <div className="flex flex-col gap-4.5">
+              <p className="text-on-dark text-[15px] font-emphasis">
+                {siteFooter.contactColumn.title}
+              </p>
+              <ul className="flex flex-col gap-3.5 text-body">
+                {info.email ? (
+                  <li className="flex items-start gap-2.5">
+                    {MailIcon}
+                    <a
+                      dir="ltr"
+                      href={`mailto:${info.email}`}
+                      className="text-on-dark-tertiary hover:text-on-dark transition-colors duration-250"
+                    >
+                      {info.email}
+                    </a>
+                  </li>
+                ) : null}
+                {info.phone ? (
+                  <li className="flex items-start gap-2.5">
+                    {PhoneIcon}
+                    <a
+                      href={info.phone.href}
+                      className="text-on-dark-tertiary hover:text-on-dark transition-colors duration-250"
+                    >
+                      {info.phone.display}
+                    </a>
+                  </li>
+                ) : null}
+                {info.address ? (
+                  <li className="flex items-start gap-2.5">
+                    {PinIcon}
+                    <address className="text-on-dark-tertiary text-body leading-[1.85] not-italic">
+                      {info.address}
+                    </address>
+                  </li>
+                ) : null}
+              </ul>
+              {info.trustBadge ? (
+                <TrustBadge badge={info.trustBadge} size="size-16" />
+              ) : null}
             </div>
-          </div>
+          ) : null}
         </div>
 
         <div className="relative mx-auto mt-[clamp(26px,4vh,44px)] flex max-w-[1240px] flex-wrap items-center justify-between gap-3.5 border-t border-white/10 pt-5">
@@ -325,12 +336,18 @@ export function SiteFooter() {
       </footer>
 
       {/* موبایل — بند ۳.۳: بدون backdrop-filter */}
-      <MobileFooter />
+      <MobileFooter info={info} socials={socials} />
     </>
   );
 }
 
-function MobileFooter() {
+function MobileFooter({
+  info,
+  socials,
+}: {
+  info: SiteInfo;
+  socials: typeof socialLinks;
+}) {
   const [open, setOpen] = useState({
     shop: false,
     support: false,
@@ -361,22 +378,20 @@ function MobileFooter() {
         </p>
 
         <div className="grid grid-cols-2 gap-2.5">
-          <a
-            href={siteFooter.contactColumn.phoneHref}
-            className="bg-brand text-on-dark flex min-h-13 items-center justify-center gap-2 rounded-tile text-body font-emphasis"
-          >
-            {PhoneIcon}
-            {siteFooter.mobile.callButton}
-          </a>
+          {info.phone ? (
+            <a
+              href={info.phone.href}
+              className="bg-brand text-on-dark flex min-h-13 items-center justify-center gap-2 rounded-tile text-body font-emphasis"
+            >
+              {PhoneIcon}
+              {siteFooter.mobile.callButton}
+            </a>
+          ) : null}
           <Link
             href="/support"
             className="text-on-dark flex min-h-13 items-center justify-center gap-2 rounded-tile border border-white/18 text-body font-emphasis"
           >
             {siteFooter.mobile.onlineChatButton}
-            <i
-              className="bg-accent animate-pulse block h-1.5 w-1.5 rounded-full"
-              aria-hidden="true"
-            />
           </Link>
         </div>
 
@@ -416,37 +431,56 @@ function MobileFooter() {
             </FooterAccordionLink>
           </FooterAccordionSection>
 
-          <FooterAccordionSection
-            title={siteFooter.contactColumn.title}
-            isOpen={open.contact}
-            onToggle={() => toggle("contact")}
-          >
-            <ul className="flex flex-col gap-3.5 border-b border-white/10 py-3.5">
-              <li className="flex items-start gap-2.5">
-                {MailIcon}
-                <a
-                  dir="ltr"
-                  href={`mailto:${siteFooter.contactColumn.email}`}
-                  className="text-on-dark-tertiary text-body"
-                >
-                  {siteFooter.contactColumn.email}
-                </a>
-              </li>
-              <li className="flex items-start gap-2.5">
-                {PinIcon}
-                <address className="text-on-dark-tertiary text-body leading-[1.9] not-italic">
-                  {siteFooter.contactColumn.address}
-                </address>
-              </li>
-            </ul>
-          </FooterAccordionSection>
+          {info.email || info.phone || info.address ? (
+            <FooterAccordionSection
+              title={siteFooter.contactColumn.title}
+              isOpen={open.contact}
+              onToggle={() => toggle("contact")}
+            >
+              <ul className="flex flex-col gap-3.5 border-b border-white/10 py-3.5">
+                {info.email ? (
+                  <li className="flex items-start gap-2.5">
+                    {MailIcon}
+                    <a
+                      dir="ltr"
+                      href={`mailto:${info.email}`}
+                      className="text-on-dark-tertiary text-body"
+                    >
+                      {info.email}
+                    </a>
+                  </li>
+                ) : null}
+                {info.phone ? (
+                  <li className="flex items-start gap-2.5">
+                    {PhoneIcon}
+                    <a
+                      href={info.phone.href}
+                      className="text-on-dark-tertiary text-body"
+                    >
+                      {info.phone.display}
+                    </a>
+                  </li>
+                ) : null}
+                {info.address ? (
+                  <li className="flex items-start gap-2.5">
+                    {PinIcon}
+                    <address className="text-on-dark-tertiary text-body leading-[1.9] not-italic">
+                      {info.address}
+                    </address>
+                  </li>
+                ) : null}
+              </ul>
+            </FooterAccordionSection>
+          ) : null}
         </div>
 
         <div className="flex gap-2.5">
-          {socialLinks.map((s) => (
+          {socials.map((s) => (
             <a
               key={s.label}
-              href="#"
+              href={info.socials[s.key]}
+              target="_blank"
+              rel="noopener noreferrer"
               aria-label={s.label}
               className="flex h-11 w-11 items-center justify-center rounded-icon-button border border-white/14"
             >
@@ -455,14 +489,9 @@ function MobileFooter() {
           ))}
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-15 w-15 items-center justify-center rounded-tile-sm border border-dashed border-white/22 bg-white/4 p-1.5 text-center text-[10.5px] leading-snug text-white/60">
-            {siteFooter.contactColumn.trustBadge}
-          </div>
-          <div className="flex h-9.5 w-20 items-center justify-center rounded-icon-button-sm border border-dashed border-white/22 bg-white/4 text-[10.5px] text-white/60">
-            {siteFooter.contactColumn.paymentGateway}
-          </div>
-        </div>
+        {info.trustBadge ? (
+          <TrustBadge badge={info.trustBadge} size="size-15" />
+        ) : null}
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-4.5">
           <div className="flex gap-4.5">
@@ -528,5 +557,37 @@ function FooterAccordionLink({
     >
       {children}
     </Link>
+  );
+}
+
+/** نماد اعتماد (اینماد تصویر را از سرور خودش می‌خواهد: hotlink با referrer). */
+function TrustBadge({
+  badge,
+  size,
+}: {
+  badge: NonNullable<SiteInfo["trustBadge"]>;
+  size: string;
+}) {
+  const img = (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={badge.imageUrl}
+      alt={badge.label}
+      referrerPolicy="origin"
+      className={`${size} rounded-tile-sm bg-white object-contain p-1`}
+    />
+  );
+  return badge.url ? (
+    <a
+      href={badge.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      referrerPolicy="origin"
+      className="self-start"
+    >
+      {img}
+    </a>
+  ) : (
+    <span className="self-start">{img}</span>
   );
 }

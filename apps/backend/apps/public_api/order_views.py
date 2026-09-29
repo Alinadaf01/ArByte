@@ -218,6 +218,7 @@ class OrderDetailView(PublicAPIView):
 class OrderReceiptUploadView(PublicAPIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+    throttle_scope = "receipt_upload"
 
     def post(self, request, order_number):
         assert_not_impersonating(request)

@@ -445,3 +445,17 @@ drift بین دو طرف بی‌صدا رخ ندهد. جداگانه، `apps/api
   hydration)؛ `useSyncExternalStore` بعد از mount واقعی state را
   می‌خواند (`cart-store` از سرور fetch می‌کند، بقیه از `localStorage`).
   جزئیات در کامنت بالای `create-local-store.ts` و `cart-store.ts`.
+
+## محتوا (G-01)
+
+| مسیر (`/api/v1/…`)                        | نکته                                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| `GET blog?category=&q=&page=&perPage=`    | فقط منتشرشده؛ `BlogListResponseSchema`                                    |
+| `GET blog/categories`                     | پنج دسته‌ی ثابت با تعداد                                                  |
+| `GET blog/:slug`                          | بخش‌ها با `html` sanitizeشده (nh3) + ۳ نوشته‌ی مرتبط                      |
+| `GET content/about` · `GET content/legal` | متن از پنل؛ خالی = پنهان                                                  |
+| `GET content/site-info`                   | تلفن/ایمیل/نشانی/ساعات/شبکه‌ها/نماد از SiteSettings                       |
+| `POST contact`                            | نرخ `contact_form` (۵/ساعت/IP) → پنل «پیام‌ها»                            |
+| `GET/POST catalog/products/:slug/reviews` | فقط تأییدشده‌ها؛ ثبت فقط خریدار DELIVERED، یک نظر، در Impersonation ممنوع |
+
+جزئیات محصول حالا `rating: {average, count}` دارد (AggregateRating فقط با ≥۳ نظر).

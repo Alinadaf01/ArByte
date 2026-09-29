@@ -15,3 +15,28 @@ export function isOriginAllowed(request: NextRequest): boolean {
     return false;
   }
 }
+
+/**
+ * G-02/G-03 — هدرهای مشترک هر درخواست BFF به Django: آی‌پی واقعی کاربر
+ * (`X-Client-IP`، امضاشده با `X-BFF-Secret` = BFF_SHARED_SECRET) و
+ * User-Agent. بدون این، همه‌ی کاربران یک آی‌پی (سرور Vercel) داشتند و
+ * نرخ‌های per-IP سمت Django (OTP، فرم تماس) بین همه مشترک می‌شد.
+ * بدون BFF_SHARED_SECRET هیچ هدری فرستاده نمی‌شود (Django هم نمی‌پذیرد).
+ */
+export function upstreamHeaders(
+  request: Request,
+  init?: Record<string, string>,
+): Headers {
+  const headers = new Headers(init);
+  const ua = request.headers.get("user-agent");
+  if (ua) headers.set("user-agent", ua.slice(0, 500));
+  const secret = process.env.BFF_SHARED_SECRET;
+  const ip =
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (secret && ip) {
+    headers.set("x-client-ip", ip);
+    headers.set("x-bff-secret", secret);
+  }
+  return headers;
+}

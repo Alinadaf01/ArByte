@@ -4,13 +4,15 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import F
 
+# G-01 — دسته‌های Blog.dc.html (قبلاً دسته‌های وایب بود؛ هیچ نوشته‌ای با آن‌ها نبود).
 BLOG_CATEGORY_CHOICES = [
-    ("محصول", "محصول"),
-    ("طراحی", "طراحی"),
-    ("آموزش", "آموزش"),
-    ("سبک زندگی", "سبک زندگی"),
-    ("جامعه", "جامعه"),
+    ("راهنمای خرید", "راهنمای خرید"),
+    ("بررسی", "بررسی"),
+    ("مقایسه", "مقایسه"),
+    ("نگهداری", "نگهداری"),
+    ("گیمینگ", "گیمینگ"),
 ]
 
 
@@ -26,6 +28,8 @@ class BlogPost(models.Model):
     external_cover_url = models.CharField(
         max_length=500, blank=True, help_text="Static asset path, used until a real image is uploaded."
     )
+    # F-04 — متن جایگزین تصویر کاور (دسترس‌پذیری/سئو).
+    cover_alt = models.CharField(max_length=200, blank=True)
     author = models.CharField(max_length=100)
     author_role = models.CharField(max_length=100, blank=True)
     tags = models.JSONField(default=list)
@@ -54,9 +58,10 @@ def generate_tracking_code() -> str:
 class ContactMessage(models.Model):
     tracking_code = models.CharField(max_length=20, unique=True, default=generate_tracking_code, editable=False)
     name = models.CharField(max_length=150)
-    email = models.EmailField()
+    email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     subject = models.CharField(max_length=100)
+    order_number = models.CharField(max_length=30, blank=True)
     message = models.TextField()
     newsletter = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
@@ -93,6 +98,10 @@ class ProductReview(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            # G-01 — هر خریدار یک نظر برای هر محصول (نظرهای ادمین/مهمان قدیمی user=null دارند).
+            models.UniqueConstraint(fields=["product", "user"], name="review_one_per_user_product"),
+        ]
 
     def __str__(self):
         return f"{self.product.name} — {self.rating}/5"
@@ -226,3 +235,191 @@ class HomepageBlock(models.Model):
             raise ValidationError(
                 {"config": f"برای بلوک {self.type} کلیدهای {', '.join(missing)} در config لازم است."}
             )
+
+
+class SeoMetadata(models.Model):
+    """F-02 — عیناً `07-content.prisma`'s SeoMetadata (یک ردیف به ازای هر
+    محصول/دسته/برند). API عمومی محصول از قبل فیلد `seo` (title/description/
+    canonical) دارد که تا اینجا همیشه null بود؛ حالا از این ردیف پر می‌شود."""
+
+    meta_title = models.CharField(max_length=200, blank=True, null=True)
+    meta_description = models.CharField(max_length=320, blank=True, null=True)
+    canonical = models.CharField(max_length=500, blank=True, null=True)
+    robots = models.CharField(max_length=100, blank=True, null=True)
+    og_title = models.CharField(max_length=200, blank=True, null=True)
+    og_description = models.CharField(max_length=320, blank=True, null=True)
+    og_image = models.CharField(max_length=500, blank=True, null=True)
+    category = models.OneToOneField(
+        "catalog.Category", on_delete=models.CASCADE, blank=True, null=True, related_name="seo"
+    )
+    brand = models.OneToOneField("catalog.Brand", on_delete=models.CASCADE, blank=True, null=True, related_name="seo")
+    product = models.OneToOneField(
+        "catalog.Product", on_delete=models.CASCADE, blank=True, null=True, related_name="seo"
+    )
+
+    def __str__(self):
+        return self.meta_title or f"SEO #{self.pk}"
+
+
+class Campaign(models.Model):
+    """F-03 — `06-marketing.prisma`'s Campaign. `rules` (JSON آزاد در Prisma)
+    اینجا شکل ثابت دارد: `{"discountType": "PERCENT"|"AMOUNT", "value": n}`
+    (درصد صحیح یا مبلغ تومان)."""
+
+    name = models.CharField(max_length=150)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)
+    rules = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-priority", "-start_at"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        _reset_campaign_cache()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _reset_campaign_cache()
+        return result
+
+
+def _reset_campaign_cache():
+    from apps.catalog.pricing import reset_campaign_cache
+
+    reset_campaign_cache()
+
+
+class CampaignProduct(models.Model):
+    """محصول *یا* دسته — دقیقاً یکی."""
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        _reset_campaign_cache()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _reset_campaign_cache()
+        return result
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="targets")
+    product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, blank=True, null=True, related_name="campaign_targets")
+    category = models.ForeignKey("catalog.Category", on_delete=models.CASCADE, blank=True, null=True, related_name="campaign_targets")
+
+    class Meta:
+        indexes = [models.Index(fields=["campaign"]), models.Index(fields=["product"]), models.Index(fields=["category"])]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(product__isnull=False, category__isnull=True) | models.Q(product__isnull=True, category__isnull=False),
+                name="campaign_target_exactly_one",
+            ),
+        ]
+
+
+class AboutPage(models.Model):
+    """G-01 — متن‌های «درباره ما» قابل ویرایش از پنل (singleton، pk=1).
+    هر بخش خالی در فروشگاه پنهان می‌شود؛ هیچ متن پیش‌فرضی نوشته نشده.
+    principles: [{title, body}] · timeline: [{year, note}] · team: [{name, role}]"""
+
+    hero_title = models.CharField(max_length=200, blank=True)
+    hero_body = models.TextField(blank=True)
+    story_title = models.CharField(max_length=200, blank=True)
+    story_body = models.TextField(blank=True, help_text="پاراگراف‌ها با یک خط خالی جدا می‌شوند")
+    principles_title = models.CharField(max_length=200, blank=True)
+    principles = models.JSONField(default=list, blank=True)
+    timeline_title = models.CharField(max_length=200, blank=True)
+    timeline = models.JSONField(default=list, blank=True)
+    team_title = models.CharField(max_length=200, blank=True)
+    team = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def load(cls) -> "AboutPage":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+LEGAL_DOCUMENT_CHOICES = [
+    ("terms", "شرایط استفاده"),
+    ("privacy", "حریم خصوصی"),
+    ("shipping", "ارسال"),
+    ("returns", "مرجوعی"),
+    ("warranty", "گارانتی"),
+]
+
+
+class LegalDocument(models.Model):
+    """G-01 — اسناد صفحه‌ی قوانین؛ متن فقط از پنل (سند خالی = پنهان).
+    body: متن ساده با پاراگراف‌های جدا با خط خالی؛ خطی که با «## » شروع شود زیرعنوان است."""
+
+    key = models.CharField(max_length=20, choices=LEGAL_DOCUMENT_CHOICES, unique=True)
+    title = models.CharField(max_length=150, blank=True)
+    body = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.get_key_display()
+
+
+REDIRECT_STATUS_CHOICES = [(301, "دائمی (301)"), (302, "موقت (302)")]
+
+
+class Redirect(models.Model):
+    """G-02 — ریدایرکت مسیرهای فروشگاه؛ middleware فروشگاه (Next) اعمال می‌کند.
+    تغییر slug محصول/دسته/نوشته و حذف محصول خودکار یک 301 می‌سازد (signals.py)."""
+
+    from_path = models.CharField(max_length=500, unique=True)
+    to_path = models.CharField(max_length=500)
+    status_code = models.PositiveSmallIntegerField(choices=REDIRECT_STATUS_CHOICES, default=301)
+    is_active = models.BooleanField(default=True)
+    is_auto = models.BooleanField(default=False, help_text="ساخته‌شده خودکار با تغییر slug/حذف")
+    hits = models.PositiveIntegerField(default=0)
+    last_hit_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.from_path} → {self.to_path} ({self.status_code})"
+
+    @staticmethod
+    def normalize(path: str) -> str:
+        path = (path or "").strip()
+        if path.startswith(("http://", "https://")):
+            return path
+        path = "/" + path.lstrip("/")
+        return path.rstrip("/") or "/"
+
+    def clean(self):
+        self.from_path = self.normalize(self.from_path)
+        self.to_path = self.normalize(self.to_path)
+        if self.from_path.startswith("http"):
+            raise ValidationError({"from_path": "مسیر مبدأ باید نسبی باشد (مثلاً /products/old)."})
+        if self.from_path == self.to_path:
+            raise ValidationError({"to_path": "مقصد نمی‌تواند با مبدأ یکی باشد."})
+
+    @classmethod
+    def point(cls, old: str, new: str) -> None:
+        """old → new با جلوگیری از زنجیره و حلقه: ریدایرکت‌هایی که به old
+        می‌رفتند مستقیم به new می‌روند و ریدایرکتِ «از new» حذف می‌شود."""
+        old, new = cls.normalize(old), cls.normalize(new)
+        if old == new:
+            return
+        cls.objects.filter(from_path=new).delete()
+        cls.objects.filter(to_path=old).update(to_path=new)
+        cls.objects.filter(from_path=F("to_path")).delete()
+        cls.objects.update_or_create(
+            from_path=old, defaults={"to_path": new, "status_code": 301, "is_active": True, "is_auto": True}
+        )

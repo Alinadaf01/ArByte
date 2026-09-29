@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatNumberFa, searchPage } from "@arbyte/contracts";
 
-type SearchKind = "all" | "products" | "support";
+type SearchKind = "all" | "products" | "posts" | "support";
 
 interface SearchFormProps {
   q: string;
@@ -116,6 +116,7 @@ export function SearchForm({ q, kind, resultCount, isIdle }: SearchFormProps) {
             [
               ["all", searchPage.kindTabs.all],
               ["products", searchPage.kindTabs.products],
+              ["posts", searchPage.kindTabs.posts],
               ["support", searchPage.kindTabs.support],
             ] as const
           ).map(([value_, label]) => {

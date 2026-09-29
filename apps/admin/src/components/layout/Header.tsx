@@ -1,196 +1,140 @@
-"use client";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAdminAuth } from "@/lib/AdminAuthContext";
+import { cn } from "@/lib/cn";
 
-import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Bell, Menu, Search, X } from "lucide-react";
-import { toPersianDigits } from "@arbyte/contracts";
-import { dictionary } from "@/lib/dictionary";
-import { DEMO_NOTIFICATIONS } from "@/lib/demo-data";
-import { getPageMeta } from "@/lib/page-meta";
-import { usePageSearch } from "./SearchContext";
+// Deliberately no search box or notification bell yet — both would be
+// decorative-only until A2 wires real data behind them, and this project's
+// brand book treats a button that doesn't work as worse than no button.
 
-interface HeaderProps {
-  onMenuClick: () => void;
-}
+export function Header({ onMenuOpen }: { onMenuOpen: () => void }) {
+  const { user, logout } = useAdminAuth();
+  const navigate = useNavigate();
+  const [profileOpen, setProfileOpen] = useState(false);
 
-export function Header({ onMenuClick }: HeaderProps) {
-  const pathname = usePathname();
-  const meta = getPageMeta(pathname);
-  const { term, setTerm } = usePageSearch();
-  const [openPanel, setOpenPanel] = useState<
-    "search" | "notify" | "profile" | null
-  >(null);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const fullName = user
+    ? `${user.firstName} ${user.lastName}`.trim() || user.phone
+    : "";
+  const initials = user
+    ? (user.firstName.charAt(0) || user.phone.slice(-2)).toUpperCase()
+    : "";
 
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node))
-        setOpenPanel(null);
-    }
-    function onEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpenPanel(null);
-    }
-    document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onEscape);
-    return () => {
-      document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onEscape);
-    };
-  }, []);
-
-  const togglePanel = (panel: "search" | "notify" | "profile") => {
-    setOpenPanel((current) => (current === panel ? null : panel));
-  };
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
-    <header
-      ref={rootRef}
-      className="bg-surface shadow-card relative z-40 flex items-center gap-3 rounded-card px-4 py-3 sm:px-5"
-    >
-      <button
-        type="button"
-        onClick={onMenuClick}
-        aria-label={dictionary.nav.openMenuLabel}
-        className="text-secondary flex h-11 w-11 shrink-0 items-center justify-center rounded-tile hover:bg-surface-muted lg:hidden"
-      >
-        <Menu size={20} aria-hidden="true" />
-      </button>
-
-      <div className="min-w-0 flex-1">
-        <h1 className="text-primary truncate text-subhead font-heading">
-          {meta.title}
-        </h1>
-        <p className="text-caption truncate text-micro">{meta.subtitle}</p>
-      </div>
-
-      <div className="relative flex shrink-0 items-center gap-2">
+    <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink-950/70 backdrop-blur-xl">
+      <div className="flex h-[4.5rem] items-center gap-3 px-4 sm:px-6 lg:px-8">
         <button
           type="button"
-          onClick={() => togglePanel("search")}
-          aria-label={dictionary.header.searchLabel}
-          aria-expanded={openPanel === "search"}
-          className={[
-            "flex h-11 w-11 items-center justify-center rounded-tile border transition-colors duration-200",
-            openPanel === "search"
-              ? "border-brand text-brand"
-              : "border-border text-secondary hover:text-brand hover:border-brand",
-          ].join(" ")}
+          onClick={onMenuOpen}
+          className="icon-btn lg:hidden"
+          aria-label="باز کردن منو"
         >
-          <Search size={18} aria-hidden="true" />
+          <svg
+            className="size-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth="1.8"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+            />
+          </svg>
         </button>
-        {openPanel === "search" ? (
-          <div className="bg-surface shadow-popover absolute end-0 top-[calc(100%+8px)] z-50 w-[min(300px,90vw)] rounded-panel p-3">
-            <label className="border-border flex items-center gap-2 rounded-tile border px-3 py-1">
-              <Search
-                size={16}
+
+        <div className="relative ms-auto">
+          <button
+            type="button"
+            onClick={() => setProfileOpen((open) => !open)}
+            className="flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-ink-800/60 py-1.5 pe-3 ps-1.5 transition-all duration-300 hover:border-brand-500/30"
+            aria-haspopup="true"
+            aria-expanded={profileOpen}
+          >
+            <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-extrabold text-white">
+              {initials}
+            </span>
+            <span className="hidden text-end md:block">
+              <span className="block text-xs font-bold text-white">
+                {fullName}
+              </span>
+              <span dir="ltr" className="block text-[10px] text-slate-500">
+                {user?.phone}
+              </span>
+            </span>
+            <svg
+              className={cn(
+                "hidden size-4 text-slate-500 transition-transform duration-300 md:block",
+                profileOpen && "-rotate-180",
+              )}
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          {profileOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setProfileOpen(false)}
                 aria-hidden="true"
-                className="text-caption shrink-0"
               />
-              <input
-                type="search"
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                placeholder={dictionary.header.searchPlaceholder}
-                className="text-body min-w-0 flex-1 bg-transparent py-2 outline-none"
-                autoFocus
-              />
-              {term ? (
-                <button
-                  type="button"
-                  onClick={() => setTerm("")}
-                  aria-label={dictionary.header.searchClearLabel}
-                  className="text-caption shrink-0"
-                >
-                  <X size={14} aria-hidden="true" />
-                </button>
-              ) : null}
-            </label>
-            <p className="text-caption mt-2 px-1 text-micro">
-              {dictionary.header.searchHint}
-            </p>
-          </div>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={() => togglePanel("notify")}
-          aria-label={dictionary.header.notificationsLabel}
-          aria-expanded={openPanel === "notify"}
-          className={[
-            "relative flex h-11 w-11 items-center justify-center rounded-tile border transition-colors duration-200",
-            openPanel === "notify"
-              ? "border-brand text-brand"
-              : "border-border text-secondary hover:text-brand hover:border-brand",
-          ].join(" ")}
-        >
-          <Bell size={18} aria-hidden="true" />
-          {DEMO_NOTIFICATIONS.length > 0 ? (
-            <span className="bg-danger text-on-dark absolute -end-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill px-1 text-[10px] font-emphasis">
-              {toPersianDigits(DEMO_NOTIFICATIONS.length)}
-            </span>
-          ) : null}
-        </button>
-        {openPanel === "notify" ? (
-          <div className="bg-surface shadow-popover absolute end-0 top-[calc(100%+8px)] z-50 w-[min(300px,90vw)] rounded-panel p-2">
-            {DEMO_NOTIFICATIONS.length === 0 ? (
-              <p className="text-caption p-3 text-center text-micro">
-                {dictionary.header.notificationsEmpty}
-              </p>
-            ) : (
-              DEMO_NOTIFICATIONS.map((n, i) => (
-                <div
-                  key={i}
-                  className="rounded-tile px-3 py-2.5 hover:bg-surface-muted"
-                >
-                  <p className="text-primary text-body font-emphasis">
-                    {n.title}
-                  </p>
-                  <p className="text-caption mt-0.5 text-micro">{n.detail}</p>
-                  <p className="text-caption mt-1 text-micro">{n.time}</p>
+              <div className="glass-card absolute end-0 top-14 z-20 w-64 overflow-hidden !bg-ink-850/95 p-0">
+                <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-4">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-base font-extrabold text-white">
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-sm font-bold text-white">
+                      {fullName}
+                    </p>
+                    <p
+                      dir="ltr"
+                      className="m-0 truncate text-[11px] text-slate-500"
+                    >
+                      {user?.phone}
+                    </p>
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={() => togglePanel("profile")}
-          aria-label={dictionary.header.profileLabel}
-          aria-expanded={openPanel === "profile"}
-          className={[
-            "border-border flex items-center gap-2 rounded-tile border py-1 ps-1 pe-2 transition-colors duration-200 sm:pe-3",
-            openPanel === "profile" ? "border-brand" : "hover:border-brand",
-          ].join(" ")}
-        >
-          <span className="hidden text-end sm:block">
-            <span className="text-primary block text-body font-emphasis">
-              {dictionary.header.profileName}
-            </span>
-            <span className="text-caption block text-micro">
-              {dictionary.header.profileRole}
-            </span>
-          </span>
-          <span className="bg-brand text-on-dark flex h-9 w-9 items-center justify-center rounded-tile text-body font-emphasis">
-            {dictionary.header.profileName.charAt(0)}
-          </span>
-        </button>
-        {openPanel === "profile" ? (
-          <div className="bg-surface shadow-popover absolute end-0 top-[calc(100%+8px)] z-50 w-[min(220px,90vw)] rounded-panel p-2">
-            <button
-              type="button"
-              className="text-primary block w-full rounded-tile px-3 py-2.5 text-start text-body hover:bg-surface-muted"
-            >
-              {dictionary.header.profileSettings}
-            </button>
-            <button
-              type="button"
-              className="text-danger block w-full rounded-tile px-3 py-2.5 text-start text-body hover:bg-surface-muted"
-            >
-              {dictionary.header.profileLogout}
-            </button>
-          </div>
-        ) : null}
+                <div className="p-2">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="profile-menu-item w-full !text-danger hover:!bg-danger/10"
+                  >
+                    <svg
+                      className="size-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.8"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+                      />
+                    </svg>
+                    خروج از حساب
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { supportPage } from "@arbyte/contracts";
+import { storeFacts, supportPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { SupportContent } from "./SupportContent";
+import { getSiteInfo } from "@/lib/content";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: `${supportPage.breadcrumb.current} | آربایت`,
+  description: supportPage.subtitle,
+  alternates: { canonical: "/support" },
+  openGraph: {
+    title: `${supportPage.breadcrumb.current} | آربایت`,
+    description: supportPage.subtitle,
+    url: "/support",
+  },
 };
 
-export default function SupportPage() {
+export default async function SupportPage() {
+  const info = await getSiteInfo();
   return (
     <StorefrontShell headerActive="support">
       <div dir="rtl" className="bg-paper text-primary font-sans">
@@ -35,18 +46,16 @@ export default function SupportPage() {
                   {supportPage.subtitle}
                 </p>
               </div>
-              <span className="bg-brand-tint-3 text-accent-deep inline-flex items-center gap-2 rounded-pill px-3.5 py-2.5 text-caption font-emphasis whitespace-nowrap">
-                <i
-                  className="bg-accent block h-2 w-2 animate-pulse rounded-full"
-                  aria-hidden="true"
-                />
-                {supportPage.onlineNow}
-              </span>
             </div>
           </div>
         </section>
 
-        <SupportContent />
+        <SupportContent
+          phone={info.phone}
+          email={info.email}
+          businessHours={info.businessHours}
+          fallbackHours={storeFacts.support.hours}
+        />
       </div>
     </StorefrontShell>
   );

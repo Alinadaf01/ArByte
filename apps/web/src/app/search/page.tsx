@@ -9,9 +9,16 @@ import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { SearchForm } from "@/components/search/SearchForm";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { searchProducts } from "@/lib/catalog";
+import { getBlogPosts } from "@/lib/content";
+import { PostCard } from "@/components/blog/PostCard";
 
-type SearchKind = "all" | "products" | "support";
-const KIND_VALUES: readonly SearchKind[] = ["all", "products", "support"];
+type SearchKind = "all" | "products" | "posts" | "support";
+const KIND_VALUES: readonly SearchKind[] = [
+  "all",
+  "products",
+  "posts",
+  "support",
+];
 
 interface SearchPageProps {
   searchParams: Promise<{ q?: string; kind?: string }>;
@@ -32,9 +39,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const kind = parseKind(rawKind);
   const isIdle = q === "";
 
-  const { items: products } = isIdle
-    ? { items: [] }
-    : await searchProducts(q, 24);
+  const [{ items: products }, { items: posts }] = isIdle
+    ? [{ items: [] }, { items: [] }]
+    : await Promise.all([
+        searchProducts(q, 24),
+        getBlogPosts({ q, perPage: 6 }),
+      ]);
 
   const needle = normalizeSearchText(q);
   const helpMatches = isIdle
@@ -49,7 +59,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     products.length > 0 && (kind === "all" || kind === "products");
   const hasHelp =
     helpMatches.length > 0 && (kind === "all" || kind === "support");
-  const totalCount = products.length + helpMatches.length;
+  const hasPosts = posts.length > 0 && (kind === "all" || kind === "posts");
+  const totalCount = products.length + posts.length + helpMatches.length;
   const isEmpty = !isIdle && totalCount === 0;
 
   return (
@@ -158,6 +169,35 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {products.map((product) => (
                 <SearchResultCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {hasPosts ? (
+          <section className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="text-subhead text-primary font-heading tracking-tight">
+                {searchPage.postsHeading}
+                <span className="text-caption text-secondary ms-2 font-medium">
+                  {searchPage.resultCount(formatNumberFa(posts.length))}
+                </span>
+              </h2>
+              <Link
+                href={`/blog?q=${encodeURIComponent(q)}`}
+                className="text-caption text-primary font-emphasis"
+              >
+                {searchPage.postsViewAllCta}
+              </Link>
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-4">
+              {posts.map((post, i) => (
+                <PostCard
+                  key={post.slug}
+                  post={post}
+                  index={i}
+                  headingLevel="h3"
+                />
               ))}
             </div>
           </section>

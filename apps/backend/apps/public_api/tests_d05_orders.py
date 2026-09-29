@@ -177,7 +177,7 @@ class ReceiptTests(OrderTestBase):
         resp = self._checkout(paymentMethod="MANUAL_CARD_TO_CARD")
         self.order_number = resp.data["data"]["orderNumber"]
 
-    def _upload(self, *, content=b"fake", content_type="image/jpeg", amount=10_000_000):
+    def _upload(self, *, content=b"\xff\xd8\xff\xe0fake-jpeg", content_type="image/jpeg", amount=10_000_000):
         from django.core.files.uploadedfile import SimpleUploadedFile
 
         file_obj = SimpleUploadedFile("receipt.jpg", content, content_type=content_type)
@@ -192,6 +192,15 @@ class ReceiptTests(OrderTestBase):
         order = Order.objects.get(order_number=self.order_number)
         self.assertEqual(order.status, "PAYMENT_REVIEW")
         self.assertEqual(order.payment_status, "RECEIPT_UPLOADED")
+        # G-03 — نام تصادفی و ذخیره خارج از MEDIA_ROOT (هرگز مستقیم سرو نمی‌شود).
+        from django.conf import settings
+
+        from apps.orders.models import PaymentReceipt
+
+        stored = PaymentReceipt.objects.latest("uploaded_at").file
+        self.assertRegex(stored.name, r"^receipts/[^/]+/[0-9a-f]{32}\.jpg$")
+        self.assertTrue(stored.path.startswith(str(settings.PRIVATE_MEDIA_ROOT)))
+        self.assertFalse(stored.path.startswith(str(settings.MEDIA_ROOT)))
 
     def test_upload_too_large_is_rejected(self):
         big = b"x" * (6 * 1024 * 1024)
@@ -200,7 +209,8 @@ class ReceiptTests(OrderTestBase):
         self.assertEqual(response.data["code"], "UPLOAD_TOO_LARGE")
 
     def test_upload_invalid_type_is_rejected(self):
-        response = self._upload(content_type="text/plain")
+        # G-03 — نوع از magic bytes تشخیص داده می‌شود، نه Content-Type ادعایی.
+        response = self._upload(content=b"<html>not an image</html>", content_type="image/jpeg")
         self.assertEqual(response.status_code, 415)
         self.assertEqual(response.data["code"], "UPLOAD_INVALID_TYPE")
 

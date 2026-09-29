@@ -1,0 +1,3 @@
+# G-03 — مقدارهای ساختگی داخل تست‌ها (نه secret واقعی).
+d4293092d71660793374f316bd2d7cfa30a56ba7:apps/backend/apps/admin_api/tests/test_settings.py:generic-api-key:189
+0e414242d97b39c3e2451403a21c2692e04db3b0:packages/contracts/src/payment/scrub-payload.test.ts:generic-api-key:13

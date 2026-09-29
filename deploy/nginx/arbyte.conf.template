@@ -1,0 +1,118 @@
+# آربایت — nginx تولیدی (ایمیج arbyte-nginx؛ ${DOMAIN_API}/${DOMAIN_ADMIN} با
+# envsubst ایمیج رسمی nginx جایگزین می‌شوند). فروشگاه روی Vercel است و این‌جا
+# سرور بلاکی برای arbyte.ir نیست.
+
+# Docker DNS + متغیر در proxy_pass: nginx آدرس web را هر ۱۰ ثانیه دوباره
+# resolve می‌کند؛ لازمه‌ی جایگزینی بی‌قطعی کانتینر web در deploy/deploy.sh.
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+map $http_upgrade $connection_upgrade { default upgrade; '' close; }
+
+gzip on;
+gzip_vary on;
+gzip_proxied any;
+gzip_min_length 1024;
+gzip_types text/plain text/css application/json application/javascript application/xml image/svg+xml;
+
+server_tokens off;
+
+server {
+    listen 80;
+    server_name ${DOMAIN_API} ${DOMAIN_ADMIN};
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+# --- api: Django، media، فید ترب ---------------------------------------------
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN_API};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN_API}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_API}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff always;
+
+    # سقف آپلود: تصاویر پنل ۸MB، رسید ۵MB.
+    client_max_body_size 10m;
+
+    set $django http://web:8000;
+
+    location ~ ^/(api|feeds)/ {
+        proxy_pass $django;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        # Django فقط X-Real-IP را (با TRUST_X_REAL_IP=True) قبول می‌کند؛ این‌جا
+        # بازنویسی می‌شود پس کاربر نمی‌تواند جعلش کند.
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 90s;
+    }
+
+    # ⚠️ هیچ add_header در locationها نیست: nginx با اولین add_header در یک
+    # location همه‌ی هدرهای امنیتی سطح server را برای آن location دور می‌ریزد.
+    location /static/ {
+        alias /var/www/static/;
+        expires 1y;
+    }
+
+    # فقط media عمومی؛ رسیدهای کارت‌به‌کارت در volume جدا (private_media) و
+    # فقط از endpoint احرازهویت‌شده‌ی ادمین در دسترس‌اند.
+    location /media/ {
+        alias /var/www/media/;
+        expires 30d;
+    }
+
+    location / { return 404; }
+}
+
+# --- admin: SPA پنل + پراکسی هم‌مبدأ /api ------------------------------------
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN_ADMIN};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN_API}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_API}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+    add_header Content-Security-Policy "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+
+    client_max_body_size 10m;
+    root /usr/share/nginx/admin;
+
+    set $django http://web:8000;
+
+    location /api/ {
+        proxy_pass $django;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;  # PDFها (فاکتور، لیست روزانه) چند ثانیه طول می‌کشند
+    }
+
+    location /media/ {
+        alias /var/www/media/;
+        expires 30d;
+    }
+
+    location /assets/ {
+        gzip_static on;
+        try_files $uri =404;
+        expires 1y;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+        expires -1;
+    }
+}

@@ -4,6 +4,8 @@ from django.conf import settings as django_settings
 from django.db import transaction
 from django.utils import timezone
 
+from apps.catalog.pricing import live_price
+
 from .models import Cart, CartItem, Order, OrderItem, Payment, PaymentReceipt
 
 
@@ -31,11 +33,11 @@ def merge_guest_cart_into_user(session_key: str, user) -> None:
             continue
         if existing:
             existing.quantity = merged_quantity
-            existing.unit_price_snapshot = variant.final_price
+            existing.unit_price_snapshot = live_price(variant)[0]
             existing.save(update_fields=["quantity", "unit_price_snapshot"])
         else:
             CartItem.objects.create(
-                cart=user_cart, variant=variant, quantity=merged_quantity, unit_price_snapshot=variant.final_price
+                cart=user_cart, variant=variant, quantity=merged_quantity, unit_price_snapshot=live_price(variant)[0]
             )
 
     guest_cart.delete()
@@ -189,20 +191,20 @@ def checkout(
     subtotal = 0
     for item in items:
         variant = item.variant
-        live_price = variant.final_price
-        if live_price != item.unit_price_snapshot:
+        current_price = live_price(variant)[0]
+        if current_price != item.unit_price_snapshot:
             price_changes.append(
-                {"variantId": str(variant.id), "oldPrice": item.unit_price_snapshot, "newPrice": live_price}
+                {"variantId": str(variant.id), "oldPrice": item.unit_price_snapshot, "newPrice": current_price}
             )
         available = available_quantity_for(variant)
         if item.quantity > available:
             shortages.append({"variantId": str(variant.id), "available": available})
-        final_price = live_price * item.quantity
+        final_price = current_price * item.quantity
         subtotal += final_price
         order_items_data.append(
             {
                 "variant": variant,
-                "unit_price": live_price,
+                "unit_price": current_price,
                 "quantity": item.quantity,
                 "final_price": final_price,
             }
@@ -293,6 +295,23 @@ def checkout(
 
 MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024  # ۵ مگابایت
 ALLOWED_RECEIPT_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp", "application/pdf"}
+_RECEIPT_EXT = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "application/pdf": ".pdf"}
+
+
+def sniff_receipt_type(file) -> str | None:
+    """G-03 — نوع واقعی از magic bytes (نه Content-Type ادعایی مرورگر)."""
+    pos = file.tell() if hasattr(file, "tell") else 0
+    head = file.read(16)
+    file.seek(pos)
+    if head.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    if head.startswith(b"%PDF-"):
+        return "application/pdf"
+    return None
 
 
 def card_to_card_enabled() -> bool:
@@ -301,7 +320,7 @@ def card_to_card_enabled() -> bool:
     from apps.settings.models import SiteSettings
 
     s = SiteSettings.load()
-    return bool(s.card_to_card_holder_name and s.card_to_card_number and s.card_to_card_sheba)
+    return bool(s.card_to_card_active and s.card_to_card_holder_name and s.card_to_card_number and s.card_to_card_sheba)
 
 
 @transaction.atomic
@@ -310,8 +329,11 @@ def upload_receipt(*, order: Order, user, file, amount: int) -> PaymentReceipt:
         raise CheckoutError("ORDER_NOT_MODIFIABLE", "این سفارش در وضعیتی نیست که بتوان رسید بارگذاری کرد.")
     if file.size > MAX_RECEIPT_SIZE_BYTES:
         raise CheckoutError("UPLOAD_TOO_LARGE", "حجم فایل بیش از حد مجاز است.")
-    if file.content_type not in ALLOWED_RECEIPT_CONTENT_TYPES:
+    kind = sniff_receipt_type(file)
+    if kind is None:
         raise CheckoutError("UPLOAD_INVALID_TYPE", "نوع فایل مجاز نیست.")
+    # نام کاربر دور ریخته می‌شود؛ فقط پسوندِ نوعِ واقعی (models._receipt_upload_path).
+    file.name = f"receipt{_RECEIPT_EXT[kind]}"
 
     from . import order_status
 

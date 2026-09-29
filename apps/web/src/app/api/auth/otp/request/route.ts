@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { env } from "@/lib/env";
-import { isOriginAllowed } from "@/lib/server/bff-shared";
+import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
 
 /** E-02 §۱ — قدم ۱، بدون توکن (کد فقط بعد از OtpVerify صادر می‌شود)؛ فقط forward خالص. */
 export async function POST(request: NextRequest): Promise<Response> {
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest): Promise<Response> {
     `${env.NEXT_PUBLIC_API_BASE_URL}/auth/otp/request`,
     {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: upstreamHeaders(request, { "content-type": "application/json" }),
       body,
       cache: "no-store",
     },

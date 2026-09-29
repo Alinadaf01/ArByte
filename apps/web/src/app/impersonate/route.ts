@@ -1,0 +1,36 @@
+import { upstreamHeaders } from "@/lib/server/bff-shared";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { env } from "@/lib/env";
+import { setImpersonationCookies } from "@/lib/server/auth-cookies";
+
+/**
+ * F-04 — لینک «ورود به حساب مشتری» پنل ادمین (بلیت ۶۰ ثانیه‌ای یک‌بارمصرف)
+ * به اینجا می‌آید. بلیت سمت سرور با توکن access مبادله و در کوکی httpOnly
+ * گذاشته می‌شود — توکن هرگز در URL یا مرورگر دیده نمی‌شود.
+ */
+export async function GET(request: NextRequest): Promise<Response> {
+  const ticket = request.nextUrl.searchParams.get("ticket");
+  const home = new URL("/", request.url);
+  if (!ticket) return NextResponse.redirect(home);
+
+  const upstream = await fetch(
+    `${env.NEXT_PUBLIC_API_BASE_URL}/auth/impersonate/exchange`,
+    {
+      method: "POST",
+      headers: upstreamHeaders(request, { "content-type": "application/json" }),
+      body: JSON.stringify({ ticket }),
+      cache: "no-store",
+    },
+  );
+  const json = (await upstream.json().catch(() => null)) as {
+    data?: { accessToken?: string };
+  } | null;
+  if (!upstream.ok || !json?.data?.accessToken) {
+    return NextResponse.redirect(
+      new URL("/login?impersonation=failed", request.url),
+    );
+  }
+  await setImpersonationCookies(json.data.accessToken);
+  return NextResponse.redirect(new URL("/account", request.url));
+}

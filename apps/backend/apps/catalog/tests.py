@@ -149,7 +149,7 @@ class SeedArbyteParityTests(TestCase):
 
     def setUp(self):
         if not FIXTURE_PATH.exists():
-            self.skipTest(f"fixture not found: {FIXTURE_PATH} — run `pnpm --filter @arbyte/api export-catalog` first")
+            self.skipTest(f"fixture not found: {FIXTURE_PATH}")
 
     def test_seed_counts_match_fixture(self):
         call_command("seed_arbyte")

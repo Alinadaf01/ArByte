@@ -9,5 +9,9 @@ export default defineConfig({
   },
   use: {
     baseURL: "http://localhost:3000",
+    // محیط‌هایی که Chromium از پیش نصب دارند (بدون `playwright install`).
+    launchOptions: {
+      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || undefined,
+    },
   },
 });

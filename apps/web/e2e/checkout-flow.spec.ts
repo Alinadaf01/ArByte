@@ -93,7 +93,10 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   await page.setInputFiles('input[type="file"]', {
     name: "receipt.jpg",
     mimeType: "image/jpeg",
-    buffer: Buffer.from("fake-receipt-bytes"),
+    // Real JPEG magic bytes: the API sniffs the content, not the extension (G-03).
+    buffer: Buffer.from([
+      0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00,
+    ]),
   });
   await page
     .getByRole("button", { name: "ثبت رسید و ارسال برای بررسی" })

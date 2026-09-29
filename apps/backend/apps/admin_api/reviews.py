@@ -6,6 +6,7 @@ from apps.content.models import ProductReview
 
 from .activity import AdminActivityLogMixin
 from .permissions import require_section
+from .revalidate import revalidate_storefront
 
 
 class AdminProductReviewSerializer(serializers.ModelSerializer):
@@ -44,3 +45,8 @@ class AdminReviewDetailView(AdminActivityLogMixin, RetrieveUpdateAPIView):
     permission_classes = [require_section("reviews")]
     serializer_class = AdminProductReviewSerializer
     queryset = ProductReview.objects.select_related("user", "product")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        # G-01 — نظر تأییدشده/پاسخ ادمین و AggregateRating صفحه‌ی محصول تازه شوند.
+        revalidate_storefront(f"/products/{serializer.instance.product.slug}")

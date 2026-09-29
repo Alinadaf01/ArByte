@@ -1,4 +1,3 @@
-from unittest import skip
 from unittest.mock import MagicMock, patch
 
 from django.urls import reverse
@@ -32,7 +31,7 @@ class AdminDocumentPdfTests(AdminApiTestMixin, APITestCase):
     """BACKEND-TASK.md §3.6-ب — admin PDF exports, all rendered via headless
     Chromium (apps/documents). D-02: stock-ledger/stocktake/price-list PDFs
     are reached through inventory.py/products.py, both disabled (see
-    docs/backend/ADMIN-DISABLED.md) — their tests are @skip'd, not deleted."""
+    docs/backend/ADMIN-DISABLED.md) — F-02 re-enabled all of them."""
 
     def setUp(self):
         patcher = patch("apps.documents.pdf.sync_playwright", new=_mock_sync_playwright())
@@ -93,25 +92,25 @@ class AdminDocumentPdfTests(AdminApiTestMixin, APITestCase):
         response = self.client.get(reverse("admin-daily-shipping-list-pdf"), {"date": "2020-01-01"})
         self._assert_pdf(response)
 
-    @skip("D-02: admin/stock-movements/* disabled, see docs/backend/ADMIN-DISABLED.md")
     def test_admin_stock_ledger_pdf(self):
-        pass
+        response = self.client.get(reverse("admin-inventory-transactions"), {"format": "pdf"})
+        self._assert_pdf(response)
 
-    @skip("D-02: admin/inventory/* disabled, see docs/backend/ADMIN-DISABLED.md")
     def test_admin_stocktake_pdf(self):
-        pass
+        response = self.client.get(reverse("admin-stocktake-pdf"))
+        self._assert_pdf(response)
 
     def test_admin_sales_report_pdf(self):
         response = self.client.get(reverse("admin-report-sales-pdf"))
         self._assert_pdf(response)
 
-    @skip("D-02: admin/products/* disabled, see docs/backend/ADMIN-DISABLED.md")
     def test_admin_price_list_pdf(self):
-        pass
+        response = self.client.get(reverse("admin-price-list-pdf"))
+        self._assert_pdf(response)
 
-    @skip("D-02: admin/products/* disabled, see docs/backend/ADMIN-DISABLED.md")
     def test_admin_price_list_pdf_respects_filters(self):
-        pass
+        response = self.client.get(reverse("admin-price-list-pdf"), {"search": "nothing-matches"})
+        self._assert_pdf(response)
 
     def test_admin_customer_statement_pdf(self):
         response = self.client.get(reverse("admin-user-statement-pdf", args=[self.customer.pk]))

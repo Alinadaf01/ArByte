@@ -1,0 +1,186 @@
+# G-03 — روی هر push و PR: Django (تست، ruff، migration)، TypeScript (typecheck،
+# lint، تست، build فروشگاه و پنل)، قرارداد Zod روی Django زنده، و E2E اصلی
+# فروشگاه (سبد → تسویه) با Playwright.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "22"
+  # فقط برای CI؛ هیچ‌کدام secret واقعی نیست.
+  SECRET_KEY: ci-only-not-secret
+  FIELD_ENCRYPTION_KEY: qPsuKJsAw58vZYPIf6CKwuSWrxPGsSaawFAaTyyCRRo= # gitleaks:allow (کلید تصادفی فقط برای CI)
+  DATABASE_URL: postgres://arbyte:arbyte@localhost:5432/arbyte_dj
+  REDIS_URL: redis://localhost:6379/0
+
+jobs:
+  secrets:
+    name: gitleaks — secret در تاریخچه‌ی git
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz | tar xz gitleaks
+          ./gitleaks git . --no-banner --redact
+
+  backend:
+    name: Django — test, ruff, migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          {
+            POSTGRES_USER: arbyte,
+            POSTGRES_PASSWORD: arbyte,
+            POSTGRES_DB: arbyte_dj,
+          }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U arbyte" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+      - run: pip install -r requirements.txt ruff
+      - name: Playwright Chromium (رندر PDF)
+        run: python -m playwright install --with-deps chromium
+      - run: ruff check .
+      - run: python manage.py makemigrations --check --dry-run
+      - name: python manage.py test
+        env:
+          DEBUG: "True"
+        run: python manage.py test
+      - name: check --deploy (تنظیمات تولیدی)
+        env:
+          DEBUG: "False"
+          SECRET_KEY: ci-deploy-check-${{ github.run_id }}-long-random-value-for-security-check-0123456789
+          ALLOWED_HOSTS: api.arbyte.ir
+          CORS_ALLOWED_ORIGINS: https://arbyte.ir,https://admin.arbyte.ir
+          CSRF_TRUSTED_ORIGINS: https://arbyte.ir,https://admin.arbyte.ir
+        run: python manage.py check --deploy --fail-level WARNING
+
+  frontend:
+    name: TypeScript — typecheck, lint, test, build
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+      API_INTERNAL_URL: http://localhost:8000/api/v1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  integration:
+    name: Contract + E2E (سبد → تسویه)
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          {
+            POSTGRES_USER: arbyte,
+            POSTGRES_PASSWORD: arbyte,
+            POSTGRES_DB: arbyte_dj,
+          }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U arbyte" --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+    env:
+      DEBUG: "True"
+      OTP_DEV_MODE: "True"
+      OTP_DEV_FIXED_CODE: "1234"
+      CELERY_TASK_ALWAYS_EAGER: "True"
+      FRONTEND_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
+      API_INTERNAL_URL: http://localhost:8000/api/v1
+      CONTRACT_API_URL: http://localhost:8000/api/v1
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: apps/backend/requirements.txt
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pip install -r apps/backend/requirements.txt
+      - run: pnpm install --frozen-lockfile
+      - name: Django — migrate + seed + runserver
+        working-directory: apps/backend
+        run: |
+          python manage.py migrate --noinput
+          python manage.py seed_arbyte
+          # کارت‌به‌کارت تنها روش پرداخت تست E2E است؛ بدون اطلاعات حساب پنهان می‌شود.
+          python manage.py shell -c "from apps.settings.models import SiteSettings as S; s=S.load(); s.card_to_card_holder_name='آزمون CI'; s.card_to_card_number='6037990000000000'; s.card_to_card_sheba='IR000000000000000000000000'; s.card_to_card_active=True; s.save()"
+          nohup python manage.py runserver 0.0.0.0:8000 > /tmp/django.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/api/v1/health && break; sleep 1; done
+      - run: pnpm contract:test
+      - run: pnpm --filter @arbyte/web build
+      - run: pnpm --filter @arbyte/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @arbyte/web test:e2e
+      - name: SEO audit
+        run: |
+          (cd apps/web && nohup pnpm start -p 3100 > /tmp/web.log 2>&1 &)
+          for i in $(seq 1 30); do curl -sf http://localhost:3100/robots.txt >/dev/null && break; sleep 1; done
+          pnpm --filter @arbyte/web seo:audit http://localhost:3100
+      - if: failure()
+        run: tail -100 /tmp/django.log || true
+
+  images:
+    name: Docker — build ایمیج‌های تولیدی (بدون push)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/nginx/Dockerfile
+          push: false
+          cache-from: type=gha,scope=nginx
+          cache-to: type=gha,mode=max,scope=nginx

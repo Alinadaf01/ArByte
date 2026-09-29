@@ -25,6 +25,11 @@ export async function generateMetadata({
   return {
     title: `${productsPage.title} | آربایت`,
     description: productsPage.subtitle,
+    openGraph: {
+      title: `${productsPage.title} | آربایت`,
+      description: productsPage.subtitle,
+      url: "/products",
+    },
     alternates: { canonical: canonicalPath },
     robots: index ? undefined : { index: false, follow: true },
   };

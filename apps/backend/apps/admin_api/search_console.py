@@ -98,3 +98,14 @@ class AdminSearchConsoleSitemapStatusView(APIView):
         if obj is None:
             return Response(_NOT_READY, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         return Response({"last_read_at": obj.last_read_at, "discovered_urls": obj.discovered_urls})
+
+
+class AdminSearchConsoleStatusView(APIView):
+    """F-04 — آیا دیتای سرچ کنسول (کش شبانه) وجود دارد؟ پنل بدون داده فقط
+    پیام «متصل نیست» نشان می‌دهد و پنج مسیر ۵۰۳ را صدا نمی‌زند (اتصال واقعی
+    در بچ ۰۵)."""
+
+    permission_classes = [require_section("search_console")]
+
+    def get(self, request):
+        return Response({"has_data": SearchConsolePerformance.objects.exists() or SearchConsoleIndexStatus.objects.exists()})

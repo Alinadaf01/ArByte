@@ -6,27 +6,34 @@ from . import (
     activity_log_views,
     auth,
     blog,
+    campaigns,
     categories,
     contact_messages,
+    content_pages,
     coupons,
     dashboard,
+    homepage,
+    imports,
+    inventory,
     orders,
     payments,
+    pricing,
+    products,
+    redirects,
     reports,
     returns,
     reviews,
     roles,
     search_console,
     settings_admin,
+    specs,
+    suppliers,
+    uploads,
     users,
 )
 
-# D-02 §۲ — products/pricing/specs/inventory/homepage removed from this
-# import (and every path() below that used them) because their serialized
-# shape is vybeshop's single-price-per-product model, not ArByte's
-# variant-based one. The files themselves are untouched ("از urls برداشته
-# شوند، نه حذف کد") — see docs/backend/ADMIN-DISABLED.md for the exact
-# route list and what rebuilds them (D-08, batch-04).
+# F-02 — products/pricing/specs/inventory/homepage بازنویسی و دوباره وصل شدند
+# (روی ProductVariant/Inventory/SpecificationDefinition/HomepageBlock).
 
 urlpatterns = [
     # Auth
@@ -42,6 +49,49 @@ urlpatterns = [
     path("admin/dashboard/", dashboard.AdminDashboardView.as_view(), name="admin-dashboard"),
     path("admin/dashboard/mark-seen/", dashboard.AdminDashboardMarkSeenView.as_view(), name="admin-dashboard-mark-seen"),
     # Categories
+    path("admin/uploads/", uploads.AdminImageUploadView.as_view(), name="admin-upload"),
+    path("admin/brands/", products.AdminBrandListCreateView.as_view(), name="admin-brand-list"),
+    path("admin/brands/<int:pk>/", products.AdminBrandDetailView.as_view(), name="admin-brand-detail"),
+    path("admin/products/", products.AdminProductListCreateView.as_view(), name="admin-product-list"),
+    path("admin/products/<int:pk>/", products.AdminProductDetailView.as_view(), name="admin-product-detail"),
+    path("admin/products/<int:pk>/images/", products.AdminProductImageListView.as_view(), name="admin-product-images"),
+    path("admin/products/<int:pk>/images/reorder/", products.AdminProductImageReorderView.as_view(), name="admin-product-images-reorder"),
+    path("admin/products/<int:pk>/images/<int:image_id>/", products.AdminProductImageDetailView.as_view(), name="admin-product-image-detail"),
+    path("admin/products/<int:pk>/specs/", products.AdminProductSpecsView.as_view(), name="admin-product-specs"),
+    path("admin/products/<int:pk>/variants/", products.AdminProductVariantsView.as_view(), name="admin-product-variants"),
+    path("admin/products/<int:pk>/variants/preview/", products.AdminVariantPreviewView.as_view(), name="admin-product-variants-preview"),
+    path("admin/specifications/", specs.AdminSpecDefinitionListCreateView.as_view(), name="admin-spec-list"),
+    path("admin/specifications/<int:pk>/", specs.AdminSpecDefinitionDetailView.as_view(), name="admin-spec-detail"),
+    path("admin/specifications/<int:definition_id>/values/", specs.AdminSpecValueListCreateView.as_view(), name="admin-spec-value-list"),
+    path("admin/specifications/<int:definition_id>/values/<int:pk>/", specs.AdminSpecValueDetailView.as_view(), name="admin-spec-value-detail"),
+    path("admin/inventory/", inventory.AdminInventoryListView.as_view(), name="admin-inventory-list"),
+    path("admin/inventory/<int:variant_id>/", inventory.AdminInventoryThresholdView.as_view(), name="admin-inventory-threshold"),
+    path("admin/inventory/stocktake.pdf", inventory.AdminStocktakePdfView.as_view(), name="admin-stocktake-pdf"),
+    path("admin/inventory/transactions/", inventory.AdminInventoryTransactionListCreateView.as_view(), name="admin-inventory-transactions"),
+    path("admin/pricing/", pricing.AdminPriceListView.as_view(), name="admin-price-list"),
+    path("admin/pricing/price-list.pdf", pricing.AdminPriceListPdfView.as_view(), name="admin-price-list-pdf"),
+    path("admin/pricing/preview/", pricing.AdminBulkPricePreviewView.as_view(), name="admin-price-preview"),
+    path("admin/pricing/apply/", pricing.AdminBulkPriceApplyView.as_view(), name="admin-price-apply"),
+    path("admin/pricing/<int:variant_id>/history/", pricing.AdminPriceHistoryView.as_view(), name="admin-price-history"),
+    path("admin/suppliers/", suppliers.AdminSupplierListCreateView.as_view(), name="admin-supplier-list"),
+    path("admin/suppliers/<int:pk>/", suppliers.AdminSupplierDetailView.as_view(), name="admin-supplier-detail"),
+    path("admin/supplier-products/", suppliers.AdminSupplierProductListCreateView.as_view(), name="admin-supplier-product-list"),
+    path("admin/supplier-products/<int:pk>/", suppliers.AdminSupplierProductDetailView.as_view(), name="admin-supplier-product-detail"),
+    path("admin/price-rules/", suppliers.AdminPriceRuleListCreateView.as_view(), name="admin-price-rule-list"),
+    path("admin/price-rules/<int:pk>/", suppliers.AdminPriceRuleDetailView.as_view(), name="admin-price-rule-detail"),
+    path("admin/pricing/recalculate/", suppliers.AdminRecalculateView.as_view(), name="admin-price-recalculate"),
+    path("admin/imports/", imports.AdminImportJobListCreateView.as_view(), name="admin-import-list"),
+    path("admin/imports/template.xlsx", imports.AdminImportTemplateView.as_view(), name="admin-import-template"),
+    path("admin/imports/<int:pk>/", imports.AdminImportJobDetailView.as_view(), name="admin-import-detail"),
+    path("admin/imports/<int:pk>/preview/", imports.AdminImportPreviewView.as_view(), name="admin-import-preview"),
+    path("admin/imports/<int:pk>/run/", imports.AdminImportRunView.as_view(), name="admin-import-run"),
+    path("admin/imports/<int:pk>/errors.xlsx", imports.AdminImportErrorsXlsxView.as_view(), name="admin-import-errors"),
+    path("admin/campaigns/", campaigns.AdminCampaignListCreateView.as_view(), name="admin-campaign-list"),
+    path("admin/campaigns/<int:pk>/", campaigns.AdminCampaignDetailView.as_view(), name="admin-campaign-detail"),
+    path("admin/campaigns/<int:pk>/preview/", campaigns.AdminCampaignPreviewView.as_view(), name="admin-campaign-preview"),
+    path("admin/homepage/blocks/", homepage.AdminHomepageBlockListCreateView.as_view(), name="admin-homepage-block-list"),
+    path("admin/homepage/blocks/reorder/", homepage.AdminHomepageBlockReorderView.as_view(), name="admin-homepage-block-reorder"),
+    path("admin/homepage/blocks/<int:pk>/", homepage.AdminHomepageBlockDetailView.as_view(), name="admin-homepage-block-detail"),
     path("admin/categories/", categories.AdminCategoryListCreateView.as_view(), name="admin-category-list"),
     path("admin/categories/<int:pk>/", categories.AdminCategoryDetailView.as_view(), name="admin-category-detail"),
     # Orders
@@ -52,6 +102,8 @@ urlpatterns = [
     path("admin/orders/<int:pk>/ready-to-ship/", orders.AdminOrderReadyToShipView.as_view(), name="admin-order-ready-to-ship"),
     path("admin/orders/<int:pk>/mark-shipped/", orders.AdminOrderMarkShippedView.as_view(), name="admin-order-mark-shipped"),
     path("admin/orders/<int:pk>/mark-delivered/", orders.AdminOrderMarkDeliveredView.as_view(), name="admin-order-mark-delivered"),
+    path("admin/orders/<int:pk>/transition/", orders.AdminOrderTransitionView.as_view(), name="admin-order-transition"),
+    path("admin/orders/<int:pk>/serials/", orders.AdminOrderSerialsView.as_view(), name="admin-order-serials"),
     path("admin/orders/<int:pk>/cancel/", orders.AdminOrderCancelView.as_view(), name="admin-order-cancel"),
     path("admin/orders/<int:pk>/invoice.pdf", orders.AdminOrderInvoicePdfView.as_view(), name="admin-order-invoice-pdf"),
     path("admin/orders/<int:pk>/packing-slip.pdf", orders.AdminOrderPackingSlipPdfView.as_view(), name="admin-order-packing-slip-pdf"),
@@ -64,6 +116,7 @@ urlpatterns = [
     path("admin/payments/receipts/<int:pk>/", payments.AdminPaymentReceiptReviewView.as_view(), name="admin-payment-receipt-review"),
     path("admin/payments/receipts/<int:pk>/file/", payments.AdminPaymentReceiptFileView.as_view(), name="admin-payment-receipt-file"),
     # Search Console
+    path("admin/search-console/status/", search_console.AdminSearchConsoleStatusView.as_view(), name="admin-sc-status"),
     path("admin/search-console/performance/", search_console.AdminSearchConsolePerformanceView.as_view(), name="admin-sc-performance"),
     path("admin/search-console/queries/", search_console.AdminSearchConsoleQueriesView.as_view(), name="admin-sc-queries"),
     path("admin/search-console/pages/", search_console.AdminSearchConsolePagesView.as_view(), name="admin-sc-pages"),
@@ -79,6 +132,11 @@ urlpatterns = [
     path("admin/users/<int:user_id>/impersonate/", account_admin.AdminImpersonateView.as_view(), name="admin-user-impersonate"),
     path("admin/users/<int:user_id>/force-logout/", account_admin.AdminForceLogoutView.as_view(), name="admin-user-force-logout"),
     # Messages
+    path("admin/redirects/", redirects.AdminRedirectListCreateView.as_view(), name="admin-redirect-list"),
+    path("admin/redirects/<int:pk>/", redirects.AdminRedirectDetailView.as_view(), name="admin-redirect-detail"),
+    path("admin/pages/about/", content_pages.AdminAboutPageView.as_view(), name="admin-page-about"),
+    path("admin/pages/legal/", content_pages.AdminLegalDocumentListView.as_view(), name="admin-page-legal-list"),
+    path("admin/pages/legal/<str:key>/", content_pages.AdminLegalDocumentDetailView.as_view(), name="admin-page-legal-detail"),
     path("admin/messages/", contact_messages.AdminMessageListView.as_view(), name="admin-message-list"),
     path("admin/messages/<int:pk>/", contact_messages.AdminMessageDetailView.as_view(), name="admin-message-detail"),
     # Sales reports
@@ -96,6 +154,10 @@ urlpatterns = [
     # Settings
     path("admin/settings/site/", settings_admin.AdminSiteSettingsView.as_view(), name="admin-settings-site"),
     path("admin/settings/credentials/", settings_admin.AdminApiCredentialListCreateView.as_view(), name="admin-settings-credential-list"),
+    path("admin/settings/credentials/test-sms/", settings_admin.AdminTestSmsView.as_view(), name="admin-settings-test-sms"),
+    path("admin/settings/sms-templates/", settings_admin.AdminSmsTemplateListView.as_view(), name="admin-settings-sms-templates"),
+    path("admin/settings/sms-templates/<int:pk>/", settings_admin.AdminSmsTemplateDetailView.as_view(), name="admin-settings-sms-template-detail"),
+    path("admin/settings/sms-logs/", settings_admin.AdminSmsLogListView.as_view(), name="admin-settings-sms-logs"),
     path("admin/settings/credentials/<int:pk>/", settings_admin.AdminApiCredentialDetailView.as_view(), name="admin-settings-credential-detail"),
     path("admin/settings/shipping-methods/", settings_admin.AdminShippingMethodListCreateView.as_view(), name="admin-settings-shipping-list"),
     path("admin/settings/shipping-methods/<int:pk>/", settings_admin.AdminShippingMethodDetailView.as_view(), name="admin-settings-shipping-detail"),
@@ -116,5 +178,6 @@ urlpatterns = [
     path("admin/returns/<int:pk>/mark-received/", returns.AdminReturnMarkReceivedView.as_view(), name="admin-return-mark-received"),
     path("admin/returns/<int:pk>/mark-refunded/", returns.AdminReturnMarkRefundedView.as_view(), name="admin-return-mark-refunded"),
     # Activity log
+    path("admin/login-attempts/", activity_log_views.AdminLoginAttemptListView.as_view(), name="admin-login-attempts"),
     path("admin/activity-log/", activity_log_views.AdminActivityLogListView.as_view(), name="admin-activity-log"),
 ]

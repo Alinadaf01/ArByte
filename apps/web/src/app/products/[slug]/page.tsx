@@ -8,6 +8,7 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { TrustTiles } from "@/components/product/TrustTiles";
 import { ProductInfoTabs } from "@/components/product/ProductInfoTabs";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { resolveInitialVariant } from "@/components/product/resolve-variant";
 import { getProductBySlug } from "@/lib/catalog";
@@ -35,12 +36,32 @@ export async function generateMetadata({
   const product = await getProductBySlug(slug);
   if (!product) return {};
 
+  const title = product.seo.title || `${product.name} | آربایت`;
+  // G-02 — بدون متن سئو/توضیح کوتاه هم description یکتا داشته باشد.
+  const description =
+    product.seo.description ||
+    product.shortDescription ||
+    `خرید ${product.name} (${product.brand.name}) از آربایت؛ تست‌شده پیش از ارسال، با قیمت و مشخصات کامل.`;
+  const url = `/products/${slug}`;
+  const image = product.images[0];
   return {
-    title: product.seo.title ?? product.name,
-    description:
-      product.seo.description ?? product.shortDescription ?? undefined,
+    title,
+    description,
     // بند ۳ سند تسک — canonical همیشه بدون `?v=`.
-    alternates: { canonical: product.seo.canonical ?? `/products/${slug}` },
+    alternates: { canonical: product.seo.canonical ?? url },
+    openGraph: {
+      title,
+      description,
+      url,
+      images: image
+        ? [{ url: image.url, alt: image.alt ?? product.name }]
+        : undefined,
+    },
+    twitter: {
+      card: image ? "summary_large_image" : "summary",
+      title,
+      description,
+    },
   };
 }
 
@@ -84,6 +105,8 @@ export default async function ProductPage({
     })),
   };
 
+  // کش ISR قدیمی (پیش از G-01) ممکن است rating نداشته باشد.
+  const rating = product.rating ?? { average: null, count: 0 };
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -92,6 +115,18 @@ export default async function ProductPage({
     description: product.shortDescription ?? product.description ?? undefined,
     brand: { "@type": "Brand", name: product.brand.name },
     sku: selectedVariant.sku,
+    // G-01 — فقط با ≥۳ نظر تأییدشده (کمتر از آن سیگنال قابل‌اتکایی نیست).
+    ...(rating.count >= 3 && rating.average != null
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: rating.average,
+            reviewCount: rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
     offers: {
       "@type": "Offer",
       price: selectedVariant.price.final * 10,
@@ -170,6 +205,8 @@ export default async function ProductPage({
           description={product.description}
           qualifiesForFreeShipping={qualifiesForFreeShipping}
         />
+
+        <ProductReviews productSlug={product.slug} />
 
         <RelatedProducts
           categorySlug={product.category.slug}

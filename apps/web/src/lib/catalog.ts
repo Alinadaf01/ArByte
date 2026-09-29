@@ -15,7 +15,7 @@ import type {
  * دسترس نبود یا خالی برگشت، منو خالی می‌ماند نه اینکه صفحه بشکند.
  */
 const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? "http://localhost:4000/api/v1";
+  process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
 export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
   try {

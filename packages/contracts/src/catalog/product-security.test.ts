@@ -24,6 +24,7 @@ describe("PublicProductDetailSchema — هرگز فیلد حساس لو نمی�
     variantAxes: [],
     specifications: [],
     seo: { title: null, description: null, canonical: null },
+    rating: { average: null, count: 0 },
     variants: [
       {
         id: "v_1",

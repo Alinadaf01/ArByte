@@ -1,6 +1,16 @@
 from django.urls import path
 
-from . import account_views, auth_views, cart_views, checkout_views, order_views, payment_views, views
+from . import (
+    account_views,
+    auth_views,
+    cart_views,
+    checkout_views,
+    content_views,
+    order_views,
+    payment_views,
+    seo_views,
+    views,
+)
 
 # Mounted at /api/v1/ (config/urls.py). Mirrors
 # apps/api/src/modules/catalog/catalog.controller.ts +
@@ -9,6 +19,18 @@ from . import account_views, auth_views, cart_views, checkout_views, order_views
 # reason as Nest's own comment there (otherwise "top-level" is read as a slug).
 urlpatterns = [
     path("health", views.HealthView.as_view(), name="public-health"),
+    path("content/about", content_views.AboutView.as_view(), name="public-content-about"),
+    path("content/site-info", content_views.SiteInfoView.as_view(), name="public-content-site-info"),
+    path("content/legal", content_views.LegalView.as_view(), name="public-content-legal"),
+    path("blog", content_views.BlogListView.as_view(), name="public-blog-list"),
+    path("blog/categories", content_views.BlogCategoriesView.as_view(), name="public-blog-categories"),
+    path("blog/<slug:slug>", content_views.BlogDetailView.as_view(), name="public-blog-detail"),
+    path("contact", content_views.ContactView.as_view(), name="public-contact"),
+    path("catalog/products/<slug:slug>/reviews", content_views.ProductReviewsView.as_view(), name="public-product-reviews"),
+    path("seo/redirects", seo_views.RedirectListView.as_view(), name="public-seo-redirects"),
+    path("seo/redirects/<int:pk>/hit", seo_views.RedirectHitView.as_view(), name="public-seo-redirect-hit"),
+    path("seo/sitemap", seo_views.SitemapDataView.as_view(), name="public-seo-sitemap"),
+    path("analytics/pageview", seo_views.PageViewView.as_view(), name="public-analytics-pageview"),
     path("content/homepage", views.HomepageView.as_view(), name="public-homepage"),
     path("catalog/categories", views.CategoryTreeView.as_view(), name="public-category-tree"),
     path("catalog/categories/top-level", views.TopLevelCategoriesView.as_view(), name="public-category-top-level"),
