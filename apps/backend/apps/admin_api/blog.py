@@ -7,6 +7,7 @@ from apps.content.models import BlogPost
 
 from .activity import AdminActivityLogMixin
 from .permissions import require_section
+from .revalidate import revalidate_storefront
 
 
 class AdminBlogPostSerializer(serializers.ModelSerializer):
@@ -61,14 +62,33 @@ class AdminBlogPostSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-class AdminBlogPostListCreateView(AdminActivityLogMixin, ListCreateAPIView):
+class _BlogRevalidateMixin:
+    """G-01 — بعد از ذخیره/حذف، فهرست وبلاگ، خود نوشته و مجله‌ی صفحه اصلی تازه شوند."""
+
+    def _revalidate(self, post):
+        revalidate_storefront("/", "/blog", f"/blog/{post.slug}")
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        self._revalidate(serializer.instance)
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        self._revalidate(serializer.instance)
+
+    def perform_destroy(self, instance):
+        self._revalidate(instance)
+        super().perform_destroy(instance)
+
+
+class AdminBlogPostListCreateView(_BlogRevalidateMixin, AdminActivityLogMixin, ListCreateAPIView):
     permission_classes = [require_section("blog")]
     serializer_class = AdminBlogPostSerializer
     parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]
     queryset = BlogPost.objects.all()
 
 
-class AdminBlogPostDetailView(AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
+class AdminBlogPostDetailView(_BlogRevalidateMixin, AdminActivityLogMixin, RetrieveUpdateDestroyAPIView):
     permission_classes = [require_section("blog")]
     serializer_class = AdminBlogPostSerializer
     parser_classes = [CamelCaseMultiPartParser, CamelCaseFormParser, CamelCaseJSONParser]

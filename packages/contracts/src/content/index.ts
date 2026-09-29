@@ -4,6 +4,7 @@ import { CategoryCardSchema } from "../catalog/category";
 import { ProductCardSchema } from "../catalog/product";
 
 export * from "./block-config";
+export * from "./pages";
 
 /**
  * `GET /content/homepage` — عمومی. الحاقیه T-004 §۸، هشدار: پاسخ باید

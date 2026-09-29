@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { SiteInfo } from "@arbyte/contracts";
 import type { CategoryTreeNode } from "@arbyte/contracts";
 import { siteHeader, toPersianDigits } from "@arbyte/contracts";
 import { useCartStore } from "@/lib/stores/cart-store";
@@ -16,6 +17,8 @@ interface SiteHeaderProps {
   /** E-02 §۱ — فقط حضور کوکی httpOnly (نه یک ادعای اعتبار واقعی)؛ کنترل
    * می‌کند آیکون حساب به `/account` برود یا `/login`. */
   isAuthenticated?: boolean;
+  /** G-01 — تلفن از SiteSettings؛ null = ردیف تلفن کشو پنهان. */
+  phone?: SiteInfo["phone"];
 }
 
 const navLinkColor = (isActive: boolean) =>
@@ -25,6 +28,7 @@ export function SiteHeader({
   active = "",
   categories,
   isAuthenticated = false,
+  phone = null,
 }: SiteHeaderProps) {
   const accountHref = isAuthenticated ? "/account" : "/login";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -434,13 +438,15 @@ export function SiteHeader({
             />
             {siteHeader.drawer.onlineSupport}
           </span>
-          <a
-            href={siteHeader.drawer.phoneHref}
-            className="text-primary text-body font-heading"
-            dir="ltr"
-          >
-            {siteHeader.drawer.phone}
-          </a>
+          {phone ? (
+            <a
+              href={phone.href}
+              className="text-primary text-body font-heading"
+              dir="ltr"
+            >
+              {phone.display}
+            </a>
+          ) : null}
         </div>
       </aside>
     </>

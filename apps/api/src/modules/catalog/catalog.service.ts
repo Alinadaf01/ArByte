@@ -668,6 +668,8 @@ export class CatalogService {
         description: product.seo?.metaDescription ?? null,
         canonical: product.seo?.canonical ?? null,
       },
+      // G-01 — نظرات فقط در بک‌اند Django (این سرویس در G-03 حذف می‌شود).
+      rating: { average: null, count: 0 },
     };
   }
 

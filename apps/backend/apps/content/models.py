@@ -5,12 +5,13 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
+# G-01 — دسته‌های Blog.dc.html (قبلاً دسته‌های وایب بود؛ هیچ نوشته‌ای با آن‌ها نبود).
 BLOG_CATEGORY_CHOICES = [
-    ("محصول", "محصول"),
-    ("طراحی", "طراحی"),
-    ("آموزش", "آموزش"),
-    ("سبک زندگی", "سبک زندگی"),
-    ("جامعه", "جامعه"),
+    ("راهنمای خرید", "راهنمای خرید"),
+    ("بررسی", "بررسی"),
+    ("مقایسه", "مقایسه"),
+    ("نگهداری", "نگهداری"),
+    ("گیمینگ", "گیمینگ"),
 ]
 
 
@@ -56,9 +57,10 @@ def generate_tracking_code() -> str:
 class ContactMessage(models.Model):
     tracking_code = models.CharField(max_length=20, unique=True, default=generate_tracking_code, editable=False)
     name = models.CharField(max_length=150)
-    email = models.EmailField()
+    email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
     subject = models.CharField(max_length=100)
+    order_number = models.CharField(max_length=30, blank=True)
     message = models.TextField()
     newsletter = models.BooleanField(default=False)
     is_read = models.BooleanField(default=False)
@@ -95,6 +97,10 @@ class ProductReview(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            # G-01 — هر خریدار یک نظر برای هر محصول (نظرهای ادمین/مهمان قدیمی user=null دارند).
+            models.UniqueConstraint(fields=["product", "user"], name="review_one_per_user_product"),
+        ]
 
     def __str__(self):
         return f"{self.product.name} — {self.rating}/5"
@@ -314,3 +320,51 @@ class CampaignProduct(models.Model):
                 name="campaign_target_exactly_one",
             ),
         ]
+
+
+class AboutPage(models.Model):
+    """G-01 — متن‌های «درباره ما» قابل ویرایش از پنل (singleton، pk=1).
+    هر بخش خالی در فروشگاه پنهان می‌شود؛ هیچ متن پیش‌فرضی نوشته نشده.
+    principles: [{title, body}] · timeline: [{year, note}] · team: [{name, role}]"""
+
+    hero_title = models.CharField(max_length=200, blank=True)
+    hero_body = models.TextField(blank=True)
+    story_title = models.CharField(max_length=200, blank=True)
+    story_body = models.TextField(blank=True, help_text="پاراگراف‌ها با یک خط خالی جدا می‌شوند")
+    principles_title = models.CharField(max_length=200, blank=True)
+    principles = models.JSONField(default=list, blank=True)
+    timeline_title = models.CharField(max_length=200, blank=True)
+    timeline = models.JSONField(default=list, blank=True)
+    team_title = models.CharField(max_length=200, blank=True)
+    team = models.JSONField(default=list, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @classmethod
+    def load(cls) -> "AboutPage":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+LEGAL_DOCUMENT_CHOICES = [
+    ("terms", "شرایط استفاده"),
+    ("privacy", "حریم خصوصی"),
+    ("shipping", "ارسال"),
+    ("returns", "مرجوعی"),
+    ("warranty", "گارانتی"),
+]
+
+
+class LegalDocument(models.Model):
+    """G-01 — اسناد صفحه‌ی قوانین؛ متن فقط از پنل (سند خالی = پنهان).
+    body: متن ساده با پاراگراف‌های جدا با خط خالی؛ خطی که با «## » شروع شود زیرعنوان است."""
+
+    key = models.CharField(max_length=20, choices=LEGAL_DOCUMENT_CHOICES, unique=True)
+    title = models.CharField(max_length=150, blank=True)
+    body = models.TextField(blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.get_key_display()

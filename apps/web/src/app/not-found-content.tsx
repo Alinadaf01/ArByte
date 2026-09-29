@@ -6,8 +6,6 @@ import { notFoundPage } from "@arbyte/contracts";
 
 export function NotFoundContent() {
   const [query, setQuery] = useState("");
-  const q = query.trim();
-  const searchHref = q ? `/search?q=${encodeURIComponent(q)}` : "/search";
 
   return (
     <main className="flex items-center justify-center px-[5vw] py-[clamp(48px,10vh,120px)]">
@@ -27,7 +25,11 @@ export function NotFoundContent() {
             {notFoundPage.body}
           </p>
 
-          <label className="border-border-input bg-surface flex min-h-13.5 max-w-110 items-center gap-2.5 rounded-panel border px-4.5">
+          <form
+            action="/search"
+            role="search"
+            className="border-border-input bg-surface flex min-h-13.5 max-w-110 items-center gap-2.5 rounded-panel border px-4.5"
+          >
             <svg
               width="19"
               height="19"
@@ -44,19 +46,20 @@ export function NotFoundContent() {
             </svg>
             <input
               type="search"
+              name="q"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={notFoundPage.searchPlaceholder}
               aria-label={notFoundPage.searchAriaLabel}
               className="text-input text-primary min-w-0 flex-1 border-0 bg-transparent outline-none"
             />
-            <Link
-              href={searchHref}
+            <button
+              type="submit"
               className="bg-primary text-on-dark hover:bg-brand flex min-h-11 flex-none items-center rounded-tile-sm px-4.5 text-caption font-emphasis whitespace-nowrap transition-colors duration-250"
             >
               {notFoundPage.searchButton}
-            </Link>
-          </label>
+            </button>
+          </form>
 
           <div className="flex flex-wrap gap-2.5">
             <Link

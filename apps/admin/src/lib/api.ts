@@ -59,6 +59,10 @@ import type {
   ImpersonateResponse,
   ResetPasswordResponse,
 } from "@/types/accountAdmin";
+import type {
+  AboutPageContent,
+  LegalDocumentContent,
+} from "@/types/contentPages";
 
 // No fake-data phase here, unlike the storefront's src/lib/api.ts — B6's
 // real /api/admin/ endpoints already exist, so every function below always
@@ -1030,3 +1034,39 @@ export async function changeOwnPassword(
   await throwIfError(res, "تغییر رمز عبور ناموفق بود.");
 }
 export { listCategories, listProducts } from "@/lib/catalogApi";
+
+// G-01 — متن‌های «درباره ما» و اسناد «قوانین».
+export async function getAboutPageContent(): Promise<AboutPageContent> {
+  return parseOrThrow(
+    await authorizedFetch("/pages/about/"),
+    "دریافت متن درباره ما ناموفق بود.",
+  );
+}
+
+export async function updateAboutPageContent(
+  data: AboutPageContent,
+): Promise<AboutPageContent> {
+  const res = await authorizedFetch("/pages/about/", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+  return parseOrThrow(res, "ذخیره‌ی متن درباره ما ناموفق بود.");
+}
+
+export async function listLegalDocuments(): Promise<LegalDocumentContent[]> {
+  return parseOrThrow(
+    await authorizedFetch("/pages/legal/"),
+    "دریافت اسناد ناموفق بود.",
+  );
+}
+
+export async function updateLegalDocument(
+  key: string,
+  data: { title: string; body: string },
+): Promise<LegalDocumentContent> {
+  const res = await authorizedFetch(`/pages/legal/${key}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  return parseOrThrow(res, "ذخیره‌ی سند ناموفق بود.");
+}

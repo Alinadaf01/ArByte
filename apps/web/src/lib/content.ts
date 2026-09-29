@@ -1,4 +1,13 @@
-import type { PublicHomepageBlock } from "@arbyte/contracts";
+import type {
+  AboutContent,
+  BlogCategory,
+  BlogPostCard,
+  BlogPostDetail,
+  LegalDocument,
+  PaginationMeta,
+  PublicHomepageBlock,
+  SiteInfo,
+} from "@arbyte/contracts";
 
 /**
  * فقط سمت سرور (RSC) صدا زده می‌شود — همان الگوی `getCategoryTree` در
@@ -21,4 +30,80 @@ export async function getHomepage(): Promise<PublicHomepageBlock[]> {
   } catch {
     return [];
   }
+}
+
+async function getJson<T>(path: string, revalidate = 60): Promise<T | null> {
+  try {
+    const res = await fetch(`${API_INTERNAL_BASE}${path}`, {
+      next: { revalidate },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+export interface BlogListParams {
+  category?: BlogCategory;
+  q?: string;
+  page?: number;
+  perPage?: number;
+}
+
+/** G-01 — فهرست نوشته‌های منتشرشده؛ API در دسترس نبود = فهرست خالی. */
+export async function getBlogPosts(
+  params: BlogListParams = {},
+): Promise<{ items: BlogPostCard[]; pagination: PaginationMeta | null }> {
+  const qs = new URLSearchParams();
+  if (params.category) qs.set("category", params.category);
+  if (params.q) qs.set("q", params.q);
+  if (params.page) qs.set("page", String(params.page));
+  if (params.perPage) qs.set("perPage", String(params.perPage));
+  const body = await getJson<{
+    data?: BlogPostCard[];
+    meta?: { pagination?: PaginationMeta };
+  }>(`/blog${qs.size ? `?${qs}` : ""}`);
+  return {
+    items: body?.data ?? [],
+    pagination: body?.meta?.pagination ?? null,
+  };
+}
+
+export async function getBlogPost(
+  slug: string,
+): Promise<BlogPostDetail | null> {
+  const body = await getJson<{ data: BlogPostDetail }>(
+    `/blog/${encodeURIComponent(slug)}`,
+  );
+  return body?.data ?? null;
+}
+
+export async function getAboutContent(): Promise<AboutContent | null> {
+  return (
+    (await getJson<{ data: AboutContent }>("/content/about"))?.data ?? null
+  );
+}
+
+export async function getLegalDocuments(): Promise<LegalDocument[]> {
+  return (
+    (await getJson<{ data: LegalDocument[] }>("/content/legal"))?.data ?? []
+  );
+}
+
+const EMPTY_SITE_INFO: SiteInfo = {
+  phone: null,
+  email: null,
+  address: null,
+  businessHours: [],
+  socials: {},
+  trustBadge: null,
+};
+
+/** G-01 — تماس/شبکه‌ها/نماد از SiteSettings؛ API در دسترس نبود = همه پنهان. */
+export async function getSiteInfo(): Promise<SiteInfo> {
+  return (
+    (await getJson<{ data: SiteInfo }>("/content/site-info", 300))?.data ??
+    EMPTY_SITE_INFO
+  );
 }

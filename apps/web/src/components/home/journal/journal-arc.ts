@@ -37,8 +37,10 @@ export function computeCardTransform(
   height: number,
   m: number,
   rp: number,
+  count: number = CARD_COUNT,
 ): CardTransform {
-  const N = CARD_COUNT;
+  // G-01 — تعداد واقعی نوشته‌ها (۳ تا ۹)؛ قوس همان دهانه را با فاصله‌ی بیشتر می‌پوشاند.
+  const N = Math.max(2, count);
   const narrow = width < 720;
   const spread = narrow ? 78 : 54;
   const half = (spread * Math.PI) / 360;

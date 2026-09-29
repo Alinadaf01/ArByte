@@ -194,9 +194,16 @@ export function BlogFormModal({
 
         <div className="flex flex-col gap-3 rounded-xl border border-white/[0.06] p-4">
           <div className="flex items-center justify-between">
-            <p className="m-0 text-xs font-semibold text-slate-300">
-              بخش‌های مطلب
-            </p>
+            <div>
+              <p className="m-0 text-xs font-semibold text-slate-300">
+                بخش‌های مطلب
+              </p>
+              <p className="m-0 mt-1 text-[11px] leading-5 text-slate-500">
+                پاراگراف‌ها با خط خالی جدا می‌شوند؛ خطی که با «&gt; » شروع شود
+                نقل‌قول است. HTML ساده (پررنگ، لینک، فهرست، تصویر) هم مجاز است و
+                بقیه‌ی تگ‌ها سمت سرور حذف می‌شوند.
+              </p>
+            </div>
             <button
               type="button"
               onClick={() =>

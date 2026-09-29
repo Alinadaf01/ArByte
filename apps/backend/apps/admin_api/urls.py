@@ -9,6 +9,7 @@ from . import (
     campaigns,
     categories,
     contact_messages,
+    content_pages,
     coupons,
     dashboard,
     homepage,
@@ -130,6 +131,9 @@ urlpatterns = [
     path("admin/users/<int:user_id>/impersonate/", account_admin.AdminImpersonateView.as_view(), name="admin-user-impersonate"),
     path("admin/users/<int:user_id>/force-logout/", account_admin.AdminForceLogoutView.as_view(), name="admin-user-force-logout"),
     # Messages
+    path("admin/pages/about/", content_pages.AdminAboutPageView.as_view(), name="admin-page-about"),
+    path("admin/pages/legal/", content_pages.AdminLegalDocumentListView.as_view(), name="admin-page-legal-list"),
+    path("admin/pages/legal/<str:key>/", content_pages.AdminLegalDocumentDetailView.as_view(), name="admin-page-legal-detail"),
     path("admin/messages/", contact_messages.AdminMessageListView.as_view(), name="admin-message-list"),
     path("admin/messages/<int:pk>/", contact_messages.AdminMessageDetailView.as_view(), name="admin-message-detail"),
     # Sales reports

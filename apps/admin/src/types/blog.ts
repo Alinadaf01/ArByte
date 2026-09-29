@@ -5,11 +5,11 @@ export interface BlogSection {
 }
 
 export const BLOG_CATEGORIES = [
-  "محصول",
-  "طراحی",
-  "آموزش",
-  "سبک زندگی",
-  "جامعه",
+  "راهنمای خرید",
+  "بررسی",
+  "مقایسه",
+  "نگهداری",
+  "گیمینگ",
 ] as const;
 
 export interface AdminBlogPost {

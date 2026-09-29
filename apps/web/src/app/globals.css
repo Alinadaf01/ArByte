@@ -19,3 +19,60 @@ body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* G-01 — متن غنی نوشته‌ها (HTML sanitizeشده‌ی سرور) با سبک BlogPost.dc.html. */
+.blog-prose {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2vh, 20px);
+  color: var(--color-secondary-2);
+  font-size: 16px;
+  line-height: 2.1;
+}
+.blog-prose p,
+.blog-prose ul,
+.blog-prose ol,
+.blog-prose figure {
+  margin: 0;
+}
+.blog-prose ul,
+.blog-prose ol {
+  padding-inline-start: 1.4em;
+}
+.blog-prose a {
+  color: var(--color-brand-active);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.blog-prose h3,
+.blog-prose h4 {
+  margin: 6px 0 0;
+  color: var(--color-primary);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+.blog-prose blockquote {
+  margin: 6px 0;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-inline-start: 3px solid var(--color-brand);
+  color: var(--color-primary);
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 2;
+}
+.blog-prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 20px;
+}
+.blog-prose figcaption {
+  margin-top: 8px;
+  color: var(--color-secondary);
+  font-size: 13px;
+  text-align: center;
+}

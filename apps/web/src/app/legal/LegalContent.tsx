@@ -2,19 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { formatDateFa } from "@arbyte/contracts/date";
 import { legalPage } from "@arbyte/contracts";
+import type { LegalDocument } from "@arbyte/contracts";
 
-type SectionKey = "faq" | "warranty" | "returns" | "terms" | "privacy";
+type SectionKey = "faq" | LegalDocument["key"];
 
-const SECTIONS: SectionKey[] = [
-  "faq",
-  "warranty",
-  "returns",
-  "terms",
-  "privacy",
-];
-
-export function LegalContent() {
+/**
+ * G-01 — FAQ از منبع مشترک `faq.ts`؛ اسناد (شرایط، حریم خصوصی، ارسال،
+ * مرجوعی، گارانتی) فقط از پنل (`GET /content/legal`) — سند خالی از فهرست
+ * پنهان است و هیچ متن حقوقی در کد نیست.
+ */
+export function LegalContent({ documents }: { documents: LegalDocument[] }) {
+  const SECTIONS: SectionKey[] = ["faq", ...documents.map((d) => d.key)];
   const [section, setSection] = useState<SectionKey>("faq");
   const [openIndex, setOpenIndex] = useState(-1);
   const [query, setQuery] = useState("");
@@ -24,7 +24,8 @@ export function LegalContent() {
     .map((f, i) => ({ f, i }))
     .filter(({ f }) => q === "" || `${f.q} ${f.a}`.includes(q));
 
-  const doc = section === "faq" ? null : legalPage.docs[section];
+  const doc =
+    section === "faq" ? null : documents.find((d) => d.key === section);
 
   return (
     <div className="mx-auto flex max-w-[1240px] flex-wrap items-start gap-[clamp(16px,2.5vw,26px)] px-[5vw] py-[clamp(20px,3vh,32px)] pb-[clamp(48px,7vh,80px)]">
@@ -46,7 +47,9 @@ export function LegalContent() {
                 : "text-secondary-2 bg-transparent"
             }`}
           >
-            {legalPage.sections[key]}
+            {key === "faq"
+              ? legalPage.sections.faq
+              : documents.find((d) => d.key === key)?.title}
           </button>
         ))}
       </nav>
@@ -172,19 +175,26 @@ export function LegalContent() {
             <h2 className="text-[clamp(19px,2.2vw,25px)] leading-relaxed font-heading tracking-[-0.02em]">
               {doc.title}
             </h2>
-            {doc.blocks.map((block) => (
-              <div key={block.h} className="flex max-w-[64ch] flex-col gap-2">
-                <h3 className="text-[15px] leading-relaxed font-heading">
-                  {block.h}
-                </h3>
-                <p className="text-secondary text-caption leading-loose">
-                  {block.p}
-                </p>
+            {doc.blocks.map((block, i) => (
+              <div key={i} className="flex max-w-[64ch] flex-col gap-2">
+                {block.heading ? (
+                  <h3 className="text-[15px] leading-relaxed font-heading">
+                    {block.heading}
+                  </h3>
+                ) : null}
+                {block.paragraphs.map((p, j) => (
+                  <p
+                    key={j}
+                    className="text-secondary text-caption leading-loose whitespace-pre-line"
+                  >
+                    {p}
+                  </p>
+                ))}
               </div>
             ))}
             <div className="border-border-divider mt-1.5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
               <p className="text-micro text-secondary">
-                {legalPage.lastUpdated}
+                {legalPage.lastUpdated(formatDateFa(new Date(doc.updatedAt)))}
               </p>
               <Link href="/support" className="text-caption font-emphasis">
                 {legalPage.askSupport}

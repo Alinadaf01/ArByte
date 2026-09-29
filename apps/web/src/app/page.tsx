@@ -1,5 +1,6 @@
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
-import { getHomepage } from "@/lib/content";
+import { getBlogPosts, getHomepage } from "@/lib/content";
+import { toJournalCards } from "@/content/home-journal";
 import { HeroSection } from "@/components/home/hero/HeroSection";
 import { CategoriesAccordion } from "@/components/home/categories/CategoriesAccordion";
 import { FlagshipDuel } from "@/components/home/flagships/FlagshipDuel";
@@ -20,7 +21,10 @@ import { BenefitsSection } from "@/components/home/BenefitsSection";
  * می‌شود — صفحه نمی‌شکند.
  */
 export default async function HomePage() {
-  const blocks = await getHomepage();
+  const [blocks, journal] = await Promise.all([
+    getHomepage(),
+    getBlogPosts({ perPage: 9 }),
+  ]);
 
   const hero = blocks.find((b) => b.type === "HERO");
   const categoryGrid = blocks.find((b) => b.type === "CATEGORY_GRID");
@@ -35,7 +39,7 @@ export default async function HomePage() {
         {categoryGrid ? <CategoriesAccordion block={categoryGrid} /> : null}
         {flagshipDuel ? <FlagshipDuel block={flagshipDuel} /> : null}
         {productRail ? <FeaturedSection block={productRail} /> : null}
-        <JournalSection />
+        <JournalSection cards={toJournalCards(journal.items)} />
         <FaqSection />
         <CommunitySection />
         {benefits ? <BenefitsSection block={benefits} /> : null}

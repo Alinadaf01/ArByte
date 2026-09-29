@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { homeJournal } from "@arbyte/contracts";
 import { usePrefersReducedMotion } from "@/lib/hooks";
-import { homeJournalCards } from "@/content/home-journal";
+import type { JournalCardData } from "@/content/home-journal";
 import { JournalCard } from "./JournalCard";
 import {
   cardTransformCss,
@@ -16,11 +16,10 @@ import {
  * T-212 §۲ — «پیش از خرید، بخوانید». دسکتاپ: قوس ۹ کارت که با اسکرول
  * پنجره باز می‌شود (`layoutArc()` پورت‌شده در `journal-arc.ts`، بدون
  * setState به‌ازای فریم — فقط transform مستقیم روی ref). موبایل: ردیف
- * افقی اسکرولی ساده (بدون منطق قوس، مثل طراحی). داده از `home-journal.ts`
- * می‌آید — کامپوننت شکل داده را می‌شناسد نه منبعش؛ وقتی بلاگ واقعی ساخته
- * شود فقط این ایمپورت با یک fetch از API عوض می‌شود.
+ * افقی اسکرولی ساده (بدون منطق قوس، مثل طراحی). G-01: کارت‌ها از API
+ * وبلاگ می‌آیند (صفحه‌ی اصلی، سمت سرور)؛ کمتر از ۳ نوشته = بخش پنهان.
  */
-export function JournalSection() {
+export function JournalSection({ cards }: { cards: JournalCardData[] }) {
   const reducedMotion = usePrefersReducedMotion();
   const arcRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -51,6 +50,7 @@ export function JournalSection() {
           sizeCache.height,
           m,
           rp,
+          cards.length,
         );
         cardEl.style.transform = cardTransformCss(t);
         cardEl.style.opacity = t.opacity.toFixed(3);
@@ -80,7 +80,10 @@ export function JournalSection() {
       window.removeEventListener("resize", onResize);
       if (rafId != null) cancelAnimationFrame(rafId);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, cards.length]);
+
+  // G-01 — کمتر از ۳ نوشته‌ی منتشرشده: کل بخش پنهان.
+  if (cards.length < 3) return null;
 
   return (
     <section className="bg-surface border-border relative overflow-hidden border-t px-[5vw] py-14 md:py-20">
@@ -117,7 +120,7 @@ export function JournalSection() {
 
       {/* موبایل — ردیف افقی ساده، بدون قوس. */}
       <div className="-mx-[5vw] flex gap-3 overflow-x-auto px-[5vw] pb-2.5 md:hidden">
-        {homeJournalCards.map((card) => (
+        {cards.map((card) => (
           <div key={card.slug} className="h-62.5 w-47.5 flex-none">
             <JournalCard card={card} reducedMotion={reducedMotion} />
           </div>
@@ -132,14 +135,14 @@ export function JournalSection() {
       >
         {reducedMotion ? (
           <div className="grid grid-cols-3 gap-3 lg:grid-cols-5">
-            {homeJournalCards.map((card) => (
+            {cards.map((card) => (
               <div key={card.slug} className="h-33 w-23">
                 <JournalCard card={card} reducedMotion />
               </div>
             ))}
           </div>
         ) : (
-          homeJournalCards.map((card, i) => (
+          cards.map((card, i) => (
             <div
               key={card.slug}
               ref={(el) => {

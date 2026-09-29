@@ -1,5 +1,6 @@
 import { getCategoryTree } from "@/lib/catalog";
 import { hasAuthCookie } from "@/lib/server/auth-cookies";
+import { getSiteInfo } from "@/lib/content";
 import { SiteHeader, type SiteHeaderActive } from "./SiteHeader";
 import { MobileNavBar, type MobileNavActive } from "./MobileNavBar";
 import { SiteFooter } from "./SiteFooter";
@@ -16,9 +17,10 @@ export async function StorefrontShell({
   headerActive = "",
   navActive = "",
 }: StorefrontShellProps) {
-  const [categories, isAuthenticated] = await Promise.all([
+  const [categories, isAuthenticated, siteInfo] = await Promise.all([
     getCategoryTree(),
     hasAuthCookie(),
+    getSiteInfo(),
   ]);
 
   return (
@@ -27,10 +29,11 @@ export async function StorefrontShell({
         active={headerActive}
         categories={categories}
         isAuthenticated={isAuthenticated}
+        phone={siteInfo.phone}
       />
       {children}
       <MobileNavBar active={navActive} isAuthenticated={isAuthenticated} />
-      <SiteFooter />
+      <SiteFooter info={siteInfo} />
     </>
   );
 }

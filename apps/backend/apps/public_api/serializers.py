@@ -164,7 +164,15 @@ def build_product_detail(product, global_threshold: int) -> dict:
         "variants": variants,
         "specifications": build_spec_groups(product.specifications.all()),
         "seo": _seo_of(product),
+        # G-01 — خلاصه‌ی نظرهای تأییدشده (JSON-LD AggregateRating فقط با ≥۳ نظر).
+        "rating": _rating_of(product),
     }
+
+
+def _rating_of(product) -> dict:
+    from .content_views import rating_summary
+
+    return rating_summary(product)
 
 
 def _seo_of(product) -> dict:
