@@ -6,6 +6,10 @@ node_modules/
 .env
 .env.local
 .env.*.local
+# G-04 — secretهای تولید، گواهی‌ها و بک‌آپ‌ها روی سرور.
+.env.production
+deploy/certbot/
+deploy/backups/
 !.env.example
 
 # build outputs

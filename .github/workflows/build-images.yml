@@ -1,0 +1,81 @@
+# G-04 — ایمیج‌های تولیدی بیرون از ایران ساخته می‌شوند (سرور ایران به PyPI/npm/
+# دانلود Chromium دسترسی مطمئن ندارد): arbyte-backend (Django + Chromium برای PDF)
+# و arbyte-nginx (پنل ادمین build‌شده + nginx). مقصدها:
+#   • ghcr.io/<owner> (همیشه)
+#   • docker.io/<DOCKERHUB_USER> اگر secretهای DOCKERHUB_USER/DOCKERHUB_TOKEN تنظیم باشند
+#     (طبق تجربه‌ی وایب‌شاپ Docker Hub از سرور ایران پایدارتر از GHCR است)
+#   • artifact «arbyte-images-<sha>»: خروجی docker save برای مسیر آفلاین
+#     (دانلود → scp به deploy/incoming/ → deploy/deploy.sh)
+name: Build images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: نام رجیستری‌ها
+        id: reg
+        run: |
+          owner="$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')"
+          echo "ghcr=ghcr.io/$owner" >> "$GITHUB_OUTPUT"
+          echo "hub=${{ secrets.DOCKERHUB_USER }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: steps.reg.outputs.hub != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: backend
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/backend
+          push: true
+          load: false
+          tags: |
+            ${{ steps.reg.outputs.ghcr }}/arbyte-backend:${{ env.TAG }}
+            ${{ steps.reg.outputs.ghcr }}/arbyte-backend:latest
+            ${{ steps.reg.outputs.hub && format('docker.io/{0}/arbyte-backend:{1}', steps.reg.outputs.hub, env.TAG) || '' }}
+            ${{ steps.reg.outputs.hub && format('docker.io/{0}/arbyte-backend:latest', steps.reg.outputs.hub) || '' }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+      - name: nginx + پنل
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/nginx/Dockerfile
+          push: true
+          tags: |
+            ${{ steps.reg.outputs.ghcr }}/arbyte-nginx:${{ env.TAG }}
+            ${{ steps.reg.outputs.ghcr }}/arbyte-nginx:latest
+            ${{ steps.reg.outputs.hub && format('docker.io/{0}/arbyte-nginx:{1}', steps.reg.outputs.hub, env.TAG) || '' }}
+            ${{ steps.reg.outputs.hub && format('docker.io/{0}/arbyte-nginx:latest', steps.reg.outputs.hub) || '' }}
+          cache-from: type=gha,scope=nginx
+          cache-to: type=gha,mode=max,scope=nginx
+      - name: خروجی آفلاین (docker save)
+        run: |
+          g=${{ steps.reg.outputs.ghcr }}
+          docker pull "$g/arbyte-backend:$TAG" && docker pull "$g/arbyte-nginx:$TAG"
+          docker save "$g/arbyte-backend:$TAG" "$g/arbyte-nginx:$TAG" | gzip -1 > "arbyte-images-$TAG.tar.gz"
+          sha256sum "arbyte-images-$TAG.tar.gz" > "arbyte-images-$TAG.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arbyte-images-${{ env.TAG }}
+          path: arbyte-images-*
+          retention-days: 14

@@ -1,0 +1,128 @@
+# آربایت — Compose تولیدی برای سرور ایران (docs/DEPLOY.md).
+#
+# معماری: فروشگاه روی Vercel است و این‌جا ساخته/سرو نمی‌شود. این سرور فقط:
+#   api.arbyte.ir   → Django (gunicorn) + /media + فید ترب
+#   admin.arbyte.ir → پنل مدیریت (build ایستا داخل ایمیج nginx) + پراکسی /api
+#
+# ایمیج‌ها بیرون از ایران در GitHub Actions ساخته می‌شوند
+# (.github/workflows/build-images.yml) و این‌جا فقط pull (یا docker load) می‌شوند؛
+# سرور ایران به PyPI/npm/دانلود Chromium دسترسی مطمئن ندارد.
+#
+# همیشه با `--env-file .env.production` اجرا کنید (deploy/*.sh همین کار را
+# می‌کنند) — جایگزینی ${...} در همین فایل فقط از آن فایل خوانده می‌شود.
+#
+# ⚠️ volumeها نام‌دار و ماندگارند. هرگز `docker compose down -v` نزنید.
+
+name: arbyte
+
+x-backend: &backend
+  image: ${IMAGE_REGISTRY:?}/arbyte-backend:${IMAGE_TAG:-latest}
+  restart: unless-stopped
+  env_file: .env.production
+  environment:
+    PRIVATE_MEDIA_ROOT: /app/private_media
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-arbyte}
+      POSTGRES_USER: ${POSTGRES_USER:-arbyte}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arbyte} -d ${POSTGRES_DB:-arbyte}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    <<: *backend
+    # migrate/collectstatic جدا در deploy/deploy.sh اجرا می‌شوند (قبل از جایگزینی
+    # کانتینر)، نه در command — تا دو کانتینر هم‌زمان migration نزنند.
+    command: >
+      gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-3}
+      --timeout 60 --graceful-timeout 30 --access-logfile - --forwarded-allow-ips="*"
+    volumes:
+      - static:/app/staticfiles
+      - media:/app/media
+      - private_media:/app/private_media
+    healthcheck:
+      # Host باید در ALLOWED_HOSTS باشد و X-Forwarded-Proto جلوی ریدایرکت SSL را می‌گیرد.
+      test:
+        - CMD
+        - python
+        - -c
+        - "import os,sys,urllib.request as u; r=u.Request('http://localhost:8000/api/v1/health', headers={'Host': os.environ['DOMAIN_API'], 'X-Forwarded-Proto': 'https'}); sys.exit(0 if u.urlopen(r, timeout=4).status == 200 else 1)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  celery-worker:
+    <<: *backend
+    command: celery -A config worker --loglevel=info --concurrency=${CELERY_CONCURRENCY:-2}
+    volumes:
+      - media:/app/media
+      - private_media:/app/private_media
+
+  celery-beat:
+    <<: *backend
+    command: celery -A config beat --loglevel=info --schedule /tmp/celerybeat-schedule
+
+  nginx:
+    image: ${IMAGE_REGISTRY:?}/arbyte-nginx:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DOMAIN_API: ${DOMAIN_API:?}
+      DOMAIN_ADMIN: ${DOMAIN_ADMIN:?}
+      # bootstrap = فقط HTTP برای گرفتن اولین گواهی (deploy/setup.sh مرحله ۵).
+      NGINX_MODE: ${NGINX_MODE:-ssl}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - static:/var/www/static:ro
+      - media:/var/www/media:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - web
+
+  certbot:
+    image: certbot/certbot:latest
+    profiles: ["tools"]
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
+
+volumes:
+  pgdata:
+    name: arbyte_pgdata
+  redisdata:
+    name: arbyte_redisdata
+  static:
+    name: arbyte_static
+  media:
+    name: arbyte_media
+  private_media:
+    name: arbyte_private_media
