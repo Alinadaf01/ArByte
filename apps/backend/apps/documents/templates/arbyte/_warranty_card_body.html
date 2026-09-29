@@ -123,13 +123,22 @@
       <div class="c-eyebrow">ارسال</div>
       {% if card.has_shipping %}
       <dl class="c-fields">
+        {% if card.shipping_method %}<div class="c-field"><dt>روش ارسال</dt><dd>{{ card.shipping_method }}</dd></div>{% endif %}
         {% if card.carrier_name %}<div class="c-field"><dt>شرکت حمل</dt><dd>{{ card.carrier_name }}</dd></div>{% endif %}
         {% if card.tracking_number %}<div class="c-field"><dt>کد رهگیری</dt><dd><span class="c-ltr c-code">{{ card.tracking_number }}</span></dd></div>{% endif %}
         {% if card.shipped_date %}<div class="c-field"><dt>تاریخ ارسال</dt><dd>{{ card.shipped_date }}</dd></div>{% endif %}
       </dl>
       {% else %}
+      {% if card.shipping_method %}
+      <dl class="c-fields">
+        <div class="c-field"><dt>روش ارسال</dt><dd>{{ card.shipping_method }}</dd></div>
+      </dl>
+      {% endif %}
+      {# تحویل‌شده بدون مرسوله (مثلاً تحویل حضوری): فقط روش، بدون «در انتظار ارسال». #}
+      {% if not card.is_delivered %}
       <span class="c-pill">در انتظار ارسال</span>
-      <div class="c-pill-note">کد رهگیری پس از ارسال از طریق پیامک و صفحه‌ی پیگیری سفارش اعلام می‌شود.</div>
+      <div class="c-pill-note">کد رهگیری پس از ارسال پیامک می‌شود.</div>
+      {% endif %}
       {% endif %}
     </div>
   </div>

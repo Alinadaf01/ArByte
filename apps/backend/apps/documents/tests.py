@@ -426,6 +426,27 @@ class WarrantyCardContentTests(TestCase):
         self.assertNotIn("در انتظار ارسال", html)
         self.assertIn("TRK-0001", html)
 
+    def test_shipping_method_shown_from_order_snapshot(self):
+        order, unit = _make_single_unit_order(user=self.user, shipped=True)
+        order.shipping_method_name = "ارسال فوری تهران"
+        order.save(update_fields=["shipping_method_name"])
+        html = self._html(unit)
+        self.assertIn("روش ارسال", html)
+        self.assertIn("ارسال فوری تهران", html)
+
+    def test_shipping_method_row_hidden_for_legacy_orders(self):
+        order, unit = _make_single_unit_order(user=self.user, shipped=True)
+        self.assertNotIn("روش ارسال", self._html(unit))
+
+    def test_delivered_without_shipment_is_not_awaiting_shipping(self):
+        """تحویل حضوری: سفارش DELIVERED بدون Shipment -- «در انتظار ارسال» غلط است."""
+        order, unit = _make_single_unit_order(user=self.user, delivered=True, shipped=False)
+        order.shipping_method_name = "تحویل حضوری"
+        order.save(update_fields=["shipping_method_name"])
+        html = self._html(unit)
+        self.assertIn("تحویل حضوری", html)
+        self.assertNotIn("در انتظار ارسال", html)
+
     def test_key_specs_from_spec_snapshot_else_variant(self):
         from apps.documents.warranty_card import build_warranty_card
 

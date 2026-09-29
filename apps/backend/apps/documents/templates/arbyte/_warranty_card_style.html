@@ -11,9 +11,9 @@
     --violet-light: #8b6bff;
   }
 
-  /* base.html's `@page { margin: 0 }` بر گزینه‌ی margin پلی‌رایت غلبه می‌کند
-     (CSS @page در Chromium اولویت دارد) و محتوا لبه‌به‌لبه چاپ می‌شد؛ حاشیه‌ی
-     امن چاپ اینجا صریح است و با PAGE_MARGIN در warranty_card.py یکی است. */
+  /* حاشیه‌ی امن چاپ، برابر PAGE_MARGIN در warranty_card.py -- صریح در CSS
+     تا چاپ مستقیم HTML از مرورگر هم همان صفحه را بدهد (ارتفاع مفید ۲۷۳mm
+     که .cert پایین به آن تکیه می‌کند). */
   @page { size: A4; margin: 12mm; }
   body { font-size: 9.5pt; line-height: 1.7; }
   .c-ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
@@ -26,7 +26,7 @@
     min-height: 272mm;
     display: flex;
     flex-direction: column;
-    gap: 3.5mm;
+    gap: 3mm;
   }
 
   /* ---- سربرگ ---- */
@@ -209,7 +209,7 @@
     justify-content: space-between;
     align-items: baseline;
     gap: 3mm;
-    padding: 1mm 0;
+    padding: 0.7mm 0;
     border-top: 0.25mm solid var(--line-3);
     min-width: 0;
   }

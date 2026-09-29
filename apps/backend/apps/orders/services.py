@@ -236,6 +236,7 @@ def checkout(
         subtotal=subtotal,
         discount_total=discount,
         shipping_cost=shipping_cost,
+        shipping_method_name=shipping_method.name,
         final_total=final_total,
         invoice_type=invoice_type,
         company_name=company_name,
@@ -252,7 +253,10 @@ def checkout(
             order=order,
             variant=variant,
             product_name_snapshot=product.name,
-            variant_name_snapshot=variant.sku,
+            # نام واریانت (مثلاً «32GB/1TB»)، نه SKU — SKU جای خودش را در
+            # sku_snapshot دارد و همه‌ی مصرف‌کننده‌ها (فاکتور، برگه‌ی بسته‌بندی،
+            # variantLabel API، کارت گارانتی) این را برچسب واریانت می‌خوانند.
+            variant_name_snapshot=variant.name or None,
             sku_snapshot=variant.sku,
             unit_price=data["unit_price"],
             quantity=data["quantity"],

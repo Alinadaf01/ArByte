@@ -96,6 +96,8 @@ def build_warranty_card(unit: OrderItemUnit) -> dict:
         "warranty_months_fa": to_persian_digits(str(product.warranty_months)) if has_warranty else "",
         "warranty_provider": (product.warranty_provider or "") if has_warranty else "",
         "warranty": warranty,
+        "shipping_method": order.shipping_method_name,
+        "is_delivered": order.delivered_at is not None,
         "has_shipping": has_shipping,
         "carrier_name": shipment.provider if shipment else "",
         "tracking_number": (shipment.tracking_number or "") if shipment else "",

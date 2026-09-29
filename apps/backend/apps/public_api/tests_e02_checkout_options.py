@@ -206,3 +206,24 @@ class OrderInvoiceAndIdempotencyTests(TransactionTestCase):
         data = response.data["data"]
         self.assertEqual(data["shippingCost"], 250_000)
         self.assertEqual(data["discountTotal"], 1_000_000)
+
+    def test_order_snapshots_shipping_method_name_and_variant_name(self):
+        """روش ارسال بعد از خالی‌شدن سبد و ویرایش/حذف ShippingMethod روی سفارش
+        می‌ماند؛ variant_name_snapshot نام واریانت است نه SKU."""
+        method = ShippingMethod.objects.create(name="تحویل حضوری-تست", cost=0, is_active=True, order=0)
+        variant = _make_variant(sku="SNAP-1")
+        variant.name = "32GB/1TB"
+        variant.save(update_fields=["name"])
+        self._add_to_cart(variant)
+        response = self.client.post(
+            "/api/v1/orders",
+            {"addressId": self.address.pk, "paymentMethod": "GATEWAY", "shippingMethodId": method.pk},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        method.delete()
+        order = Order.objects.get(order_number=response.data["data"]["orderNumber"])
+        self.assertEqual(order.shipping_method_name, "تحویل حضوری-تست")
+        item = order.items.get()
+        self.assertEqual(item.variant_name_snapshot, "32GB/1TB")
+        self.assertEqual(item.sku_snapshot, "SNAP-1")

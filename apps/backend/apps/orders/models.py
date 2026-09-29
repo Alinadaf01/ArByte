@@ -161,6 +161,13 @@ class Order(models.Model):
     subtotal = models.PositiveIntegerField()
     discount_total = models.PositiveIntegerField(default=0)
     shipping_cost = models.PositiveIntegerField(default=0)
+    # الحاقیه‌ی Django (نه در Prisma) — Snapshot نام روش ارسالِ انتخاب‌شده در
+    # چک‌اوت، همان اصل Price Snapshot: `Cart.shipping_method` بعد از ثبت
+    # سفارش خالی می‌شود و ShippingMethod ممکن است بعداً ویرایش/حذف شود.
+    # روش ارسال («تحویل حضوری»، «ارسال فوری تهران») با شرکت حمل
+    # (`Shipment.provider`، هنگام ارسال) یکی نیست. سفارش‌های قبل از این
+    # فیلد خالی‌اند و اسناد آن ردیف را پنهان می‌کنند.
+    shipping_method_name = models.CharField(max_length=100, blank=True, default="")
     final_total = models.PositiveIntegerField()
     # تصمیم ج (Prisma) — دلیل لغو، مثلاً "PAYMENT_TIMEOUT" (Celery beat خودکار).
     cancel_reason = models.CharField(max_length=255, blank=True, null=True)

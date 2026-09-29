@@ -23,7 +23,11 @@
   }
 
   * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  @page { margin: 0; }
+  /* بدون قاعده‌ی @page margin: حاشیه‌ی هر سند از آرگومان `margin` تابع
+     render_pdf می‌آید (فاکتور ۱۲mm، بسته‌بندی ۱۰mm، برچسب ۵mm). قبلاً
+     `@page { margin: 0 }` اینجا بود و در Chromium بر آن آرگومان غلبه می‌کرد:
+     محتوا لبه‌به‌لبه چاپ می‌شد و فوتر صفحه‌شمار (که داخل حاشیه‌ی پایین
+     رسم می‌شود) جایی برای نمایش نداشت. */
   body {
     margin: 0;
     background: var(--surface);
