@@ -5,6 +5,14 @@ import type {
   AdminCategory,
   AdminProduct,
   AdminProductListItem,
+  Campaign,
+  ImportJob,
+  ImportMappingPair,
+  ImportPreviewRow,
+  PriceRuleRow,
+  RecalcChange,
+  Supplier,
+  SupplierProduct,
   HomepageBlock,
   InventoryRow,
   InventoryTransaction,
@@ -415,3 +423,133 @@ export const reorderHomepageBlocks = (ids: number[]) =>
     { ids },
     "مرتب‌سازی بلوک‌ها ناموفق بود.",
   );
+
+// ---- F-03: تأمین‌کننده، قیمت همکار، قانون سود ----
+export async function listSuppliers(): Promise<Supplier[]> {
+  const res = await authorizedFetch("/suppliers/");
+  return parseOrThrow(res, "دریافت تأمین‌کنندگان ناموفق بود.");
+}
+export const saveSupplier = (id: string | null, data: Partial<Supplier>) =>
+  send<Supplier>(
+    id ? `/suppliers/${id}/` : "/suppliers/",
+    id ? "PATCH" : "POST",
+    data,
+    "ذخیره‌ی تأمین‌کننده ناموفق بود.",
+  );
+export const deleteSupplier = (id: string) =>
+  send<void>(`/suppliers/${id}/`, "DELETE", undefined, "حذف ناموفق بود.");
+export async function listSupplierProducts(params: {
+  supplier?: string;
+  page?: number;
+}): Promise<PaginatedResponse<SupplierProduct>> {
+  const res = await authorizedFetch(
+    `/supplier-products/${buildQuery({ pageSize: 50, ...params })}`,
+  );
+  return parseOrThrow(res, "دریافت قیمت‌های همکار ناموفق بود.");
+}
+export const saveSupplierProduct = (
+  id: string | null,
+  data: Partial<SupplierProduct>,
+) =>
+  send<SupplierProduct>(
+    id ? `/supplier-products/${id}/` : "/supplier-products/",
+    id ? "PATCH" : "POST",
+    data,
+    "ذخیره‌ی قیمت همکار ناموفق بود.",
+  );
+export const deleteSupplierProduct = (id: string) =>
+  send<void>(
+    `/supplier-products/${id}/`,
+    "DELETE",
+    undefined,
+    "حذف ناموفق بود.",
+  );
+export async function listPriceRules(): Promise<PriceRuleRow[]> {
+  const res = await authorizedFetch("/price-rules/");
+  return parseOrThrow(res, "دریافت قوانین سود ناموفق بود.");
+}
+export const savePriceRule = (id: string | null, data: Partial<PriceRuleRow>) =>
+  send<PriceRuleRow>(
+    id ? `/price-rules/${id}/` : "/price-rules/",
+    id ? "PATCH" : "POST",
+    data,
+    "ذخیره‌ی قانون ناموفق بود.",
+  );
+export const deletePriceRule = (id: string) =>
+  send<void>(`/price-rules/${id}/`, "DELETE", undefined, "حذف ناموفق بود.");
+export const recalculatePrices = (apply: boolean) =>
+  send<{
+    applied: boolean;
+    count: number;
+    changes: RecalcChange[];
+    skipped: { variant: string; sku: string; reason: string }[];
+  }>("/pricing/recalculate/", "POST", { apply }, "بازمحاسبه ناموفق بود.");
+
+// ---- F-03: ورود اکسل ----
+export async function listImportJobs(): Promise<PaginatedResponse<ImportJob>> {
+  const res = await authorizedFetch("/imports/");
+  return parseOrThrow(res, "دریافت تاریخچه‌ی ورود ناموفق بود.");
+}
+export async function uploadImportFile(file: File): Promise<ImportJob> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await authorizedFetch("/imports/", {
+    method: "POST",
+    body: form,
+  });
+  if (!res.ok) throw await readError(res, "آپلود فایل ناموفق بود.");
+  return res.json();
+}
+export async function getImportJob(id: string): Promise<ImportJob> {
+  const res = await authorizedFetch(`/imports/${id}/`);
+  return parseOrThrow(res, "دریافت وضعیت ورود ناموفق بود.");
+}
+export const previewImport = (id: string, mapping: ImportMappingPair[]) =>
+  send<{
+    summary: { create: number; update: number; error: number };
+    rows: ImportPreviewRow[];
+  }>(`/imports/${id}/preview/`, "POST", { mapping }, "پیش‌نمایش ناموفق بود.");
+export const runImport = (id: string) =>
+  send<ImportJob>(`/imports/${id}/run/`, "POST", {}, "اجرای ورود ناموفق بود.");
+export const downloadImportTemplate = () =>
+  downloadFile("/imports/template.xlsx", "arbyte-products-template.xlsx");
+export const downloadImportErrors = (id: string) =>
+  downloadFile(`/imports/${id}/errors.xlsx`, `import-${id}-errors.xlsx`);
+
+// ---- F-03: کمپین ----
+export async function listCampaigns(): Promise<PaginatedResponse<Campaign>> {
+  const res = await authorizedFetch("/campaigns/?pageSize=100");
+  return parseOrThrow(res, "دریافت کمپین‌ها ناموفق بود.");
+}
+export type CampaignBody = Partial<
+  Pick<Campaign, "name" | "startAt" | "endAt" | "isActive" | "priority">
+> & {
+  discountType?: "PERCENT" | "AMOUNT";
+  value?: number;
+  productIds?: number[];
+  categoryIds?: number[];
+};
+export const saveCampaign = (id: string | null, data: CampaignBody) =>
+  send<Campaign>(
+    id ? `/campaigns/${id}/` : "/campaigns/",
+    id ? "PATCH" : "POST",
+    data,
+    "ذخیره‌ی کمپین ناموفق بود.",
+  );
+export const deleteCampaign = (id: string) =>
+  send<void>(`/campaigns/${id}/`, "DELETE", undefined, "حذف کمپین ناموفق بود.");
+export async function previewCampaign(
+  id: string,
+): Promise<{
+  count: number;
+  rows: {
+    variant: string;
+    sku: string;
+    productName: string;
+    price: number;
+    campaignPrice: number;
+  }[];
+}> {
+  const res = await authorizedFetch(`/campaigns/${id}/preview/`);
+  return parseOrThrow(res, "پیش‌نمایش کمپین ناموفق بود.");
+}

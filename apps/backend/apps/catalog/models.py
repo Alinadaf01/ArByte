@@ -319,3 +319,112 @@ class PriceHistory(models.Model):
 
     def __str__(self):
         return f"{self.variant} — {self.previous_price} -> {self.new_price}"
+
+
+# ---------------------------------------------------------------------------
+# F-03 — تأمین‌کننده، قیمت همکار، قانون سود، ورود اکسل (03-pricing.prisma،
+# 08-system.prisma؛ فیلد به فیلد).
+# ---------------------------------------------------------------------------
+
+
+class Supplier(models.Model):
+    name = models.CharField(max_length=150)
+    contact_name = models.CharField(max_length=150, blank=True, null=True)
+    contact_phone = models.CharField(max_length=30, blank=True, null=True)
+    contact_email = models.EmailField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
+class SupplierProduct(models.Model):
+    """§۸.۳۶ — روی واریانت (الحاقیه‌ی T-003). `price` قیمت همکار این
+    تأمین‌کننده است؛ ارزان‌ترین ردیف در دسترس، قیمت همکار واریانت می‌شود."""
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name="supplier_products")
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="supplier_products")
+    price = models.BigIntegerField()
+    is_available = models.BooleanField(default=True)
+    source = models.CharField(max_length=100, blank=True, null=True)
+    last_updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["supplier", "variant"], name="supplier_product_unique")]
+        indexes = [models.Index(fields=["variant"])]
+
+
+class PriceRule(models.Model):
+    """تصمیم د — سطح تأمین‌کننده یا دسته؛ هر دو null = پیش‌فرض سراسری."""
+
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank=True, null=True, related_name="price_rules")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name="price_rules")
+    profit_type = models.CharField(max_length=10, choices=PROFIT_TYPE_CHOICES)
+    profit_amount_toman = models.BigIntegerField(blank=True, null=True)
+    profit_percent_basis_points = models.IntegerField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [models.Index(fields=["supplier"]), models.Index(fields=["category"])]
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(profit_type="AMOUNT", profit_amount_toman__isnull=False, profit_percent_basis_points__isnull=True)
+                    | models.Q(profit_type="PERCENT", profit_percent_basis_points__isnull=False, profit_amount_toman__isnull=True)
+                ),
+                name="price_rule_profit_matches_type",
+            ),
+        ]
+
+
+IMPORT_JOB_STATUS_CHOICES = [
+    ("PENDING", "در انتظار"),
+    ("PROCESSING", "در حال اجرا"),
+    ("COMPLETED", "انجام‌شده"),
+    ("FAILED", "ناموفق"),
+]
+IMPORT_ROW_STATUS_CHOICES = [("SUCCESS", "موفق"), ("FAILED", "ناموفق"), ("SKIPPED", "رد شده")]
+
+
+class ImportJob(models.Model):
+    """§۷.۴۰–۷.۴۶. `file` جای `fileUrl` Prisma (فایل در MEDIA)؛ `column_mapping`
+    الحاقیه‌ی Django — نگاشت ستون‌های همین فایل که برای دفعه‌ی بعد هم
+    پیشنهاد می‌شود. `headers` سرستون‌های خوانده‌شده از ردیف اول."""
+
+    file = models.FileField(upload_to="imports/")
+    original_name = models.CharField(max_length=255, blank=True)
+    headers = models.JSONField(default=list)
+    column_mapping = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=12, choices=IMPORT_JOB_STATUS_CHOICES, default="PENDING")
+    started_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
+    total_rows = models.IntegerField(default=0)
+    successful_rows = models.IntegerField(default=0)
+    failed_rows = models.IntegerField(default=0)
+    error = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        "users.User", on_delete=models.SET_NULL, blank=True, null=True, related_name="import_jobs"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class ImportJobRow(models.Model):
+    import_job = models.ForeignKey(ImportJob, on_delete=models.CASCADE, related_name="rows")
+    row_number = models.IntegerField()
+    status = models.CharField(max_length=8, choices=IMPORT_ROW_STATUS_CHOICES)
+    action = models.CharField(max_length=10, blank=True, help_text="create/update")
+    sku_matched = models.CharField(max_length=50, blank=True, null=True)
+    error_message = models.TextField(blank=True, null=True)
+    raw_data = models.JSONField(blank=True, null=True)
+
+    class Meta:
+        ordering = ["row_number"]
+        indexes = [models.Index(fields=["import_job"])]

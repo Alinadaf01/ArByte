@@ -272,6 +272,12 @@ class AdminPricingTests(CatalogFixtureMixin, APITestCase):
         history = self.client.get(reverse("admin-price-history", args=[self.variant.pk])).data
         self.assertEqual((history[0]["previous_price"], history[0]["reason"]), (1_234_000, "تورم"))
 
+    def test_percent_rounding_has_no_float_drift(self):
+        self.variant.final_price = 1_200_000
+        self.variant.save()
+        preview = self.client.post(reverse("admin-price-preview"), {"mode": "percent", "value": 10, "variant_ids": [self.variant.pk]}, format="json")
+        self.assertEqual(preview.data["changes"][0]["new_price"], 1_320_000)
+
     def test_explicit_table_changes_and_negative_rejected(self):
         ok = self.client.post(reverse("admin-price-apply"), {"changes": [{"variant": self.variant.pk, "new_price": 2_000_000}]}, format="json")
         self.assertEqual(ok.data["count"], 1)

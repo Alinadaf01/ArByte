@@ -285,6 +285,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.orders.tasks.cancel_stale_unpaid_orders",
         "schedule": crontab(minute="*/15"),
     },
+    # F-03 §۳ — شروع/پایان کمپین‌ها → revalidate صفحه‌های فروشگاه.
+    "revalidate-campaign-boundaries": {
+        "task": "apps.catalog.tasks.revalidate_campaign_boundaries",
+        "schedule": crontab(minute="*/5"),
+    },
 }
 
 # D-05 §۲ — پیش‌فرض ۲۴ ساعت (کارت‌به‌کارت)؛ از env قابل تنظیم.

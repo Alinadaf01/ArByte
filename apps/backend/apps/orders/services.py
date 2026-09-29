@@ -4,6 +4,8 @@ from django.conf import settings as django_settings
 from django.db import transaction
 from django.utils import timezone
 
+from apps.catalog.pricing import live_price
+
 from .models import Cart, CartItem, Order, OrderItem, Payment, PaymentReceipt
 
 
@@ -31,11 +33,11 @@ def merge_guest_cart_into_user(session_key: str, user) -> None:
             continue
         if existing:
             existing.quantity = merged_quantity
-            existing.unit_price_snapshot = variant.final_price
+            existing.unit_price_snapshot = live_price(variant)[0]
             existing.save(update_fields=["quantity", "unit_price_snapshot"])
         else:
             CartItem.objects.create(
-                cart=user_cart, variant=variant, quantity=merged_quantity, unit_price_snapshot=variant.final_price
+                cart=user_cart, variant=variant, quantity=merged_quantity, unit_price_snapshot=live_price(variant)[0]
             )
 
     guest_cart.delete()
@@ -189,20 +191,20 @@ def checkout(
     subtotal = 0
     for item in items:
         variant = item.variant
-        live_price = variant.final_price
-        if live_price != item.unit_price_snapshot:
+        current_price = live_price(variant)[0]
+        if current_price != item.unit_price_snapshot:
             price_changes.append(
-                {"variantId": str(variant.id), "oldPrice": item.unit_price_snapshot, "newPrice": live_price}
+                {"variantId": str(variant.id), "oldPrice": item.unit_price_snapshot, "newPrice": current_price}
             )
         available = available_quantity_for(variant)
         if item.quantity > available:
             shortages.append({"variantId": str(variant.id), "available": available})
-        final_price = live_price * item.quantity
+        final_price = current_price * item.quantity
         subtotal += final_price
         order_items_data.append(
             {
                 "variant": variant,
-                "unit_price": live_price,
+                "unit_price": current_price,
                 "quantity": item.quantity,
                 "final_price": final_price,
             }

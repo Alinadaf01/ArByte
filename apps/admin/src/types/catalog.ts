@@ -302,3 +302,93 @@ export interface HomepageBlock {
   endsAt: string | null;
   updatedAt: string;
 }
+
+// ---- F-03 ----
+export interface Supplier {
+  id: string;
+  name: string;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  notes: string | null;
+  isActive: boolean;
+  productsCount: number;
+}
+
+export interface SupplierProduct {
+  id: string;
+  supplier: string;
+  supplierName: string;
+  variant: string;
+  sku: string;
+  productName: string;
+  price: number;
+  isAvailable: boolean;
+  lastUpdatedAt: string;
+}
+
+export interface PriceRuleRow {
+  id: string;
+  supplier: string | null;
+  category: string | null;
+  level: "supplier" | "category" | "global";
+  profitType: "AMOUNT" | "PERCENT";
+  profitAmountToman: number | null;
+  profitPercentBasisPoints: number | null;
+  isActive: boolean;
+}
+
+export interface RecalcChange {
+  variant: string;
+  sku: string;
+  productName: string;
+  supplierPrice: number;
+  oldPrice: number;
+  newPrice: number;
+  profitSource: string;
+}
+
+export interface ImportMappingPair {
+  field: string;
+  header: string;
+}
+
+export interface ImportJob {
+  id: string;
+  originalName: string;
+  headers: string[];
+  columnMapping: ImportMappingPair[];
+  status: "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+  totalRows: number;
+  successfulRows: number;
+  failedRows: number;
+  error: string;
+  createdByName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  fields?: { key: string; label: string }[];
+  failed?: { row: number; sku: string | null; error: string }[];
+  created?: number;
+  updated?: number;
+}
+
+export interface ImportPreviewRow {
+  row: number;
+  sku: string;
+  action: "create" | "update" | "error";
+  errors: string[];
+  name: string | null;
+}
+
+export interface Campaign {
+  id: string;
+  name: string;
+  startAt: string;
+  endAt: string;
+  isActive: boolean;
+  priority: number;
+  rules: { discountType: "PERCENT" | "AMOUNT"; value: number } | null;
+  products: { id: string; name: string; slug: string }[];
+  categories: { id: string; name: string }[];
+  state: "running" | "scheduled" | "ended" | "inactive";
+}

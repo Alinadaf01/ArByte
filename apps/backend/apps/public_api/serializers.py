@@ -6,6 +6,8 @@ snake_case-keyed dicts on purpose — DRF's CamelCaseJSONRenderer (already
 global, see config/settings.py) converts them to camelCase on the way out,
 same as every apps/admin_api response already relies on."""
 
+from apps.catalog.pricing import live_price
+
 from .availability import compute_availability
 from .variant import build_variant_label, select_card_variant
 
@@ -55,6 +57,7 @@ def build_axes_and_variants(variant_rows: list, global_threshold: int) -> tuple[
             if value:
                 axis_values[str(spec.definition_id)] = value
         inventory = getattr(v, "inventory", None)
+        live_final, live_compare = live_price(v)
         variants.append(
             {
                 "id": str(v.id),
@@ -62,8 +65,8 @@ def build_axes_and_variants(variant_rows: list, global_threshold: int) -> tuple[
                 "label": build_variant_label(axis_values, axis_refs_for_label),
                 "axisValues": axis_values,
                 "price": {
-                    "final": v.final_price,
-                    "compareAt": v.compare_at_price,
+                    "final": live_final,
+                    "compareAt": live_compare,
                 },
                 "availability": compute_availability(inventory, v.is_preorder, global_threshold),
             }

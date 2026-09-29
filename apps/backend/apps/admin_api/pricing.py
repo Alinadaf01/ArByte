@@ -3,7 +3,7 @@
 apply، پس آنچه پیش‌نمایش نشان می‌دهد دقیقاً همان است که ذخیره می‌شود)، و
 تاریخچه‌ی قیمت هر واریانت (`PriceHistory`)."""
 
-import math
+from decimal import ROUND_CEILING, Decimal
 
 from django.db import transaction
 from django.db.models import Q
@@ -75,8 +75,10 @@ def _compute_changes(data) -> tuple[list[dict], str | None]:
         variants = _variant_queryset(data if not ids else {}).filter(**({"pk__in": ids} if ids else {}))
         target = {}
         for v in variants:
-            raw = v.final_price * (1 + value / 100) if mode == "percent" else v.final_price + value
-            target[v] = int(math.ceil(raw / ROUND_TO) * ROUND_TO) if raw > 0 else 0
+            # Decimal، نه float — ۱٬۲۰۰٬۰۰۰×۱٫۱ در float از ۱٬۳۲۰٬۰۰۰ کمی بیشتر است و یک پله بالاتر گرد می‌شد.
+            step = Decimal(str(value))
+            raw = Decimal(v.final_price) * (1 + step / 100) if mode == "percent" else Decimal(v.final_price) + step
+            target[v] = int((raw / ROUND_TO).to_integral_value(rounding=ROUND_CEILING)) * ROUND_TO if raw > 0 else 0
     rows = []
     for v, new_price in target.items():
         if new_price <= 0:

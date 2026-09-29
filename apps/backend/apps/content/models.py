@@ -250,3 +250,65 @@ class SeoMetadata(models.Model):
 
     def __str__(self):
         return self.meta_title or f"SEO #{self.pk}"
+
+
+class Campaign(models.Model):
+    """F-03 — `06-marketing.prisma`'s Campaign. `rules` (JSON آزاد در Prisma)
+    اینجا شکل ثابت دارد: `{"discountType": "PERCENT"|"AMOUNT", "value": n}`
+    (درصد صحیح یا مبلغ تومان)."""
+
+    name = models.CharField(max_length=150)
+    start_at = models.DateTimeField()
+    end_at = models.DateTimeField()
+    is_active = models.BooleanField(default=True)
+    priority = models.IntegerField(default=0)
+    rules = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-priority", "-start_at"]
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        _reset_campaign_cache()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _reset_campaign_cache()
+        return result
+
+
+def _reset_campaign_cache():
+    from apps.catalog.pricing import reset_campaign_cache
+
+    reset_campaign_cache()
+
+
+class CampaignProduct(models.Model):
+    """محصول *یا* دسته — دقیقاً یکی."""
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        _reset_campaign_cache()
+
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        _reset_campaign_cache()
+        return result
+
+    campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name="targets")
+    product = models.ForeignKey("catalog.Product", on_delete=models.CASCADE, blank=True, null=True, related_name="campaign_targets")
+    category = models.ForeignKey("catalog.Category", on_delete=models.CASCADE, blank=True, null=True, related_name="campaign_targets")
+
+    class Meta:
+        indexes = [models.Index(fields=["campaign"]), models.Index(fields=["product"]), models.Index(fields=["category"])]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(product__isnull=False, category__isnull=True) | models.Q(product__isnull=True, category__isnull=False),
+                name="campaign_target_exactly_one",
+            ),
+        ]

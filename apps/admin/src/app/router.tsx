@@ -29,6 +29,9 @@ import RolesPage from "@/pages/RolesPage";
 import ActivityLogPage from "@/pages/ActivityLogPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import BrandsPage from "@/pages/BrandsPage";
+import SuppliersPage from "@/pages/SuppliersPage";
+import ImportPage from "@/pages/ImportPage";
+import CampaignsPage from "@/pages/CampaignsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -51,6 +54,9 @@ export const router = createBrowserRouter([
           { path: "homepage", element: <HomepagePage /> },
           { path: "categories", element: <CategoriesPage /> },
           { path: "brands", element: <BrandsPage /> },
+          { path: "suppliers", element: <SuppliersPage /> },
+          { path: "import", element: <ImportPage /> },
+          { path: "campaigns", element: <CampaignsPage /> },
           { path: "specs", element: <SpecsPage /> },
           { path: "inventory", element: <InventoryPage /> },
           { path: "stock-ledger", element: <StockLedgerPage /> },

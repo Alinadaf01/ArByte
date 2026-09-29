@@ -648,6 +648,12 @@ class AdminProductVariantsView(APIView):
                     transaction.set_rollback(True)
                     return Response({"detail": f"موجودی «{variant.sku}» نمی‌تواند منفی شود."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # F-03 — واریانت‌های «همکار + سود» بلافاصله با موتور قیمت بازمحاسبه می‌شوند.
+        from apps.catalog import pricing
+
+        pricing.recalculate_variants(
+            list(pricing.cost_plus_variants().filter(product=product)), user=request.user, reason="ویرایش جدول واریانت"
+        )
         log_admin_action(user=request.user, action="update_variants", model_name="Product", object_id=product.pk)
         _revalidate_product(product)
         return self.get(request, pk)
