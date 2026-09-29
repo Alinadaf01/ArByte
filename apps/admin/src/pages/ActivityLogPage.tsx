@@ -10,6 +10,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { listActivityLog } from "@/lib/api";
 import { useQueryFilters } from "@/lib/useQueryFilters";
 import { formatJalaliDateTime } from "@/lib/formatters";
+import { LoginAttemptsCard } from "@/pages/activityLog/LoginAttemptsCard";
 
 const PAGE_SIZE = 20;
 
@@ -181,6 +182,7 @@ export default function ActivityLogPage() {
           </>
         )}
       </section>
+      <LoginAttemptsCard />
     </div>
   );
 }

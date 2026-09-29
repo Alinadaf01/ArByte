@@ -15,8 +15,8 @@ import { contractApiUrl, fetchJson } from "./client";
 /**
  * D-03 §4 — غیرقابل‌مذاکره: به CONTRACT_API_URL درخواست واقعی می‌زند و
  * پاسخ را با همان اسکیماهای Zod فرانت parse می‌کند. سرور باید از قبل seed
- * شده باشد (apps/backend: `pnpm be:migrate && pnpm --filter @arbyte/api
- * export-catalog && pnpm be:manage seed_arbyte`، یا معادلش).
+ * شده باشد (apps/backend: `pnpm be:migrate && node scripts/backend.mjs python manage.py
+ * seed_arbyte`).
  *
  * بدون CONTRACT_API_URL، این فایل کامل skip می‌شود — طبق همان الگوی
  * «skip با دلیل» که بقیه‌ی پروژه برای پیش‌نیاز غایب استفاده می‌کند، نه

@@ -1,5 +1,7 @@
 # ArByte
 
+[![CI](https://github.com/Alinadaf01/ArByte/actions/workflows/ci.yml/badge.svg)](https://github.com/Alinadaf01/ArByte/actions/workflows/ci.yml)
+
 فروشگاه اینترنتی پریمیوم محصولات تکنولوژی — بازار ایران، RTL فارسی.
 
 منابع حقیقت این پروژه:
@@ -10,83 +12,85 @@
 
 ## Tech Stack
 
-| لایه          | انتخاب                                                   |
-| ------------- | -------------------------------------------------------- |
-| Frontend      | Next.js 15 (App Router) + TypeScript، خروجی `standalone` |
-| Styling       | Tailwind CSS v4 + CSS Variables (`packages/tokens`)      |
-| Backend       | NestJS + TypeScript                                      |
-| Database      | PostgreSQL 16 (ORM: Prisma — از T-003)                   |
-| Cache / Queue | Redis + BullMQ                                           |
-| Storage       | S3-compatible (MinIO در dev)                             |
-| Auth          | JWT (access + refresh) + OTP                             |
-| Validation    | Zod، مشترک بین Frontend و Backend (`packages/contracts`) |
-| Test          | Vitest (یونیت) + Playwright (E2E)                        |
-| مونوریپو      | pnpm workspaces + Turborepo                              |
-
-جزئیات و چراییِ هر انتخاب در [ADR-001](docs/adr/ADR-001-tech-stack.md).
+| لایه          | انتخاب                                                           |
+| ------------- | ---------------------------------------------------------------- |
+| فروشگاه       | Next.js 15 (App Router، BFF با کوکی httpOnly) + TypeScript       |
+| پنل مدیریت    | React + Vite (پنل وایب با هویت آربایت)                           |
+| Backend       | Django 5.2 + DRF (`apps/backend`) — منبع حقیقت سیستم             |
+| Database      | PostgreSQL 16                                                    |
+| Cache / Queue | Redis + Celery (worker + beat)                                   |
+| اسناد PDF     | Playwright Chromium (فاکتور، برگه‌ی بسته‌بندی، کارت گارانتی)     |
+| Validation    | Zod (`packages/contracts`) — قرارداد سیم با `pnpm contract:test` |
+| Test          | Django test + Vitest + Playwright (E2E)                          |
+| مونوریپو      | pnpm workspaces + Turborepo                                      |
 
 ## ساختار پوشه‌ها
 
 ```
 arbyte/
 ├─ apps/
-│  ├─ web/          Next.js — فروشگاه مشتری (Experience First)
-│  ├─ admin/        Next.js — پنل مدیریت (Efficiency First)
-│  └─ api/           NestJS — منبع حقیقت سیستم
+│  ├─ web/          Next.js — فروشگاه
+│  ├─ admin/        React/Vite — پنل مدیریت
+│  └─ backend/      Django — API عمومی (/api/v1)، API پنل (/api/admin)، Celery
 ├─ packages/
-│  ├─ ui/           کامپوننت‌های مشترک (خروجی T-002)
-│  ├─ tokens/       Design Tokens (خروجی T-001)
-│  ├─ contracts/    اسکیماهای Zod مشترک بین Frontend/Backend
+│  ├─ ui/           کامپوننت‌های مشترک
+│  ├─ tokens/       Design Tokens
+│  ├─ contracts/    اسکیماهای Zod + تست قرارداد
 │  └─ config/       eslint / tsconfig / tailwind / prettier مشترک
-├─ docs/
-│  ├─ brandbook/
-│  ├─ adr/
-│  └─ api/
-└─ infra/
-   └─ docker/
+├─ docs/            برندبوک، ADR، API، مدل داده (خودکار)، گزارش‌ها
+└─ infra/docker/    docker-compose توسعه (Postgres + Redis)
 ```
 
 ## پیش‌نیازها
 
-- Node.js ≥ 22
-- pnpm (نسخه در `packageManager` روت مشخص است — با `corepack enable` یا `npm i -g pnpm` نصب کن)
-- Docker + Docker Compose (برای سرویس‌های محلی)
+Node.js ≥ 22 و pnpm (`corepack enable`)، Python 3.12، Docker.
 
-## راه‌اندازی
+## راه‌اندازی dev از صفر در ۵ قدم
 
 ```bash
+# ۱) وابستگی‌ها
 pnpm install
+python3.12 -m venv apps/backend/.venv
+apps/backend/.venv/bin/pip install -r apps/backend/requirements.txt
+apps/backend/.venv/bin/playwright install chromium
 
-# متغیرهای محیطی هر اپ را از نمونه کپی کن و مقداردهی کن
-cp apps/web/.env.example apps/web/.env
-cp apps/admin/.env.example apps/admin/.env
-cp apps/api/.env.example apps/api/.env
-
-# سرویس‌های زیرساختی محلی
+# ۲) Postgres (پورت 5435) و Redis
 docker compose -f infra/docker/docker-compose.dev.yml up -d
 
-pnpm dev
+# ۳) متغیرهای محیطی از نمونه‌ها
+cp apps/backend/.env.example apps/backend/.env
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env
+
+# ۴) دیتابیس، داده‌ی نمونه و مدیر
+pnpm be:migrate
+pnpm be:manage seed_arbyte
+pnpm be:manage createsuperuser
+
+# ۵) اجرا (دو ترمینال)
+pnpm be:dev        # Django → http://localhost:8000
+pnpm dev           # فروشگاه → :3000 ، پنل → :3001
 ```
 
-- `apps/web` → http://localhost:3000
-- `apps/admin` → http://localhost:3001
-- `apps/api` → http://localhost:4000/api/v1 (Swagger در `/api/docs`, فقط dev)
-
-⚠️ هر سه اپ بدون `.env` معتبر با خطای واضح در بوت fail می‌کنند — این عمدی است
-(بند ۱۱.۱۰۸، ۱۲.۱۳ برند بوک؛ ر.ک. `src/config/env.validation.ts` در `apps/api` و
-`src/lib/env.ts` در `apps/web`/`apps/admin`).
+⚠️ اپ‌ها بدون `.env` معتبر با خطای واضح در بوت fail می‌کنند (عمدی؛ بند ۱۱.۱۰۸ برندبوک).
+Celery در dev با `CELERY_TASK_ALWAYS_EAGER=True` بدون worker هم کار می‌کند.
 
 ## اسکریپت‌ها
 
-| دستور            | توضیح                                        |
-| ---------------- | -------------------------------------------- |
-| `pnpm dev`       | اجرای هم‌زمان هر سه اپ (Turborepo)           |
-| `pnpm build`     | Build پروداکشن هر سه اپ                      |
-| `pnpm lint`      | ESLint روی همه‌ی پکیج‌ها (شامل قانون ضد HEX) |
-| `pnpm typecheck` | بررسی تایپ TypeScript                        |
-| `pnpm test`      | تست‌های یونیت (Vitest)                       |
-| `pnpm test:e2e`  | تست‌های E2E (Playwright)                     |
-| `pnpm format`    | فرمت با Prettier                             |
+| دستور                                       | توضیح                                                     |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `pnpm dev`                                  | فروشگاه و پنل (Turborepo)                                 |
+| `pnpm be:dev`                               | Django روی 8000                                           |
+| `pnpm be:test`                              | تست‌های Django                                            |
+| `pnpm be:lint`                              | ruff                                                      |
+| `pnpm be:manage …`                          | هر دستور `manage.py`                                      |
+| `pnpm build`                                | build فروشگاه و پنل                                       |
+| `pnpm lint`                                 | ESLint (شامل قانون ضد HEX)                                |
+| `pnpm typecheck`                            | TypeScript                                                |
+| `pnpm test`                                 | تست‌های یونیت (Vitest)                                    |
+| `pnpm test:e2e`                             | E2E فروشگاه (Playwright)                                  |
+| `pnpm contract:test`                        | قرارداد Zod روی Django زنده (`CONTRACT_API_URL=…/api/v1`) |
+| `pnpm --filter @arbyte/web seo:audit [URL]` | ممیزی سئو                                                 |
 
 ## Docker
 
@@ -122,5 +126,6 @@ Commit ها باید از Conventional Commits پیروی کنند (`commitlint.
 ## مستندسازی
 
 - [docs/adr](docs/adr) — تصمیمات معماری
-- [docs/api](docs/api) — مستندات API (تکمیل در T-004)
+- [docs/api](docs/api) — مستندات API عمومی و پنل
+- [docs/data-model.md](docs/data-model.md) و [docs/erd.md](docs/erd.md) — خودکار از مدل‌های Django (`pnpm be:manage generate_data_model`)
 - هر پکیج/اپ یک `README.md` محلی دارد که وضعیت فعلی و مرز آن با تسک‌های بعدی را توضیح می‌دهد.

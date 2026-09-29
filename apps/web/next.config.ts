@@ -24,10 +24,20 @@ const securityHeaders = [
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
+  // G-03 — سخت‌سازی: بدون MIME sniffing، بدون دسترسی به حسگرها/دوربین،
+  // جداسازی پنجره‌ی باز‌شده از مبدأ دیگر.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  {
+    key: "Permissions-Policy",
+    value:
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+  },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   images: {
     // بهینه‌سازی خودمیزبان با sharp (بدون سرویس ابری Vercel) — بند ۷.۱۶ و ۱۰.۵۶ برند بوک.
     formats: ["image/avif", "image/webp"],

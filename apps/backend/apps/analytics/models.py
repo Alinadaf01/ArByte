@@ -61,3 +61,25 @@ class DailyStat(models.Model):
 
     def __str__(self):
         return str(self.date)
+
+
+class AdminLoginAttempt(models.Model):
+    """G-03 — لاگ ورود پنل (موفق و ناموفق) و پایه‌ی قفل موقت بعد از چند
+    تلاش ناموفق (apps/admin_api/auth.py). آی‌پی واقعی از client_ip."""
+
+    phone = models.CharField(max_length=20)
+    ip_address = models.GenericIPAddressField(blank=True, null=True)
+    user_agent = models.CharField(max_length=300, blank=True)
+    success = models.BooleanField(default=False)
+    reason = models.CharField(max_length=20, blank=True, help_text="bad_credentials / not_staff / locked")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True, related_name="login_attempts"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["phone", "created_at"]), models.Index(fields=["ip_address", "created_at"])]
+
+    def __str__(self):
+        return f"{self.phone} {'✓' if self.success else '✗'} @ {self.created_at}"

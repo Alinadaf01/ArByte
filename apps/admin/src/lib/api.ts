@@ -1100,3 +1100,26 @@ export async function deleteRedirect(id: number): Promise<void> {
   const res = await authorizedFetch(`/redirects/${id}/`, { method: "DELETE" });
   if (!res.ok) throw new Error("حذف ریدایرکت ناموفق بود.");
 }
+
+// G-03 — لاگ ورود پنل.
+export interface AdminLoginAttempt {
+  id: number;
+  phone: string;
+  ipAddress: string | null;
+  userAgent: string;
+  success: boolean;
+  reason: string;
+  userName: string | null;
+  createdAt: string;
+}
+
+export async function listLoginAttempts(params: {
+  page?: number;
+  pageSize?: number;
+  success?: string;
+}): Promise<PaginatedResponse<AdminLoginAttempt>> {
+  return parseOrThrow(
+    await authorizedFetch(`/login-attempts/${buildQuery(params)}`),
+    "دریافت لاگ ورود ناموفق بود.",
+  );
+}

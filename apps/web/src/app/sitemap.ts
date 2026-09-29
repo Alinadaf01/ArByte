@@ -10,7 +10,7 @@ interface SitemapData {
 }
 
 const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? "http://localhost:4000/api/v1";
+  process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
 async function getSitemapData(): Promise<SitemapData> {
   try {

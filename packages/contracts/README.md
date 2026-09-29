@@ -1,6 +1,6 @@
 # @arbyte/contracts
 
-اسکیماهای Zod مشترک بین `apps/api` (ولیدیشن سرور) و `apps/web` / `apps/admin` (تایپ کلاینت).
+اسکیماهای Zod مشترک بین `apps/backend` (Django — قرارداد سیم، `pnpm contract:test`) و `apps/web` / `apps/admin` (تایپ کلاینت).
 طبق ADR-001، این پکیج «Single Source of Truth» بند ۱۲.۳ برند بوک برای شکل داده‌ی بین Frontend و Backend است.
 
 ## وضعیت فعلی

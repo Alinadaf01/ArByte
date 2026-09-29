@@ -178,5 +178,6 @@ urlpatterns = [
     path("admin/returns/<int:pk>/mark-received/", returns.AdminReturnMarkReceivedView.as_view(), name="admin-return-mark-received"),
     path("admin/returns/<int:pk>/mark-refunded/", returns.AdminReturnMarkRefundedView.as_view(), name="admin-return-mark-refunded"),
     # Activity log
+    path("admin/login-attempts/", activity_log_views.AdminLoginAttemptListView.as_view(), name="admin-login-attempts"),
     path("admin/activity-log/", activity_log_views.AdminActivityLogListView.as_view(), name="admin-activity-log"),
 ]

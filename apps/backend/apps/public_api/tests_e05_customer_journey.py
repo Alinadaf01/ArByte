@@ -99,7 +99,7 @@ class CustomerJourneyTests(TransactionTestCase):
         # ۲) رسید پرداخت ------------------------------------------------------
         from django.core.files.uploadedfile import SimpleUploadedFile
 
-        receipt_file = SimpleUploadedFile("receipt.jpg", b"fake-receipt-bytes", content_type="image/jpeg")
+        receipt_file = SimpleUploadedFile("receipt.jpg", b"\xff\xd8\xff\xe0fake-receipt-bytes", content_type="image/jpeg")
         upload_resp = self.client.post(
             f"/api/v1/orders/{order_number}/receipt",
             {"file": receipt_file, "amount": 50_000_000},

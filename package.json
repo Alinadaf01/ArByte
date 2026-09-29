@@ -15,18 +15,13 @@
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .gitignore",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\" --ignore-path .gitignore",
-    "db:generate": "pnpm --filter @arbyte/api db:generate",
-    "db:migrate": "pnpm --filter @arbyte/api db:migrate",
-    "db:migrate:deploy": "pnpm --filter @arbyte/api db:migrate:deploy",
-    "db:seed": "pnpm --filter @arbyte/api db:seed",
-    "db:studio": "pnpm --filter @arbyte/api db:studio",
     "be:dev": "node scripts/backend.mjs python manage.py runserver 8000",
     "be:test": "node scripts/backend.mjs python manage.py test",
     "be:migrate": "node scripts/backend.mjs python manage.py migrate",
     "be:lint": "node scripts/backend.mjs ruff check .",
     "contract:test": "pnpm --filter @arbyte/contracts exec vitest run --config vitest.contract.config.ts",
-    "contract:parity": "pnpm --filter @arbyte/contracts exec tsx test/contract/parity.ts",
-    "prepare": "husky"
+    "prepare": "husky",
+    "be:manage": "node scripts/backend.mjs python manage.py"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.5.0",

@@ -15,7 +15,7 @@ import type {
  * بشکند، فقط بخش‌های مبتنی بر بلوک رندر نمی‌شوند.
  */
 const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? "http://localhost:4000/api/v1";
+  process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1";
 
 export async function getHomepage(): Promise<PublicHomepageBlock[]> {
   try {

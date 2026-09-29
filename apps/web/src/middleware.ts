@@ -110,6 +110,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     "font-src 'self'",
     `connect-src 'self' ${apiOrigin}`,
     "frame-ancestors 'none'",
+    "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
   ].join("; ");

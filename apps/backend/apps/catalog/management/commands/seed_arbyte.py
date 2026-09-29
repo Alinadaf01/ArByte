@@ -4,8 +4,8 @@ Nest ساخته و تست شده (۵ دسته، ۱۸ محصول، پرچم‌د�
 برابری D-03 معنا ندارد.
 
 منبع: apps/backend/fixtures/arbyte-catalog.json — با
-`pnpm --filter @arbyte/api export-catalog` از دیتابیس Nest (بعد از
-`pnpm db:seed`) ساخته می‌شود. کلید طبیعی همه‌جا (slug/sku/key)، بدون
+یک بار از دیتابیس Nest قدیمی (پیش از حذفش در G-03) استخراج و در git ثبت شد؛
+منبع ثابت seed است. کلید طبیعی همه‌جا (slug/sku/key)، بدون
 نگاشت id-به-id با Prisma.
 
 ⚠️ تصاویر همان مسیرهای apps/web/public/... می‌مانند — رشته‌ی ساده، نه
@@ -38,7 +38,7 @@ FIXTURE_PATH = Path(settings.BASE_DIR) / "fixtures" / "arbyte-catalog.json"
 
 
 class Command(BaseCommand):
-    help = "همان کاتالوگ Nest (apps/api/scripts/export-catalog.ts) را از fixtures/arbyte-catalog.json seed می‌کند."
+    help = "کاتالوگ نمونه‌ی آربایت را از fixtures/arbyte-catalog.json seed می‌کند."
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -46,7 +46,7 @@ class Command(BaseCommand):
             self.stderr.write(
                 self.style.ERROR(
                     f"fixture یافت نشد: {FIXTURE_PATH}\n"
-                    "اول از apps/api اجرا کنید: pnpm export-catalog"
+                    "فایل fixtures/arbyte-catalog.json در مخزن نیست."
                 )
             )
             return

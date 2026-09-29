@@ -1,6 +1,9 @@
+import os
 import secrets
+import uuid
 
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 from django.db import models
 
 
@@ -336,8 +339,15 @@ class Payment(models.Model):
         return f"{self.order.order_number} — {self.method} ({self.status})"
 
 
+def private_storage() -> FileSystemStorage:
+    """G-03 — خارج از MEDIA_ROOT؛ فقط از طریق endpoint احرازهویت‌شده خوانده می‌شود."""
+    return FileSystemStorage(location=settings.PRIVATE_MEDIA_ROOT, base_url=None)
+
+
 def _receipt_upload_path(instance: "PaymentReceipt", filename: str) -> str:
-    return f"receipts/private/{instance.payment.order.order_number}/{filename}"
+    # نام تصادفی؛ فقط پسوندِ نوعِ تشخیص‌داده‌شده (services.sniff_receipt_type) می‌ماند.
+    ext = os.path.splitext(filename)[1].lower()[:5]
+    return f"receipts/{instance.payment.order.order_number}/{uuid.uuid4().hex}{ext}"
 
 
 class PaymentReceipt(models.Model):
@@ -348,7 +358,7 @@ class PaymentReceipt(models.Model):
 
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="receipts")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="uploaded_receipts")
-    file = models.FileField(upload_to=_receipt_upload_path)
+    file = models.FileField(upload_to=_receipt_upload_path, storage=private_storage)
     amount = models.PositiveIntegerField()
     uploaded_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=RECEIPT_STATUS_CHOICES, default="PENDING")

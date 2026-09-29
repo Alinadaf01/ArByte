@@ -1,11 +1,17 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.db.models import Q
+from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from apps.public_api.client_ip import ClientIpScopedRateThrottle
+from apps.analytics.models import AdminLoginAttempt
+from apps.public_api.client_ip import ClientIpScopedRateThrottle, client_ip
 from apps.users.models import User
 
 from .permissions import IsAdminStaff
@@ -41,14 +47,39 @@ class AdminLoginView(APIView):
     throttle_classes = [ClientIpScopedRateThrottle]
     throttle_scope = "admin_login"
 
+    @staticmethod
+    def _is_locked(phone: str, ip: str) -> bool:
+        """G-03 — قفل موقت: N شکست پشت‌سرهم برای یک شماره یا یک آی‌پی در
+        پنجره‌ی زمانی (از آخرین ورود موفق همان شماره/آی‌پی)."""
+        window_start = timezone.now() - timedelta(minutes=settings.ADMIN_LOGIN_LOCK_MINUTES)
+        for q in (Q(phone=phone), Q(ip_address=ip)):
+            recent = AdminLoginAttempt.objects.filter(q, created_at__gte=window_start)
+            last_ok = recent.filter(success=True).order_by("-created_at").values_list("created_at", flat=True).first()
+            fails = recent.filter(success=False).exclude(reason="locked")
+            if last_ok:
+                fails = fails.filter(created_at__gt=last_ok)
+            if fails.count() >= settings.ADMIN_LOGIN_MAX_FAILURES:
+                return True
+        return False
+
     def post(self, request):
         serializer = AdminLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = authenticate(
-            request, phone=serializer.validated_data["phone"], password=serializer.validated_data["password"]
-        )
+        phone = serializer.validated_data["phone"].strip()[:20]
+        ip = client_ip(request)
+        log = {"phone": phone, "ip_address": ip if ip != "unknown" else None, "user_agent": request.META.get("HTTP_USER_AGENT", "")[:300]}
+        if self._is_locked(phone, ip):
+            AdminLoginAttempt.objects.create(**log, reason="locked")
+            minutes = settings.ADMIN_LOGIN_LOCK_MINUTES
+            return Response(
+                {"detail": f"به‌دلیل تلاش‌های ناموفق، ورود تا {minutes} دقیقه قفل است."},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+        user = authenticate(request, phone=phone, password=serializer.validated_data["password"])
         if user is None or not user.is_staff:
+            AdminLoginAttempt.objects.create(**log, reason="bad_credentials" if user is None else "not_staff")
             return Response({"detail": "شماره یا رمز عبور اشتباه است."}, status=status.HTTP_401_UNAUTHORIZED)
+        AdminLoginAttempt.objects.create(**log, success=True, user=user)
 
         refresh = RefreshToken.for_user(user)
         return Response(

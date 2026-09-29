@@ -7,7 +7,8 @@ services:
     environment:
       POSTGRES_USER: arbyte
       POSTGRES_PASSWORD: arbyte
-      POSTGRES_DB: arbyte
+      # G-03 — همان نام دیتابیس apps/backend/.env.example (Django).
+      POSTGRES_DB: arbyte_dj
     # پورت 5432 روی هاست عمداً استفاده نشده — یکی از رایج‌ترین پورت‌هایی است
     # که نصب‌های محلی/سیستمی Postgres هم می‌گیرند (در T-003 دقیقاً همین برخورد
     # روی ماشین توسعه پیش آمد)؛ 5435 برخورد کمتری دارد. پورت داخلی کانتینر
@@ -17,7 +18,7 @@ services:
     volumes:
       - arbyte_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U arbyte -d arbyte"]
+      test: ["CMD-SHELL", "pg_isready -U arbyte -d arbyte_dj"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -35,32 +36,6 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio:latest
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: arbyte
-      MINIO_ROOT_PASSWORD: arbyte-minio-dev-secret
-    ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # کنسول وب
-    volumes:
-      - arbyte_minio_data:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  mailpit:
-    image: axllent/mailpit:latest
-    restart: unless-stopped
-    ports:
-      - "1025:1025" # SMTP
-      - "8025:8025" # وب UI
-
 volumes:
   arbyte_postgres_data:
   arbyte_redis_data:
-  arbyte_minio_data:
