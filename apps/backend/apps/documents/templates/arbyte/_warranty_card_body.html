@@ -1,73 +1,169 @@
 <section class="cert">
-  <div class="cert-hero">
-    <img src="{{ logo_uri }}" alt="آربایت" class="cert-logo">
-    <div class="cert-title">کارت گارانتی و مهلت تست محصول</div>
-    <div class="cert-tagline">فناوری با ظرافت</div>
+
+  <header class="c-head">
+    <div class="c-brand">
+      <img src="{{ logo_uri }}" alt="آربایت">
+      <div class="c-brand-tagline">فناوری با ظرافت</div>
+    </div>
+    <dl class="c-ids">
+      <dt>شناسه کارت</dt><dd><span class="c-ltr c-code">{{ card.certificate_id }}</span></dd>
+      <dt>شماره سفارش</dt><dd><span class="c-ltr c-code">{{ card.order_number }}</span></dd>
+      <dt>تاریخ صدور</dt><dd>{{ card.issue_date }}</dd>
+    </dl>
+  </header>
+
+  <div class="c-circuit" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+  <div>
+    <div class="c-title-eyebrow">Warranty &amp; Test Period Certificate</div>
+    <h1 class="c-title">کارت گارانتی و مهلت تست محصول</h1>
   </div>
 
-  <div class="cert-grid">
-    <div class="cert-card">
-      <div class="cert-card-title">مشتری</div>
-      <div class="cert-row"><span class="cert-label">نام</span><span class="cert-value">{{ card.customer_name }}</span></div>
-      <div class="cert-row"><span class="cert-label">تماس</span><span class="cert-value ltr">{{ card.customer_phone }}</span></div>
-      <div class="cert-row"><span class="cert-label">شماره سفارش</span><span class="cert-value ltr">{{ card.order_number }}</span></div>
+  {# ---- محصول ---- #}
+  <div class="c-card c-product">
+    <div class="c-product-top">
+      <div>
+        <div class="c-eyebrow">محصول</div>
+        <div class="c-product-name">{{ card.product_name }}</div>
+        {% if card.product_brand or card.product_model %}
+        <div class="c-product-meta">
+          {% if card.product_brand %}<span>{{ card.product_brand }}</span>{% endif %}
+          {% if card.product_brand and card.product_model %}<span class="sep">|</span>{% endif %}
+          {% if card.product_model %}<span>مدل <span class="c-ltr">{{ card.product_model }}</span></span>{% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% if card.product_condition %}
+      <div class="c-chip"><span class="c-chip-label">وضعیت کالا</span>{{ card.product_condition }}</div>
+      {% endif %}
     </div>
-    <div class="cert-card">
-      <div class="cert-card-title">محصول</div>
-      <div class="cert-row"><span class="cert-label">نام</span><span class="cert-value">{{ card.product_name }}</span></div>
-      {% if card.product_brand %}<div class="cert-row"><span class="cert-label">برند</span><span class="cert-value">{{ card.product_brand }}</span></div>{% endif %}
-      {% if card.product_model %}<div class="cert-row"><span class="cert-label">مدل</span><span class="cert-value ltr">{{ card.product_model }}</span></div>{% endif %}
-      {% if card.product_condition %}<div class="cert-row"><span class="cert-label">وضعیت کالا</span><span class="cert-value">{{ card.product_condition }}</span></div>{% endif %}
-      {% if card.product_specs %}<div class="cert-row"><span class="cert-label">مشخصات</span><span class="cert-value">{{ card.product_specs }}</span></div>{% endif %}
-      <div class="cert-row"><span class="cert-label">شماره سریال</span><span class="cert-value ltr">{{ card.serial_number|default:"—" }}</span></div>
+
+    <div class="c-specs">
+      {% if card.serial_number %}
+      <div class="c-spec c-spec-serial">
+        <span class="c-spec-label">شماره سریال</span>
+        <span class="c-spec-value c-code">{{ card.serial_number }}</span>
+      </div>
+      {% endif %}
+      {% for spec in card.key_specs %}
+      <div class="c-spec">
+        <span class="c-spec-label">{{ spec.label|default:"مشخصات" }}</span>
+        <span class="c-spec-value"><bdi>{{ spec.value }}</bdi></span>
+      </div>
+      {% endfor %}
     </div>
   </div>
 
-  <div class="cert-card cert-emphasis">
-    <div class="cert-card-title">مهلت تست ({{ card.test_period_days }} روز)</div>
-    <div class="cert-emphasis-grid">
-      <div><span class="cert-label">تاریخ خرید</span><div class="cert-value">{{ card.purchase_date }}</div></div>
-      <div><span class="cert-label">شروع</span><div class="cert-value">{{ card.test_period.start_label }}</div></div>
-      <div><span class="cert-label">پایان</span><div class="cert-value">{{ card.test_period.end_label }}</div></div>
+  {# ---- مهلت تست / گارانتی ---- #}
+  <div class="c-periods{% if not card.has_warranty %} is-single{% endif %}">
+    <div class="c-card c-period">
+      <div class="c-period-head">
+        <div class="c-eyebrow">مهلت تست</div>
+        <div class="c-period-provider">خرید: {{ card.purchase_date }}</div>
+      </div>
+      <div class="c-duration">{{ card.test_period_days_fa }}<small>روز</small></div>
+      <div class="c-timeline">
+        <div class="c-tl-point">
+          <span class="c-tl-label">شروع</span>
+          <span class="c-tl-value">{{ card.test_period.start_label }}</span>
+        </div>
+        <div class="c-tl-point c-tl-end">
+          <span class="c-tl-label">پایان مهلت تست</span>
+          <span class="c-tl-value">{{ card.test_period.end_label }}</span>
+        </div>
+      </div>
+      {% if not card.test_period.known %}
+      <div class="c-period-note">شمارش مهلت از روز تحویل کالا به شما آغاز می‌شود.</div>
+      {% endif %}
     </div>
-  </div>
 
-  {% if card.has_warranty %}
-  <div class="cert-card cert-emphasis">
-    <div class="cert-card-title">گارانتی{% if card.warranty_provider %} — {{ card.warranty_provider }}{% endif %} ({{ card.warranty_months }} ماه)</div>
-    <div class="cert-emphasis-grid">
-      <div><span class="cert-label">شروع</span><div class="cert-value">{{ card.warranty.start_label }}</div></div>
-      <div><span class="cert-label">پایان</span><div class="cert-value">{{ card.warranty.end_label }}</div></div>
+    {% if card.has_warranty %}
+    <div class="c-card c-period">
+      <div class="c-period-head">
+        <div class="c-eyebrow">گارانتی</div>
+        {% if card.warranty_provider %}<div class="c-period-provider">{{ card.warranty_provider }}</div>{% endif %}
+      </div>
+      <div class="c-duration">{{ card.warranty_months_fa }}<small>ماه</small></div>
+      <div class="c-timeline">
+        <div class="c-tl-point">
+          <span class="c-tl-label">شروع</span>
+          <span class="c-tl-value">{{ card.warranty.start_label }}</span>
+        </div>
+        <div class="c-tl-point c-tl-end">
+          <span class="c-tl-label">پایان گارانتی</span>
+          <span class="c-tl-value">{{ card.warranty.end_label }}</span>
+        </div>
+      </div>
+      {% if not card.warranty.known %}
+      <div class="c-period-note">شمارش گارانتی از روز تحویل کالا به شما آغاز می‌شود.</div>
+      {% endif %}
     </div>
-  </div>
-  {% endif %}
-
-  <div class="cert-card">
-    <div class="cert-card-title">ارسال</div>
-    {% if card.has_shipping %}
-      <div class="cert-row"><span class="cert-label">شرکت حمل</span><span class="cert-value">{{ card.carrier_name }}</span></div>
-      <div class="cert-row"><span class="cert-label">کد رهگیری</span><span class="cert-value ltr">{{ card.tracking_number }}</span></div>
-    {% else %}
-      <div class="muted">در انتظار ارسال</div>
     {% endif %}
   </div>
 
+  {# ---- مشتری / سفارش / ارسال ---- #}
+  <div class="c-info">
+    <div class="c-card">
+      <div class="c-eyebrow">مشتری</div>
+      <dl class="c-fields">
+        <div class="c-field"><dt>نام</dt><dd>{{ card.customer_name|default:"—" }}</dd></div>
+        {% if card.customer_phone %}<div class="c-field"><dt>شماره تماس</dt><dd><span class="c-ltr">{{ card.customer_phone }}</span></dd></div>{% endif %}
+      </dl>
+    </div>
+
+    <div class="c-card">
+      <div class="c-eyebrow">سفارش</div>
+      <dl class="c-fields">
+        <div class="c-field"><dt>شماره سفارش</dt><dd><span class="c-ltr c-code">{{ card.order_number }}</span></dd></div>
+        <div class="c-field"><dt>تاریخ خرید</dt><dd>{{ card.purchase_date }}</dd></div>
+      </dl>
+    </div>
+
+    <div class="c-card">
+      <div class="c-eyebrow">ارسال</div>
+      {% if card.has_shipping %}
+      <dl class="c-fields">
+        {% if card.carrier_name %}<div class="c-field"><dt>شرکت حمل</dt><dd>{{ card.carrier_name }}</dd></div>{% endif %}
+        {% if card.tracking_number %}<div class="c-field"><dt>کد رهگیری</dt><dd><span class="c-ltr c-code">{{ card.tracking_number }}</span></dd></div>{% endif %}
+        {% if card.shipped_date %}<div class="c-field"><dt>تاریخ ارسال</dt><dd>{{ card.shipped_date }}</dd></div>{% endif %}
+      </dl>
+      {% else %}
+      <span class="c-pill">در انتظار ارسال</span>
+      <div class="c-pill-note">کد رهگیری پس از ارسال از طریق پیامک و صفحه‌ی پیگیری سفارش اعلام می‌شود.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---- شرایط: فقط از SiteSettings.warranty_terms؛ خالی = پنهان ---- #}
   {% if card.terms %}
-  <div class="cert-card">
-    <div class="cert-card-title">شرایط</div>
-    <div style="font-size:9pt; line-height:1.8;">{{ card.terms|linebreaksbr }}</div>
+  <div class="c-card c-terms">
+    <div class="c-eyebrow">شرایط گارانتی و مهلت تست</div>
+    <div class="c-terms-body">{{ card.terms|linebreaksbr }}</div>
   </div>
   {% endif %}
 
-  <div class="cert-footer">
-    <div class="cert-footer-qr">
-      {{ card.qr_svg }}
-      <div class="footnote">پیگیری وضعیت سفارش</div>
+  {# ---- تأیید + فوتر ---- #}
+  <footer class="c-foot">
+    <div class="c-verify">
+      <div class="c-qr">{{ card.qr_svg }}</div>
+      <div>
+        <div class="c-verify-title">پیگیری وضعیت سفارش</div>
+        <div class="c-verify-text">کد را اسکن کنید یا شماره سفارش را در این نشانی وارد کنید:</div>
+        <div class="c-verify-url"><span class="c-ltr">{{ card.track_url_display }}</span></div>
+      </div>
+      <div class="c-verify-id">
+        شناسه این کارت
+        <strong><span class="c-ltr c-code">{{ card.certificate_id }}</span></strong>
+      </div>
     </div>
-    <div class="cert-footer-meta">
-      <div class="footnote">شناسه کارت: <span class="ltr">{{ card.certificate_id }}</span></div>
-      <div class="footnote">تاریخ صدور: {{ card.issue_date }}</div>
-      <div class="footnote">arbyte.ir{% if seller_phone %} · <span class="ltr">{{ seller_phone }}</span>{% endif %}</div>
+    <div class="c-contact">
+      <img src="{{ logo_mono_uri }}" alt="آربایت">
+      <div class="c-contact-items">
+        <span class="c-ltr">ArByte.ir</span>
+        {% if seller_phone %}<span><span class="c-ltr">{{ seller_phone }}</span></span>{% endif %}
+        {% if seller_address %}<span>{{ seller_address }}</span>{% endif %}
+      </div>
     </div>
-  </div>
+  </footer>
+
 </section>

@@ -352,6 +352,125 @@ class WarrantyCardRenderTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class WarrantyCardContentTests(TestCase):
+    """بریف E-04 (کارت گارانتی) — محتوای HTML رندرشده، نه فقط وجود PDF
+    (Chromium در تست mock است، پس بررسی واقعی روی خروجی قالب انجام می‌شود)."""
+
+    def setUp(self):
+        _configure_seller()
+        from apps.users.models import User
+
+        self.user = User.objects.create_user(phone="09121110096", is_verified=True)
+
+    def _html(self, unit) -> str:
+        from django.template.loader import render_to_string
+
+        from apps.documents.warranty_card import build_single_warranty_context
+
+        return render_to_string("arbyte/warranty_card.html", build_single_warranty_context(unit))
+
+    def test_qr_points_to_track_order_code_param(self):
+        """صفحه‌ی track-order فقط `?code=` را می‌خواند (TrackOrderView.tsx)."""
+        from apps.documents import warranty_card
+
+        order, unit = _make_single_unit_order(user=self.user)
+        with patch.object(warranty_card, "qr_code_svg", return_value="") as qr:
+            warranty_card.build_warranty_card(unit)
+        qr.assert_called_once_with(f"https://arbyte.ir/track-order?code={order.order_number}")
+
+    def test_condition_uses_project_enum_labels(self):
+        from apps.documents.warranty_card import build_warranty_card
+
+        order, unit = _make_single_unit_order(user=self.user)
+        product = unit.order_item.variant.product
+        for code, label in [("NEW", "آکبند"), ("OPEN_BOX", "اپن باکس"), ("STOCK", "استوک"), ("LIKE_NEW", "در حد نو")]:
+            product.condition = code
+            product.save(update_fields=["condition"])
+            unit.order_item.variant.product.refresh_from_db()
+            self.assertEqual(build_warranty_card(unit)["product_condition"], label)
+
+    def test_durations_and_phone_use_persian_digits(self):
+        from apps.documents.warranty_card import build_warranty_card
+
+        order, unit = _make_single_unit_order(user=self.user, warranty_months=24)
+        card = build_warranty_card(unit)
+        self.assertEqual(card["warranty_months_fa"], "۲۴")
+        self.assertEqual(card["test_period_days_fa"], "۷")
+        self.assertEqual(card["customer_phone"], "۰۹۱۲۱۲۳۴۵۶۷")
+
+    def test_warranty_section_hidden_without_warranty(self):
+        order, unit = _make_single_unit_order(user=self.user, warranty_months=None)
+        html = self._html(unit)
+        self.assertNotIn("پایان گارانتی", html)
+        self.assertIn("پایان مهلت تست", html)
+
+    def test_warranty_section_shown_with_warranty(self):
+        order, unit = _make_single_unit_order(user=self.user, warranty_months=24, delivered=True)
+        html = self._html(unit)
+        self.assertIn("پایان گارانتی", html)
+        self.assertIn("گارانتی شرکتی", html)
+        self.assertNotIn("از تاریخ تحویل", html)
+
+    def test_terms_section_hidden_when_empty(self):
+        settings_obj = SiteSettings.load()
+        settings_obj.warranty_terms = "   "
+        settings_obj.save(update_fields=["warranty_terms"])
+        order, unit = _make_single_unit_order(user=self.user)
+        self.assertNotIn("شرایط گارانتی و مهلت تست", self._html(unit))
+
+    def test_awaiting_shipping_vs_shipped(self):
+        order, unit = _make_single_unit_order(user=self.user, shipped=False)
+        self.assertIn("در انتظار ارسال", self._html(unit))
+        order2, unit2 = _make_single_unit_order(user=self.user, shipped=True, product_name="محصول ارسال‌شده آربایت")
+        html = self._html(unit2)
+        self.assertNotIn("در انتظار ارسال", html)
+        self.assertIn("TRK-0001", html)
+
+    def test_key_specs_from_spec_snapshot_else_variant(self):
+        from apps.documents.warranty_card import build_warranty_card
+
+        order, unit = _make_single_unit_order(user=self.user)
+        self.assertEqual(build_warranty_card(unit)["key_specs"], [{"label": "پیکربندی", "value": "32GB/1TB"}])
+        item = unit.order_item
+        item.spec_snapshot = {"پردازنده": "Core Ultra 9", "گرافیک": "RTX 5080", "خالی": ""}
+        item.save(update_fields=["spec_snapshot"])
+        self.assertEqual(
+            build_warranty_card(unit)["key_specs"],
+            [{"label": "پردازنده", "value": "Core Ultra 9"}, {"label": "گرافیک", "value": "RTX 5080"}],
+        )
+
+    def test_footer_has_company_contact(self):
+        order, unit = _make_single_unit_order(user=self.user)
+        html = self._html(unit)
+        self.assertIn("ArByte.ir", html)
+        self.assertIn("۰۲۱-۱۲۳۴۵۶۷۸", html)
+        self.assertIn("تهران، خیابان ولیعصر، پلاک ۱۲۳", html)
+
+    def test_production_template_has_no_demo_data_or_javascript(self):
+        """بریف اصلاح ۸/۱۰/۱۱ — نه متن نمونه، نه جاوااسکریپت در قالب تولید."""
+        order, unit = _make_single_unit_order(user=self.user)
+        html = self._html(unit)
+        self.assertNotIn("DEMO", html)
+        self.assertNotIn("<script", html.lower())
+
+    def test_assets_are_inlined_as_data_uris(self):
+        """page.set_content() روی about:blank است و file:// را بار نمی‌کند."""
+        order, unit = _make_single_unit_order(user=self.user)
+        html = self._html(unit)
+        self.assertNotIn("file://", html)
+        self.assertIn('src="data:image/png;base64,', html)
+        self.assertIn('url("data:font/woff2;base64,', html)
+
+    def test_demo_renders_every_state_without_database_records(self):
+        from apps.documents.warranty_demo import demo_cards, render_demo_html
+
+        order_count = Order.objects.count()
+        html = render_demo_html()
+        self.assertEqual(html.count('class="cert"'), len(demo_cards()))
+        self.assertIn("DEMO", html)
+        self.assertEqual(Order.objects.count(), order_count)
+
+
 class PackingSlipAndShippingLabelRenderTests(TestCase):
     def setUp(self):
         _configure_seller()

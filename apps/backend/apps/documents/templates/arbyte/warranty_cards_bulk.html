@@ -2,12 +2,12 @@
 {% block header %}{% endblock %}
 {% block extra_style %}
 {% include "arbyte/_warranty_card_style.html" %}
-  /* E-04 §۳ — یک واحد، یک صفحه. */
-  .cert-page:not(:last-child) { page-break-after: always; break-after: page; }
+  /* E-04 §۳ — هر واحد از صفحه‌ی جدید شروع می‌شود. */
+  .cert-sheet:not(:last-child) { page-break-after: always; break-after: page; }
 {% endblock %}
 {% block content %}
 {% for card in cards %}
-<div class="cert-page">
+<div class="cert-sheet">
   {% include "arbyte/_warranty_card_body.html" %}
 </div>
 {% empty %}

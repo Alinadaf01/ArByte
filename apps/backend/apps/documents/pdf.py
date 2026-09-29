@@ -11,6 +11,7 @@ per-order documents; list-style admin exports that could be slow run through
 Celery (see apps/documents/tasks.py) so that cost never blocks a web worker.
 """
 
+import base64
 from functools import lru_cache
 from pathlib import Path
 
@@ -45,12 +46,26 @@ BRAND_DIR = Path(__file__).resolve().parent.parent.parent / "public" / "brand"
 TITANIUM = "#7A7D82"
 
 
+_MIME_TYPES = {".woff2": "font/woff2", ".png": "image/png", ".svg": "image/svg+xml"}
+
+
+@lru_cache(maxsize=32)
+def _data_uri(path: Path) -> str:
+    """`page.set_content()` سند را روی about:blank باز می‌کند و Chromium از
+    آنجا هیچ زیرمنبع `file://` را بار نمی‌کند -- با `as_uri()` لوگو شکسته و
+    فونت به fallback سیستم برمی‌گشت (رندر واقعی: `naturalWidth == 0`،
+    `document.fonts` → error). پس دارایی‌ها inline به‌صورت data URI می‌آیند؛
+    هر فایل چند ده کیلوبایت است و یک بار در هر پروسه خوانده می‌شود."""
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f"data:{_MIME_TYPES[path.suffix]};base64,{encoded}"
+
+
 def peyda_font_uri(weight_filename: str) -> str:
-    return (PUBLIC_FONTS_DIR / "peyda" / weight_filename).as_uri()
+    return _data_uri(PUBLIC_FONTS_DIR / "peyda" / weight_filename)
 
 
 def jetbrains_mono_font_uri(weight_filename: str) -> str:
-    return (PUBLIC_FONTS_DIR / "jetbrains-mono" / weight_filename).as_uri()
+    return _data_uri(PUBLIC_FONTS_DIR / "jetbrains-mono" / weight_filename)
 
 
 def estedad_font_uri(weight_filename: str) -> str:
@@ -58,14 +73,14 @@ def estedad_font_uri(weight_filename: str) -> str:
     برند (Estedad) استفاده می‌کنند، نه Peyda's میراث وایب. خودمیزبان از
     apps/backend/public/fonts/estedad (کپی از apps/web، همان دلیل کپی
     فونت‌های Peyda بالا -- Docker build context فقط backend/ است)."""
-    return (PUBLIC_FONTS_DIR / "estedad" / weight_filename).as_uri()
+    return _data_uri(PUBLIC_FONTS_DIR / "estedad" / weight_filename)
 
 
 def brand_logo_uri(filename: str) -> str:
     """`logo-horizontal-light.png`/`logo-full-light.png`/`logo-mono-black.png`
     -- کپی واقعی و تأییدشده‌ی E-01 (apps/web/public/brand)، نه وردمارک
     جای‌گذاری‌شده‌ی `store_wordmark_svg` پایین (که هنوز خالی است)."""
-    return (BRAND_DIR / filename).as_uri()
+    return _data_uri(BRAND_DIR / filename)
 
 
 @lru_cache(maxsize=1)
