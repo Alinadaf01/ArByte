@@ -13,7 +13,11 @@ export const ProfileSchema = z.object({
   mobile: z.string(),
   firstName: z.string().nullable(),
   lastName: z.string().nullable(),
+  /** E-05 §۳ — «عضو از» (Account.dc.html). فقط `GET/PATCH
+   * /account/profile` این را برمی‌گرداند، نه پاسخ ورود (`AuthUserSchema`). */
+  memberSince: z.string().datetime(),
 });
+export type Profile = z.infer<typeof ProfileSchema>;
 export const ProfileResponseSchema = successResponseSchema(ProfileSchema);
 
 export const UpdateProfileBodySchema = z.object({
@@ -32,6 +36,7 @@ export const AddressSchema = z.object({
   /** §۸.۹ — همیشه دقیقاً یکی برابر true است (پارشال یونیک، T-003). */
   isDefault: z.boolean(),
 });
+export type Address = z.infer<typeof AddressSchema>;
 export const AddressListResponseSchema = successResponseSchema(
   z.array(AddressSchema),
 );
@@ -85,3 +90,27 @@ export const MergeWishlistItemSchema = z.object({
 });
 export const MergeWishlistBodySchema = z.array(MergeWishlistItemSchema);
 export const MergeWishlistResponseSchema = WishlistResponseSchema;
+
+/**
+ * E-05 §۳ — «دستگاه‌های من»، جدید در قرارداد: یک ردیف به ازای هر
+ * `OrderItemUnit` از سفارش‌های DELIVERED کاربر (E-03/E-04). تاریخ‌ها
+ * رشته‌ی فارسی از پیش‌فرمت‌شده‌اند (همان `format_jalali_date_fa` سمت سرور
+ * که کارت گارانتی هم استفاده می‌کند) نه ISO خام — این صفحه فقط نمایش
+ * می‌دهد، محاسبه‌ای روی آن انجام نمی‌شود.
+ */
+export const DeviceSchema = z.object({
+  orderNumber: z.string(),
+  certificateId: z.string(),
+  productName: z.string(),
+  serialNumber: z.string().nullable(),
+  /** null یعنی هنوز DELIVERED نشده (نمی‌شود چون این فهرست فقط DELIVERED
+   * است) یا مهلت تست تعریف نشده — عملاً همیشه پر است اینجا. */
+  testPeriodEndDate: z.string().nullable(),
+  hasWarranty: z.boolean(),
+  /** `hasWarranty` false → همیشه null («بدون گارانتی جدا»، UI). */
+  warrantyEndDate: z.string().nullable(),
+});
+export type Device = z.infer<typeof DeviceSchema>;
+export const DeviceListResponseSchema = successResponseSchema(
+  z.array(DeviceSchema),
+);

@@ -1045,3 +1045,153 @@ export const checkoutPage = {
     "مبلغ تا زمان تحویل و تأیید شما نزد درگاه می‌ماند. در صورت مغایرت، بازگشت وجه تا ۷۲ ساعت انجام می‌شود.",
   emptyCartRedirectNote: "سبد خرید شما خالی است.",
 } as const;
+
+/**
+ * E-05 §۱ — `/orders/[orderNumber]`. یادداشت‌های هر وضعیت («stateNotes»)
+ * برای هر ۹ وضعیت یک جمله دارند؛ طراحی (`OrderStatus.dc.html`) فقط دو
+ * حالت را صریح نوشته بود (پرداخت درگاهی/کارت‌به‌کارت) — بقیه با همان الگو
+ * (سند تسک §۱: «بقیه‌ی وضعیت‌ها با همان الگو»).
+ */
+export const orderStatusPage = {
+  orderNumberLabel: "شماره سفارش",
+  stateNotes: {
+    registered: "سفارش شما ثبت شد.",
+    awaitingPayment: "برای تکمیل سفارش، پرداخت را انجام دهید.",
+    paymentReview:
+      "رسید شما دریافت شد و در حال بررسی توسط کارشناس مالی است. معمولاً کمتر از دو ساعت کاری طول می‌کشد.",
+    paymentConfirmed:
+      "پرداخت با موفقیت تأیید شد. سفارش شما وارد صف آماده‌سازی شده است.",
+    processing: "دستگاه شما در حال آماده‌سازی و تست است.",
+    readyToShip: "سفارش شما آماده‌ی ارسال است.",
+    shipped: "سفارش شما ارسال شد.",
+    delivered: "سفارش شما با موفقیت تحویل داده شد.",
+    cancelled: "این سفارش لغو شده است.",
+  } as const,
+
+  /** بازگشت از درگاه/بله‌پی (`?payment=return`) — سند تسک §۱: «صفحه هرگز
+   * خودش پرداخت را موفق اعلام نمی‌کند»، فقط بررسی کوتاه‌مدت وضعیت. */
+  paymentReturn: {
+    checking: "در حال تأیید پرداخت…",
+    stillWaitingNote: "تأیید پرداخت کمی طول می‌کشد، پیامک می‌گیرید.",
+  },
+
+  timelineTitle: "مراحل سفارش",
+  timelineSteps: {
+    registered: "سفارش ثبت شد",
+    paid: "پرداخت تأیید شد",
+    processing: "آماده‌سازی و تست دستگاه",
+    shipped: "تحویل به پست",
+    delivered: "تحویل به شما",
+  } as const,
+
+  cardToCard: {
+    title: "اطلاعات حساب برای واریز",
+    bankLabel: "شماره شبا",
+    cardLabel: "شماره کارت",
+    holderLabel: "به نام",
+    copyIdle: "کپی",
+    copyDone: "کپی شد ✓",
+    amountNote: (orderNumber: string) =>
+      `هنگام واریز، شماره سفارش ${orderNumber} را در توضیحات بنویسید تا تطبیق سریع‌تر انجام شود.`,
+    receiptSectionTitle: "ثبت رسید پرداخت",
+    dropzoneIdle: "تصویر رسید را اینجا بیندازید",
+    dropzoneHint: "یا کلیک کنید و از دستگاه انتخاب کنید · JPG، PNG یا PDF",
+    submitIdle: "ثبت رسید و ارسال برای بررسی",
+    submitSending: "در حال ارسال…",
+    submitDone: "رسید ثبت شد ✓",
+    afterSubmitNote: "نتیجه‌ی بررسی با پیامک به شما اطلاع داده می‌شود.",
+  },
+
+  summaryTitle: "خلاصه سفارش",
+  deliveryTitle: "تحویل",
+  invoiceSectionTitle: "فاکتور رسمی",
+  invoiceDownloadIdle: "دانلود فاکتور PDF",
+  invoiceDownloadPreparing: "در حال آماده‌سازی…",
+  invoiceDownloadDone: "دانلود شد ✓",
+  invoiceNotAvailableNote: "فاکتور از لحظه‌ی تأیید پرداخت در دسترس است.",
+  warrantyCardSectionTitle: "کارت گارانتی دستگاه‌ها",
+  warrantyCardDownloadCta: "دانلود کارت گارانتی",
+  warrantyCardNotAvailableNote: "کارت گارانتی پس از ارسال سفارش در دسترس است.",
+  notFoundTitle: "سفارشی با این مشخصات پیدا نشد",
+  notFoundNote: "این سفارش متعلق به شما نیست یا وجود ندارد.",
+} as const;
+
+/** E-05 §۲ — `/track-order`. حریم خصوصی: فقط شهر مقصد نشان داده می‌شود. */
+export const trackOrderPage = {
+  breadcrumbHome: "خانه",
+  breadcrumbSupport: "پشتیبانی",
+  breadcrumbCurrent: "پیگیری سفارش",
+  title: "پیگیری سفارش",
+  subtitle:
+    "شماره سفارش و شماره موبایل ثبت‌شده را وارد کنید. بدون ورود به حساب هم می‌توانید وضعیت را ببینید.",
+  orderNumberLabel: "شماره سفارش",
+  orderNumberPlaceholder: "ARB-14042738",
+  mobileLabel: "شماره موبایل",
+  mobilePlaceholder: "۰۹۱۲۰۰۰۰۰۰۰",
+  submitCta: "پیگیری",
+  requiredFieldsNote: "هر دو فیلد لازم است.",
+  notFoundTitle: "سفارشی با این مشخصات پیدا نشد",
+  notFoundNote:
+    "شماره سفارش با ARB شروع می‌شود و در پیامک تأیید برایتان ارسال شده است. شماره موبایل هم باید همان شماره ثبت سفارش باشد.",
+  notFoundSupportCta: "پرسیدن از پشتیبانی",
+  timelineTitle: "مسیر سفارش",
+  itemsTitle: "اقلام سفارش",
+  totalPaidLabel: "مبلغ پرداخت‌شده",
+  addressTitle: "نشانی تحویل",
+  /** حریم خصوصی — فقط شهر، نه نشانی کامل (سند تسک §۲). */
+  addressCityOnlyNote: (city: string) => `مقصد: ${city}`,
+  documentsTitle: "مدارک سفارش",
+  guestInvoiceNote: "برای دانلود فاکتور وارد شوید",
+  guestInvoiceCta: "ورود به حساب",
+  fullOrderPageCta: "صفحه کامل سفارش",
+  supportBoxTitle: "مشکلی در ارسال هست؟",
+  supportBoxNote:
+    "اگر مرسوله بیش از دو روز در یک وضعیت مانده، به ما بگویید تا پیگیری کنیم.",
+  supportBoxCta: "گفت‌وگو با پشتیبانی",
+} as const;
+
+/** E-05 §۳ — `/account`، چهار تب. */
+export const accountPage = {
+  memberSinceLabel: "عضو از",
+  logoutCta: "خروج از حساب",
+  wishlistCta: "علاقه‌مندی‌ها",
+  tabs: {
+    orders: "سفارش‌ها",
+    addresses: "آدرس‌ها",
+    devices: "دستگاه‌های من",
+    info: "اطلاعات حساب",
+  },
+  orders: {
+    emptyTitle: "هنوز سفارشی ثبت نکرده‌اید",
+    emptyNote: "سفارش‌های شما اینجا نمایش داده می‌شوند.",
+    emptyCta: "مشاهده فروشگاه",
+    detailCta: "جزئیات سفارش",
+  },
+  addresses: {
+    defaultBadge: "پیش‌فرض",
+    editCta: "ویرایش",
+    setDefaultCta: "پیش‌فرض کن",
+    deleteCta: "حذف",
+    addNewCta: "افزودن آدرس جدید",
+    emptyNote: "هنوز آدرسی ثبت نکرده‌اید.",
+  },
+  devices: {
+    intro:
+      "دستگاه‌هایی که از آربایت خریده‌اید، با سریال ثبت‌شده و اطلاعات گارانتی.",
+    serialLabel: "شماره سریال",
+    testPeriodEndLabel: "پایان مهلت تست",
+    warrantyLabel: "گارانتی تا",
+    noWarrantyNote: "بدون گارانتی جدا",
+    downloadWarrantyCardCta: "دانلود کارت گارانتی",
+    emptyNote: "هنوز دستگاهی به حساب شما تحویل داده نشده است.",
+  },
+  info: {
+    title: "اطلاعات حساب",
+    firstNameLabel: "نام",
+    lastNameLabel: "نام خانوادگی",
+    mobileLabel: "شماره موبایل",
+    mobileLockedNote: "شماره موبایل قابل ویرایش نیست",
+    saveCta: "ذخیره تغییرات",
+    saveDone: "ذخیره شد ✓",
+  },
+} as const;

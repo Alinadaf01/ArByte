@@ -24,7 +24,13 @@ const FORWARD_REQUEST_HEADERS = [
   "x-cart-session",
   "idempotency-key",
 ];
-const FORWARD_RESPONSE_HEADERS = ["content-type", "x-cart-session"];
+const FORWARD_RESPONSE_HEADERS = [
+  "content-type",
+  "x-cart-session",
+  // E-05 §۱ — فاکتور/کارت گارانتی PDF نامِ فایل پیشنهادی سرور را نگه
+  // می‌دارند (Django's pdf_filename())، به‌جای این‌که کلاینت خودش بسازد.
+  "content-disposition",
+];
 
 async function forward(
   request: NextRequest,

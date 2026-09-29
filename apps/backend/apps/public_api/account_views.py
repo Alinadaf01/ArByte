@@ -17,6 +17,14 @@ from .jwt_tokens import to_auth_user
 from .validation import parse_mobile, parse_non_empty_string, parse_postal_code
 
 
+def _profile_to_dict(user) -> dict:
+    # E-05 §۳ — «عضو از» (Account.dc.html)؛ apps.users.models.User از
+    # AbstractBaseUser است، `created_at` دارد نه `date_joined` استاندارد
+    # جنگو. فقط اینجا اضافه می‌شود (نه to_auth_user مشترک با پاسخ ورود)
+    # چون فقط UI حساب کاربری به آن نیاز دارد.
+    return {**to_auth_user(user), "memberSince": user.created_at.isoformat()}
+
+
 def _address_to_dict(address: Address) -> dict:
     return {
         "id": str(address.id),
@@ -61,7 +69,7 @@ class ProfileView(PublicAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(success_response(to_auth_user(request.user), request.request_id))
+        return Response(success_response(_profile_to_dict(request.user), request.request_id))
 
     def patch(self, request):
         assert_not_impersonating(request)
@@ -75,7 +83,7 @@ class ProfileView(PublicAPIView):
             update_fields.append("last_name")
         if update_fields:
             user.save(update_fields=update_fields)
-        return Response(success_response(to_auth_user(user), request.request_id))
+        return Response(success_response(_profile_to_dict(user), request.request_id))
 
 
 class AddressListCreateView(PublicAPIView):
@@ -172,6 +180,40 @@ class WishlistDetailView(PublicAPIView):
     def delete(self, request, pk):
         Favorite.objects.filter(pk=pk, user=request.user).delete()
         return Response(success_response({}, request.request_id))
+
+
+class DeviceListView(PublicAPIView):
+    """E-05 §۳ — «دستگاه‌های من»: یک ردیف به ازای هر `OrderItemUnit` از
+    سفارش‌های DELIVERED کاربر. تاریخ‌های مهلت‌تست/گارانتی از همان منطق
+    E-04's کارت گارانتی (`build_warranty_card`) می‌آیند — یک منبع محاسبه،
+    نه تکرار قواعد تاریخ در دو جا."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.orders.models import OrderItemUnit
+        from apps.documents.warranty_card import build_warranty_card
+
+        units = (
+            OrderItemUnit.objects.filter(order_item__order__user=request.user, order_item__order__status="DELIVERED")
+            .select_related("order_item__order", "order_item__variant__product__brand")
+            .order_by("-order_item__order__delivered_at")
+        )
+        devices = []
+        for unit in units:
+            card = build_warranty_card(unit)
+            devices.append(
+                {
+                    "orderNumber": card["order_number"],
+                    "certificateId": card["certificate_id"],
+                    "productName": card["product_name"],
+                    "serialNumber": card["serial_number"],
+                    "testPeriodEndDate": card["test_period"]["end_label"] if card["test_period"]["known"] else None,
+                    "hasWarranty": card["has_warranty"],
+                    "warrantyEndDate": card["warranty"]["end_label"] if card["has_warranty"] and card["warranty"]["known"] else None,
+                }
+            )
+        return Response(success_response(devices, request.request_id))
 
 
 class WishlistMergeView(PublicAPIView):

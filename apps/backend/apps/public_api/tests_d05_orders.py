@@ -367,6 +367,18 @@ class OrderTrackTests(OrderTestBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["data"]["orderNumber"], self.order_number)
 
+    def test_guest_response_hides_full_address(self):
+        """E-05 §۲ — حریم خصوصی: فقط شهر، نه نشانی کامل/فاکتور/روش‌پرداخت."""
+        response = self.client.post(
+            "/api/v1/orders/track", {"orderNumber": self.order_number, "mobile": "09121110050"}, format="json"
+        )
+        data = response.data["data"]
+        self.assertIn("shippingCity", data)
+        self.assertNotIn("shippingAddress", data)
+        self.assertNotIn("invoice", data)
+        self.assertNotIn("payment", data)
+        self.assertTrue(all("units" not in item for item in data["items"]))
+
     def test_unknown_order_and_wrong_mobile_give_identical_error_shape(self):
         unknown = self.client.post(
             "/api/v1/orders/track", {"orderNumber": "ARB-00000000", "mobile": "09121110050"}, format="json"

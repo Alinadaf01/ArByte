@@ -20,6 +20,22 @@ from .validation import _parse_positive_int, parse_mobile
 RETURN_WINDOW_DAYS = 7
 
 
+def _card_to_card_account(payment) -> dict | None:
+    """E-05 §۱ — «اطلاعات حساب از API، نه هاردکد». فقط برای سفارش‌های
+    کارت‌به‌کارت دستی؛ سه فیلد از SiteSettings (همان‌هایی که
+    order_services.card_to_card_enabled() چک می‌کند)."""
+    if not payment or payment.method != "MANUAL_CARD_TO_CARD":
+        return None
+    from apps.settings.models import SiteSettings
+
+    settings_obj = SiteSettings.load()
+    return {
+        "cardNumber": settings_obj.card_to_card_number,
+        "sheba": settings_obj.card_to_card_sheba,
+        "holderName": settings_obj.card_to_card_holder_name,
+    }
+
+
 def _order_item_to_dict(item, *, include_units: bool = False) -> dict:
     data = {
         "id": str(item.id),
@@ -71,6 +87,7 @@ def _order_to_dict(order: Order, *, include_units: bool = False) -> dict:
         "payment": (
             {"method": payment.method, "provider": payment.provider, "status": payment.status} if payment else None
         ),
+        "cardToCardAccount": _card_to_card_account(payment),
         "shipment": (
             {
                 "provider": shipment.provider,
@@ -324,6 +341,36 @@ class OrderReturnRequestView(PublicAPIView):
         return Response(success_response(data, request.request_id), status=201)
 
 
+def _order_to_guest_dict(order: Order) -> dict:
+    """E-05 §۲ — حریم خصوصی: پیگیری مهمان فقط شهر مقصد را می‌بیند، نه نشانی
+    کامل/فاکتور/روش‌پرداخت (`_order_to_dict` بالا برای مالک واردشده است).
+    `units` هم هرگز اینجا نیست (همان قاعده‌ی E-03/E-04)."""
+    shipment = getattr(order, "shipment", None)
+    return {
+        "orderNumber": order.order_number,
+        "status": order.status,
+        "paymentStatus": order.payment_status,
+        "items": [_order_item_to_dict(item) for item in order.items.all()],
+        "shippingCity": order.shipping_city,
+        "subtotal": order.subtotal,
+        "discountTotal": order.discount_total,
+        "shippingCost": order.shipping_cost,
+        "finalTotal": order.final_total,
+        "shipment": (
+            {
+                "provider": shipment.provider,
+                "trackingNumber": shipment.tracking_number,
+                "trackingUrl": shipment.tracking_url,
+                "shippedAt": shipment.shipped_at.isoformat() if shipment.shipped_at else None,
+                "deliveredAt": shipment.delivered_at.isoformat() if shipment.delivered_at else None,
+            }
+            if shipment
+            else None
+        ),
+        "createdAt": order.created_at.isoformat(),
+    }
+
+
 class OrderTrackView(PublicAPIView):
     """D-05 §۵ — پیگیری مهمان، عمومی. پاسخ خطا برای «سفارش نیست» و «موبایل
     نمی‌خورد» عمداً یکسان است تا شماره‌ی سفارش قابل حدس‌زدن نباشد."""
@@ -339,8 +386,8 @@ class OrderTrackView(PublicAPIView):
         mobile = parse_mobile(mobile_raw, "mobile")
 
         order = Order.objects.filter(order_number=order_number, shipping_mobile=mobile).prefetch_related(
-            "items", "payments", "shipment"
+            "items", "shipment"
         ).first()
         if not order:
             raise not_found("سفارشی با این مشخصات پیدا نشد.")
-        return Response(success_response(_order_to_dict(order), request.request_id))
+        return Response(success_response(_order_to_guest_dict(order), request.request_id))

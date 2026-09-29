@@ -166,3 +166,70 @@ class WishlistMergeTests(AuthenticatedApiTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Favorite.objects.filter(user=self.user).count(), 0)
+
+
+class DeviceListTests(AuthenticatedApiTestCase):
+    """E-05 §۳ — «دستگاه‌های من»: فقط OrderItemUnitهای سفارش‌های DELIVERED
+    کاربر، با تاریخ‌های آماده برای نمایش."""
+
+    def _make_delivered_order_with_unit(self, *, warranty_months=24, delivered=True):
+        from django.utils import timezone
+
+        from apps.catalog.models import Brand, Category, Product, ProductVariant
+        from apps.orders.models import Order, OrderItem, OrderItemUnit
+
+        brand = Brand.objects.create(name="MSI Devices", slug="msi-devices-test")
+        category = Category.objects.create(slug="devices-test-cat", name="لپ‌تاپ")
+        product = Product.objects.create(
+            slug="devices-test-product", name="لپ‌تاپ تست دستگاه‌ها", brand=brand, category=category,
+            condition="NEW", warranty_months=warranty_months,
+            warranty_provider="گارانتی شرکتی" if warranty_months else None,
+        )
+        variant = ProductVariant.objects.create(product=product, sku="DEV-TEST-1", is_default=True, final_price=1)
+        order = Order.objects.create(
+            user=self.user, shipping_recipient_name="", shipping_mobile="", shipping_province="",
+            shipping_city="", shipping_address_line="", subtotal=1, final_total=1,
+            status="DELIVERED" if delivered else "SHIPPED",
+            delivered_at=timezone.now() if delivered else None,
+        )
+        item = OrderItem.objects.create(
+            order=order, variant=variant, product_name_snapshot=product.name, sku_snapshot=variant.sku,
+            unit_price=1, quantity=1, final_price=1,
+        )
+        unit = OrderItemUnit.objects.create(order_item=item, serial_number="SN-DEV-0001")
+        return order, unit
+
+    def test_returns_device_for_delivered_order_with_warranty(self):
+        self._make_delivered_order_with_unit(warranty_months=24)
+        response = self.client.get("/api/v1/account/devices")
+        self.assertEqual(response.status_code, 200)
+        devices = response.data["data"]
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0]["serialNumber"], "SN-DEV-0001")
+        self.assertTrue(devices[0]["hasWarranty"])
+        self.assertIsNotNone(devices[0]["warrantyEndDate"])
+
+    def test_no_warranty_product_shows_null_warranty_end(self):
+        self._make_delivered_order_with_unit(warranty_months=None)
+        response = self.client.get("/api/v1/account/devices")
+        devices = response.data["data"]
+        self.assertFalse(devices[0]["hasWarranty"])
+        self.assertIsNone(devices[0]["warrantyEndDate"])
+
+    def test_excludes_units_from_non_delivered_orders(self):
+        self._make_delivered_order_with_unit(delivered=False)
+        response = self.client.get("/api/v1/account/devices")
+        self.assertEqual(response.data["data"], [])
+
+    def test_excludes_other_users_devices(self):
+        from apps.users.models import User
+
+        self._make_delivered_order_with_unit()
+        other = User.objects.create_user(phone="09133330099", is_verified=True)
+        from apps.public_api.jwt_tokens import issue_tokens
+
+        access, _ = issue_tokens(other)
+        other_client = APIClient()
+        other_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+        response = other_client.get("/api/v1/account/devices")
+        self.assertEqual(response.data["data"], [])

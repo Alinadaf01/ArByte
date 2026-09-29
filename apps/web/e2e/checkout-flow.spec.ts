@@ -85,4 +85,18 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
 
   await page.getByRole("button", { name: "پرداخت و ثبت سفارش" }).click();
   await expect(page).toHaveURL(/\/orders\/ARB-/, { timeout: 15_000 });
+
+  // ۵) E-05 §۱ — صفحه‌ی وضعیت سفارش: بلوک کارت‌به‌کارت + آپلود رسید.
+  await expect(
+    page.getByRole("heading", { name: "اطلاعات حساب برای واریز" }),
+  ).toBeVisible();
+  await page.setInputFiles('input[type="file"]', {
+    name: "receipt.jpg",
+    mimeType: "image/jpeg",
+    buffer: Buffer.from("fake-receipt-bytes"),
+  });
+  await page
+    .getByRole("button", { name: "ثبت رسید و ارسال برای بررسی" })
+    .click();
+  await expect(page.getByText("رسید ثبت شد ✓")).toBeVisible();
 });

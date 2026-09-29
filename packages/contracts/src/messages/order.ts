@@ -27,6 +27,30 @@ export const orderStatus = {
 export type OrderStatusKey = keyof typeof orderStatus;
 
 /**
+ * E-05 §۱ — نگاشت مقدار enum دیتابیس (`OrderStatusSchema`،
+ * `common/enums.ts`) به کلید `orderStatus` بالا. کد داخلی (`"PAID"`) نباید
+ * مستقیم در UI ظاهر شود (§۲.۳۷) — همیشه از این نگاشت رد شود.
+ */
+export const ORDER_STATUS_DB_TO_KEY = {
+  PENDING: "registered",
+  AWAITING_PAYMENT: "awaitingPayment",
+  PAYMENT_REVIEW: "paymentReview",
+  PAID: "paymentConfirmed",
+  PROCESSING: "processing",
+  READY_TO_SHIP: "readyToShip",
+  SHIPPED: "shipped",
+  DELIVERED: "delivered",
+  CANCELLED: "cancelled",
+} as const satisfies Record<string, OrderStatusKey>;
+
+export function orderStatusLabel(dbStatus: string): string {
+  const key = (ORDER_STATUS_DB_TO_KEY as Record<string, OrderStatusKey>)[
+    dbStatus
+  ];
+  return key ? orderStatus[key] : dbStatus;
+}
+
+/**
  * وضعیت مرجوعی — موجودیت جداگانه از سفارش (§۸.۵۲). برند بوک فقط می‌گوید
  * Return یک فیلد «Status» دارد، مقادیرش را مشخص نکرده؛ این فهرست یک
  * جریان استاندارد مرجوعی است (تصمیم T-003، نه نقل‌قول مستقیم برند بوک).

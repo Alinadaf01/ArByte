@@ -121,6 +121,8 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
   { method: "DELETE", path: "/account/wishlist/:id", access: "authenticated" },
   /** D-04 §۲ — جدید. */
   { method: "POST", path: "/account/wishlist/merge", access: "authenticated" },
+  /** E-05 §۳ — جدید («دستگاه‌های من»). */
+  { method: "GET", path: "/account/devices", access: "authenticated" },
 
   // ---------- content (عمومی) ----------
   { method: "GET", path: "/content/homepage", access: "public" },

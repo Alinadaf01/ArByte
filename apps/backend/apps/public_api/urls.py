@@ -47,6 +47,7 @@ urlpatterns = [
         account_views.WishlistDetailView.as_view(),
         name="public-account-wishlist-detail",
     ),
+    path("account/devices", account_views.DeviceListView.as_view(), name="public-account-devices"),
 
     # D-04 §۳ — cart (مهمان یا کاربر واردشده، هر دو)
     path("cart", cart_views.CartView.as_view(), name="public-cart"),

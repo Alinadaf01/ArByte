@@ -60,6 +60,20 @@ export const OrderPaymentSummarySchema = z.object({
 });
 
 /**
+ * E-05 §۱ — «اطلاعات حساب از API، نه هاردکد». فقط وقتی `payment.method`
+ * سفارش `MANUAL_CARD_TO_CARD` است پر می‌شود (`SiteSettings.card_to_card_*`)،
+ * وگرنه `null`. فقط روی `OrderSchema` (مالک واردشده) است، هرگز روی
+ * `GuestOrderSchema` (پیگیری مهمان بلوک واریز نشان نمی‌دهد).
+ */
+export const CardToCardAccountSchema = z
+  .object({
+    cardNumber: z.string(),
+    sheba: z.string(),
+    holderName: z.string(),
+  })
+  .nullable();
+
+/**
  * فاکتور — E-02 §۴ (Checkout.dc.html: تاگل شخصی/حقوقی). شخصی هیچ فیلد
  * تکمیلی ندارد؛ حقوقی نام‌شرکت/شناسه‌ملی الزامی، کد‌اقتصادی/شماره‌ثبت
  * اختیاری‌اند — همان اعتبارسنجی سرور (apps/orders/services.py's checkout()).
@@ -98,6 +112,7 @@ export const OrderSchema = z.object({
   finalTotal: MoneyAmountSchema,
   invoice: OrderInvoiceSchema,
   payment: OrderPaymentSummarySchema.nullable(),
+  cardToCardAccount: CardToCardAccountSchema,
   shipment: OrderShipmentSummarySchema,
   createdAt: z.string().datetime(),
 });
@@ -178,7 +193,29 @@ export const TrackOrderBodySchema = z.object({
   orderNumber: z.string(),
   mobile: z.string(),
 });
-export const TrackOrderResponseSchema = successResponseSchema(OrderSchema);
+
+/**
+ * E-05 §۲ — حریم خصوصی: مهمان (بدون ورود) فقط شهر مقصد را می‌بیند، نه
+ * نشانی کامل (`ShippingAddressSnapshotSchema`ی کامل مخصوص مالک واردشده‌ی
+ * سفارش است، `GET /orders/:orderNumber`). فاکتور/روش‌پرداخت هم عمداً حذف
+ * شدند — کاربرد UI پیگیری مهمان به آن‌ها نیاز ندارد. `units` هرگز اینجا
+ * نیست (همان قاعده‌ی سریال فقط برای مالک، E-03/E-04).
+ */
+export const GuestOrderSchema = z.object({
+  orderNumber: z.string(),
+  status: OrderStatusSchema,
+  paymentStatus: PaymentStatusSchema,
+  items: z.array(OrderItemSchema),
+  shippingCity: z.string(),
+  subtotal: MoneyAmountSchema,
+  discountTotal: MoneyAmountSchema,
+  shippingCost: MoneyAmountSchema,
+  finalTotal: MoneyAmountSchema,
+  shipment: OrderShipmentSummarySchema,
+  createdAt: z.string().datetime(),
+});
+export type GuestOrder = z.infer<typeof GuestOrderSchema>;
+export const TrackOrderResponseSchema = successResponseSchema(GuestOrderSchema);
 
 /**
  * `POST /orders/:orderNumber/return` — مرجوعی قلم‌به‌قلم (§۵)، فقط سفارش

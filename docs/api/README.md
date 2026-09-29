@@ -133,10 +133,22 @@ Prisma. قیمت/محاسبات همیشه سرور — بدنه هرگز عدد
 **E-03 §۳/۴ — `units` روی هر `OrderItemSchema`.** فقط در `GET
 /orders/:orderNumber` (مالک سفارش) پر می‌شود: `{serialNumber, certificateId}`
 به ازای هر واحد (`OrderItemUnit`، ورود سریال فعلاً از Django admin — رابط
-ادمین بچ۰۴). `GET /orders` (فهرست) و `POST /orders/track` (پیگیری مهمان)
-همین اسکیما را برمی‌گردانند اما `units` را نمی‌فرستند (`undefined`، نه
-آرایه‌ی خالی) — سریال محصول فقط برای صاحب لاگین‌کرده‌ی سفارش قابل مشاهده
-است.
+ادمین بچ۰۴). `GET /orders` (فهرست) همین `OrderSchema` را برمی‌گرداند اما
+`units` را نمی‌فرستد (`undefined`، نه آرایه‌ی خالی) — سریال محصول فقط برای
+صاحب لاگین‌کرده‌ی سفارش قابل مشاهده است.
+
+**E-05 §۲ — `POST /orders/track` اسکیمای جدا (`GuestOrderSchema`)، نه
+`OrderSchema`.** حریم خصوصی: مهمان فقط `shippingCity` می‌بیند (نه
+`shippingAddress` کامل — نام گیرنده/موبایل/نشانی خیابان/کدپستی)، و
+`invoice`/`payment` هم اصلاً در پاسخ نیستند (کاربرد UI پیگیری مهمان به آن‌ها
+نیاز ندارد). `items` همان `OrderItemSchema` است بدون `units` (همان قاعده‌ی
+بالا).
+
+**E-05 §۱ — `OrderSchema.cardToCardAccount`.** فقط وقتی روش پرداخت سفارش
+`MANUAL_CARD_TO_CARD` است پر می‌شود (`{cardNumber, sheba, holderName}` از
+`SiteSettings`، همان مقادیری که `order_services.card_to_card_enabled()`
+چک می‌کند) — «اطلاعات حساب از API، نه هاردکد». برای بقیه‌ی روش‌های
+پرداخت `null` است.
 
 **E-04 — سه سند PDF با هویت آربایت** (`apps/documents`، فونت Estedad
 خودمیزبان، پالت برند، ارقام فارسی، بدون برند وایب). فاکتور (`invoice.pdf`)
@@ -184,6 +196,19 @@ Profile، Address (CRUD + `isDefault`)، Wishlist (CRUD +
 علاقه‌مندی محلی (`localStorage`، قبل از ورود) بعد از ورود؛ با
 `productSlug` شناسایی می‌شود چون localStorage قبل از ورود فقط slug دارد،
 و آیتمی که از قبل در حساب کاربر بود دست نمی‌خورد (merge، نه overwrite).
+
+**E-05 §۳ — `GET /account/devices` (جدید).** «دستگاه‌های من»: یک ردیف به
+ازای هر `OrderItemUnit` از سفارش‌های `DELIVERED` کاربر (E-03/E-04) —
+`productName`/`serialNumber`/`testPeriodEndDate`/`hasWarranty`/
+`warrantyEndDate`، تاریخ‌ها رشته‌ی فارسیِ از پیش‌فرمت‌شده (همان تابعی که
+کارت گارانتی استفاده می‌کند، `apps.documents.warranty_card.build_warranty_card`
+— یک منبع محاسبه، نه تکرار قواعد تاریخ).
+
+**E-05 §۳ — `ProfileSchema.memberSince` (جدید).** «عضو از» در
+`Account.dc.html`؛ از `User.created_at` (نه `date_joined` استاندارد جنگو —
+مدل کاربر این پروژه سفارشی است). فقط `GET`/`PATCH /account/profile` این
+را برمی‌گردانند، نه پاسخ ورود (`AuthUserSchema`، جدا نگه داشته شد چون فقط
+UI حساب کاربری به آن نیاز دارد).
 
 ### content — `src/content/`
 
