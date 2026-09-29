@@ -149,6 +149,8 @@ jobs:
         run: |
           python manage.py migrate --noinput
           python manage.py seed_arbyte
+          # کارت‌به‌کارت تنها روش پرداخت تست E2E است؛ بدون اطلاعات حساب پنهان می‌شود.
+          python manage.py shell -c "from apps.settings.models import SiteSettings as S; s=S.load(); s.card_to_card_holder_name='آزمون CI'; s.card_to_card_number='6037990000000000'; s.card_to_card_sheba='IR000000000000000000000000'; s.card_to_card_active=True; s.save()"
           nohup python manage.py runserver 0.0.0.0:8000 > /tmp/django.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://localhost:8000/api/v1/health && break; sleep 1; done
       - run: pnpm contract:test
@@ -162,3 +164,4 @@ jobs:
           pnpm --filter @arbyte/web seo:audit http://localhost:3100
       - if: failure()
         run: tail -100 /tmp/django.log || true
+
