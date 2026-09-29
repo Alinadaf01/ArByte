@@ -85,6 +85,12 @@ export const PERMISSIONS_MAP: readonly PermissionMapEntry[] = [
     path: "/orders/:orderNumber/invoice.pdf",
     access: "authenticated",
   },
+  /** E-04 §۳ — فقط مالک سفارش، فقط بعد از SHIPPED (سرور ۴۰۴ می‌دهد قبل از آن). */
+  {
+    method: "GET",
+    path: "/orders/:orderNumber/units/:certificateId/warranty.pdf",
+    access: "authenticated",
+  },
   {
     method: "POST",
     path: "/orders/:orderNumber/return",

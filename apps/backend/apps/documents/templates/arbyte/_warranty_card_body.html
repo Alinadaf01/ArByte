@@ -1,0 +1,73 @@
+<section class="cert">
+  <div class="cert-hero">
+    <img src="{{ logo_uri }}" alt="آربایت" class="cert-logo">
+    <div class="cert-title">کارت گارانتی و مهلت تست محصول</div>
+    <div class="cert-tagline">فناوری با ظرافت</div>
+  </div>
+
+  <div class="cert-grid">
+    <div class="cert-card">
+      <div class="cert-card-title">مشتری</div>
+      <div class="cert-row"><span class="cert-label">نام</span><span class="cert-value">{{ card.customer_name }}</span></div>
+      <div class="cert-row"><span class="cert-label">تماس</span><span class="cert-value ltr">{{ card.customer_phone }}</span></div>
+      <div class="cert-row"><span class="cert-label">شماره سفارش</span><span class="cert-value ltr">{{ card.order_number }}</span></div>
+    </div>
+    <div class="cert-card">
+      <div class="cert-card-title">محصول</div>
+      <div class="cert-row"><span class="cert-label">نام</span><span class="cert-value">{{ card.product_name }}</span></div>
+      {% if card.product_brand %}<div class="cert-row"><span class="cert-label">برند</span><span class="cert-value">{{ card.product_brand }}</span></div>{% endif %}
+      {% if card.product_model %}<div class="cert-row"><span class="cert-label">مدل</span><span class="cert-value ltr">{{ card.product_model }}</span></div>{% endif %}
+      {% if card.product_condition %}<div class="cert-row"><span class="cert-label">وضعیت کالا</span><span class="cert-value">{{ card.product_condition }}</span></div>{% endif %}
+      {% if card.product_specs %}<div class="cert-row"><span class="cert-label">مشخصات</span><span class="cert-value">{{ card.product_specs }}</span></div>{% endif %}
+      <div class="cert-row"><span class="cert-label">شماره سریال</span><span class="cert-value ltr">{{ card.serial_number|default:"—" }}</span></div>
+    </div>
+  </div>
+
+  <div class="cert-card cert-emphasis">
+    <div class="cert-card-title">مهلت تست ({{ card.test_period_days }} روز)</div>
+    <div class="cert-emphasis-grid">
+      <div><span class="cert-label">تاریخ خرید</span><div class="cert-value">{{ card.purchase_date }}</div></div>
+      <div><span class="cert-label">شروع</span><div class="cert-value">{{ card.test_period.start_label }}</div></div>
+      <div><span class="cert-label">پایان</span><div class="cert-value">{{ card.test_period.end_label }}</div></div>
+    </div>
+  </div>
+
+  {% if card.has_warranty %}
+  <div class="cert-card cert-emphasis">
+    <div class="cert-card-title">گارانتی{% if card.warranty_provider %} — {{ card.warranty_provider }}{% endif %} ({{ card.warranty_months }} ماه)</div>
+    <div class="cert-emphasis-grid">
+      <div><span class="cert-label">شروع</span><div class="cert-value">{{ card.warranty.start_label }}</div></div>
+      <div><span class="cert-label">پایان</span><div class="cert-value">{{ card.warranty.end_label }}</div></div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="cert-card">
+    <div class="cert-card-title">ارسال</div>
+    {% if card.has_shipping %}
+      <div class="cert-row"><span class="cert-label">شرکت حمل</span><span class="cert-value">{{ card.carrier_name }}</span></div>
+      <div class="cert-row"><span class="cert-label">کد رهگیری</span><span class="cert-value ltr">{{ card.tracking_number }}</span></div>
+    {% else %}
+      <div class="muted">در انتظار ارسال</div>
+    {% endif %}
+  </div>
+
+  {% if card.terms %}
+  <div class="cert-card">
+    <div class="cert-card-title">شرایط</div>
+    <div style="font-size:9pt; line-height:1.8;">{{ card.terms|linebreaksbr }}</div>
+  </div>
+  {% endif %}
+
+  <div class="cert-footer">
+    <div class="cert-footer-qr">
+      {{ card.qr_svg }}
+      <div class="footnote">پیگیری وضعیت سفارش</div>
+    </div>
+    <div class="cert-footer-meta">
+      <div class="footnote">شناسه کارت: <span class="ltr">{{ card.certificate_id }}</span></div>
+      <div class="footnote">تاریخ صدور: {{ card.issue_date }}</div>
+      <div class="footnote">arbyte.ir{% if seller_phone %} · <span class="ltr">{{ seller_phone }}</span>{% endif %}</div>
+    </div>
+  </div>
+</section>

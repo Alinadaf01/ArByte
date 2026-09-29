@@ -55,6 +55,8 @@ urlpatterns = [
     path("admin/orders/<int:pk>/cancel/", orders.AdminOrderCancelView.as_view(), name="admin-order-cancel"),
     path("admin/orders/<int:pk>/invoice.pdf", orders.AdminOrderInvoicePdfView.as_view(), name="admin-order-invoice-pdf"),
     path("admin/orders/<int:pk>/packing-slip.pdf", orders.AdminOrderPackingSlipPdfView.as_view(), name="admin-order-packing-slip-pdf"),
+    path("admin/orders/<int:pk>/shipping-label.pdf", orders.AdminOrderShippingLabelPdfView.as_view(), name="admin-order-shipping-label-pdf"),
+    path("admin/orders/<int:pk>/warranty-cards.pdf", orders.AdminOrderWarrantyCardsPdfView.as_view(), name="admin-order-warranty-cards-pdf"),
     path("admin/orders/daily-shipping-list.pdf", orders.AdminDailyShippingListPdfView.as_view(), name="admin-daily-shipping-list-pdf"),
     # Payments / receipts (D-05 §۳)
     path("admin/payments/", payments.AdminPaymentListView.as_view(), name="admin-payment-list"),

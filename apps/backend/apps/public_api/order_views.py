@@ -245,9 +245,34 @@ class OrderInvoicePdfView(PublicAPIView):
         if not order:
             raise not_found("سفارش پیدا نشد.")
         if order.status not in self._INVOICEABLE:
-            raise ApiError("ORDER_NOT_MODIFIABLE", status=409, message="فاکتور فقط برای سفارش‌های پرداخت‌شده در دسترس است.")
+            # E-04 §۱ — سند تسک صریح: «از لحظه‌ی PAID، قبل از آن ۴۰۴ با پیام».
+            raise not_found("فاکتور فقط از لحظه‌ی تأیید پرداخت در دسترس است.")
         pdf_bytes = get_invoice_pdf(order, generated_by_name=request.user.get_full_name() or order.shipping_recipient_name)
         return pdf_response(pdf_bytes, pdf_filename(f"invoice-{order.order_number}"))
+
+
+class OrderWarrantyCardPdfView(PublicAPIView):
+    """E-04 §۳ — فقط مالک سفارش، فقط بعد از SHIPPED (سند تسک)."""
+
+    permission_classes = [IsAuthenticated]
+
+    _AVAILABLE_STATUSES = {"SHIPPED", "DELIVERED"}
+
+    def get(self, request, order_number, certificate_id):
+        from apps.documents.responses import pdf_filename, pdf_response
+        from apps.documents.warranty_card import render_warranty_card_pdf
+        from apps.orders.models import OrderItemUnit
+
+        order = Order.objects.filter(order_number=order_number, user=request.user).first()
+        if not order:
+            raise not_found("سفارش پیدا نشد.")
+        if order.status not in self._AVAILABLE_STATUSES:
+            raise not_found("کارت گارانتی فقط پس از ارسال سفارش در دسترس است.")
+        unit = OrderItemUnit.objects.filter(certificate_id=certificate_id, order_item__order=order).first()
+        if not unit:
+            raise not_found("کارت گارانتی پیدا نشد.")
+        pdf_bytes = render_warranty_card_pdf(unit)
+        return pdf_response(pdf_bytes, pdf_filename(f"warranty-{unit.certificate_id}"))
 
 
 class OrderReturnRequestView(PublicAPIView):

@@ -79,6 +79,11 @@ urlpatterns = [
         order_views.OrderReturnRequestView.as_view(),
         name="public-order-return",
     ),
+    path(
+        "orders/<str:order_number>/units/<str:certificate_id>/warranty.pdf",
+        order_views.OrderWarrantyCardPdfView.as_view(),
+        name="public-order-warranty-pdf",
+    ),
 
     # D-05 §۳ — پرداخت درگاهی
     path(

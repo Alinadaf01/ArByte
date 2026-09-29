@@ -1,0 +1,16 @@
+{% extends "arbyte/base.html" %}
+{% block header %}{% endblock %}
+{% block extra_style %}
+{% include "arbyte/_warranty_card_style.html" %}
+  /* E-04 §۳ — یک واحد، یک صفحه. */
+  .cert-page:not(:last-child) { page-break-after: always; break-after: page; }
+{% endblock %}
+{% block content %}
+{% for card in cards %}
+<div class="cert-page">
+  {% include "arbyte/_warranty_card_body.html" %}
+</div>
+{% empty %}
+<div class="muted">هیچ واحدی برای این سفارش ثبت نشده است.</div>
+{% endfor %}
+{% endblock %}

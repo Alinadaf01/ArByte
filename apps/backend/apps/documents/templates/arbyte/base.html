@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>{{ doc_title }}</title>
+<style>
+  @font-face { font-family: "Estedad"; src: url("{{ font_regular }}") format("woff2"); font-weight: 400; }
+  @font-face { font-family: "Estedad"; src: url("{{ font_medium }}") format("woff2"); font-weight: 500; }
+  @font-face { font-family: "Estedad"; src: url("{{ font_semibold }}") format("woff2"); font-weight: 600; }
+  @font-face { font-family: "Estedad"; src: url("{{ font_bold }}") format("woff2"); font-weight: 700; }
+
+  /* E-04 §۰ — توکن‌های packages/tokens (نه رنگ‌های نمونه‌ی بریف). زمینه‌ی
+     چاپی همیشه سفید خالص است؛ paper فقط برای سطوح/کارت‌های داخل صفحه. */
+  :root {
+    --ink: #17151f;
+    --ink-2: #3d3950;
+    --brand: #6c4dff;
+    --brand-deep: #4b32c3;
+    --paper: #f6f4fc;
+    --surface: #ffffff;
+    --line: #eae6f4;
+    --line-2: #e0dbf0;
+  }
+
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { margin: 0; }
+  body {
+    margin: 0;
+    background: var(--surface);
+    font-family: "Estedad", sans-serif;
+    font-weight: 400;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: var(--ink);
+    direction: rtl;
+  }
+  .ltr { direction: ltr; unicode-bidi: embed; }
+  .muted { color: var(--ink-2); }
+  .hidden { display: none; }
+
+  h1, h2, h3 { margin: 0; font-weight: 600; }
+
+  /* ---- سربرگ مشترک: لوگو (راست) / عنوان سند (وسط) / شماره+تاریخ (چپ) ---- */
+  .doc-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    align-items: center;
+    padding-bottom: 4mm;
+  }
+  .doc-header-logo { justify-self: start; }
+  .doc-header-logo img { height: 10mm; width: auto; display: block; }
+  .doc-header-title {
+    justify-self: center;
+    text-align: center;
+    font-weight: 700;
+    font-size: 20pt;
+    color: var(--ink);
+  }
+  .doc-header-meta {
+    justify-self: end;
+    text-align: end;
+    font-size: 9pt;
+    color: var(--ink-2);
+    line-height: 1.8;
+  }
+  .doc-header-rule { border-top: 1px solid var(--line); }
+  .doc-header-accent { height: 2px; background: var(--brand); margin-bottom: 5mm; }
+
+  .section-title {
+    font-weight: 600;
+    font-size: 13pt;
+    color: var(--ink);
+    margin: 6mm 0 3mm;
+  }
+  .section-title:first-child { margin-top: 0; }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3mm;
+    padding: 4mm 5mm;
+  }
+
+  table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+  thead th {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 600;
+    text-align: start;
+    height: 8mm;
+    padding: 0 3mm;
+  }
+  tbody td {
+    height: 8mm;
+    padding: 2mm 3mm;
+    text-align: start;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--paper); }
+  .num { text-align: start; }
+  tfoot td { border-top: 1px solid var(--ink); font-weight: 600; }
+
+  .footnote { font-size: 8pt; color: var(--ink-2); }
+
+  {% block extra_style %}{% endblock %}
+</style>
+</head>
+<body>
+  {% block header %}
+  <div class="doc-header">
+    <div class="doc-header-logo"><img src="{{ logo_uri }}" alt="آربایت"></div>
+    <div class="doc-header-title">{{ doc_title }}</div>
+    <div class="doc-header-meta">
+      {% if doc_number %}<div class="ltr">{{ doc_number }}</div>{% endif %}
+      <div>{{ doc_date }}</div>
+    </div>
+  </div>
+  <div class="doc-header-rule"></div>
+  <div class="doc-header-accent"></div>
+  {% endblock %}
+
+  {% block content %}{% endblock %}
+  {% block after_content %}{% endblock %}
+</body>
+</html>

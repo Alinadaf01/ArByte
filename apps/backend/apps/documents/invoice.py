@@ -2,66 +2,56 @@ from django.core.files.base import ContentFile
 from django.utils import timezone
 
 from apps.orders.models import Order
-from apps.settings.models import SiteSettings
 
-from .context import base_context
-from .pdf import render_pdf
-from .persian import amount_in_words, format_jalali_date, format_toman
+from .arbyte_context import arbyte_base_context
+from .arbyte_formatting import amount_in_words_fa, format_jalali_date_fa, format_toman_fa
+from .pdf import arbyte_footer_template, render_pdf
 
 
-def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
-    """Shared by the customer-facing invoice (GET /api/orders/{number}/invoice.pdf)
-    and the admin one (GET /api/admin/orders/{id}/invoice.pdf) — same document,
-    BACKEND-TASK.md §3.6-ب: 'فاکتور فروش — همان سند بالا، از سمت ادمین'.
-
-    No separate invoice-numbering sequence exists in this app, so the order
-    number doubles as the invoice number (§5 order-info bar shows both
-    labels, same value) — a deliberate simplification rather than adding a
-    second sequence purely for document display.
-
-    D-05 §۱/۳ — آدرس دیگر یک JSON blob نیست (فیلدهای شناخته‌شده روی خودِ
-    Order)؛ Payment موفق یعنی status="CONFIRMED" (نه "success" قدیمی)،
-    ref_id تغییر نام داد به provider_ref، tax کلاً حذف شد (نه در Prisma،
-    نرخ مالیات هیچ‌وقت پیکربندی نشد)."""
+def build_invoice_context(order: Order) -> dict:
+    """E-04 §۱ — بازسازی با هویت آربایت (فونت Estedad، ارقام فارسی، پالت
+    برند). فروشنده از SiteSettings؛ خریدار شخصی یا حقوقی (E-02 §۴ فیلدهای
+    invoice_type/company_name/...). اقلام از snapshot سفارش، نه قیمت فعلی
+    محصول (که می‌تواند از زمان خرید عوض شده باشد)."""
     successful_payment = order.payments.filter(status="CONFIRMED").order_by("-updated_at").first()
-    invoice_date = format_jalali_date(order.paid_at or order.created_at)
-    settings_obj = SiteSettings.load()
+    invoice_date = format_jalali_date_fa(order.paid_at or order.created_at)
     shipment = getattr(order, "shipment", None)
 
-    ctx = base_context(
-        doc_title="فاکتور فروش",
-        generated_by_name=generated_by_name,
-        doc_number=order.order_number,
-        doc_date=invoice_date,
-    )
+    ctx = arbyte_base_context(doc_title="فاکتور فروش", doc_number=order.order_number, doc_date=invoice_date)
     ctx.update(
         {
             "order": order,
             "invoice_date": invoice_date,
-            "seller_economic_code": settings_obj.economic_code,
-            "seller_national_id": settings_obj.national_id,
+            "is_corporate": order.invoice_type == "CORPORATE",
             "buyer_name": order.shipping_recipient_name,
             "buyer_phone": order.shipping_mobile,
-            "shipping_address_line": ", ".join(
+            "buyer_company_name": order.company_name,
+            "buyer_national_id": order.national_id,
+            "buyer_economic_code": order.economic_code,
+            "buyer_registration_number": order.registration_number,
+            # E-04 §۰ — ویرگول فارسی «،» برای متن نمایشی، نه لاتین (سند
+            # PDF لایه‌ی نمایش است، برخلاف order_views.py's پاسخ API خام).
+            "shipping_address_line": "، ".join(
                 part for part in [order.shipping_province, order.shipping_city, order.shipping_address_line] if part
             ),
             "postal_code": order.shipping_postal_code or "",
             "items": [
                 {
-                    "name": item.product_name_snapshot
-                    + (f" ({item.variant_name_snapshot})" if item.variant_name_snapshot else ""),
+                    "name": item.product_name_snapshot,
+                    "variant_label": item.variant_name_snapshot,
                     "sku": item.sku_snapshot,
                     "quantity": item.quantity,
-                    "price": format_toman(item.unit_price),
-                    "subtotal": format_toman(item.subtotal),
+                    "unit_price": format_toman_fa(item.unit_price),
+                    "discount": format_toman_fa(item.discount) if item.discount else "",
+                    "subtotal": format_toman_fa(item.final_price),
                 }
                 for item in order.items.all()
             ],
-            "subtotal": format_toman(order.subtotal),
-            "discount": format_toman(order.discount_total),
-            "shipping_cost": format_toman(order.shipping_cost),
-            "total": format_toman(order.final_total),
-            "total_in_words": f"{amount_in_words(order.final_total)} تومان",
+            "subtotal": format_toman_fa(order.subtotal),
+            "discount_total": format_toman_fa(order.discount_total) if order.discount_total else "",
+            "shipping_cost": format_toman_fa(order.shipping_cost) if order.shipping_cost else "",
+            "total": format_toman_fa(order.final_total),
+            "total_in_words": amount_in_words_fa(order.final_total),
             "payment": successful_payment,
             "payment_method_display": successful_payment.get_method_display() if successful_payment else "",
             "payment_ref_id": successful_payment.provider_ref if successful_payment else "",
@@ -71,11 +61,14 @@ def build_invoice_context(order: Order, *, generated_by_name: str) -> dict:
     return ctx
 
 
-def get_invoice_pdf(order: Order, *, generated_by_name: str) -> bytes:
-    """Cached on Order.invoice_pdf — regenerated only the first time, or
-    again if the order changed since (e.g. a tracking code was added after
-    shipping). BACKEND-TASK.md §3.6: 'فایل تولیدشده کش شود؛ فاکتور یک سفارش
-    پرداخت‌شده دیگر تغییر نمی‌کند'."""
+def get_invoice_pdf(order: Order, *, generated_by_name: str = "") -> bytes:
+    """`generated_by_name` دیگر در سند نمایش داده نمی‌شود (فاکتور آربایت
+    خودکار است، نه «تهیه‌شده توسط»ی گزارش‌های ادمین وایب) -- پارامتر فقط
+    برای سازگاری با فراخوان‌های موجود (admin_api) نگه داشته شده.
+
+    کش روی Order.invoice_pdf -- فقط بار اول یا اگر سفارش بعد از آخرین
+    تولید تغییر کرده باشد دوباره رندر می‌شود (E-04 §۱: «کش شود، با تغییر
+    سفارش باطل شود»)."""
     is_stale = not order.invoice_pdf or not order.invoice_pdf_generated_at or order.invoice_pdf_generated_at < order.updated_at
     if not is_stale:
         order.invoice_pdf.open("rb")
@@ -84,8 +77,10 @@ def get_invoice_pdf(order: Order, *, generated_by_name: str) -> bytes:
         finally:
             order.invoice_pdf.close()
 
-    context = build_invoice_context(order, generated_by_name=generated_by_name)
-    pdf_bytes = render_pdf("documents/invoice.html", context)
+    context = build_invoice_context(order)
+    pdf_bytes = render_pdf(
+        "arbyte/invoice.html", context, margin="12mm", footer_html=arbyte_footer_template(generated_at=context["generated_at"])
+    )
     order.invoice_pdf.save(f"{order.order_number}.pdf", ContentFile(pdf_bytes), save=False)
     order.invoice_pdf_generated_at = timezone.now()
     order.save(update_fields=["invoice_pdf", "invoice_pdf_generated_at"])

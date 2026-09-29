@@ -63,6 +63,15 @@ describeIfServer(
         expect(() => ApiErrorSchema.parse(body)).not.toThrow();
       });
 
+      it("GET /orders/:orderNumber/units/:certificateId/warranty.pdf — بدون توکن → ۴۰۱", async () => {
+        const { status, body } = await requestJson(
+          baseUrl!,
+          "/orders/ARB-00000000/units/ARB-W-0000000000/warranty.pdf",
+        );
+        expect(status).toBe(401);
+        expect(() => ApiErrorSchema.parse(body)).not.toThrow();
+      });
+
       it("POST /orders/:orderNumber/return — بدون توکن → ۴۰۱", async () => {
         const { status, body } = await requestJson(
           baseUrl!,

@@ -117,6 +117,7 @@ X-Cart-Session یا با ورود — فقط سبد، D-04 §۳)، یا کلید
 `POST /orders` · `GET /orders` · `GET /orders/:orderNumber` ·
 `POST /orders/:orderNumber/receipt` ·
 `GET /orders/:orderNumber/invoice.pdf` ·
+`GET /orders/:orderNumber/units/:certificateId/warranty.pdf` ·
 `POST /orders/:orderNumber/return` ·
 `POST /orders/:orderNumber/payment/initiate` ·
 `POST /orders/track` (**public** — پیگیری مهمان، rate-limit سخت)
@@ -136,6 +137,17 @@ Prisma. قیمت/محاسبات همیشه سرور — بدنه هرگز عدد
 همین اسکیما را برمی‌گردانند اما `units` را نمی‌فرستند (`undefined`، نه
 آرایه‌ی خالی) — سریال محصول فقط برای صاحب لاگین‌کرده‌ی سفارش قابل مشاهده
 است.
+
+**E-04 — سه سند PDF با هویت آربایت** (`apps/documents`، فونت Estedad
+خودمیزبان، پالت برند، ارقام فارسی، بدون برند وایب). فاکتور (`invoice.pdf`)
+از لحظه‌ی `PAID`؛ کارت گارانتی (`GET
+/orders/:orderNumber/units/:certificateId/warranty.pdf`) فقط بعد از
+`SHIPPED` و فقط برای مالکِ همان واحد (`certificate_id` باید متعلق به همان
+سفارش باشد، وگرنه ۴۰۴). برگه‌ی بسته‌بندی/برچسب ارسال/کارت‌های گارانتی
+دسته‌ای فقط سمت ادمین‌اند (`/api/admin/orders/:id/{packing-slip,
+shipping-label, warranty-cards}.pdf` — این‌ها در permissions-map نیستند،
+چون آن فایل فقط مسیرهای `/api/v1/*` مشتری را پوشش می‌دهد، نه `/api/admin/*`
+که با `require_section()` جدا کنترل می‌شود).
 
 **Idempotency-Key.** هدر اختیاری `Idempotency-Key` روی `POST /orders` —
 اگر همان کاربر با همان کلید دوباره درخواست بدهد (کلیک دوم روی «ثبت

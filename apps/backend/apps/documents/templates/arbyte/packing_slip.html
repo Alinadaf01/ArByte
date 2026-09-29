@@ -1,0 +1,41 @@
+{% extends "arbyte/base.html" %}
+{% block content %}
+<div style="margin-bottom:4mm;">
+  <div>گیرنده: {{ buyer_name }}</div>
+  <div class="muted ltr" style="text-align:end;">{{ buyer_phone }}</div>
+</div>
+
+<div class="section-title">اقلام</div>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>شرح کالا</th>
+      <th class="ltr">SKU</th>
+      <th class="num">تعداد</th>
+      <th class="ltr num">سریال</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="num">{{ forloop.counter }}</td>
+      <td>{{ row.name }}{% if row.variant_label %} <span class="muted">({{ row.variant_label }})</span>{% endif %}</td>
+      <td class="ltr">{{ row.sku }}</td>
+      <td class="num">{{ row.quantity|default:1 }}</td>
+      <td class="ltr num">{{ row.serial|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="section-title">چک‌لیست محتویات</div>
+<div class="card" style="display:flex; flex-direction:column; gap:2mm;">
+  {% for label in checklist %}
+  <div style="display:flex; align-items:center; gap:3mm;">
+    <span style="display:inline-block; width:4mm; height:4mm; border:1.5px solid var(--ink); border-radius:1mm;"></span>
+    <span>{{ label }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

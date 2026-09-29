@@ -1,0 +1,41 @@
+  .cert-hero { text-align: center; padding: 3mm 0 6mm; }
+  .cert-logo { height: 9mm; margin-bottom: 3mm; }
+  .cert-title { font-size: 18pt; font-weight: 700; color: var(--ink); }
+  .cert-tagline { font-size: 9pt; color: var(--brand); margin-top: 1mm; letter-spacing: 0.5px; }
+
+  .cert-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-bottom: 4mm; }
+  .cert-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4mm;
+    padding: 4mm;
+    box-shadow: 0 2px 8px rgba(108, 77, 255, 0.06);
+    margin-bottom: 4mm;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .cert-card:last-child { margin-bottom: 0; }
+  .cert-card-title { font-weight: 600; font-size: 10pt; color: var(--brand-deep); margin-bottom: 2.5mm; }
+  .cert-row { display: flex; justify-content: space-between; gap: 3mm; padding: 1.2mm 0; border-bottom: 1px dashed var(--line); font-size: 9.5pt; }
+  .cert-row:last-child { border-bottom: none; }
+  .cert-label { color: var(--ink-2); white-space: nowrap; }
+  .cert-value { font-weight: 600; text-align: end; }
+
+  .cert-emphasis { background: var(--paper); }
+  .cert-emphasis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; text-align: center; }
+  .cert-emphasis-grid .cert-label { display: block; font-size: 8pt; }
+  .cert-emphasis-grid .cert-value { font-size: 11pt; color: var(--brand-deep); }
+
+  .cert-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 5mm;
+    padding-top: 3mm;
+    border-top: 1px solid var(--line);
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .cert-footer-qr svg { width: 20mm; height: 20mm; }
+  .cert-footer-qr { text-align: center; }
+  .cert-footer-meta { text-align: end; }

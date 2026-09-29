@@ -1,0 +1,77 @@
+{% extends "arbyte/base.html" %}
+{% block content %}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin-bottom:6mm;">
+  <div class="card">
+    <div class="section-title" style="margin-top:0;">فروشنده</div>
+    <div>{{ seller_name }}</div>
+    {% if seller_national_id %}<div class="muted">شناسه ملی: <span class="ltr">{{ seller_national_id }}</span></div>{% endif %}
+    {% if seller_economic_code %}<div class="muted">کد اقتصادی: <span class="ltr">{{ seller_economic_code }}</span></div>{% endif %}
+    {% if seller_address %}<div class="muted">{{ seller_address }}{% if seller_postal_code %} — کد پستی <span class="ltr">{{ seller_postal_code }}</span>{% endif %}</div>{% endif %}
+    {% if seller_phone %}<div class="muted ltr" style="text-align:end;">{{ seller_phone }}</div>{% endif %}
+  </div>
+  <div class="card">
+    <div class="section-title" style="margin-top:0;">خریدار</div>
+    {% if is_corporate %}
+      <div>{{ buyer_company_name }}</div>
+      {% if buyer_national_id %}<div class="muted">شناسه ملی: <span class="ltr">{{ buyer_national_id }}</span></div>{% endif %}
+      {% if buyer_economic_code %}<div class="muted">کد اقتصادی: <span class="ltr">{{ buyer_economic_code }}</span></div>{% endif %}
+      {% if buyer_registration_number %}<div class="muted">شماره ثبت: <span class="ltr">{{ buyer_registration_number }}</span></div>{% endif %}
+    {% else %}
+      <div>{{ buyer_name }}</div>
+      <div class="muted ltr" style="text-align:end;">{{ buyer_phone }}</div>
+    {% endif %}
+    {% if shipping_address_line %}<div class="muted">{{ shipping_address_line }}{% if postal_code %} — کد پستی <span class="ltr">{{ postal_code }}</span>{% endif %}</div>{% endif %}
+  </div>
+</div>
+
+<div class="section-title">اقلام سفارش</div>
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>شرح کالا</th>
+      <th class="ltr">SKU</th>
+      <th class="num">تعداد</th>
+      <th class="num">قیمت واحد</th>
+      <th class="num">تخفیف</th>
+      <th class="num">جمع</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td class="num">{{ forloop.counter }}</td>
+      <td>{{ item.name }}{% if item.variant_label %} <span class="muted">({{ item.variant_label }})</span>{% endif %}</td>
+      <td class="ltr">{{ item.sku }}</td>
+      <td class="num">{{ item.quantity }}</td>
+      <td class="num">{{ item.unit_price }}</td>
+      <td class="num">{{ item.discount|default:"—" }}</td>
+      <td class="num">{{ item.subtotal }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div style="display:flex; justify-content:flex-end; margin-top:5mm;">
+  <table style="width:70mm;">
+    <tbody>
+      <tr><td>جمع کل</td><td class="num">{{ subtotal }}</td></tr>
+      {% if discount_total %}<tr><td>تخفیف</td><td class="num">{{ discount_total }}</td></tr>{% endif %}
+      {% if shipping_cost %}<tr><td>هزینه ارسال</td><td class="num">{{ shipping_cost }}</td></tr>{% endif %}
+    </tbody>
+    <tfoot>
+      <tr><td>مبلغ نهایی</td><td class="num">{{ total }}</td></tr>
+    </tfoot>
+  </table>
+</div>
+<div class="footnote" style="text-align:end; margin-top:2mm;">{{ total_in_words }}</div>
+
+{% if payment or tracking_code %}
+<div class="section-title">پرداخت و ارسال</div>
+<div class="card" style="display:grid; grid-template-columns:1fr 1fr; gap:2mm 6mm; font-size:9pt;">
+  {% if payment_method_display %}<div>روش پرداخت: {{ payment_method_display }}</div>{% endif %}
+  {% if payment_ref_id %}<div>شناسه تراکنش: <span class="ltr">{{ payment_ref_id }}</span></div>{% endif %}
+  {% if tracking_code %}<div>کد رهگیری: <span class="ltr">{{ tracking_code }}</span></div>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

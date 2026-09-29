@@ -2,26 +2,22 @@ import datetime
 
 from django.db.models import QuerySet
 
-from .context import base_context
-from .pdf import render_pdf
-from .persian import format_jalali_date
+from .arbyte_context import arbyte_base_context
+from .arbyte_formatting import format_jalali_date_fa
+from .pdf import arbyte_footer_template, render_pdf
 
 
-def build_daily_shipping_list_context(orders: QuerySet, *, target_date: datetime.date, generated_by_name: str) -> dict:
-    """Orders ready to ship on a given day — taken to the post office counter,
-    tracking codes are written in by hand there (BACKEND-TASK.md §3.6-ب:
-    'فهرست سفارش‌های آماده ارسال ... برای بردن به باجه پست')."""
-    ctx = base_context(
-        doc_title="لیست ارسال روزانه",
-        generated_by_name=generated_by_name,
-        doc_date=format_jalali_date(target_date),
-    )
+def build_daily_shipping_list_context(orders: QuerySet, *, target_date: datetime.date) -> dict:
+    """E-04 §۲ — بازسازی با هویت آربایت. سفارش‌های آماده ارسال یک روز، برای
+    بردن به باجه پست -- کد رهگیری آن‌جا دستی نوشته می‌شود."""
+    doc_date = format_jalali_date_fa(target_date)
+    ctx = arbyte_base_context(doc_title="لیست ارسال روزانه", doc_date=doc_date)
     ctx["rows"] = [
         {
             "number": order.order_number,
             "receiver_name": order.shipping_recipient_name,
             "receiver_phone": order.shipping_mobile,
-            "address_line": ", ".join(
+            "address_line": "، ".join(
                 part
                 for part in [order.shipping_province, order.shipping_city, order.shipping_address_line]
                 if part
@@ -33,6 +29,8 @@ def build_daily_shipping_list_context(orders: QuerySet, *, target_date: datetime
     return ctx
 
 
-def render_daily_shipping_list_pdf(orders: QuerySet, *, target_date: datetime.date, generated_by_name: str) -> bytes:
-    context = build_daily_shipping_list_context(orders, target_date=target_date, generated_by_name=generated_by_name)
-    return render_pdf("documents/daily_shipping_list.html", context)
+def render_daily_shipping_list_pdf(orders: QuerySet, *, target_date: datetime.date) -> bytes:
+    context = build_daily_shipping_list_context(orders, target_date=target_date)
+    return render_pdf(
+        "arbyte/daily_shipping_list.html", context, margin="12mm", footer_html=arbyte_footer_template(generated_at=context["generated_at"])
+    )

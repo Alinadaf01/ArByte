@@ -151,7 +151,7 @@ class AdminOrderInvoicePdfView(APIView):
             return Response(
                 {"detail": "فاکتور فقط برای سفارش‌های پرداخت‌شده در دسترس است."}, status=status.HTTP_400_BAD_REQUEST
             )
-        pdf_bytes = get_invoice_pdf(order, generated_by_name=request.user.get_full_name())
+        pdf_bytes = get_invoice_pdf(order)
         return pdf_response(pdf_bytes, pdf_filename(f"invoice-{order.order_number}"))
 
 
@@ -162,9 +162,33 @@ class AdminOrderPackingSlipPdfView(APIView):
         from apps.documents.packing_slip import render_packing_slip_pdf
         from apps.documents.responses import pdf_filename, pdf_response
 
-        order = Order.objects.prefetch_related("items").get(pk=pk)
-        pdf_bytes = render_packing_slip_pdf(order, generated_by_name=request.user.get_full_name())
+        order = Order.objects.prefetch_related("items__units").get(pk=pk)
+        pdf_bytes = render_packing_slip_pdf(order)
         return pdf_response(pdf_bytes, pdf_filename(f"packing-slip-{order.order_number}"))
+
+
+class AdminOrderWarrantyCardsPdfView(APIView):
+    permission_classes = [require_section("orders")]
+
+    def get(self, request, pk):
+        from apps.documents.responses import pdf_filename, pdf_response
+        from apps.documents.warranty_card import render_warranty_cards_pdf
+
+        order = Order.objects.get(pk=pk)
+        pdf_bytes = render_warranty_cards_pdf(order)
+        return pdf_response(pdf_bytes, pdf_filename(f"warranty-cards-{order.order_number}"))
+
+
+class AdminOrderShippingLabelPdfView(APIView):
+    permission_classes = [require_section("orders")]
+
+    def get(self, request, pk):
+        from apps.documents.responses import pdf_filename, pdf_response
+        from apps.documents.shipping_label import render_shipping_label_pdf
+
+        order = Order.objects.select_related("shipment").get(pk=pk)
+        pdf_bytes = render_shipping_label_pdf(order)
+        return pdf_response(pdf_bytes, pdf_filename(f"shipping-label-{order.order_number}"))
 
 
 class AdminDailyShippingListPdfView(APIView):
@@ -182,9 +206,7 @@ class AdminDailyShippingListPdfView(APIView):
             .prefetch_related("items")
             .order_by("order_number")
         )
-        pdf_bytes = render_daily_shipping_list_pdf(
-            orders, target_date=target_date, generated_by_name=request.user.get_full_name()
-        )
+        pdf_bytes = render_daily_shipping_list_pdf(orders, target_date=target_date)
         return pdf_response(pdf_bytes, pdf_filename(f"daily-shipping-list-{target_date.isoformat()}"))
 
 

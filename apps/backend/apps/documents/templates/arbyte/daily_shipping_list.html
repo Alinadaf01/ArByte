@@ -1,0 +1,31 @@
+{% extends "arbyte/base.html" %}
+{% block content %}
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th class="ltr">شماره سفارش</th>
+      <th>گیرنده</th>
+      <th class="ltr">موبایل</th>
+      <th>آدرس</th>
+      <th class="num">تعداد اقلام</th>
+      <th class="ltr">کد رهگیری</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td class="num">{{ forloop.counter }}</td>
+      <td class="ltr">{{ row.number }}</td>
+      <td>{{ row.receiver_name }}</td>
+      <td class="ltr">{{ row.receiver_phone }}</td>
+      <td>{{ row.address_line }}</td>
+      <td class="num">{{ row.item_count }}</td>
+      <td class="ltr">&nbsp;</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7" class="muted" style="text-align:center;">هیچ سفارشی برای این روز آماده ارسال نیست.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
