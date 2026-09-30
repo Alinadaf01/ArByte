@@ -10,7 +10,15 @@ interface SitemapData {
 }
 
 const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1";
+  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!API_INTERNAL_BASE)
+  throw new Error("Set API_INTERNAL_URL for the production sitemap.");
+if (
+  process.env.NODE_ENV === "production" &&
+  API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
+) {
+  throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
+}
 
 async function getSitemapData(): Promise<SitemapData> {
   try {

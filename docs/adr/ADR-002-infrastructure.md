@@ -1,3 +1,5 @@
+> Historical proposal: production runs Next.js on Vercel and Django plus the separate Admin SPA on the Iranian VPS. See `docs/DEPLOY.md`.
+
 # ADR-002 — زیرساخت و هاستینگ
 
 **وضعیت:** ⚠️ نیاز به تصمیم مجدد

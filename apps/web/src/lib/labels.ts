@@ -7,7 +7,7 @@ import {
 
 /**
  * T-201 §۱ — همتای apps/web برای الگوی exhaustive-map «enum-labels.ts»ِ
- * apps/api (که چون به `../../prisma/generated/prisma/client` وابسته است،
+ * historical NestJS/Prisma code (که چون به `../../prisma/generated/prisma/client` وابسته است،
  * از apps/web قابل import نیست). منبع متن همان `@arbyte/contracts` است —
  * برچسب‌ها این‌جا نه بازنویسی و نه ترجمه‌ی مجدد می‌شوند، فقط دوباره روی
  * enum سیمی (`ProductConditionValue`/`Availability.status`) نگاشت

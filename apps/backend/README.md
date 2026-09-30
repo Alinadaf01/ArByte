@@ -1,9 +1,9 @@
 # apps/backend — ArByte Django backend
 
-Django 5 + DRF, imported from `vybeshop@a6b592759a7b16b5524356db81f48958af960dbd`
-(D-01, `01-tasks/batch-02/D-01.md`) and pruned/rebranded. See
-`00-strategy/PLAN-DJANGO.md` for why this backend exists alongside `apps/api`
-(NestJS, still authoritative until D-03) and the full migration plan.
+Django 5 + DRF is the current backend and source of truth for the API. It runs
+on the Iranian VPS with PostgreSQL, Redis, Celery, and Nginx; the Next.js
+storefront is deployed separately on Vercel. Older ADRs and reports describe
+historical NestJS/Prisma decisions and are not the current deployment plan.
 
 ## Setup
 
@@ -49,6 +49,6 @@ node scripts/backend.mjs python manage.py createsuperuser
 ## Root scripts
 
 `pnpm be:dev` / `be:test` / `be:migrate` / `be:lint` (`scripts/backend.mjs`)
-run against this app's own `.venv`, independent of `apps/api`'s Node/Nest
-tooling. `apps/backend` is intentionally **not** part of the pnpm workspace
+run against this app's own `.venv`, independent of frontend Node tooling.
+`apps/backend` is intentionally **not** part of the pnpm workspace
 (it's Python) — Turbo never touches it.

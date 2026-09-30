@@ -11,11 +11,19 @@ import type {
 
 /**
  * فقط سمت سرور (RSC) صدا زده می‌شود — بدون مرورگر، پس نیازی به CORS/rewrite
- * نیست؛ مستقیم به apps/api داخلی وصل می‌شود. §۳.۱ سند T-200: اگر API در
+ * نیست؛ مستقیم به Django API وصل می‌شود. §۳.۱ سند T-200: اگر API در
  * دسترس نبود یا خالی برگشت، منو خالی می‌ماند نه اینکه صفحه بشکند.
  */
 const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1";
+  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+if (!API_INTERNAL_BASE)
+  throw new Error("Set API_INTERNAL_URL for storefront requests.");
+if (
+  process.env.NODE_ENV === "production" &&
+  API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
+) {
+  throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
+}
 
 export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
   try {

@@ -1,13 +1,14 @@
 # قرارداد API — ArByte (T-004)
 
+> Current implementation: API behavior is implemented in Django (`apps/backend`) and shared Zod contracts. Mentions of NestJS/Prisma below are historical design/implementation references, not deployed services.
+
+
 منبع حقیقت مشترک بین بک‌اند و فرانت. اسکیماهای Zod واقعی در
 `packages/contracts/src/` زندگی می‌کنند — این سند فقط نقشه‌ی راه و
 تصمیم‌های کلیدی است، نه کپی‌ی شکل داده‌ها (شکل دقیق را از خودِ فایل‌های
 `.ts` بخوانید، چون این سند synced-by-hand است و ممکن است عقب بیفتد).
 
-Swagger تولیدشده از همین قراردادها در dev روی `/api/docs` بالا می‌آید
-(`apps/api/src/openapi/registry.ts`، بند ۱۲.۱۵ برند بوک) — نه از
-`@ApiProperty()` دستی.
+Django drf-spectacular Swagger is available only in development at `/api/docs` (`apps/backend/config/urls.py`); production disables schema/docs routes.
 
 ## پوشش پاسخ (Response Envelope)
 
@@ -397,17 +398,11 @@ drift بین دو طرف بی‌صدا رخ ندهد. جداگانه، `apps/api
 پروژه. مسیر `GET /catalog/categories` عمداً از فهرست ثبت‌شده در
 `apps/api/src/openapi/registry.ts` کنار گذاشته شده تا تولید سند خطا
 ندهد؛ خودِ قرارداد Zod در `packages/contracts` کاملاً و درست بازگشتی
-باقی مانده — فقط نمایش در Swagger UI برای همین یک endpoint به بعد
-موکول شده.
-
-## قوانین مرزی بسته‌ها
+باقی مانده — فقط نمایش در Django drf-spectacular Swagger is available only in development at `/api/docs` (`apps/backend/config/urls.py`); production disables schema/docs routes.
 
 `packages/contracts` از هر وابستگی مخصوص OpenAPI آزاد است (بدون
 `.openapi()`/`extendZodWithOpenApi`) چون `apps/web`/`apps/admin` هم به آن
-وابسته‌اند و Swagger لازم ندارند. تمام ثبت OpenAPI فقط داخل
-`apps/api/src/openapi/registry.ts` است، با ایمپورت از قراردادها.
-
-## سه store سمت کاربر (T-210 §۶ → D-04 §۴)
+وابسته‌اند و Django drf-spectacular Swagger is available only in development at `/api/docs` (`apps/backend/config/urls.py`); production disables schema/docs routes.
 
 `apps/web/src/lib/stores/{cart,wishlist,compare}-store.ts` سه store با
 امضای بیرونی یکسان‌اند (`useSyncExternalStore`، بدون prop-drilling)،

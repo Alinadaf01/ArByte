@@ -17,7 +17,16 @@ let redirectTable: { at: number; map: Map<string, RedirectRule> } | null = null;
 let redirectLoading: Promise<Map<string, RedirectRule>> | null = null;
 
 function apiBase(): string {
-  return process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL!;
+  const base =
+    process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!base) throw new Error("Set API_INTERNAL_URL for storefront requests.");
+  if (
+    process.env.NODE_ENV === "production" &&
+    base !== "https://api.arbyte.ir/api/v1"
+  ) {
+    throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
+  }
+  return base;
 }
 
 async function loadRedirects(): Promise<Map<string, RedirectRule>> {
@@ -95,12 +104,12 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
       ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
       : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
   // T-215 §۳ — `/wishlist` و انتخابگر «افزودن دستگاه» در `/compare` عمداً
-  // سمت کلاینت به apps/api صدا می‌زنند (صفحه‌ی شخصی/تعامل زنده، نه RSC).
+  // سمت کلاینت به Django API صدا می‌زنند (صفحه‌ی شخصی/تعامل زنده، نه RSC).
   // بدون این، `connect-src 'self'` هر fetch را بی‌صدا با «Failed to fetch»
   // مسدود می‌کرد (بدون هیچ خطای قابل‌مشاهده‌ای در network لاگ) — همان الگوی
   // خطای ADR-005 (مسدودشدن بی‌صدا)، این‌بار برای fetch نه hydration.
-  // apps/api زیرساخت خودِ ما است (بند ۸ فقط دامنه‌ی خارجی را منع می‌کند).
-  const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_BASE_URL!).origin;
+  // Django API زیرساخت خودِ ما است (بند ۸ فقط دامنه‌ی خارجی را منع می‌کند).
+  const apiOrigin = new URL(apiBase()).origin;
   const cspHeader = [
     "default-src 'self'",
     scriptSrc,

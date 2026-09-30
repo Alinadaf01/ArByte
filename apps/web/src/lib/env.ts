@@ -22,3 +22,24 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+if (process.env.NODE_ENV === "production") {
+  if (env.NEXT_PUBLIC_APP_URL !== "https://arbyte.ir") {
+    throw new Error(
+      "Production NEXT_PUBLIC_APP_URL must be https://arbyte.ir.",
+    );
+  }
+  if (env.NEXT_PUBLIC_API_BASE_URL !== "https://api.arbyte.ir/api/v1") {
+    throw new Error(
+      "Production NEXT_PUBLIC_API_BASE_URL must be https://api.arbyte.ir/api/v1.",
+    );
+  }
+  if (
+    process.env.API_INTERNAL_URL &&
+    process.env.API_INTERNAL_URL !== "https://api.arbyte.ir/api/v1"
+  ) {
+    throw new Error(
+      "Production API_INTERNAL_URL must be https://api.arbyte.ir/api/v1.",
+    );
+  }
+}

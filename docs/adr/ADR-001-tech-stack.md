@@ -1,3 +1,5 @@
+> Historical record: this predates the current implementation. The production backend is Django (`apps/backend`), not NestJS/Prisma. See `docs/DEPLOY.md` for the current architecture.
+
 # ADR-001 — استک فنی ArByte
 
 **وضعیت:** تأیید شده

@@ -54,9 +54,26 @@ const nextConfig: NextConfig = {
   // ترب، …) description را نمی‌دیدند. متادیتا همیشه در <head> رندر شود.
   htmlLimitedBots: /.*/,
   async rewrites() {
-    const apiOrigin = (
-      process.env.API_INTERNAL_URL ?? "http://localhost:8000/api/v1"
-    ).replace(/\/api\/v1\/?$/, "");
+    const apiBase =
+      process.env.API_INTERNAL_URL ??
+      process.env.NEXT_PUBLIC_API_BASE_URL ??
+      (process.env.NODE_ENV === "production"
+        ? undefined
+        : "http://localhost:8000/api/v1");
+    if (!apiBase) {
+      throw new Error(
+        "Set API_INTERNAL_URL or NEXT_PUBLIC_API_BASE_URL for production builds.",
+      );
+    }
+    if (
+      process.env.NODE_ENV === "production" &&
+      apiBase !== "https://api.arbyte.ir/api/v1"
+    ) {
+      throw new Error(
+        "Production API URLs must be https://api.arbyte.ir/api/v1.",
+      );
+    }
+    const apiOrigin = apiBase.replace(/\/api\/v1\/?$/, "");
     return [
       { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
       // G-02 — فید ترب روی دامنه‌ی فروشگاه (arbyte.ir/feeds/torob)، ساخته‌شده در Django.

@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Alinadaf01/ArByte/actions/workflows/ci.yml/badge.svg)](https://github.com/Alinadaf01/ArByte/actions/workflows/ci.yml)
 
+Current production architecture: [docs/DEPLOY.md](docs/DEPLOY.md). The linked ADRs are historical and may describe superseded choices.
+
 فروشگاه اینترنتی پریمیوم محصولات تکنولوژی — بازار ایران، RTL فارسی.
 
 منابع حقیقت این پروژه:

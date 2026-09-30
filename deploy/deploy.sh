@@ -22,13 +22,14 @@ dc() { docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"; }
 cd "$PROJECT_DIR"
 
 if [[ -n "${1:-}" ]]; then
+    [[ "$1" =~ ^[A-Za-z0-9_.-]+$ ]] || { echo "IMAGE_TAG must contain only letters, digits, dot, underscore, or hyphen" >&2; exit 1; }
     sed -i "s|^IMAGE_TAG=.*|IMAGE_TAG=$1|" "$ENV_FILE"
 fi
 set -a; source "$ENV_FILE"; set +a
 echo "[..] نسخه: ${IMAGE_TAG}"
 
 if [[ -d .git && "${SKIP_GIT_PULL:-0}" != "1" ]]; then
-    git pull --ff-only || echo "[WARN] git pull نشد (دسترسی به GitHub؟) — با فایل‌های فعلی ادامه."
+    git pull --ff-only || { echo "[ERR] git pull failed; refusing to deploy with possibly stale Compose/Nginx files." >&2; exit 1; }
 fi
 
 shopt -s nullglob
@@ -61,6 +62,17 @@ done
 [[ "$(docker inspect -f '{{.State.Health.Status}}' "$new_id")" == "healthy" ]] || { docker rm -f "$new_id"; echo "[ERR] timeout سلامت" >&2; exit 1; }
 echo "[OK] نسخه‌ی تازه سالم است."
 
+if [[ -x "$PROJECT_DIR/scripts/smoke.sh" ]]; then
+    if ! "$PROJECT_DIR/scripts/smoke.sh" "https://$DOMAIN_API" "https://$DOMAIN_ADMIN" "${STOREFRONT_URL:-}"; then
+        echo "[ERR] Smoke check failed; removing candidate and preserving the previous web container." >&2
+        docker rm -f "$new_id" >/dev/null 2>&1 || true
+        if [[ -n "$old_ids" ]]; then
+            dc up -d --no-deps --no-recreate --scale web=1 web
+        fi
+        exit 1
+    fi
+fi
+
 # nginx چند ثانیه فرصت دارد resolve را به‌روز کند، بعد قبلی‌ها graceful متوقف می‌شوند.
 sleep 12
 for cid in $old_ids; do docker stop -t 30 "$cid" >/dev/null && docker rm "$cid" >/dev/null; done
@@ -70,8 +82,4 @@ dc up -d --no-deps --no-recreate --scale web=1 web
 dc up -d --no-deps celery-worker celery-beat
 NGINX_MODE=ssl dc up -d --no-deps nginx
 docker image prune -f >/dev/null
-
-if [[ -x "$PROJECT_DIR/scripts/smoke.sh" ]]; then
-    "$PROJECT_DIR/scripts/smoke.sh" "https://$DOMAIN_API" "https://$DOMAIN_ADMIN" "${STOREFRONT_URL:-}"
-fi
 echo "[OK] استقرار ${IMAGE_TAG} تمام شد."
