@@ -84,9 +84,9 @@ jobs:
     name: TypeScript — typecheck, lint, test, build
     runs-on: ubuntu-latest
     env:
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000/api/v1
-      API_INTERNAL_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_APP_URL: https://arbyte.ir
+      NEXT_PUBLIC_API_BASE_URL: https://api.arbyte.ir/api/v1
+      API_INTERNAL_URL: https://api.arbyte.ir/api/v1
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
