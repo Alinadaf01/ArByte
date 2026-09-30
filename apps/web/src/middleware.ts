@@ -21,6 +21,7 @@ function apiBase(): string {
     process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!base) throw new Error("Set API_INTERNAL_URL for storefront requests.");
   if (
+    process.env.VERCEL === "1" &&
     process.env.VERCEL_ENV === "production" &&
     base !== "https://api.arbyte.ir/api/v1"
   ) {

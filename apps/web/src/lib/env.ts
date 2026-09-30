@@ -23,7 +23,7 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 
-if (process.env.VERCEL_ENV === "production") {
+if (process.env.VERCEL === "1" && process.env.VERCEL_ENV === "production") {
   if (env.NEXT_PUBLIC_APP_URL !== "https://arbyte.ir") {
     throw new Error(
       "Production NEXT_PUBLIC_APP_URL must be https://arbyte.ir.",

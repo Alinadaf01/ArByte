@@ -14,6 +14,7 @@ const API_INTERNAL_BASE =
 if (!API_INTERNAL_BASE)
   throw new Error("Set API_INTERNAL_URL for the production sitemap.");
 if (
+  process.env.VERCEL === "1" &&
   process.env.VERCEL_ENV === "production" &&
   API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
 ) {

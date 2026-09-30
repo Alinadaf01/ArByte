@@ -84,7 +84,6 @@ jobs:
     name: TypeScript — typecheck, lint, test, build
     runs-on: ubuntu-latest
     env:
-      VERCEL_ENV: production
       NEXT_PUBLIC_APP_URL: https://arbyte.ir
       NEXT_PUBLIC_API_BASE_URL: https://api.arbyte.ir/api/v1
       API_INTERNAL_URL: https://api.arbyte.ir/api/v1
@@ -99,7 +98,11 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
-      - run: pnpm build
+      - name: pnpm build (Vercel production URL validation)
+        env:
+          VERCEL: "1"
+          VERCEL_ENV: production
+        run: pnpm build
 
   integration:
     name: Contract + E2E (سبد → تسویه)
