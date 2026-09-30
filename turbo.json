@@ -8,6 +8,8 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": ["API_INTERNAL_URL"],
+      "passThroughEnv": ["REVALIDATE_SECRET", "BFF_SHARED_SECRET"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
