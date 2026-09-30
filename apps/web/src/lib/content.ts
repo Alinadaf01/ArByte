@@ -19,7 +19,7 @@ const API_INTERNAL_BASE =
 if (!API_INTERNAL_BASE)
   throw new Error("Set API_INTERNAL_URL for storefront requests.");
 if (
-  process.env.NODE_ENV === "production" &&
+  process.env.VERCEL_ENV === "production" &&
   API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
 ) {
   throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");

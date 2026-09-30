@@ -66,7 +66,7 @@ const nextConfig: NextConfig = {
       );
     }
     if (
-      process.env.NODE_ENV === "production" &&
+      process.env.VERCEL_ENV === "production" &&
       apiBase !== "https://api.arbyte.ir/api/v1"
     ) {
       throw new Error(
