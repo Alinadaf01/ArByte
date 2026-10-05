@@ -25,7 +25,10 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   // ۱) افزودن به سبد مهمان — با page.evaluate (نه page.request) چون پراکسی
   // برای نوشتن هدر Origin واقعی مرورگر می‌خواهد (ضد CSRF، E-02 §۱)؛
   // request context مستقل پلی‌رایت آن را نمی‌فرستد.
-  await page.goto("/");
+  // سبد خودِ صفحه هنگام mount کلید X-Cart-Session را می‌نویسد؛ تا آرام نشود
+  // fetch خام زیر ممکن است سبد دیگری بسازد و کلیدش بعد بازنویسی شود
+  // (با سبک‌تر شدن هیرو در AUDIT-4 این رقابت در CI رخ داد).
+  await page.goto("/", { waitUntil: "networkidle" });
   const addStatus = await page.evaluate(async (id) => {
     // هدر X-Cart-Session را باید دقیقاً مثل lib/cart-api.ts بخوانیم/بنویسیم،
     // وگرنه هر fetch خام یک سبد مهمان تازه و جدا می‌سازد.
