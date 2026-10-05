@@ -2,8 +2,23 @@
   "count": 220,
   "width": 1400,
   "height": 2164,
-  "pattern": "/hero/frames/f_{i}.webp",
-  "mobilePattern": "/hero/frames/m/f_{i}.webp",
+  "fps": 30,
+  "video": {
+    "desktop": "/hero/hero-desktop.mp4",
+    "mobile": "/hero/hero-mobile.mp4"
+  },
+  "videoWebm": {
+    "desktop": "/hero/hero-desktop.webm",
+    "mobile": "/hero/hero-mobile.webm"
+  },
+  "poster": {
+    "desktop": "/hero/poster-desktop.avif",
+    "mobile": "/hero/poster-mobile.avif"
+  },
+  "posterEnd": {
+    "desktop": "/hero/poster-end-desktop.avif",
+    "mobile": "/hero/poster-end-mobile.avif"
+  },
   "bands": [
     [0, 46, 100],
     [9, 47, 100],

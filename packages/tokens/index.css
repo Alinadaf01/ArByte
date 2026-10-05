@@ -119,7 +119,11 @@
   --color-focus-ring-on-dark: var(--palette-violet-light-1);
 
   /* ============ تایپوگرافی ============ */
-  --font-sans: "Estedad", Tahoma, sans-serif;
+  /* AUDIT §12.3 — «ArByte Latin» (Inter، فقط بازه‌ی لاتین با unicode-range) پیش
+     از Estedad: زیرمجموعه‌ی Estedad فقط «A» لاتین دارد، پس «ArByte» نیمه‌استداد/
+     نیمه‌Tahoma می‌شد. فاصله (U+0020) در بازه نیست تا فاصله‌گذاری فارسی ثابت بماند.
+     @font-face در apps/web/src/app/globals.css؛ جایی که تعریف نشده، نادیده گرفته می‌شود. */
+  --font-sans: "ArByte Latin", "Estedad", Tahoma, sans-serif;
 
   /* بند ۴.۲۹ برند بوک؛ فقط وزن‌های ۴۰۰/۵۰۰/۶۰۰/۷۰۰ (ر.ک. apps/web/src/lib/fonts.ts) */
   --font-weight-regular: 400;
@@ -132,8 +136,11 @@
   --text-h2: clamp(26px, 3vw, 40px);
   --text-subhead: clamp(20px, 2.4vw, 28px);
   --text-card-title: 19px;
-  --text-body: clamp(14px, 0.6vw + 13px, 15.5px);
-  --text-caption: clamp(12.5px, 0.3vw + 12px, 13px);
+  /* AUDIT §12.17 — قبلاً body در ۴۱۷px به سقف ۱۵.۵px می‌رسید و caption در ۱۳px؛
+     یعنی دسکتاپ ۱۴۴۰px همان اندازه‌ی موبایل (۱۵/۱۳) را داشت و متن ریز دیده می‌شد.
+     حالا از ۷۶۸px تا ۱۵۳۶px خطی بزرگ می‌شود: ۱۵ → ۱۷ و ۱۳ → ۱۴. موبایل (پایین فایل) دست‌نخورده. */
+  --text-body: clamp(15px, 0.26vw + 13px, 17px);
+  --text-caption: clamp(13px, 0.13vw + 12px, 14px);
   --text-micro: 12px;
   /* حداقل ۱۶px روی input در موبایل تا iOS Safari هنگام فوکوس zoom نکند
      (override واقعی در media query پایین فایل است) */

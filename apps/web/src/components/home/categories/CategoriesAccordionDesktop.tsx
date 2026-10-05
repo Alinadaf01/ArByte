@@ -66,7 +66,7 @@ export function CategoriesAccordionDesktop({
                   alt=""
                   aria-hidden="true"
                   fill
-                  sizes="10vw"
+                  sizes="40vw"
                   className="-z-10 object-cover opacity-50"
                 />
               ) : null}

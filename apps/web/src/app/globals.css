@@ -37,12 +37,23 @@
   font-display: swap;
 }
 
-:root {
-  --font-estedad: "Estedad";
+/* AUDIT §12.3 — حروف/ارقام/نشانه‌های لاتین (ArByte، ASUS، Apple، مدل‌ها) با Inter
+   (OFL، خودمیزبان، یک فایل متغیر برای همه‌ی وزن‌ها). unicode-range باعث می‌شود
+   فقط وقتی متن لاتین در صفحه هست دانلود شود و متن فارسی دست نخورد؛ فاصله
+   (U+0020) عمداً بیرون است. ترتیب در --font-sans (packages/tokens). */
+@font-face {
+  font-family: "ArByte Latin";
+  src: url("/fonts/inter/Inter-latin-wght.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0021-007E, U+00A1-00FF, U+2013-2014, U+2018-201E, U+2022, U+2026, U+20AC,
+    U+2122;
 }
 
 body {
-  font-family: var(--font-estedad), Tahoma, sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* T-201 — ریل‌های افقی (محصولات منتخب): اسکرول‌بار مرورگر پنهان می‌شود، نه

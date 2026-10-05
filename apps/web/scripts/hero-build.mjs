@@ -10,6 +10,7 @@ import {
   convertFrames,
   computeBand,
   writeManifest,
+  buildHeroMedia,
 } from "./hero-pipeline.mjs";
 
 /**
@@ -23,7 +24,8 @@ const MOBILE_WIDTH = 800;
 const QUALITY = 70;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const OUT_DIR = path.resolve(__dirname, "../public/hero/frames");
+// AUDIT-4 — فریم‌ها فقط ورودی میانی‌اند (gitignored)؛ سایت ویدیو + پوستر سرو می‌کند.
+const OUT_DIR = path.resolve(__dirname, "../.hero-work/frames");
 const MOBILE_OUT_DIR = path.join(OUT_DIR, "m");
 const MANIFEST_DIR = path.resolve(__dirname, "../public/hero");
 
@@ -87,6 +89,16 @@ async function main() {
     );
     bands.push([FRAME_COUNT - 1, top, bottom]);
   }
+
+  console.log("ساخت ویدیو و پوستر...");
+  await buildHeroMedia({
+    desktopFramesDir: OUT_DIR,
+    mobileFramesDir: MOBILE_OUT_DIR,
+    outDir: MANIFEST_DIR,
+    count: FRAME_COUNT,
+    desktopWidth: DESKTOP_WIDTH,
+    mobileWidth: MOBILE_WIDTH,
+  });
 
   writeManifest(MANIFEST_DIR, {
     count: FRAME_COUNT,

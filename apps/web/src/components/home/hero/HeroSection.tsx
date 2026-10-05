@@ -9,7 +9,7 @@ interface HeroSectionProps {
 }
 
 /**
- * T-211 §۲ — پوسته‌ی سروری هیرو: مانیفست فریم‌ها را از دیسک می‌خواند (فایل
+ * T-211 §۲ — پوسته‌ی سروری هیرو: مانیفست ویدیو/پوستر را از دیسک می‌خواند (فایل
  * استاتیک در public/، نه فراخوانی شبکه) و به HeroScroll (کلاینت) می‌دهد.
  * اگر فایل نبود یا شکل نامعتبر داشت، `null` می‌رود — HeroScroll خودش
  * پوستر ثابت را رندر می‌کند، صفحه نمی‌شکند.
@@ -42,8 +42,17 @@ function isHeroManifest(value: unknown): value is HeroManifest {
     typeof v.count === "number" &&
     typeof v.width === "number" &&
     typeof v.height === "number" &&
-    typeof v.pattern === "string" &&
-    typeof v.mobilePattern === "string" &&
+    typeof v.fps === "number" &&
+    isMediaPair(v.video) &&
+    (v.videoWebm === undefined || isMediaPair(v.videoWebm)) &&
+    isMediaPair(v.poster) &&
+    isMediaPair(v.posterEnd) &&
     Array.isArray(v.bands)
   );
+}
+
+function isMediaPair(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return typeof v.desktop === "string" && typeof v.mobile === "string";
 }

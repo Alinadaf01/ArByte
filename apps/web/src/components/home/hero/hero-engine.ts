@@ -4,12 +4,22 @@
  * تا قابل تست باشد — کامپوننت فقط این توابع را روی ref/DOM اعمال می‌کند.
  */
 
+/** AUDIT-4 — یک ویدیو برای هر breakpoint + پوستر AVIF (به‌جای ۲۲۰ فریم جدا). */
+export interface HeroMediaPair {
+  desktop: string;
+  mobile: string;
+}
+
 export interface HeroManifest {
   count: number;
   width: number;
   height: number;
-  pattern: string;
-  mobilePattern: string;
+  fps: number;
+  video: HeroMediaPair;
+  /** جایگزین VP9 برای مرورگرهای بدون H.264؛ فقط وقتی MP4 قابل‌پخش نیست. */
+  videoWebm?: HeroMediaPair;
+  poster: HeroMediaPair;
+  posterEnd: HeroMediaPair;
   bands: [number, number, number][];
 }
 
@@ -21,13 +31,19 @@ export const HERO_STEP_RANGES: readonly [number, number][] = [
   [0.78, 1.01],
 ];
 
-export function frameUrl(
-  manifest: HeroManifest,
-  i: number,
-  mobile: boolean,
-): string {
-  const pattern = mobile ? manifest.mobilePattern : manifest.pattern;
-  return pattern.replace("{i}", String(i));
+/**
+ * فریم (اعشاری، از اسکرول) → زمان ویدیو. وسط فریم هدف گرفته می‌شود تا
+ * گرد شدن ممیز شناور فریم قبلی را نشان ندهد؛ هرگز از طول ویدیو جلوتر نمی‌رود.
+ */
+export function frameToTime(
+  frame: number,
+  fps: number,
+  duration: number,
+): number {
+  const t = (Math.max(0, frame) + 0.5) / fps;
+  return Number.isFinite(duration) && duration > 0
+    ? Math.min(t, Math.max(0, duration - 0.5 / fps))
+    : t;
 }
 
 /** کدام گام (۰..۳) در پیشرفت p فعال است. */
@@ -101,25 +117,4 @@ export function easeStep(disp: number, target: number): number {
   const d = target - disp;
   if (Math.abs(d) < 0.05) return target;
   return disp + d * 0.12;
-}
-
-/**
- * نزدیک‌ترین فریمِ از قبل بارگذاری‌شده به `target` — وقتی فریم دقیق هنوز
- * decode نشده (E-01 §۴: «اگر فریمی هنوز نرسیده، نزدیک‌ترین فریم بارگذاری‌شده،
- * نه جای خالی»). فریم صفر همیشه اول eager بارگذاری می‌شود، پس این تابع
- * همیشه چیزی پیدا می‌کند مگر `available` کاملاً خالی باشد.
- */
-export function nearestAvailableFrame(
-  available: { has(index: number): boolean },
-  target: number,
-  maxIndex: number,
-): number {
-  if (available.has(target)) return target;
-  for (let d = 1; d <= maxIndex; d++) {
-    const below = target - d;
-    if (below >= 0 && available.has(below)) return below;
-    const above = target + d;
-    if (above <= maxIndex && available.has(above)) return above;
-  }
-  return target;
 }
