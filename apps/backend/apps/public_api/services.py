@@ -1,11 +1,11 @@
 """D-03 §1/§3 — ports CatalogService + ContentService
 (apps/api/src/modules/catalog/catalog.service.ts,
 apps/api/src/modules/content/content.service.ts) onto the Django models.
-Same public/active filter criteria, same sort/filter/search semantics, same
-"fetch small catalog fully, filter in Python" style Nest itself already
-uses for search()/getFilters()."""
+Same public/active filter criteria, same sort/filter/search semantics. AUDIT §۱۲.۱۰: فهرست و جستجو در
+دیتابیس فیلتر و صفحه‌بندی می‌شوند."""
 
-from django.db.models import Count, Min, Prefetch, Q
+from django.db.models import Count, Exists, Min, OuterRef, Prefetch, Q, Subquery, Window
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from apps.catalog.models import (
@@ -16,15 +16,21 @@ from apps.catalog.models import (
     ProductVariant,
     SpecificationDefinition,
 )
-from apps.catalog.pricing import live_price
+from apps.catalog.pricing import live_price, live_price_expression
 from apps.content.models import HomepageBlock
 
 from .availability import GLOBAL_LOW_STOCK_THRESHOLD
 from .errors import not_found
-from .search import normalize_search_text
-from .serializers import build_product_card, build_product_detail, to_brand_ref, to_category_card
+from .media import public_media_url
+from .search import normalize_search_text, normalized_search_text
+from .serializers import build_product_card, build_product_detail, spec_value_of, to_brand_ref, to_category_card
 
-PUBLIC_CATEGORY_PRODUCT_Q = Q(status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_category=True)
+# AUDIT-1 §12.6 — محصول بدون واریانت زنده قابل فروش نیست و در هیچ خروجی
+# عمومی (فهرست، جستجو، جزئیات، صفحه‌ی اصلی، sitemap، ترب) نمی‌آید؛ قبلاً
+# کارت/جزئیاتش با IndexError روی `variants[0]` به ۵۰۰ می‌رسید.
+HAS_LIVE_VARIANT_Q = Q(Exists(ProductVariant.objects.filter(product_id=OuterRef("pk"), deleted_at__isnull=True)))
+PUBLIC_PRODUCT_Q = Q(status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True) & HAS_LIVE_VARIANT_Q
+PUBLIC_CATEGORY_PRODUCT_Q = PUBLIC_PRODUCT_Q & Q(is_visible_in_category=True)
 
 
 def _public_product_q(prefix: str = "") -> Q:
@@ -33,7 +39,17 @@ def _public_product_q(prefix: str = "") -> Q:
     filter kwargs must be prefixed with the relation name ("products__...")
     to reach Product's fields from a Category queryset, unlike a plain
     Product.objects.filter(...) where the bare field names apply directly."""
-    return Q(**{f"{prefix}status": "ACTIVE", f"{prefix}deleted_at__isnull": True, f"{prefix}is_visible_on_site": True, f"{prefix}is_visible_in_category": True})
+    return Q(
+        **{
+            f"{prefix}status": "ACTIVE",
+            f"{prefix}deleted_at__isnull": True,
+            f"{prefix}is_visible_on_site": True,
+            f"{prefix}is_visible_in_category": True,
+            # همان HAS_LIVE_VARIANT_Q؛ Count(..., distinct=True) تکرار join را خنثی می‌کند.
+            f"{prefix}variants__deleted_at__isnull": True,
+            f"{prefix}variants__isnull": False,
+        }
+    )
 
 _ORDERED_SPEC_FIELDS = ("definition", "value")
 
@@ -87,7 +103,7 @@ def get_category_tree() -> list[dict]:
                 "id": str(row["id"]),
                 "name": row["name"],
                 "slug": row["slug"],
-                "image": row["image_main"],
+                "image": public_media_url(row["image_main"]),
                 "children": build(row["id"]),
             }
             for row in by_parent.get(parent_id, [])
@@ -149,8 +165,8 @@ def get_category_by_slug(slug: str) -> dict:
         "name": category.name,
         "slug": category.slug,
         "description": category.description,
-        "imageMain": category.image_main,
-        "imageBanner": category.image_banner,
+        "imageMain": public_media_url(category.image_main),
+        "imageBanner": public_media_url(category.image_banner),
         "parent": (
             {"id": str(category.parent_id), "name": category.parent.name, "slug": category.parent.slug}
             if category.parent_id
@@ -166,79 +182,95 @@ def get_product_cards_by_slugs(slugs: list[str]) -> list[dict]:
         return []
     products = {
         p.slug: p
-        for p in _product_queryset().filter(
-            slug__in=slugs, status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True
-        )
+        for p in _product_queryset().filter(PUBLIC_PRODUCT_Q, slug__in=slugs)
     }
     return [build_product_card(products[slug], GLOBAL_LOW_STOCK_THRESHOLD) for slug in slugs if slug in products]
 
 
-def _variant_matches(variant: ProductVariant, query: dict) -> bool:
-    price = live_price(variant)[0]
-    if query.get("minPrice") is not None and price < query["minPrice"]:
-        return False
-    if query.get("maxPrice") is not None and price > query["maxPrice"]:
-        return False
-    if query.get("spec"):
-        variant_axis_values = {}
-        for spec in variant.specifications.all():
-            if spec.value_id and spec.value.value:
-                variant_axis_values[str(spec.definition_id)] = spec.value.value
-        for spec_def_id, value in query["spec"].items():
-            if variant_axis_values.get(spec_def_id) != value:
-                return False
+def _matching_variants(query: dict):
+    """AUDIT §۱۲.۱۰ — همان شرط‌های `_variant_matches` قبلی (قیمت زنده، محور
+    مشخصه، موجودی) به‌صورت queryset، تا فیلتر در دیتابیس انجام شود."""
+    variants = ProductVariant.objects.filter(product_id=OuterRef("pk"), deleted_at__isnull=True).annotate(
+        live=live_price_expression()
+    )
+    if query.get("minPrice") is not None:
+        variants = variants.filter(live__gte=query["minPrice"])
+    if query.get("maxPrice") is not None:
+        variants = variants.filter(live__lte=query["maxPrice"])
+    for spec_def_id, value in (query.get("spec") or {}).items():
+        if not str(spec_def_id).isdigit():
+            return variants.none()
+        variants = variants.filter(_has_axis_value(spec_def_id, value))
     availability = query.get("availability")
-    if availability == "PREORDER" and not variant.is_preorder:
-        return False
-    if availability == "IN_STOCK":
-        if variant.is_preorder:
-            return False
-        inventory = getattr(variant, "inventory", None)
-        available = inventory.available_quantity if inventory else 0
-        if not available or available <= 0:
-            return False
-    return True
+    if availability == "PREORDER":
+        variants = variants.filter(is_preorder=True)
+    elif availability == "IN_STOCK":
+        variants = variants.filter(is_preorder=False, inventory__available_quantity__gt=0)
+    return variants
+
+
+def _has_axis_value(spec_def_id, value) -> Exists:
+    return Exists(
+        ProductSpecification.objects.filter(variant_id=OuterRef("pk"), definition_id=int(spec_def_id), value__value=value)
+    )
+
+
+def _card_price_subquery(spec_filters: dict | None):
+    """قیمت همان واریانتی که کارت نشان می‌دهد (`select_card_variant`): اولین
+    واریانت منطبق با محورهای فیلتر، وگرنه پیش‌فرض، وگرنه اولین."""
+    base = ProductVariant.objects.filter(product_id=OuterRef("pk"), deleted_at__isnull=True).annotate(
+        live=live_price_expression()
+    )
+    fallback = Subquery(base.order_by("-is_default", "id").values("live")[:1])
+    if not spec_filters or not all(str(k).isdigit() for k in spec_filters):
+        return fallback
+    matching = base
+    for spec_def_id, value in spec_filters.items():
+        matching = matching.filter(_has_axis_value(spec_def_id, value))
+    return Coalesce(Subquery(matching.order_by("id").values("live")[:1]), fallback)
+
+
+_SORT_ORDER = {
+    "price_asc": ("card_price", "-priority", "-created_at", "pk"),
+    "price_desc": ("-card_price", "-priority", "-created_at", "pk"),
+    "popular": ("-priority", "-created_at", "pk"),
+    "featured": ("-priority", "-created_at", "pk"),
+}
+
+
+def _page_of_cards(qs, query: dict, spec_filters: dict | None = None) -> tuple[list[dict], int]:
+    """برش صفحه در دیتابیس؛ تعداد کل با window function در همان کوئری، و فقط
+    محصولات همین صفحه با prefetch کامل بارگذاری و به کارت تبدیل می‌شوند."""
+    start = (query["page"] - 1) * query["perPage"]
+    page = list(
+        qs.select_related("brand", "category", "seo")
+        .prefetch_related(*_PRODUCT_PREFETCH)
+        .annotate(full_count=Window(Count("pk")))[start : start + query["perPage"]]
+    )
+    total = page[0].full_count if page else qs.count()
+    return [build_product_card(p, GLOBAL_LOW_STOCK_THRESHOLD, spec_filters) for p in page], total
 
 
 def list_products(query: dict) -> tuple[list[dict], int]:
-    qs = _product_queryset().filter(
-        status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_category=True
-    )
+    qs = Product.objects.filter(PUBLIC_CATEGORY_PRODUCT_Q)
     if query.get("category"):
         qs = qs.filter(category__slug=query["category"])
     if query.get("brand"):
         qs = qs.filter(brand__slug__in=query["brand"])
     if query.get("condition"):
         qs = qs.filter(condition=query["condition"])
-
-    products = [p for p in qs if any(_variant_matches(v, query) for v in p.variants.all())]
-
-    rows = [
-        {"card": build_product_card(p, GLOBAL_LOW_STOCK_THRESHOLD, query.get("spec")), "priority": p.priority, "created_at": p.created_at}
-        for p in products
-    ]
+    qs = qs.filter(Exists(_matching_variants(query)))
 
     sort = query.get("sort", "featured")
-    if sort == "price_asc":
-        rows.sort(key=lambda r: r["card"]["defaultVariant"]["price"])
-    elif sort == "price_desc":
-        rows.sort(key=lambda r: r["card"]["defaultVariant"]["price"], reverse=True)
-    elif sort in ("popular", "featured"):
-        rows.sort(key=lambda r: (r["priority"], r["created_at"]), reverse=True)
-    else:  # newest / default
-        rows.sort(key=lambda r: r["created_at"], reverse=True)
-
-    total = len(rows)
-    start = (query["page"] - 1) * query["perPage"]
-    items = [r["card"] for r in rows[start : start + query["perPage"]]]
-    return items, total
+    if sort in ("price_asc", "price_desc"):
+        qs = qs.annotate(card_price=_card_price_subquery(query.get("spec")))
+    qs = qs.order_by(*_SORT_ORDER.get(sort, ("-created_at", "pk")))
+    return _page_of_cards(qs, query, query.get("spec"))
 
 
 def get_product_by_slug(slug: str) -> dict:
     try:
-        product = _product_queryset().get(
-            slug=slug, status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True
-        )
+        product = _product_queryset().get(PUBLIC_PRODUCT_Q, slug=slug)
     except Product.DoesNotExist:
         raise not_found("محصول پیدا نشد.") from None
     return build_product_detail(product, GLOBAL_LOW_STOCK_THRESHOLD)
@@ -340,21 +372,16 @@ def get_filters(category_slug: str | None = None) -> dict:
 
 
 def search(query: dict) -> tuple[list[dict], int]:
+    """AUDIT §۱۲.۱۰ — همان نرمال‌سازی `normalize_search_text` در SQL
+    (`translate` + `lower`)؛ تطبیق، شمارش و صفحه‌بندی در دیتابیس."""
     needle = normalize_search_text(query["q"])
-    candidates = _product_queryset().filter(
-        status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_search=True
-    ).order_by("-priority", "-created_at")
-
-    products = [
-        p
-        for p in candidates
-        if needle in normalize_search_text(p.name) or needle in normalize_search_text(p.brand.name)
-    ]
-    cards = [build_product_card(p, GLOBAL_LOW_STOCK_THRESHOLD) for p in products]
-    total = len(cards)
-    start = (query["page"] - 1) * query["perPage"]
-    items = cards[start : start + query["perPage"]]
-    return items, total
+    qs = (
+        Product.objects.filter(PUBLIC_PRODUCT_Q, is_visible_in_search=True)
+        .annotate(name_norm=normalized_search_text("name"), brand_norm=normalized_search_text("brand__name"))
+        .filter(Q(name_norm__contains=needle) | Q(brand_norm__contains=needle))
+        .order_by("-priority", "-created_at", "pk")
+    )
+    return _page_of_cards(qs, query)
 
 
 # ---- content (homepage) ----
@@ -388,13 +415,20 @@ def _resolve_flagship_duel(config: dict | None) -> dict | None:
 
     definitions = {str(d.id): d for d in SpecificationDefinition.objects.filter(id__in=metric_def_ids)}
     a_id, b_id = int(product_a["id"]), int(product_b["id"])
+    # مشخصه‌ی محور (مثل رم) روی واریانت است؛ همان واریانتی که کارت نشان می‌دهد.
+    variant_of = {a_id: int(product_a["defaultVariant"]["id"]), b_id: int(product_b["defaultVariant"]["id"])}
     specs = list(
-        ProductSpecification.objects.filter(definition_id__in=metric_def_ids, product_id__in=[a_id, b_id])
+        ProductSpecification.objects.filter(
+            Q(product_id__in=[a_id, b_id]) | Q(variant_id__in=list(variant_of.values())),
+            definition_id__in=metric_def_ids,
+        ).select_related("value")
     )
 
     def value_for(product_id: int, def_id: str) -> str:
-        row = next((s for s in specs if str(s.definition_id) == def_id and s.product_id == product_id), None)
-        return (row.custom_value or "") if row else ""
+        row = next((s for s in specs if str(s.definition_id) == def_id and s.product_id == product_id), None) or next(
+            (s for s in specs if str(s.definition_id) == def_id and s.variant_id == variant_of[product_id]), None
+        )
+        return spec_value_of(row) if row else ""  # قبلاً فقط custom_value؛ مقدار انتخابی/عددی خالی می‌شد
 
     metrics = [
         {

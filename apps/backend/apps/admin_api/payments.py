@@ -12,6 +12,12 @@ from .activity import log_admin_action
 from .permissions import require_section
 
 # D-05 §۳ — پرداخت‌ها/رسیدها (packages/contracts/src/admin/payment.ts).
+#
+# AUDIT-1 §11 — بخش «payments» در sections.SECTIONS وجود نداشت؛ پس
+# require_section("payments") مجوزی را چک می‌کرد که هیچ نقشی نمی‌تواند داشته
+# باشد و برای هر ادمین غیر سوپریوزر (حتی «مدیر کل») رسید ۴۰۳ می‌داد. رسید
+# بخشی از گردش سفارش است: دیدن = orders.view، تأیید/رد = orders.edit.
+PAYMENTS_SECTION = "orders"
 # «تأیید/رد رسید» تنها راه واقعی گذار AWAITING_PAYMENT→PAYMENT_REVIEW→PAID
 # در روش کارت‌به‌کارت است (order_status.py مستقیم صدا زده نمی‌شود، از
 # services.approve_receipt/reject_receipt که هم Payment/Order را sync
@@ -20,12 +26,23 @@ from .permissions import require_section
 
 class AdminPaymentSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    order_id = serializers.IntegerField(source="order_id")
+    order_id = serializers.IntegerField()
     order_number = serializers.CharField(source="order.order_number")
 
     class Meta:
         model = Payment
-        fields = ["id", "order_id", "order_number", "method", "provider", "gateway", "status", "amount", "provider_ref", "created_at"]
+        fields = [
+            "id",
+            "order_id",
+            "order_number",
+            "method",
+            "provider",
+            "gateway",
+            "status",
+            "amount",
+            "provider_ref",
+            "created_at",
+        ]
 
     def get_id(self, obj: Payment) -> str:
         return str(obj.pk)
@@ -40,7 +57,7 @@ class AdminPaymentFilter(django_filters.FilterSet):
 
 
 class AdminPaymentListView(ListAPIView):
-    permission_classes = [require_section("payments")]
+    permission_classes = [require_section(PAYMENTS_SECTION, action="view")]
     serializer_class = AdminPaymentSerializer
     filterset_class = AdminPaymentFilter
     queryset = Payment.objects.select_related("order").order_by("-created_at")
@@ -48,16 +65,24 @@ class AdminPaymentListView(ListAPIView):
 
 class AdminPaymentReceiptSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
-    payment_id = serializers.IntegerField(source="payment_id")
-    user_id = serializers.IntegerField(source="user_id")
+    payment_id = serializers.IntegerField()
+    user_id = serializers.IntegerField()
     file_url = serializers.SerializerMethodField()
     reviewed_by_user_id = serializers.IntegerField(source="reviewed_by_id", allow_null=True)
 
     class Meta:
         model = PaymentReceipt
         fields = [
-            "id", "payment_id", "user_id", "file_url", "amount", "uploaded_at",
-            "status", "reviewed_by_user_id", "reviewed_at", "rejection_reason",
+            "id",
+            "payment_id",
+            "user_id",
+            "file_url",
+            "amount",
+            "uploaded_at",
+            "status",
+            "reviewed_by_user_id",
+            "reviewed_at",
+            "rejection_reason",
         ]
 
     def get_id(self, obj: PaymentReceipt) -> str:
@@ -69,7 +94,7 @@ class AdminPaymentReceiptSerializer(serializers.ModelSerializer):
 
 
 class AdminPaymentReceiptListView(ListAPIView):
-    permission_classes = [require_section("payments")]
+    permission_classes = [require_section(PAYMENTS_SECTION, action="view")]
     serializer_class = AdminPaymentReceiptSerializer
     queryset = PaymentReceipt.objects.select_related("payment__order").order_by("-uploaded_at")
 
@@ -79,16 +104,27 @@ class AdminPaymentReceiptFileView(APIView):
     endpoint احراز‌هویت‌شده (require_section)، چون این پروژه MinIO/presigned
     URL واقعی سیم‌کشی نکرده (D-05 §۳، انحراف مستند — گزارش تسک)."""
 
-    permission_classes = [require_section("payments")]
+    permission_classes = [require_section(PAYMENTS_SECTION, action="view")]
 
     def get(self, request, pk):
         from django.http import FileResponse
 
         try:
-            receipt = PaymentReceipt.objects.get(pk=pk)
-        except PaymentReceipt.DoesNotExist:
+            receipt = PaymentReceipt.objects.select_related("payment__order").get(pk=pk)
+            handle = receipt.file.open("rb")
+        except (PaymentReceipt.DoesNotExist, FileNotFoundError):
             return Response({"detail": "رسید پیدا نشد."}, status=status.HTTP_404_NOT_FOUND)
-        return FileResponse(receipt.file.open("rb"), filename=receipt.file.name.rsplit("/", 1)[-1])
+        # نوع از محتوای واقعی (نه پسوند/ادعای مرورگر)؛ inline تا پنل پیش‌نمایش کند.
+        content_type = order_services.sniff_receipt_type(handle) or "application/octet-stream"
+        response = FileResponse(
+            handle,
+            content_type=content_type,
+            as_attachment=False,
+            filename=f"receipt-{receipt.payment.order.order_number}-{receipt.pk}",
+        )
+        response["Cache-Control"] = "private, no-store"
+        response["X-Content-Type-Options"] = "nosniff"
+        return response
 
 
 class AdminPaymentReceiptReviewView(APIView):
@@ -96,7 +132,7 @@ class AdminPaymentReceiptReviewView(APIView):
     `{decision: "APPROVE"}` یا `{decision: "REJECT", rejectionReason}`
     (packages/contracts/src/admin/payment.ts's ReviewReceiptBodySchema)."""
 
-    permission_classes = [require_section("payments", action="edit")]
+    permission_classes = [require_section(PAYMENTS_SECTION, action="edit")]
 
     def patch(self, request, pk):
         try:
@@ -108,13 +144,19 @@ class AdminPaymentReceiptReviewView(APIView):
         try:
             if decision == "APPROVE":
                 order_services.approve_receipt(receipt=receipt, admin_user=request.user)
-                log_admin_action(user=request.user, action="approve_receipt", model_name="PaymentReceipt", object_id=receipt.pk)
+                log_admin_action(
+                    user=request.user, action="approve_receipt", model_name="PaymentReceipt", object_id=receipt.pk
+                )
             elif decision == "REJECT":
                 reason = request.data.get("rejection_reason", "")
                 order_services.reject_receipt(receipt=receipt, admin_user=request.user, reason=reason)
-                log_admin_action(user=request.user, action="reject_receipt", model_name="PaymentReceipt", object_id=receipt.pk)
+                log_admin_action(
+                    user=request.user, action="reject_receipt", model_name="PaymentReceipt", object_id=receipt.pk
+                )
             else:
-                return Response({"detail": "decision باید APPROVE یا REJECT باشد."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"detail": "decision باید APPROVE یا REJECT باشد."}, status=status.HTTP_400_BAD_REQUEST
+                )
         except CheckoutError as exc:
             return Response({"detail": exc.message, "code": exc.code}, status=status.HTTP_400_BAD_REQUEST)
 

@@ -30,6 +30,7 @@ export async function StorefrontShell({
         categories={categories}
         isAuthenticated={isAuthenticated}
         phone={siteInfo.phone}
+        businessHours={siteInfo.businessHours}
       />
       {children}
       <MobileNavBar active={navActive} isAuthenticated={isAuthenticated} />

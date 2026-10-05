@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { apiOrigin } from "./src/lib/urls";
 
 // ADR-002: هیچ قابلیت اختصاصی Vercel استفاده نشود (نه Vercel Edge Middleware
 // (محصول اختصاصی Vercel با قفل زیرساخت)، نه Image Optimization ابری Vercel،
@@ -54,31 +55,12 @@ const nextConfig: NextConfig = {
   // ترب، …) description را نمی‌دیدند. متادیتا همیشه در <head> رندر شود.
   htmlLimitedBots: /.*/,
   async rewrites() {
-    const apiBase =
-      process.env.API_INTERNAL_URL ??
-      process.env.NEXT_PUBLIC_API_BASE_URL ??
-      (process.env.NODE_ENV === "production"
-        ? undefined
-        : "http://localhost:8000/api/v1");
-    if (!apiBase) {
-      throw new Error(
-        "Set API_INTERNAL_URL or NEXT_PUBLIC_API_BASE_URL for production builds.",
-      );
-    }
-    if (
-      process.env.VERCEL === "1" &&
-      process.env.VERCEL_ENV === "production" &&
-      apiBase !== "https://api.arbyte.ir/api/v1"
-    ) {
-      throw new Error(
-        "Production API URLs must be https://api.arbyte.ir/api/v1.",
-      );
-    }
-    const apiOrigin = apiBase.replace(/\/api\/v1\/?$/, "");
+    // AUDIT-1 §12.8 — نرمال‌سازی و گارد تولید در lib/urls (نه نسخه‌ی جدا).
+    const origin = apiOrigin();
     return [
-      { source: "/media/:path*", destination: `${apiOrigin}/media/:path*` },
+      { source: "/media/:path*", destination: `${origin}/media/:path*` },
       // G-02 — فید ترب روی دامنه‌ی فروشگاه (arbyte.ir/feeds/torob)، ساخته‌شده در Django.
-      { source: "/feeds/:path*", destination: `${apiOrigin}/feeds/:path*` },
+      { source: "/feeds/:path*", destination: `${origin}/feeds/:path*` },
     ];
   },
   async headers() {

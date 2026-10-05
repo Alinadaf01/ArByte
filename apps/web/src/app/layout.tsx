@@ -5,27 +5,32 @@ import "./globals.css";
 import { ImpersonationBanner } from "@/components/shell/ImpersonationBanner";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 import { absoluteUrl, jsonLd } from "@/lib/json-ld";
+import { appBaseUrl } from "@/lib/urls";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const metadata: Metadata = {
   // بند ۱۰.۷۱ — پایه‌ی canonical/OG مطلق، نه نسبی؛ از env عمومی همان چیزی
   // که T-200 برای همین منظور گذاشته بود (ر.ک. apps/web/.env.example).
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
-  ),
+  metadataBase: new URL(appBaseUrl()),
   title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار",
   description: siteFooter.tagline,
   applicationName: "آربایت",
   // favicon.ico/apple-icon.png/icon.png/opengraph-image.png/manifest.ts —
   // همه با قرارداد نام‌گذاری فایل Next خودکار پیوند می‌شوند (E-01 §۱)؛
   // اینجا فقط چیزی که آن قرارداد نمی‌سازد (زبان/عنوان/توضیح OG).
+  // AUDIT-1 B — پیش‌نمایش لینک (تلگرام، واتس‌اپ، X) باید از همین‌جا بیاید.
+  // تصویر ۱۲۰۰×۶۳۰ از `opengraph-image.png` (+ alt) با قرارداد فایل Next.
   openGraph: {
-    title: "آربایت",
+    ...SITE_OPEN_GRAPH,
+    title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار",
     description: siteFooter.tagline,
-    siteName: "آربایت",
-    locale: "fa_IR",
-    type: "website",
+    url: "/",
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار",
+    description: siteFooter.tagline,
+  },
 };
 
 /** G-02 — بند ۱۰.۷۲ برندبوک: Organization با لوگو در همه‌ی صفحه‌ها. */

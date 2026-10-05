@@ -2,6 +2,7 @@
 ارسال و پرداخت واقعاً در دسترس — هیچ‌کدام گزینه‌ای که در چک‌اوت رد می‌شود
 را نشان نمی‌دهند (صفر فرض کلاینتی، همه از سرور)."""
 
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.orders import services as order_services
@@ -51,3 +52,34 @@ class PaymentMethodListView(PublicAPIView):
             options.append({"method": "GATEWAY", "provider": provider_code, "label": label})
 
         return Response(success_response(options, request.request_id))
+
+
+class PaymentPlanListView(PublicAPIView):
+    """AUDIT-2 — `GET /payment-plans`: سه روش با در دسترس بودن، برای جمع سبد
+    همین کاربر (از سرور، نه عدد کلاینت). سقف آنلاین به تومان برای پیام UI."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.orders import payment_state
+
+        from .cart_service import resolve_cart, to_cart_response
+
+        cart, _ = resolve_cart(request)
+        total = to_cart_response(cart)["finalTotal"]
+        options = [
+            {
+                "plan": o.plan,
+                "available": o.available,
+                "reason": o.reason or None,
+                "onlineAmount": o.online_amount,
+                "bankAmount": o.bank_amount,
+            }
+            for o in payment_state.plan_options(total)
+        ]
+        return Response(
+            success_response(
+                {"total": total, "onlineLimit": payment_state.online_limit_toman(), "plans": options},
+                request.request_id,
+            )
+        )

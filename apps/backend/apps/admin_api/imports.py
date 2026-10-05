@@ -2,6 +2,7 @@
 
 import io
 
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import MultiPartParser
@@ -83,7 +84,7 @@ class AdminImportJobDetailView(APIView):
     permission_classes = [require_section("products", action="create")]
 
     def get(self, request, pk):
-        job = ImportJob.objects.get(pk=pk)
+        job = get_object_or_404(ImportJob, pk=pk)
         data = AdminImportJobSerializer(job).data
         data["fields"] = _fields_payload()
         data["failed"] = [
@@ -101,7 +102,7 @@ class AdminImportPreviewView(APIView):
     permission_classes = [require_section("products", action="create")]
 
     def post(self, request, pk):
-        job = ImportJob.objects.get(pk=pk)
+        job = get_object_or_404(ImportJob, pk=pk)
         if job.status != "PENDING":
             return Response({"detail": "این فایل قبلاً اجرا شده است."}, status=status.HTTP_400_BAD_REQUEST)
         mapping = {str(p.get("field")): str(p.get("header")) for p in (request.data.get("mapping") or []) if p.get("field") and p.get("header")}
@@ -124,7 +125,7 @@ class AdminImportRunView(APIView):
     permission_classes = [require_section("products", action="create")]
 
     def post(self, request, pk):
-        job = ImportJob.objects.get(pk=pk)
+        job = get_object_or_404(ImportJob, pk=pk)
         if job.status != "PENDING" or not job.column_mapping:
             return Response({"detail": "اول پیش‌نمایش را ببینید؛ هر فایل فقط یک بار اجرا می‌شود."}, status=status.HTTP_400_BAD_REQUEST)
         log_admin_action(user=request.user, action="run_import", model_name="ImportJob", object_id=job.pk)
@@ -137,7 +138,7 @@ class AdminImportErrorsXlsxView(APIView):
     permission_classes = [require_section("products", action="create")]
 
     def get(self, request, pk):
-        return xlsx_response(importer.errors_workbook(ImportJob.objects.get(pk=pk)), xlsx_filename(f"import-{pk}-errors"))
+        return xlsx_response(importer.errors_workbook(get_object_or_404(ImportJob, pk=pk)), xlsx_filename(f"import-{pk}-errors"))
 
 
 class AdminImportTemplateView(APIView):

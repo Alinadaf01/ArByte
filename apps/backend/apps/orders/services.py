@@ -115,7 +115,7 @@ def checkout(
     *,
     user,
     address,
-    payment_method: str,
+    payment_plan: str,
     shipping_method_id: str | None = None,
     coupon_code: str | None = None,
     idempotency_key: str | None = None,
@@ -227,6 +227,12 @@ def checkout(
 
     final_total = subtotal - discount + shipping_cost
 
+    # AUDIT-2 — روش پرداخت پیش از ساخت سفارش/رزرو موجودی اعتبارسنجی می‌شود
+    # (سقف آنلاین و فعال‌بودن روش‌ها سمت سرور؛ مبلغ کلاینت هرگز ملاک نیست).
+    from .payment_state import split_for_plan
+
+    split_for_plan(payment_plan, final_total)
+
     order = Order.objects.create(
         user=user,
         shipping_recipient_name=address.receiver_name,
@@ -275,12 +281,10 @@ def checkout(
     if coupon:
         CouponUsage.objects.create(coupon=coupon, user=user, order=order, discount_amount=discount)
 
-    Payment.objects.create(
-        order=order,
-        method=payment_method,
-        amount=final_total,
-        status="UNPAID",
-    )
+    # AUDIT-2 — ترکیب پرداخت از سرور (سقف آنلاین، فعال‌بودن روش‌ها) — هرگز از کلاینت.
+    from .payment_state import create_payments
+
+    create_payments(order, payment_plan)
 
     cart.items.all().delete()
     cart.coupon = None
@@ -335,45 +339,44 @@ def upload_receipt(*, order: Order, user, file, amount: int) -> PaymentReceipt:
     # نام کاربر دور ریخته می‌شود؛ فقط پسوندِ نوعِ واقعی (models._receipt_upload_path).
     file.name = f"receipt{_RECEIPT_EXT[kind]}"
 
-    from . import order_status
+    from . import payment_state
 
-    payment = order.payments.filter(method="MANUAL_CARD_TO_CARD").order_by("-created_at").first()
-    if not payment:
-        payment = Payment.objects.create(
-            order=order, method="MANUAL_CARD_TO_CARD", amount=order.final_total, status="UNPAID"
+    # AUDIT-2 — رسید به Payment واریز مستقیمِ پرداخت‌نشده‌ی همین سفارش وصل می‌شود
+    # (در پرداخت ترکیبی، همان سهم باقی‌مانده)؛ سفارش آنلاین‌محض رسید نمی‌پذیرد.
+    payment = next(
+        (p for p in payment_state.active_payments(order) if not p.is_online and p.status == "UNPAID"),
+        None,
+    )
+    if payment is None:
+        raise CheckoutError(
+            "ORDER_NOT_MODIFIABLE", "برای این سفارش واریز مستقیمِ در انتظار پرداخت وجود ندارد."
         )
     receipt = PaymentReceipt.objects.create(payment=payment, user=user, file=file, amount=amount)
-
-    order_status.sync_payment_status(order, "RECEIPT_UPLOADED")
     payment.status = "RECEIPT_UPLOADED"
     payment.save(update_fields=["status", "updated_at"])
-    order_status.transition_to(order, "PAYMENT_REVIEW", user=user)
+    payment_state.reconcile_order_payments(order, user=user)
     return receipt
 
 
 @transaction.atomic
 def approve_receipt(*, receipt: PaymentReceipt, admin_user) -> None:
-    from . import order_status
+    from . import payment_state
 
+    receipt = PaymentReceipt.objects.select_for_update().select_related("payment__order").get(pk=receipt.pk)
     if receipt.status == "APPROVED":
         raise CheckoutError("PAYMENT_ALREADY_CONFIRMED", "پرداخت این سفارش قبلاً تأیید شده است.")
     receipt.status = "APPROVED"
     receipt.reviewed_by = admin_user
     receipt.reviewed_at = timezone.now()
     receipt.save(update_fields=["status", "reviewed_by", "reviewed_at"])
-
-    payment = receipt.payment
-    payment.status = "CONFIRMED"
-    payment.save(update_fields=["status", "updated_at"])
-
-    order = payment.order
-    order_status.sync_payment_status(order, "CONFIRMED")
-    order_status.transition_to(order, "PAID", user=admin_user)
+    # AUDIT-2 — فقط همین سهم واریز تأیید می‌شود؛ سفارش وقتی PAID است که همه‌ی
+    # سهم‌ها (مثلاً آنلاینِ ترکیبی) هم تأیید شده باشند.
+    payment_state.confirm_payment(receipt.payment, user=admin_user, note="رسید واریز تأیید شد")
 
 
 @transaction.atomic
 def reject_receipt(*, receipt: PaymentReceipt, admin_user, reason: str) -> None:
-    from . import order_status
+    from . import payment_state
 
     receipt.status = "REJECTED"
     receipt.reviewed_by = admin_user
@@ -382,12 +385,10 @@ def reject_receipt(*, receipt: PaymentReceipt, admin_user, reason: str) -> None:
     receipt.save(update_fields=["status", "reviewed_by", "reviewed_at", "rejection_reason"])
 
     payment = receipt.payment
-    payment.status = "UNPAID"
-    payment.save(update_fields=["status", "updated_at"])
-
-    order = payment.order
-    order_status.sync_payment_status(order, "UNPAID")
-    order_status.transition_to(order, "AWAITING_PAYMENT", user=admin_user, note=f"رسید رد شد: {reason}")
+    if payment.status != "CONFIRMED":
+        payment.status = "UNPAID"
+        payment.save(update_fields=["status", "updated_at"])
+    payment_state.reconcile_order_payments(payment.order, user=admin_user, note=f"رسید رد شد: {reason}")
 
 
 # ---------- درگاه (§۳) ----------
@@ -432,13 +433,9 @@ def initiate_payment(*, order: Order, provider_code: str) -> tuple[Payment, str]
         provider_ref=result.authority or callback_token,
         status="UNDER_REVIEW",
     )
-    from . import order_status
+    from . import payment_state
 
-    order_status.sync_payment_status(order, "UNDER_REVIEW")
-    # تنها راه رسیدن به PAID از PAYMENT_REVIEW می‌گذرد (order_status.py's
-    # ORDER_STATUS_TRANSITIONS) — درگاه هم مثل رسید کارت‌به‌کارت باید اول
-    # وارد «در حال بررسی» شود، بعد وب‌هوک تأییدش کند.
-    order_status.transition_to(order, "PAYMENT_REVIEW")
+    payment_state.reconcile_order_payments(order)
     return payment, result.redirect_url
 
 
@@ -447,7 +444,6 @@ def verify_payment(*, provider_code: str, provider_ref: str, amount: int, callba
     """Idempotent by construction: a Payment already CONFIRMED short-circuits
     before any network call — a duplicate/retried callback can never confirm
     an order twice."""
-    from . import order_status
     from .providers import PaymentProviderError, get_provider
 
     try:
@@ -469,14 +465,12 @@ def verify_payment(*, provider_code: str, provider_ref: str, amount: int, callba
         payment.save(update_fields=["provider_payload", "updated_at"])
         return payment
 
-    order = payment.order
     if result.success:
-        payment.status = "CONFIRMED"
-        payment.provider_ref = result.ref_id or payment.provider_ref
+        from . import payment_state
+
         payment.provider_payload = result.raw_response
-        payment.save(update_fields=["status", "provider_ref", "provider_payload", "updated_at"])
-        order_status.sync_payment_status(order, "CONFIRMED")
-        order_status.transition_to(order, "PAID")
+        payment.save(update_fields=["provider_payload", "updated_at"])
+        payment_state.confirm_payment(payment, provider_ref=result.ref_id or payment.provider_ref)
     else:
         payment.provider_payload = result.raw_response
         payment.save(update_fields=["provider_payload", "updated_at"])

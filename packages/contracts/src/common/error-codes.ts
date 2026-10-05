@@ -36,6 +36,7 @@ export const ERROR_CODES = [
   "GATEWAY_ERROR",
   "GATEWAY_TIMEOUT",
   "GATEWAY_AMOUNT_MISMATCH",
+  "ONLINE_PAYMENT_LIMIT_EXCEEDED",
   // D-05 §۴/۵ — کوپن و مرجوعی
   "COUPON_INVALID",
   "COUPON_MIN_ORDER_NOT_MET",
@@ -91,6 +92,8 @@ export const ERROR_MESSAGES: Record<ErrorCode, string> = {
   GATEWAY_ERROR: "پرداخت با خطا مواجه شد. لطفاً دوباره تلاش کنید.",
   GATEWAY_TIMEOUT: "درگاه پرداخت پاسخ نداد. لطفاً دوباره تلاش کنید.",
   GATEWAY_AMOUNT_MISMATCH: "مبلغ پرداختی با مبلغ سفارش مطابقت ندارد.",
+  ONLINE_PAYMENT_LIMIT_EXCEEDED:
+    "پرداخت آنلاین برای مبالغ تا سقف مجاز در دسترس است.",
   COUPON_INVALID: "کد تخفیف معتبر نیست.",
   COUPON_MIN_ORDER_NOT_MET: "حداقل مبلغ سفارش برای این کد رعایت نشده است.",
   COUPON_USAGE_LIMIT_REACHED: "سقف استفاده از این کد پر شده است.",

@@ -22,6 +22,7 @@ urlpatterns = [
     path("content/about", content_views.AboutView.as_view(), name="public-content-about"),
     path("content/site-info", content_views.SiteInfoView.as_view(), name="public-content-site-info"),
     path("content/legal", content_views.LegalView.as_view(), name="public-content-legal"),
+    path("content/faq", content_views.FaqView.as_view(), name="public-content-faq"),
     path("blog", content_views.BlogListView.as_view(), name="public-blog-list"),
     path("blog/categories", content_views.BlogCategoriesView.as_view(), name="public-blog-categories"),
     path("blog/<slug:slug>", content_views.BlogDetailView.as_view(), name="public-blog-detail"),
@@ -82,6 +83,17 @@ urlpatterns = [
     # E-02 §۳/۴ — گزینه‌های عمومی چک‌اوت
     path("shipping-methods", checkout_views.ShippingMethodListView.as_view(), name="public-shipping-methods"),
     path("payment-methods", checkout_views.PaymentMethodListView.as_view(), name="public-payment-methods"),
+    path("payment-plans", checkout_views.PaymentPlanListView.as_view(), name="public-payment-plans"),
+    path(
+        "orders/<str:order_number>/payment/online",
+        order_views.OrderOnlinePaymentStartView.as_view(),
+        name="public-order-payment-online",
+    ),
+    path(
+        "orders/<str:order_number>/payment/move-to-bank",
+        order_views.OrderMoveToBankView.as_view(),
+        name="public-order-payment-move-to-bank",
+    ),
 
     # D-05 §۲/۵ — سفارش. track باید قبل از <str:order_number> ثبت شود.
     path("orders/track", order_views.OrderTrackView.as_view(), name="public-order-track"),

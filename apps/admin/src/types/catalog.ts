@@ -146,6 +146,9 @@ export interface SpecDefinition {
   isSearchable: boolean;
   isVariantAxis: boolean;
   sortOrder: number;
+  /** AUDIT §۱۲.۴ — جایگاه در «مشخصات کلیدی» کارت/صفحه‌ی محصول؛ null = نیست.
+   * در ساخت تعریف تازه اگر نیاید، سرور برای پردازنده/گرافیک/رم پیش‌فرض می‌گذارد. */
+  keySpecOrder?: number | null;
   values: SpecValue[];
   usageCount: number;
 }

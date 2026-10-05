@@ -4,25 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import { formatDateFa } from "@arbyte/contracts/date";
 import { legalPage } from "@arbyte/contracts";
-import type { LegalDocument } from "@arbyte/contracts";
+import type { FaqItem, LegalDocument } from "@arbyte/contracts";
 
 type SectionKey = "faq" | LegalDocument["key"];
 
 /**
- * G-01 — FAQ از منبع مشترک `faq.ts`؛ اسناد (شرایط، حریم خصوصی، ارسال،
+ * G-01 — FAQ از پنل (`GET /content/faq`)؛ اسناد (شرایط، حریم خصوصی، ارسال،
  * مرجوعی، گارانتی) فقط از پنل (`GET /content/legal`) — سند خالی از فهرست
  * پنهان است و هیچ متن حقوقی در کد نیست.
  */
-export function LegalContent({ documents }: { documents: LegalDocument[] }) {
+export function LegalContent({
+  documents,
+  faq,
+}: {
+  documents: LegalDocument[];
+  faq: FaqItem[];
+}) {
   const SECTIONS: SectionKey[] = ["faq", ...documents.map((d) => d.key)];
   const [section, setSection] = useState<SectionKey>("faq");
   const [openIndex, setOpenIndex] = useState(-1);
   const [query, setQuery] = useState("");
 
   const q = query.trim();
-  const hits = legalPage.faq
+  const hits = faq
     .map((f, i) => ({ f, i }))
-    .filter(({ f }) => q === "" || `${f.q} ${f.a}`.includes(q));
+    .filter(({ f }) => q === "" || `${f.question} ${f.answer}`.includes(q));
 
   const doc =
     section === "faq" ? null : documents.find((d) => d.key === section);
@@ -106,7 +112,7 @@ export function LegalContent({ documents }: { documents: LegalDocument[] }) {
                   const isOpen = openIndex === i;
                   return (
                     <div
-                      key={f.q}
+                      key={f.id}
                       role="button"
                       tabIndex={0}
                       onClick={() => setOpenIndex(isOpen ? -1 : i)}
@@ -126,7 +132,7 @@ export function LegalContent({ documents }: { documents: LegalDocument[] }) {
                       </span>
                       <div className="min-w-0">
                         <h2 className="text-pretty text-[15px] leading-relaxed font-emphasis">
-                          {f.q}
+                          {f.question}
                         </h2>
                         <div
                           className="grid transition-[grid-template-rows] duration-[450ms]"
@@ -136,7 +142,7 @@ export function LegalContent({ documents }: { documents: LegalDocument[] }) {
                             <p
                               className={`text-secondary max-w-[62ch] pt-2.5 text-caption leading-loose transition-opacity duration-400 ${isOpen ? "opacity-100" : "opacity-0"}`}
                             >
-                              {f.a}
+                              {f.answer}
                             </p>
                           </div>
                         </div>

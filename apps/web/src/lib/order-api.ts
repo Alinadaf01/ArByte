@@ -36,14 +36,45 @@ export async function uploadReceipt(
   return res.ok;
 }
 
-export async function initiateGatewayPayment(
+export interface OnlinePaymentLink {
+  deepLink: string;
+  qrDataUri: string;
+  amount: number;
+  expiresAt: string;
+}
+
+/** AUDIT-3 — لینک یک‌بارمصرف ربات بله برای سهم آنلاینِ پرداخت‌نشده. */
+export async function startOnlinePayment(
   orderNumber: string,
-): Promise<{ redirectUrl: string } | null> {
+): Promise<
+  { ok: true; link: OnlinePaymentLink } | { ok: false; message: string }
+> {
+  try {
+    const res = await fetch(
+      `${PROXY_BASE}/orders/${encodeURIComponent(orderNumber)}/payment/online`,
+      { method: "POST" },
+    );
+    const body = (await res.json()) as {
+      data?: OnlinePaymentLink;
+      message?: string;
+    };
+    if (!res.ok || !body.data)
+      return { ok: false, message: body.message ?? "" };
+    return { ok: true, link: body.data };
+  } catch {
+    return { ok: false, message: "" };
+  }
+}
+
+/** AUDIT-3 / ADDENDUM §C — پرداخت آنلاین نشد → باقی‌مانده با واریز مستقیم. */
+export async function moveRemainderToBank(
+  orderNumber: string,
+): Promise<Order | null> {
   const res = await fetch(
-    `${PROXY_BASE}/orders/${encodeURIComponent(orderNumber)}/payment/initiate`,
+    `${PROXY_BASE}/orders/${encodeURIComponent(orderNumber)}/payment/move-to-bank`,
     { method: "POST" },
   );
   if (!res.ok) return null;
-  const body = (await res.json()) as { data: { redirectUrl: string } };
+  const body = (await res.json()) as { data: Order };
   return body.data;
 }

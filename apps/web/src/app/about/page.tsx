@@ -10,6 +10,7 @@ import {
 } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { getAboutContent } from "@/lib/content";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   description: aboutPage.metaDescription,
   alternates: { canonical: "/about" },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: `${aboutPage.breadcrumb.current} | آربایت`,
     description: aboutPage.metaDescription,
     url: "/about",

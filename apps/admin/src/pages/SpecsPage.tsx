@@ -146,6 +146,24 @@ function DefinitionForm({
             onChange={(e) => set("sortOrder", Number(e.target.value))}
           />
         </Field>
+        <Field
+          label="جایگاه در مشخصات کلیدی"
+          htmlFor="d-key-order"
+          hint="کارت و صفحه‌ی محصول؛ خالی یعنی جزو مشخصات کلیدی نیست."
+        >
+          <Input
+            id="d-key-order"
+            type="number"
+            min={1}
+            value={draft.keySpecOrder ?? ""}
+            onChange={(e) =>
+              set(
+                "keySpecOrder",
+                e.target.value === "" ? null : Number(e.target.value),
+              )
+            }
+          />
+        </Field>
       </div>
       <div className="flex flex-wrap gap-5">
         <Switch
@@ -381,6 +399,9 @@ export default function SpecsPage() {
                         <div className="flex flex-wrap gap-1">
                           {d.isVariantAxis && (
                             <Chip tone="brand">محور واریانت</Chip>
+                          )}
+                          {d.keySpecOrder != null && (
+                            <Chip tone="success">کلیدی {d.keySpecOrder}</Chip>
                           )}
                           {d.isFilterable && <Chip tone="neutral">فیلتر</Chip>}
                           {d.isRequired && <Chip tone="warning">اجباری</Chip>}

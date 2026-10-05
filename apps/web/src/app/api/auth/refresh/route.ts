@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { env } from "@/lib/env";
-import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
+import {
+  bffFetch,
+  isOriginAllowed,
+  upstreamHeaders,
+  withUpstreamErrors,
+} from "@/lib/server/bff-shared";
 import {
   clearAuthCookies,
   getAuthCookies,
@@ -10,7 +14,7 @@ import {
 
 /** E-02 §۱ — تمدید دستی (کلاینت وقتی پراکسی ۴۰۱ می‌دهد این را صدا می‌زند)؛
  * app/api/proxy هم به‌صورت خودکار همین مسیر را داخلی صدا می‌زند. */
-export async function POST(request: NextRequest): Promise<Response> {
+async function handlePOST(request: NextRequest): Promise<Response> {
   if (!isOriginAllowed(request)) {
     return NextResponse.json(
       { code: "FORBIDDEN", message: "درخواست نامعتبر است." },
@@ -26,11 +30,10 @@ export async function POST(request: NextRequest): Promise<Response> {
     );
   }
 
-  const upstream = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
+  const upstream = await bffFetch("/auth/refresh", {
     method: "POST",
     headers: upstreamHeaders(request, { "content-type": "application/json" }),
     body: JSON.stringify({ refreshToken }),
-    cache: "no-store",
   });
 
   if (!upstream.ok) {
@@ -48,3 +51,5 @@ export async function POST(request: NextRequest): Promise<Response> {
   );
   return NextResponse.json({ data: { ok: true } });
 }
+
+export const POST = withUpstreamErrors(handlePOST);

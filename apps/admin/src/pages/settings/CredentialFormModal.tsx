@@ -32,6 +32,8 @@ const REQUIRED_CREDENTIAL_KEYS: Record<ApiCredentialService, string[]> = {
   idpay: ["apiKey"],
   snapppay: ["clientId", "clientSecret", "username", "password"],
   digipay: ["clientId", "clientSecret"],
+  // AUDIT-6 — کلید عمومی ترب (PEM)؛ یک‌خطی هم پذیرفته می‌شود.
+  torob: ["publicKey"],
 };
 
 export function CredentialFormModal({

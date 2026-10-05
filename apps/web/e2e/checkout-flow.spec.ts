@@ -25,7 +25,10 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   // ۱) افزودن به سبد مهمان — با page.evaluate (نه page.request) چون پراکسی
   // برای نوشتن هدر Origin واقعی مرورگر می‌خواهد (ضد CSRF، E-02 §۱)؛
   // request context مستقل پلی‌رایت آن را نمی‌فرستد.
-  await page.goto("/");
+  // سبد خودِ صفحه هنگام mount کلید X-Cart-Session را می‌نویسد؛ تا آرام نشود
+  // fetch خام زیر ممکن است سبد دیگری بسازد و کلیدش بعد بازنویسی شود
+  // (با سبک‌تر شدن هیرو در AUDIT-4 این رقابت در CI رخ داد).
+  await page.goto("/", { waitUntil: "networkidle" });
   const addStatus = await page.evaluate(async (id) => {
     // هدر X-Cart-Session را باید دقیقاً مثل lib/cart-api.ts بخوانیم/بنویسیم،
     // وگرنه هر fetch خام یک سبد مهمان تازه و جدا می‌سازد.
@@ -78,10 +81,8 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   await page.getByLabel("نشانی کامل").fill("خیابان تست، پلاک ۱");
   await page.getByRole("button", { name: "ذخیره آدرس" }).click();
 
-  const cardToCard = page.getByRole("button", { name: "کارت‌به‌کارت" });
-  if (await cardToCard.isVisible().catch(() => false)) {
-    await cardToCard.click();
-  }
+  // AUDIT-3 — سه کارت روش پرداخت (radio)؛ واریز مستقیم = همان کارت‌به‌کارت.
+  await page.getByRole("radio", { name: /واریز مستقیم به حساب/ }).click();
 
   await page.getByRole("button", { name: "پرداخت و ثبت سفارش" }).click();
   await expect(page).toHaveURL(/\/orders\/ARB-/, { timeout: 15_000 });

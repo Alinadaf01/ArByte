@@ -6,6 +6,7 @@ from rest_framework import serializers, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
 
+from apps.catalog.key_specs import default_key_spec_order
 from apps.catalog.models import Category, SpecificationDefinition, SpecificationValue
 
 from .activity import AdminActivityLogMixin
@@ -40,7 +41,7 @@ class AdminSpecDefinitionSerializer(serializers.ModelSerializer):
         model = SpecificationDefinition
         fields = [
             "id", "key", "name_fa", "type", "unit", "category", "is_required", "is_filterable",
-            "is_searchable", "is_variant_axis", "sort_order", "values", "usage_count",
+            "is_searchable", "is_variant_axis", "sort_order", "key_spec_order", "values", "usage_count",
         ]
 
     def get_id(self, obj) -> str:
@@ -50,6 +51,14 @@ class AdminSpecDefinitionSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data["category"] = str(instance.category_id) if instance.category_id else None
         return data
+
+    def create(self, validated_data):
+        # AUDIT §۱۲.۴ — پردازنده/گرافیک/رم تازه پیش‌فرض کلیدی‌اند مگر ادمین صریحاً بگوید.
+        if "key_spec_order" not in validated_data:
+            validated_data["key_spec_order"] = default_key_spec_order(
+                validated_data.get("key", ""), validated_data.get("name_fa", "")
+            )
+        return super().create(validated_data)
 
     def validate(self, attrs):
         spec_type = attrs.get("type", getattr(self.instance, "type", None))

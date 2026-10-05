@@ -45,7 +45,7 @@ export interface AdminSiteSettings {
 }
 
 export type ApiCredentialService =
-  "kavenegar" | "zarinpal" | "idpay" | "snapppay" | "digipay";
+  "kavenegar" | "zarinpal" | "idpay" | "snapppay" | "digipay" | "torob";
 
 export const API_CREDENTIAL_SERVICE_LABELS: Record<
   ApiCredentialService,
@@ -56,6 +56,7 @@ export const API_CREDENTIAL_SERVICE_LABELS: Record<
   idpay: "آیدی‌پی",
   snapppay: "اسنپ‌پی",
   digipay: "دیجی‌پی",
+  torob: "ترب (Torob API v3)",
 };
 
 export interface ApiCredential {

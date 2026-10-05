@@ -4,7 +4,6 @@
  * Support,Legal,NotFound}.dc.html`). بازنویسی یا ترجمه‌ی مجدد ممنوع (قاعده‌ی #۲).
  */
 import { toPersianDigits } from "../format/digits";
-import { faqQuestions } from "./faq";
 
 export const siteHeader = {
   logoAlt: "آربایت",
@@ -42,7 +41,7 @@ export const siteHeader = {
     sectionArbyte: "آربایت",
     blog: "بلاگ",
     about: "درباره ما",
-    onlineSupport: "پشتیبانی آنلاین ۹ تا ۲۱",
+    onlineSupport: (hours: string) => `پشتیبانی آنلاین ${hours}`,
   },
 } as const;
 
@@ -116,8 +115,11 @@ export const aboutPage = {
 export const supportPage = {
   breadcrumb: { home: "خانه", current: "پشتیبانی" },
   title: "پشتیبانی آربایت",
+  /** متا/پیش‌نمایش؛ متن صفحه با ساعت واقعی پنل از `subtitleWithHours` است. */
   subtitle:
-    "کارشناس‌ها هر روز هفته از ۹ تا ۲۱ در دسترس‌اند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.",
+    "کارشناس‌های آربایت در ساعات کاری پاسخ‌گو هستند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.",
+  subtitleWithHours: (hours: string) =>
+    `کارشناس‌ها ${hours} در دسترس‌اند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.`,
   channels: {
     request: { title: "ثبت درخواست", meta: "پاسخ در ساعات کاری" },
     call: { title: "تماس تلفنی" },
@@ -205,12 +207,6 @@ export const legalPage = {
     noResultsCta: "پرسیدن از پشتیبانی",
   },
   askSupport: "سوالی دارید؟ بپرسید",
-  /**
-   * T-212 §۳ — از `faq.ts` می‌آید (منبع مشترک با آکاردئون صفحه اصلی)؛
-   * دو سوال «تحویل حضوری»/«اقساط» که این‌جا قبلاً بود عمداً از منبع مشترک
-   * حذف شدند (ادعای بدون پشتیبان)، نه فقط از صفحه اصلی مخفی — ر.ک. faq.ts.
-   */
-  faq: faqQuestions,
 } as const;
 
 /**
@@ -541,7 +537,7 @@ export const productDetailPage = {
  * T-215 §۱ — `/search`. طبق §۰ سند تسک: تب «نوشته‌ها» چون API وبلاگ نداریم
  * پنهان است (Q). چیپ‌های پرتکرار فهرست ثابت خودِ سند تسک‌اند، نه رونویسی
  * از طراحی (طراحی «مانیتور OLED»/«کد تخفیف» دارد که محصول ما نیست — Q).
- * نمایه‌ی راهنما = صفحات ثابت + `faqQuestions` (منبع مشترک با `/legal`).
+ * نمایه‌ی راهنما = صفحات ثابت؛ سوالات متداول از پنل در خود صفحه‌ی جستجو اضافه می‌شوند.
  */
 export const searchPage = {
   inputPlaceholder: "نام محصول، برند یا مثلاً «لپ‌تاپ ۱۸ اینچ»",
@@ -607,12 +603,6 @@ export const searchPage = {
       tag: "قوانین",
       href: "/legal",
     },
-    ...faqQuestions.map((item) => ({
-      title: item.q,
-      description: item.a,
-      tag: "سوالات",
-      href: "/legal",
-    })),
   ],
 } as const;
 
@@ -816,6 +806,32 @@ export const checkoutPage = {
   },
   paymentSectionTitle: "روش پرداخت",
   noPaymentMethodsNote: "پرداخت موقتاً در دسترس نیست",
+  /**
+   * AUDIT-3 §۵/§۱۵ — سه روش. ADDENDUM §C: برچسب «پرداخت آنلاین» می‌ماند ولی
+   * توضیح صریح می‌گوید پرداخت در اپلیکیشن «بله» کامل می‌شود (تغییر اپ غافلگیر نکند).
+   * مبالغ قالب‌بندی‌شده (`formatPrice`) پاس داده می‌شوند.
+   */
+  paymentPlans: {
+    ONLINE: {
+      title: "پرداخت آنلاین",
+      description:
+        "پرداخت در اپلیکیشن «بله» کامل می‌شود: پس از ثبت سفارش، «باز کردن بله» را بزنید و فاکتور را همان‌جا پرداخت کنید.",
+      limitNote: (limit: string) => `تا سقف ${limit}`,
+    },
+    BANK_TRANSFER: {
+      title: "واریز مستقیم به حساب",
+      description:
+        "مبلغ را به حساب آربایت واریز و تصویر رسید را بارگذاری کنید؛ سفارش پس از تأیید رسید پردازش می‌شود.",
+    },
+    COMBINED: {
+      title: "پرداخت ترکیبی",
+      description:
+        "بخشی از مبلغ را آنلاین پرداخت کنید و باقی‌مانده را مستقیماً به حساب ArByte واریز کنید.",
+      split: (online: string, bank: string) =>
+        `${online} آنلاین در «بله» + ${bank} واریز مستقیم`,
+    },
+    unavailableBadge: "در دسترس نیست",
+  },
   invoiceSectionTitle: "فاکتور",
   invoicePersonalCta: "شخصی",
   invoiceCorporateCta: "حقوقی",
@@ -840,9 +856,6 @@ export const checkoutPage = {
   },
   legalNote: "با ثبت سفارش، قوانین آربایت را می‌پذیرید.",
   legalLink: "قوانین آربایت",
-  /** فقط برای GATEWAY نشان داده می‌شود — کارت‌به‌کارت واقعاً «نزد درگاه» نمی‌ماند. */
-  escrowNote:
-    "مبلغ تا زمان تحویل و تأیید شما نزد درگاه می‌ماند. در صورت مغایرت، بازگشت وجه تا ۷۲ ساعت انجام می‌شود.",
   emptyCartRedirectNote: "سبد خرید شما خالی است.",
 } as const;
 
@@ -873,6 +886,44 @@ export const orderStatusPage = {
   paymentReturn: {
     checking: "در حال تأیید پرداخت…",
     stillWaitingNote: "تأیید پرداخت کمی طول می‌کشد، پیامک می‌گیرید.",
+  },
+
+  /** AUDIT-3 §۵/§۶/§۱۵ — ترکیب پرداخت و پرداخت آنلاین در «بله». */
+  payment: {
+    title: "پرداخت",
+    totalLabel: "مبلغ سفارش",
+    paidLabel: "پرداخت‌شده",
+    remainingLabel: "باقی‌مانده",
+    shareLabels: { online: "آنلاین (بله)", bank: "واریز مستقیم" },
+    shareStatus: {
+      UNPAID: "در انتظار پرداخت",
+      RECEIPT_UPLOADED: "رسید در حال بررسی",
+      UNDER_REVIEW: "در حال بررسی",
+      CONFIRMED: "پرداخت شد",
+      PARTIALLY_PAID: "پرداخت بخشی",
+      FAILED: "ناموفق",
+      VOID: "باطل",
+    },
+    online: {
+      title: "پرداخت آنلاین در «بله»",
+      note: (amount: string) =>
+        `${amount} در اپلیکیشن «بله» پرداخت می‌شود. با زدن دکمه، بله باز می‌شود و فاکتور سفارش برایتان ارسال می‌شود.`,
+      openCta: "باز کردن بله",
+      preparing: "در حال آماده‌سازی…",
+      desktopNote:
+        "روی کامپیوتر هستید؟ این کد را با دوربین گوشی اسکن کنید یا لینک زیر را در گوشی باز کنید.",
+      linkLabel: "لینک پرداخت در بله",
+      waiting: "پس از پرداخت در بله، این صفحه خودکار به‌روز می‌شود.",
+      failedTitle: "پرداخت آنلاین انجام نشد؟",
+      failedNote:
+        "سقف پرداخت روزانه‌ی بله بین همه‌ی فروشگاه‌ها مشترک است، پس ممکن است پرداخت کمتر از سقف ما هم ناموفق شود. می‌توانید باقی‌مانده را مستقیم به حساب واریز کنید؛ سفارش باز می‌ماند.",
+      moveToBankCta: "پرداخت باقی‌مانده با واریز مستقیم",
+      moving: "در حال تغییر…",
+      startError: "اتصال به بله ممکن نشد. کمی بعد دوباره تلاش کنید.",
+    },
+    bankAmountLabel: "مبلغ قابل واریز",
+    receiptPendingNote:
+      "رسید شما دریافت شد و در حال بررسی است. پس از تأیید، وضعیت سفارش به‌روز می‌شود.",
   },
 
   timelineTitle: "مراحل سفارش",

@@ -103,13 +103,81 @@ export async function computeBand(framePath) {
   ];
 }
 
+/**
+ * AUDIT-4 — فریم‌ها → یک ویدیوی کوتاه برای هر breakpoint + پوستر AVIF.
+ *
+ * H.264 با GOP=2 (هر دو فریم یک keyframe) تا `video.currentTime` روی اسکرول
+ * بدون پرش seek کند. اندازه‌گیری روی همین فریم‌ها: H.264 CRF34 دسکتاپ ۲٫۵MB
+ * (SSIM 0.987) در برابر VP9 ۳٫۰MB (SSIM 0.959) با همان GOP — پس MP4 منبع
+ * اصلی است و WebM/VP9 فقط جایگزین مرورگرهایی که H.264 ندارند (Chromium بدون
+ * کُدک‌های اختصاصی؛ انتخاب با canPlayType، دو فایل هرگز با هم دانلود نمی‌شوند).
+ * `faststart` تا متادیتا اول فایل باشد.
+ */
+export const HERO_FPS = 30;
+const VIDEO_CRF = 34;
+const VP9_CRF = 56;
+
+export function encodeHeroVideo(framesDir, outPath, { width }) {
+  execFileSync(
+    ffmpegPath,
+    [
+      "-y", "-hide_banner", "-loglevel", "error",
+      "-framerate", String(HERO_FPS),
+      "-i", path.join(framesDir, "f_%d.webp"),
+      "-vf", `scale=${width}:-2`,
+      "-c:v", "libx264", "-preset", "slow", "-crf", String(VIDEO_CRF),
+      "-g", "2", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an",
+      outPath,
+    ],
+    { stdio: "inherit" },
+  );
+}
+
+export function encodeHeroWebm(framesDir, outPath, { width }) {
+  execFileSync(
+    ffmpegPath,
+    [
+      "-y", "-hide_banner", "-loglevel", "error",
+      "-framerate", String(HERO_FPS),
+      "-i", path.join(framesDir, "f_%d.webp"),
+      "-vf", `scale=${width}:-2`,
+      "-c:v", "libvpx-vp9", "-crf", String(VP9_CRF), "-b:v", "0",
+      "-g", "2", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2",
+      "-pix_fmt", "yuv420p", "-an",
+      outPath,
+    ],
+    { stdio: "inherit" },
+  );
+}
+
+/** پوستر AVIF (کاندید LCP، قبل از ویدیو) از فریم اول/آخر. */
+export async function writePoster(framePath, outPath, { width }) {
+  await sharp(framePath).resize({ width }).avif({ quality: 55, effort: 6 }).toFile(outPath);
+}
+
+export async function buildHeroMedia({ desktopFramesDir, mobileFramesDir, outDir, count, desktopWidth, mobileWidth }) {
+  fs.mkdirSync(outDir, { recursive: true });
+  encodeHeroVideo(desktopFramesDir, path.join(outDir, "hero-desktop.mp4"), { width: desktopWidth });
+  encodeHeroVideo(mobileFramesDir, path.join(outDir, "hero-mobile.mp4"), { width: mobileWidth });
+  encodeHeroWebm(desktopFramesDir, path.join(outDir, "hero-desktop.webm"), { width: desktopWidth });
+  encodeHeroWebm(mobileFramesDir, path.join(outDir, "hero-mobile.webm"), { width: mobileWidth });
+  const last = count - 1;
+  await writePoster(path.join(desktopFramesDir, "f_0.webp"), path.join(outDir, "poster-desktop.avif"), { width: desktopWidth });
+  await writePoster(path.join(mobileFramesDir, "f_0.webp"), path.join(outDir, "poster-mobile.avif"), { width: mobileWidth });
+  await writePoster(path.join(desktopFramesDir, `f_${last}.webp`), path.join(outDir, "poster-end-desktop.avif"), { width: desktopWidth });
+  await writePoster(path.join(mobileFramesDir, `f_${last}.webp`), path.join(outDir, "poster-end-mobile.avif"), { width: mobileWidth });
+}
+
 export function writeManifest(outDir, { count, width, height, bands }) {
   const manifest = {
     count,
     width,
     height,
-    pattern: "/hero/frames/f_{i}.webp",
-    mobilePattern: "/hero/frames/m/f_{i}.webp",
+    fps: HERO_FPS,
+    video: { desktop: "/hero/hero-desktop.mp4", mobile: "/hero/hero-mobile.mp4" },
+    videoWebm: { desktop: "/hero/hero-desktop.webm", mobile: "/hero/hero-mobile.webm" },
+    poster: { desktop: "/hero/poster-desktop.avif", mobile: "/hero/poster-mobile.avif" },
+    posterEnd: { desktop: "/hero/poster-end-desktop.avif", mobile: "/hero/poster-end-mobile.avif" },
     bands,
   };
   fs.writeFileSync(

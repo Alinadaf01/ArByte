@@ -10,6 +10,7 @@ import {
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { PostCard, PostMeta } from "@/components/blog/PostCard";
 import { getBlogPosts } from "@/lib/content";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -29,6 +30,7 @@ export async function generateMetadata({
     // فهرست فیلترشده/صفحه‌بندی‌شده ایندکس نشود؛ فقط /blog اصلی.
     robots: filtered ? { index: false, follow: true } : undefined,
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title: blogPage.title,
       description: blogPage.metaDescription,
       url: "/blog",

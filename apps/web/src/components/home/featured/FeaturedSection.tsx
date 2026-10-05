@@ -14,8 +14,8 @@ interface FeaturedSectionProps {
 }
 
 /**
- * T-212 §۱ — «محصولات منتخب»: یک کارت بزرگ + دو کوچک، از بلوک PRODUCT_RAIL
- * (سه محصول واقعی، اولی کارت بزرگ). منطق قیمت/موجودی/سبد از همان
+ * T-212 §۱ — «محصولات منتخب»: یک کارت بزرگ + بقیه کوچک، از بلوک PRODUCT_RAIL
+ * پنل (ترتیب پنل؛ اولی کارت بزرگ). منطق قیمت/موجودی/سبد از همان
  * helperهای `ProductCard` می‌آید (`@/lib/labels`, `AddToCartButton`) —
  * تکرار نشده، فقط چیدمان طراحی این بخش فرق دارد.
  */
@@ -99,7 +99,10 @@ export function FeaturedSection({ block }: FeaturedSectionProps) {
           </div>
         </article>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* بلوک «ردیف محصولات» پنل: اولی کارت بزرگ، بقیه کوچک (۴ محصول = ۱+۳). */}
+        <div
+          className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${small.length % 3 === 0 ? "lg:grid-cols-3" : ""}`}
+        >
           {small.map((product) => {
             const availability = product.defaultVariant.availability;
             return (

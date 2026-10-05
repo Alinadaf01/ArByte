@@ -19,3 +19,11 @@ export interface LegalDocumentContent {
   body: string;
   updatedAt: string;
 }
+
+/** سوالات متداول — ترتیب آرایه همان ترتیب نمایش در فروشگاه است. */
+export interface FaqEntry {
+  id?: string;
+  question: string;
+  answer: string;
+  showOnHome: boolean;
+}

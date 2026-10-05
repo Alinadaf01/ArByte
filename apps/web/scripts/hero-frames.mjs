@@ -8,14 +8,14 @@ import {
   convertFrames,
   computeBand,
   writeManifest,
+  buildHeroMedia,
 } from "./hero-pipeline.mjs";
 
 /**
  * E-01 §۴ — `pnpm hero:frames` (قبلاً `hero:dev-frames`، فقط dev). تصمیم
  * مدیر پروژه: همان فریم‌های طراحی (raw.githubusercontent.com/duthiljean/
- * hero-apple) استفاده می‌شوند — خروجی این‌بار در ریپو کامیت می‌شود
- * (`public/hero/frames/` از `.gitignore` بیرون آمد) تا در دیپلوی هم باشد؛
- * پس این دیگر «فقط dev» نیست. دانلود از دامنه‌ی خارجی فقط زمان اجرای این
+ * hero-apple) استفاده می‌شوند. AUDIT-4: فریم‌ها فقط ورودی pipeline هستند
+ * (`.hero-work/`، gitignored)؛ خروجی کامیت‌شده ویدیو + پوستر در `public/hero/`. دانلود از دامنه‌ی خارجی فقط زمان اجرای این
  * اسکریپت (ساخت، نه زمان اجرای سایت) است — قانون ۸ (بدون درخواست خارجی
  * runtime) نقض نمی‌شود، دقیقاً مثل `hero:build`.
  */
@@ -28,7 +28,8 @@ const SOURCE_BASE =
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TMP_DIR = path.resolve(__dirname, "../.hero-dev-tmp");
-const OUT_DIR = path.resolve(__dirname, "../public/hero/frames");
+// AUDIT-4 — فریم‌ها فقط ورودی میانی‌اند (gitignored)؛ سایت ویدیو + پوستر سرو می‌کند.
+const OUT_DIR = path.resolve(__dirname, "../.hero-work/frames");
 const MOBILE_OUT_DIR = path.join(OUT_DIR, "m");
 const MANIFEST_DIR = path.resolve(__dirname, "../public/hero");
 
@@ -91,6 +92,16 @@ async function main() {
     );
     bands.push([FRAME_COUNT - 1, top, bottom]);
   }
+
+  console.log("ساخت ویدیو و پوستر...");
+  await buildHeroMedia({
+    desktopFramesDir: OUT_DIR,
+    mobileFramesDir: MOBILE_OUT_DIR,
+    outDir: MANIFEST_DIR,
+    count: FRAME_COUNT,
+    desktopWidth: DESKTOP_WIDTH,
+    mobileWidth: MOBILE_WIDTH,
+  });
 
   writeManifest(MANIFEST_DIR, {
     count: FRAME_COUNT,

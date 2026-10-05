@@ -199,7 +199,7 @@ def _make_single_unit_order(*, user, warranty_months=24, delivered=False, shippe
         quantity=1,
         final_price=50_000_000,
     )
-    unit = OrderItemUnit.objects.create(order_item=item, serial_number="SN-0001")
+    unit = OrderItemUnit.objects.create(order_item=item, serial_number=f"SN-{order.id}-0001")
     if shipped:
         Shipment.objects.create(order=order, provider="پست پیشتاز", tracking_number="TRK-0001")
         order.status = "SHIPPED"

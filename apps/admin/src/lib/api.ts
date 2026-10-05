@@ -3,6 +3,14 @@ import {
   saveStoredAdminAuth,
   clearStoredAdminAuth,
 } from "@/lib/adminAuthStorage";
+import type { TorobStatus, TorobValidation } from "@/types/torob";
+import type {
+  BalePaySession,
+  BalePaySettings,
+  BalePaySettingsInput,
+  BalePayTestResult,
+  BalePayWebhookStatus,
+} from "@/types/balepay";
 import type { AdminLoginResponse } from "@/types/adminAuth";
 import type { PaginatedResponse } from "@/types/api";
 import type { AdminOrder } from "@/types/order";
@@ -61,6 +69,7 @@ import type {
 } from "@/types/accountAdmin";
 import type {
   AboutPageContent,
+  FaqEntry,
   LegalDocumentContent,
 } from "@/types/contentPages";
 import type { AdminRedirect, RedirectFormValues } from "@/types/redirect";
@@ -315,14 +324,26 @@ export async function reviewReceipt(
     throw new Error(await readErrorDetail(res, "بررسی رسید ناموفق بود."));
 }
 
-/** فایل رسید فقط از مسیر احراز‌شده — بلاب با توکن گرفته و در زبانه‌ی جدید باز می‌شود. */
-export async function openReceiptFile(receiptId: number): Promise<void> {
+export interface ReceiptFile {
+  /** blob: URL — فراخوان بعد از استفاده `URL.revokeObjectURL` می‌کند. */
+  url: string;
+  type: string;
+}
+
+/**
+ * فایل رسید فقط از مسیر احراز‌شده (توکن در هدر، نه لینک عمومی).
+ * AUDIT-1 §11 — قبلاً بعد از `await` با `window.open` باز می‌شد؛ مرورگر آن
+ * را popup بدون کلیک کاربر می‌دید و بی‌صدا مسدود می‌کرد (Safari همیشه، Chrome
+ * وقتی دریافت فایل چند ثانیه طول می‌کشید). حالا داخل خود پنل پیش‌نمایش می‌شود.
+ */
+export async function fetchReceiptFile(
+  receiptId: number,
+): Promise<ReceiptFile> {
   const res = await authorizedFetch(`/payments/receipts/${receiptId}/file/`);
   if (!res.ok)
     throw new Error(await readErrorDetail(res, "دریافت فایل رسید ناموفق بود."));
-  const url = URL.createObjectURL(await res.blob());
-  window.open(url, "_blank", "noopener");
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  const blob = await res.blob();
+  return { url: URL.createObjectURL(blob), type: blob.type };
 }
 
 export type OrderDocumentKind =
@@ -1072,6 +1093,27 @@ export async function updateLegalDocument(
   return parseOrThrow(res, "ذخیره‌ی سند ناموفق بود.");
 }
 
+// سوالات متداول (صفحه اصلی، قوانین، پشتیبانی و جستجوی فروشگاه).
+export async function getFaqEntries(): Promise<FaqEntry[]> {
+  const data = await parseOrThrow<{ items: FaqEntry[] }>(
+    await authorizedFetch("/pages/faq/"),
+    "دریافت سوالات متداول ناموفق بود.",
+  );
+  return data.items;
+}
+
+export async function saveFaqEntries(items: FaqEntry[]): Promise<FaqEntry[]> {
+  const res = await authorizedFetch("/pages/faq/", {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+  const data = await parseOrThrow<{ items: FaqEntry[] }>(
+    res,
+    "ذخیره‌ی سوالات متداول ناموفق بود.",
+  );
+  return data.items;
+}
+
 // G-02 — ریدایرکت‌ها.
 export async function listRedirects(params: {
   page?: number;
@@ -1121,5 +1163,84 @@ export async function listLoginAttempts(params: {
   return parseOrThrow(
     await authorizedFetch(`/login-attempts/${buildQuery(params)}`),
     "دریافت لاگ ورود ناموفق بود.",
+  );
+}
+
+// AUDIT-6 — ترب (Torob API v3)
+export async function getTorobStatus(): Promise<TorobStatus> {
+  return parseOrThrow(
+    await authorizedFetch("/torob/status/"),
+    "دریافت وضعیت ترب ناموفق بود.",
+  );
+}
+
+export async function validateTorobFeed(): Promise<TorobValidation> {
+  return parseOrThrow(
+    await authorizedFetch("/torob/validate/", { method: "POST" }),
+    "اعتبارسنجی فید ترب ناموفق بود.",
+  );
+}
+
+// AUDIT-3 — بله پی
+export async function getBalePaySettings(): Promise<BalePaySettings> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/settings/"),
+    "دریافت تنظیمات بله پی ناموفق بود.",
+  );
+}
+
+export async function saveBalePaySettings(
+  input: BalePaySettingsInput,
+): Promise<BalePaySettings> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/settings/", {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+    "ذخیره‌ی تنظیمات بله پی ناموفق بود.",
+  );
+}
+
+export async function testBalePayConnection(): Promise<BalePayTestResult> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/test/", { method: "POST" }),
+    "تست اتصال ناموفق بود.",
+  );
+}
+
+export async function getBalePayWebhook(): Promise<BalePayWebhookStatus> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/webhook/"),
+    "دریافت وضعیت وب‌هوک ناموفق بود.",
+  );
+}
+
+export async function registerBalePayWebhook(): Promise<BalePayWebhookStatus> {
+  const res = await authorizedFetch("/balepay/webhook/", { method: "POST" });
+  return (await res.json()) as BalePayWebhookStatus;
+}
+
+export async function listBalePaySessions(params: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  order?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  amountMin?: string;
+  amountMax?: string;
+}): Promise<PaginatedResponse<BalePaySession>> {
+  const { dateFrom, dateTo, amountMin, amountMax, ...rest } = params;
+  return parseOrThrow(
+    await authorizedFetch(
+      `/balepay/sessions/${buildQuery({
+        ...rest,
+        date_from: dateFrom,
+        date_to: dateTo,
+        amount_min: amountMin,
+        amount_max: amountMax,
+      })}`,
+    ),
+    "دریافت پرداخت‌های بله ناموفق بود.",
   );
 }

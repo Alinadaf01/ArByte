@@ -9,7 +9,7 @@ import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { SearchForm } from "@/components/search/SearchForm";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 import { searchProducts } from "@/lib/catalog";
-import { getBlogPosts } from "@/lib/content";
+import { getBlogPosts, getFaq } from "@/lib/content";
 import { PostCard } from "@/components/blog/PostCard";
 
 type SearchKind = "all" | "products" | "posts" | "support";
@@ -47,9 +47,21 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       ]);
 
   const needle = normalizeSearchText(q);
+  // نمایه‌ی راهنما = صفحات ثابت + سوالات متداول پنل.
+  const helpIndex = isIdle
+    ? []
+    : [
+        ...searchPage.helpIndex,
+        ...(await getFaq()).map((item) => ({
+          title: item.question,
+          description: item.answer,
+          tag: "سوالات",
+          href: "/legal",
+        })),
+      ];
   const helpMatches = isIdle
     ? []
-    : searchPage.helpIndex.filter((item) =>
+    : helpIndex.filter((item) =>
         normalizeSearchText(`${item.title} ${item.description}`).includes(
           needle,
         ),

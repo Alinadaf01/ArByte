@@ -6,9 +6,11 @@ snake_case-keyed dicts on purpose — DRF's CamelCaseJSONRenderer (already
 global, see config/settings.py) converts them to camelCase on the way out,
 same as every apps/admin_api response already relies on."""
 
+from apps.catalog.key_specs import MAX_KEY_SPECS
 from apps.catalog.pricing import live_price
 
 from .availability import compute_availability
+from .media import public_media_url
 from .variant import build_variant_label, select_card_variant
 
 _NULL_SEO = {"title": None, "description": None, "canonical": None}
@@ -80,13 +82,26 @@ def build_axes_and_variants(variant_rows: list, global_threshold: int) -> tuple[
     return variants, variant_axes
 
 
-def build_key_specs(specs) -> list[dict]:
-    items = []
-    for spec in list(specs)[:4]:
-        value = spec_value_of(spec)
-        if value:
-            items.append({"name": spec.definition.name_fa, "value": value})
-    return items
+def build_key_specs(product_specs, variant_specs=()) -> list[dict]:
+    """AUDIT §۱۲.۴ — مشخصات کلیدی یک واریانت، به ترتیب صریح `key_spec_order`.
+
+    مشخصه‌ی همان واریانت (مثلاً رم پیکربندی انتخاب‌شده) بر مقدار مشترک محصول
+    مقدم است؛ تعریف بدون `key_spec_order` هرگز کلیدی نیست (نه «اولین N مورد»).
+    """
+    by_definition: dict[int, object] = {}
+    for spec in list(product_specs) + list(variant_specs):
+        if spec.definition.key_spec_order is not None and spec_value_of(spec):
+            by_definition[spec.definition_id] = spec
+    ranked = sorted(
+        by_definition.values(),
+        key=lambda spec: (spec.definition.key_spec_order, spec.definition.sort_order, spec.definition_id),
+    )
+    return [{"name": spec.definition.name_fa, "value": spec_value_of(spec)} for spec in ranked[:MAX_KEY_SPECS]]
+
+
+def _variant_specs(variant_rows: list, variant_id: str) -> list:
+    row = next((v for v in variant_rows if str(v.id) == variant_id), None)
+    return list(row.specifications.all()) if row else []
 
 
 def build_spec_groups(specs) -> list[dict]:
@@ -111,8 +126,9 @@ def build_product_card(product, global_threshold: int, spec_filters: dict[str, s
     actual_default = next((v for v in variant_rows if v.is_default), None)
     actual_default_id = str(actual_default.id) if actual_default else variants[0]["id"]
     chosen = select_card_variant(variants, actual_default_id, spec_filters)
+    product_specs = list(product.specifications.all())
 
-    images = list(product.images.all())
+    images = [img for img in product.images.all() if public_media_url(img.url)]
     primary_image = next((img for img in images if img.is_primary), images[0] if images else None)
 
     return {
@@ -123,11 +139,11 @@ def build_product_card(product, global_threshold: int, spec_filters: dict[str, s
         "category": to_category_ref(product),
         "condition": product.condition,
         "image": (
-            {"url": primary_image.url, "alt": primary_image.alt_text, "order": primary_image.sort_order}
+            {"url": public_media_url(primary_image.url), "alt": primary_image.alt_text, "order": primary_image.sort_order}
             if primary_image
             else None
         ),
-        "keySpecs": build_key_specs(product.specifications.all()),
+        "keySpecs": build_key_specs(product_specs, _variant_specs(variant_rows, chosen["id"])),
         "defaultVariant": {
             "id": chosen["id"],
             "label": chosen["label"],
@@ -144,9 +160,12 @@ def build_product_detail(product, global_threshold: int) -> dict:
     variants, variant_axes = build_axes_and_variants(variant_rows, global_threshold)
     actual_default = next((v for v in variant_rows if v.is_default), None)
     default_variant_id = str(actual_default.id) if actual_default else variants[0]["id"]
+    product_specs = list(product.specifications.all())
 
     images = [
-        {"url": img.url, "alt": img.alt_text, "order": img.sort_order} for img in product.images.all()
+        {"url": url, "alt": img.alt_text, "order": img.sort_order}
+        for img in product.images.all()
+        if (url := public_media_url(img.url))
     ]
 
     return {
@@ -161,8 +180,11 @@ def build_product_detail(product, global_threshold: int) -> dict:
         "description": product.description,
         "defaultVariantId": default_variant_id,
         "variantAxes": variant_axes,
-        "variants": variants,
-        "specifications": build_spec_groups(product.specifications.all()),
+        "variants": [
+            {**variant, "keySpecs": build_key_specs(product_specs, _variant_specs(variant_rows, variant["id"]))}
+            for variant in variants
+        ],
+        "specifications": build_spec_groups(product_specs),
         "seo": _seo_of(product),
         # G-01 — خلاصه‌ی نظرهای تأییدشده (JSON-LD AggregateRating فقط با ≥۳ نظر).
         "rating": _rating_of(product),
@@ -191,7 +213,9 @@ def to_category_card(category, min_price: int | None = None) -> dict:
         "id": str(category.id),
         "name": category.name,
         "slug": category.slug,
-        "image": {"url": category.image_main, "alt": category.name} if category.image_main else None,
+        "image": (
+            {"url": url, "alt": category.name} if (url := public_media_url(category.image_main)) else None
+        ),
         "productCount": category.product_count,
         "description": category.description,
         "minPrice": min_price,

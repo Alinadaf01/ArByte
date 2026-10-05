@@ -3,6 +3,7 @@
 فعال قیمت را برای فهرست/جزئیات/سبد/سفارش حساب می‌کند."""
 
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.response import Response
@@ -139,7 +140,7 @@ class AdminCampaignPreviewView(APIView):
     permission_classes = [require_section("coupons")]
 
     def get(self, request, pk):
-        campaign = Campaign.objects.prefetch_related("targets").get(pk=pk)
+        campaign = get_object_or_404(Campaign.objects.prefetch_related("targets"), pk=pk)
         rows = [
             {"variant": str(v.pk), "sku": v.sku, "product_name": v.product.name, "price": v.final_price,
              "campaign_price": discounted(v.final_price, campaign.rules)}

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { env } from "@/lib/env";
-import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
+import {
+  bffFetch,
+  isOriginAllowed,
+  upstreamHeaders,
+  withUpstreamErrors,
+} from "@/lib/server/bff-shared";
 import {
   clearAuthCookies,
   getAuthCookies,
@@ -37,7 +41,6 @@ async function forward(
   path: string[],
   accessToken: string | null,
 ): Promise<Response> {
-  const url = `${env.NEXT_PUBLIC_API_BASE_URL}/${path.join("/")}${request.nextUrl.search}`;
   const headers = upstreamHeaders(request);
   for (const key of FORWARD_REQUEST_HEADERS) {
     const value = request.headers.get(key);
@@ -46,21 +49,19 @@ async function forward(
   if (accessToken) headers.set("authorization", `Bearer ${accessToken}`);
 
   const hasBody = request.method !== "GET" && request.method !== "HEAD";
-  return fetch(url, {
+  return bffFetch(`/${path.join("/")}${request.nextUrl.search}`, {
     method: request.method,
     headers,
     body: hasBody ? await request.arrayBuffer() : undefined,
-    cache: "no-store",
   });
 }
 
 async function tryRefresh(refreshToken: string): Promise<string | null> {
   try {
-    const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/refresh`, {
+    const res = await bffFetch("/auth/refresh", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ refreshToken }),
-      cache: "no-store",
     });
     if (!res.ok) return null;
     const body = (await res.json()) as {
@@ -113,10 +114,11 @@ async function handle(
   });
 }
 
+const guarded = withUpstreamErrors(handle);
 export {
-  handle as GET,
-  handle as POST,
-  handle as PATCH,
-  handle as PUT,
-  handle as DELETE,
+  guarded as GET,
+  guarded as POST,
+  guarded as PATCH,
+  guarded as PUT,
+  guarded as DELETE,
 };

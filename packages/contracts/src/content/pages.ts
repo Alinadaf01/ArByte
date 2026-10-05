@@ -99,6 +99,16 @@ export const LegalResponseSchema = successResponseSchema(
   z.array(LegalDocumentSchema),
 );
 
+/** سوالات متداول — فقط از پنل (`GET /content/faq`)، به ترتیب پنل. */
+export const FaqItemSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  answer: z.string(),
+  onHome: z.boolean(),
+});
+export type FaqItem = z.infer<typeof FaqItemSchema>;
+export const FaqResponseSchema = successResponseSchema(z.array(FaqItemSchema));
+
 export const CONTACT_TOPICS = [
   "پیش از خرید",
   "سفارش و ارسال",

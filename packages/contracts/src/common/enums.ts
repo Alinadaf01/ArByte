@@ -27,6 +27,11 @@ export const PAYMENT_STATUS_VALUES = [
   "RECEIPT_UPLOADED",
   "UNDER_REVIEW",
   "CONFIRMED",
+  /** AUDIT-2 — فقط وضعیت سفارش: بخشی پرداخت شده (پرداخت ترکیبی). */
+  "PARTIALLY_PAID",
+  /** AUDIT-2 — فقط وضعیت هر پرداخت: آنلاین ناموفق / کنار گذاشته‌شده. */
+  "FAILED",
+  "VOID",
 ] as const;
 export const PaymentStatusSchema = z.enum(PAYMENT_STATUS_VALUES);
 export type PaymentStatus = z.infer<typeof PaymentStatusSchema>;
@@ -37,6 +42,15 @@ export const PAYMENT_METHOD_VALUES = [
 ] as const;
 export const PaymentMethodSchema = z.enum(PAYMENT_METHOD_VALUES);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
+
+/** AUDIT-2 — سه روش پرداخت چک‌اوت. */
+export const PAYMENT_PLAN_VALUES = [
+  "ONLINE",
+  "BANK_TRANSFER",
+  "COMBINED",
+] as const;
+export const PaymentPlanSchema = z.enum(PAYMENT_PLAN_VALUES);
+export type PaymentPlan = z.infer<typeof PaymentPlanSchema>;
 
 export const PAYMENT_PROVIDER_VALUES = ["NONE", "BALEPAY"] as const;
 export const PaymentProviderSchema = z.enum(PAYMENT_PROVIDER_VALUES);

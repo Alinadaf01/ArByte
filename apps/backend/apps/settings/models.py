@@ -112,6 +112,13 @@ class SiteSettings(models.Model):
     # بدون پاک کردن اطلاعات حساب).
     card_to_card_active = models.BooleanField(default=True, help_text="روش کارت‌به‌کارت در چک‌اوت فعال باشد")
 
+    # AUDIT-2 — پرداخت آنلاین (بله‌پی). توکن‌ها رمزشده در ApiCredential(service="balepay")
+    # هستند؛ این‌جا فقط مقادیر غیرمحرمانه. سقف به ریال (واحد فاکتور بله)، تنها منبع این عدد.
+    online_payment_limit_rial = models.PositiveBigIntegerField(
+        default=150_000_000, help_text="سقف هر پرداخت آنلاین (ریال)؛ پیش‌فرض ۱۵ میلیون تومان"
+    )
+    balepay_bot_username = models.CharField(max_length=64, blank=True, help_text="بدون @، مثلاً arbytebot")
+
     class Meta:
         verbose_name_plural = "site settings"
 
@@ -144,6 +151,8 @@ API_CREDENTIAL_SERVICE_CHOICES = [
     # D-05 §۳ — اسکلت بله‌پی؛ بدون مستندات provider هیچ کلیدی معتبر نیست، پس
     # این ردیف تا مستندات نرسد همیشه has_valid_credentials()=False می‌ماند.
     ("balepay", "بله‌پی"),
+    # AUDIT-6 — Torob API v3: {"publicKey": "<PEM کلید عمومی ترب>"}؛ is_active = اتصال روشن.
+    ("torob", "ترب"),
 ]
 
 

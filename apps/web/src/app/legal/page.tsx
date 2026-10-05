@@ -3,7 +3,8 @@ import Link from "next/link";
 import { legalPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { LegalContent } from "./LegalContent";
-import { getLegalDocuments } from "@/lib/content";
+import { getFaq, getLegalDocuments } from "@/lib/content";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   description: legalPage.subtitle,
   alternates: { canonical: "/legal" },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: `${legalPage.breadcrumb.current} | آربایت`,
     description: legalPage.subtitle,
     url: "/legal",
@@ -19,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default async function LegalPage() {
-  const documents = await getLegalDocuments();
+  const [documents, faq] = await Promise.all([getLegalDocuments(), getFaq()]);
   return (
     <StorefrontShell>
       <div dir="rtl" className="bg-paper text-primary font-sans">
@@ -46,7 +48,7 @@ export default async function LegalPage() {
           </div>
         </section>
 
-        <LegalContent documents={documents} />
+        <LegalContent documents={documents} faq={faq} />
       </div>
     </StorefrontShell>
   );

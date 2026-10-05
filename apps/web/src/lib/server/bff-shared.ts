@@ -1,5 +1,12 @@
 import type { NextRequest } from "next/server";
+import { ERROR_MESSAGES } from "@arbyte/contracts";
 import { env } from "@/lib/env";
+import {
+  fetchWithTimeout,
+  UPSTREAM_TIMEOUT_MS,
+  UpstreamTimeoutError,
+} from "@/lib/upstream-fetch";
+import { serverApiUrl } from "@/lib/urls";
 
 /**
  * E-02 §۱ — ضد CSRF ساده روی Route Handlerهای نوشتنی: مرورگر روی هر fetch
@@ -39,4 +46,43 @@ export function upstreamHeaders(
     headers.set("x-bff-secret", secret);
   }
   return headers;
+}
+
+/**
+ * AUDIT-1 §12.8/§12.9 — هر درخواست BFF به Django: آدرس از `lib/urls`
+ * (نرمال‌شده) و سقف زمانی `UPSTREAM_TIMEOUT_MS.bff`.
+ */
+export function bffFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  return fetchWithTimeout(
+    serverApiUrl(path),
+    { cache: "no-store", ...init },
+    UPSTREAM_TIMEOUT_MS.bff,
+  );
+}
+
+/**
+ * Django کند یا در دسترس نیست → پاسخ JSON کنترل‌شده‌ی 504/502 با همان
+ * قالب خطای API، به‌جای معلق‌ماندن تا سقف اجرای Vercel یا 500 خام.
+ */
+export function withUpstreamErrors<A extends unknown[]>(
+  handler: (...args: A) => Promise<Response>,
+): (...args: A) => Promise<Response> {
+  return async (...args: A) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      const timedOut = error instanceof UpstreamTimeoutError;
+      console.error("[bff] upstream failure", error);
+      return Response.json(
+        {
+          code: "SERVICE_UNAVAILABLE",
+          message: ERROR_MESSAGES.SERVICE_UNAVAILABLE,
+        },
+        { status: timedOut ? 504 : 502 },
+      );
+    }
+  };
 }

@@ -13,6 +13,7 @@ from apps.content.models import Coupon
 from apps.inventory.models import Inventory
 from apps.orders import order_status
 from apps.orders.models import CouponUsage, Order, Payment, PaymentReceipt
+from apps.orders.testing import enable_payments
 from apps.public_api.jwt_tokens import issue_tokens
 from apps.settings.models import ShippingMethod, SiteSettings
 from apps.users.models import Address, User
@@ -41,6 +42,7 @@ class OrderTestBase(TransactionTestCase):
     واقعی جدا در دو ترد نیاز دارد (select_for_update باید واقعاً قفل کند)."""
 
     def setUp(self):
+        enable_payments(limit_rial=10**12)  # AUDIT-2 — مثل تولید پیکربندی، سقف خارج از دامنه‌ی این تست
         cache.clear()
         self.client = APIClient()
         self.user = User.objects.create_user(phone="09121110050", is_verified=True)
@@ -260,10 +262,11 @@ class PaymentCallbackTests(OrderTestBase):
         self._add_to_cart(variant)
         resp = self._checkout(paymentMethod="GATEWAY")
         self.order = Order.objects.get(order_number=resp.data["data"]["orderNumber"])
-        self.payment = Payment.objects.create(
-            order=self.order, method="GATEWAY", provider="BALEPAY", gateway="BALEPAY",
-            amount=self.order.final_total, provider_ref="ref-123", status="UNDER_REVIEW",
-        )
+        # AUDIT-2 — همان سهم آنلاینی که چک‌اوت ساخت (ردیف دوم یعنی سهم پرداخت‌نشده‌ی دیگر).
+        self.payment = self.order.payments.get()
+        self.payment.provider_ref = "ref-123"
+        self.payment.status = "UNDER_REVIEW"
+        self.payment.save()
         # initiate_payment واقعی همین‌جا سفارش را PAYMENT_REVIEW می‌کند —
         # اینجا Payment دستی ساخته شد، پس گذار هم دستی انجام می‌شود.
         order_status.transition_to(self.order, "PAYMENT_REVIEW")

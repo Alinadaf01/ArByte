@@ -10,6 +10,7 @@ import { CopyLinkButton } from "@/components/blog/CopyLinkButton";
 import { getBlogPost } from "@/lib/content";
 import { formatJalaliLong } from "@/lib/jalali";
 import { absoluteUrl, jsonLd } from "@/lib/json-ld";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -31,6 +32,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: url },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       type: "article",
       title,
       description,

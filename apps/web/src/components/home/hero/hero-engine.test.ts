@@ -4,22 +4,19 @@ import {
   bandAt,
   easeStep,
   fitTransform,
-  frameUrl,
-  nearestAvailableFrame,
+  frameToTime,
 } from "./hero-engine";
 
-describe("frameUrl", () => {
-  it("الگوی دسکتاپ/موبایل را با شماره‌ی فریم جایگزین می‌کند", () => {
-    const manifest = {
-      count: 220,
-      width: 1400,
-      height: 900,
-      pattern: "/hero/frames/f_{i}.webp",
-      mobilePattern: "/hero/frames/m/f_{i}.webp",
-      bands: [] as [number, number, number][],
-    };
-    expect(frameUrl(manifest, 42, false)).toBe("/hero/frames/f_42.webp");
-    expect(frameUrl(manifest, 42, true)).toBe("/hero/frames/m/f_42.webp");
+describe("frameToTime", () => {
+  it("maps a frame to the middle of its slot at the manifest fps", () => {
+    expect(frameToTime(0, 30, 7.33)).toBeCloseTo(0.5 / 30);
+    expect(frameToTime(30, 30, 7.33)).toBeCloseTo(30.5 / 30);
+  });
+
+  it("never seeks past the end or before the start", () => {
+    expect(frameToTime(219, 30, 7.333)).toBeLessThan(7.333);
+    expect(frameToTime(-5, 30, 7.333)).toBeCloseTo(0.5 / 30);
+    expect(frameToTime(10, 30, Number.NaN)).toBeCloseTo(10.5 / 30);
   });
 });
 
@@ -96,27 +93,5 @@ describe("easeStep", () => {
 
   it("در غیر این صورت با ضریب ۰٫۱۲ به target نزدیک می‌شود (E-01 §۴)", () => {
     expect(easeStep(0, 10)).toBeCloseTo(1.2, 5);
-  });
-});
-
-describe("nearestAvailableFrame", () => {
-  it("اگر خودِ فریم موجود باشد، همان را برمی‌گرداند", () => {
-    const available = new Set([10, 20, 30]);
-    expect(nearestAvailableFrame(available, 20, 219)).toBe(20);
-  });
-
-  it("نزدیک‌ترین فریمِ بارگذاری‌شده را برمی‌گرداند، نه جای خالی", () => {
-    const available = new Set([0, 42, 50]);
-    expect(nearestAvailableFrame(available, 45, 219)).toBe(42);
-    expect(nearestAvailableFrame(available, 48, 219)).toBe(50);
-  });
-
-  it("در فاصله‌ی مساوی، سمت پایین‌تر برنده است (اولویت به قبل)", () => {
-    const available = new Set([40, 44]);
-    expect(nearestAvailableFrame(available, 42, 219)).toBe(40);
-  });
-
-  it("وقتی available خالی است، همان target را برمی‌گرداند (نگهبان)", () => {
-    expect(nearestAvailableFrame(new Set(), 42, 219)).toBe(42);
   });
 });

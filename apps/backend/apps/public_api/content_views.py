@@ -26,6 +26,7 @@ from .client_ip import client_ip
 from .envelope import PublicAPIView, paginated_response, success_response
 from .errors import ApiError, not_found, validation_error
 from .impersonation import assert_not_impersonating
+from .media import public_media_url
 from .validation import _parse_positive_int
 
 _ALLOWED_TAGS = {
@@ -87,7 +88,7 @@ def _paragraphs(text: str) -> list[str]:
 def _media_url(request, url: str) -> str | None:
     """نسبی می‌ماند (`/media/...`) — مثل تصاویر محصول؛ فروشگاه /media را به
     Django rewrite می‌کند و next/image فقط مسیر هم‌مبدأ را بهینه می‌کند."""
-    return url or None
+    return public_media_url(url)
 
 
 def _post_card(request, post: BlogPost) -> dict:
@@ -215,6 +216,19 @@ class LegalView(PublicAPIView):
             if d.body.strip()
         ]
         return Response(success_response(docs, request.request_id))
+
+
+class FaqView(PublicAPIView):
+    """سوالات متداول از پنل؛ `onHome` برای آکاردئون صفحه‌ی اصلی."""
+
+    def get(self, request):
+        from apps.content.models import FaqItem
+
+        items = [
+            {"id": str(f.pk), "question": f.question, "answer": f.answer, "onHome": f.show_on_home}
+            for f in FaqItem.objects.all()
+        ]
+        return Response(success_response(items, request.request_id))
 
 
 _MOBILE = re.compile(r"^09\d{9}$")

@@ -1,12 +1,15 @@
 """G-01 — ویرایش متن‌های «درباره ما» و اسناد «قوانین» از پنل (بخش تنظیمات).
 متن پیش‌فرض نداریم: هر بخش/سند خالی در فروشگاه پنهان می‌شود."""
 
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView, RetrieveUpdateAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from apps.content.models import LEGAL_DOCUMENT_CHOICES, AboutPage, LegalDocument
+from apps.content.models import LEGAL_DOCUMENT_CHOICES, AboutPage, FaqItem, LegalDocument
 
-from .activity import AdminActivityLogMixin
+from .activity import AdminActivityLogMixin, log_admin_action
 from .permissions import require_section
 from .revalidate import revalidate_storefront
 
@@ -88,3 +91,47 @@ class AdminLegalDocumentDetailView(AdminActivityLogMixin, RetrieveUpdateAPIView)
     def perform_update(self, serializer):
         super().perform_update(serializer)
         revalidate_storefront("/legal")
+
+
+class FaqItemSerializer(serializers.Serializer):
+    question = serializers.CharField(max_length=300, trim_whitespace=True)
+    answer = serializers.CharField(max_length=4000, trim_whitespace=True)
+    show_on_home = serializers.BooleanField(default=False)
+
+
+class FaqListSerializer(serializers.Serializer):
+    items = FaqItemSerializer(many=True)
+
+    def validate_items(self, value):
+        if len(value) > 60:
+            raise serializers.ValidationError("حداکثر ۶۰ سوال.")
+        return value
+
+
+class AdminFaqView(APIView):
+    """سوالات متداول: GET فهرست مرتب، PUT جایگزینی کل فهرست (ترتیب = ترتیب ارسال)."""
+
+    def get_permissions(self):
+        return [require_section("settings", action="view" if self.request.method == "GET" else "edit")()]
+
+    def get(self, request):
+        return Response({"items": [_faq_payload(f) for f in FaqItem.objects.all()]})
+
+    @transaction.atomic
+    def put(self, request):
+        serializer = FaqListSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        FaqItem.objects.all().delete()
+        FaqItem.objects.bulk_create(
+            FaqItem(sort_order=i, **item) for i, item in enumerate(serializer.validated_data["items"])
+        )
+        log_admin_action(
+            user=request.user, action="faq_update", model_name="FaqItem", object_id="all",
+            changes={"count": len(serializer.validated_data["items"])},
+        )
+        revalidate_storefront("/", "/legal", "/support", "/search")
+        return self.get(request)
+
+
+def _faq_payload(item: FaqItem) -> dict:
+    return {"id": str(item.pk), "question": item.question, "answer": item.answer, "show_on_home": item.show_on_home}

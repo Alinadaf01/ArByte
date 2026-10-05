@@ -18,7 +18,10 @@ export function CategoriesAccordion({ block }: CategoriesAccordionProps) {
   if (block.categories.length === 0) return null;
 
   return (
-    <section className="border-border border-t px-[5vw] py-14 md:py-20">
+    <section
+      data-section="categories"
+      className="border-border border-t px-[5vw] py-14 md:py-20"
+    >
       <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
         <div>
           <h2 className="text-h2 text-primary font-heading tracking-tight">

@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
-import { Field, Input, Textarea } from "@/components/ui/Field";
+import { Field, Input, Switch, Textarea } from "@/components/ui/Field";
 import { ErrorState } from "@/components/ui/Stateviews";
 import {
   getAboutPageContent,
+  getFaqEntries,
   listLegalDocuments,
+  saveFaqEntries,
   updateAboutPageContent,
   updateLegalDocument,
 } from "@/lib/api";
@@ -17,6 +19,7 @@ import { useQueryFilters } from "@/lib/useQueryFilters";
 import { useToast } from "@/lib/ToastContext";
 import type {
   AboutPageContent,
+  FaqEntry,
   LegalDocumentContent,
 } from "@/types/contentPages";
 
@@ -321,20 +324,173 @@ function LegalEditor() {
   );
 }
 
+const HOME_LIMIT = 4;
+
+/** سوالات متداول: ترتیب فهرست = ترتیب فروشگاه؛ «صفحه اصلی» چهار مورد اول تیک‌خورده. */
+function FaqEditor() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const { data, isError, refetch } = useQuery({
+    queryKey: ["faq-entries"],
+    queryFn: getFaqEntries,
+  });
+  const [items, setItems] = useState<FaqEntry[]>([]);
+  useEffect(() => {
+    if (data) setItems(data);
+  }, [data]);
+  const save = useMutation({
+    mutationFn: () => saveFaqEntries(items),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["faq-entries"], saved);
+      toast.showSuccess("سوالات متداول ذخیره شد.");
+    },
+    onError: (e: unknown) =>
+      toast.showError(e instanceof Error ? e.message : "ذخیره ناموفق بود."),
+  });
+  const update = (i: number, patch: Partial<FaqEntry>) =>
+    setItems((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const move = (i: number, by: number) =>
+    setItems((rows) => {
+      const next = [...rows];
+      const [row] = next.splice(i, 1);
+      next.splice(i + by, 0, row!);
+      return next;
+    });
+  const onHome = items.filter((r) => r.showOnHome).length;
+
+  if (isError)
+    return (
+      <ErrorState
+        description="دریافت سوالات متداول ناموفق بود."
+        onRetry={() => refetch()}
+      />
+    );
+  return (
+    <form
+      className="glass-card flex flex-col gap-4 p-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="m-0 text-xs leading-6 text-slate-400">
+          در صفحه‌ی «قوانین و سوالات»، پشتیبانی و جستجوی فروشگاه به همین ترتیب
+          نمایش داده می‌شوند. {HOME_LIMIT} سوال اولِ تیک‌خورده در صفحه‌ی اصلی
+          می‌آیند (الان {onHome}).
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          onClick={() =>
+            setItems((rows) => [
+              ...rows,
+              { question: "", answer: "", showOnHome: false },
+            ])
+          }
+        >
+          <Plus className="size-4" /> سوال تازه
+        </Button>
+      </div>
+      {items.map((row, i) => (
+        <div
+          key={row.id ?? `new-${i}`}
+          className="flex flex-col gap-3 rounded-xl border border-white/[0.06] p-4"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-500">
+              {i + 1}
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label="بالا"
+                disabled={i === 0}
+                onClick={() => move(i, -1)}
+              >
+                <ArrowUp className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label="پایین"
+                disabled={i === items.length - 1}
+                onClick={() => move(i, 1)}
+              >
+                <ArrowDown className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                aria-label="حذف"
+                onClick={() =>
+                  setItems((rows) => rows.filter((_, j) => j !== i))
+                }
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </div>
+          </div>
+          <Field label="سوال" htmlFor={`faq-q-${i}`}>
+            <Input
+              id={`faq-q-${i}`}
+              required
+              maxLength={300}
+              value={row.question}
+              onChange={(e) => update(i, { question: e.target.value })}
+            />
+          </Field>
+          <Field label="پاسخ" htmlFor={`faq-a-${i}`}>
+            <Textarea
+              id={`faq-a-${i}`}
+              required
+              className="min-h-24"
+              value={row.answer}
+              onChange={(e) => update(i, { answer: e.target.value })}
+            />
+          </Field>
+          <Switch
+            checked={row.showOnHome}
+            onChange={(v) => update(i, { showOnHome: v })}
+            label="نمایش در صفحه‌ی اصلی"
+          />
+        </div>
+      ))}
+      {items.length === 0 && (
+        <p className="m-0 text-xs text-slate-500">
+          خالی — بخش سوالات متداول در فروشگاه نمایش داده نمی‌شود.
+        </p>
+      )}
+      <div className="flex justify-end">
+        <Button type="submit" disabled={save.isPending}>
+          ذخیره
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 const TABS = [
   { key: "about", label: "درباره ما" },
   { key: "legal", label: "قوانین و اسناد" },
+  { key: "faq", label: "سوالات متداول" },
 ] as const;
 
 /** G-01 — متن صفحه‌های «درباره ما» و «قوانین»؛ هیچ متن پیش‌فرضی در فروشگاه نیست. */
 export default function ContentPagesPage() {
   const [filters, setFilters] = useQueryFilters({ tab: "about" });
-  const tab = filters.tab === "legal" ? "legal" : "about";
+  const tab =
+    filters.tab === "legal" || filters.tab === "faq" ? filters.tab : "about";
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="صفحه‌های محتوا"
-        description="متن صفحه‌های «درباره ما» و اسناد «قوانین» (شرایط استفاده، حریم خصوصی، ارسال، مرجوعی، گارانتی)."
+        description="متن صفحه‌های «درباره ما»، اسناد «قوانین» (شرایط استفاده، حریم خصوصی، ارسال، مرجوعی، گارانتی) و سوالات متداول."
       />
       <div className="flex gap-2 overflow-x-auto rounded-xl border border-white/[0.06] bg-ink-800/40 p-1.5">
         {TABS.map((t) => (
@@ -353,7 +509,13 @@ export default function ContentPagesPage() {
           </button>
         ))}
       </div>
-      {tab === "about" ? <AboutEditor /> : <LegalEditor />}
+      {tab === "about" ? (
+        <AboutEditor />
+      ) : tab === "legal" ? (
+        <LegalEditor />
+      ) : (
+        <FaqEditor />
+      )}
     </div>
   );
 }

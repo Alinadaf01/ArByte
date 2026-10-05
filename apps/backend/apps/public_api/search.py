@@ -1,8 +1,7 @@
 """D-03 §3 — ports packages/contracts/src/format/search-text.ts +
 digits.ts (toLatinDigits half) character-for-character. Used by
 GET /catalog/search to match Nest's normalize-then-substring behavior
-exactly (no DB-level LIKE/ILIKE — see CatalogService.search()'s own
-comment on why: small catalog, JS filtering is safe)."""
+exactly. AUDIT §۱۲.۱۰: همان نرمال‌سازی در SQL هم هست (normalized_search_text)."""
 
 import re
 
@@ -31,3 +30,23 @@ def normalize_search_text(text: str) -> str:
     text = _DIACRITICS_AND_TATWEEL.sub("", text)
     text = _ZWNJ_AND_WHITESPACE.sub("", text)
     return text.lower()
+
+
+# AUDIT §۱۲.۱۰ — همان normalize_search_text در SQL. translate() در Postgres
+# نویسه‌ای را که در «to» جفت ندارد حذف می‌کند (اعراب، کشیده، نیم‌فاصله و همه‌ی
+# نویسه‌های \s پایتون)؛ هم‌ارزی با نسخه‌ی پایتونی تست دارد.
+_SQL_FROM = "۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩يك"
+_SQL_TO = "01234567890123456789یک"
+_SQL_DELETE = (
+    "".join(chr(c) for c in range(0x064B, 0x0653))
+    + "ٰـ‌"
+    + "".join(chr(c) for c in range(0x110000) if re.match(r"\s", chr(c)))
+)
+
+
+def normalized_search_text(field: str):
+    from django.db.models import CharField, Func, Value
+    from django.db.models.functions import Lower
+
+    translated = Func(field, Value(_SQL_FROM + _SQL_DELETE), Value(_SQL_TO), function="translate", output_field=CharField())
+    return Lower(translated)

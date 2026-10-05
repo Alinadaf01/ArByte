@@ -69,9 +69,9 @@ function ConfigFields({
   if (draft.type === "HERO") {
     return (
       <Field
-        label="مسیر manifest فریم‌ها"
+        label="مسیر manifest هیرو"
         htmlFor="cfg-frames"
-        hint="مثلاً /hero/frames.json"
+        hint="پیش‌فرض: /hero/manifest.json (ویدیو و پوستر هیرو)"
       >
         <Input
           id="cfg-frames"

@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  faqQuestions,
   formatNumberFa,
   homeFaq,
   storeFacts,
+  type FaqItem,
+  type SiteInfo,
 } from "@arbyte/contracts";
-import { isWithinSupportHours } from "./support-hours";
+import { displayRows, isOpenNow, openingTime } from "@/lib/business-hours";
 
-const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
+const HOME_LIMIT = 4;
 
 /**
  * T-212 §۳ — آکاردئون سوالات متداول (فقط ۴ مورد `onHome`) + کارت پشتیبانی
@@ -18,17 +19,30 @@ const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
  * باید بعد از mount محاسبه شود (تفاوت سرور/کلاینت، هیدریشن‌سیف: پیش‌فرض
  * false تا وقتی mount واقعی ساعت را بخواند).
  */
-export function FaqSection() {
+export function FaqSection({
+  info,
+  items,
+}: {
+  info: SiteInfo;
+  items: FaqItem[];
+}) {
   const [openIndex, setOpenIndex] = useState(0);
   const [online, setOnline] = useState(false);
+  // سوال‌ها از پنل («سوالات متداول»، تیک «صفحه اصلی»)؛ ساعت و تلفن از
+  // SiteSettings — همان منبع هدر، فوتر و صفحه‌ی پشتیبانی.
+  const questions = items.filter((item) => item.onHome).slice(0, HOME_LIMIT);
+  const rows = info.businessHours;
+  const first = displayRows(rows)[0]!;
+  const phoneHref =
+    info.phone?.href ??
+    (storeFacts.support.phone ? `tel:${storeFacts.support.phone}` : null);
 
   useEffect(() => {
-    const check = () =>
-      setOnline(isWithinSupportHours(new Date(), storeFacts.support.hours));
+    const check = () => setOnline(isOpenNow(new Date(), rows));
     check();
     const id = window.setInterval(check, 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [rows]);
 
   return (
     <section className="bg-paper border-border border-t px-[5vw] py-14 md:py-20">
@@ -53,7 +67,9 @@ export function FaqSection() {
                 className={`size-2 rounded-full ${online ? "bg-accent" : "bg-on-dark-tertiary"}`}
               />
               <span className="text-caption text-on-dark font-emphasis">
-                {online ? homeFaq.onlineNow : homeFaq.offlineHint}
+                {online
+                  ? homeFaq.onlineNow
+                  : homeFaq.offlineHint(openingTime(rows))}
               </span>
             </div>
 
@@ -76,22 +92,20 @@ export function FaqSection() {
                     dir="ltr"
                     className="text-on-dark text-body font-heading"
                   >
-                    {formatNumberFa(storeFacts.support.hours.from)} تا{" "}
-                    {formatNumberFa(storeFacts.support.hours.to)}
+                    {first.time}
                   </span>
                   <span className="text-micro text-on-dark-secondary">
-                    {homeFaq.hoursLabel}
+                    {first.day}
                   </span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
                 <span dir="ltr" className="text-on-dark text-body font-heading">
-                  {formatNumberFa(storeFacts.support.hours.from)} تا{" "}
-                  {formatNumberFa(storeFacts.support.hours.to)}
+                  {first.time}
                 </span>
                 <span className="text-micro text-on-dark-secondary">
-                  {homeFaq.hoursLabel}
+                  {first.day}
                 </span>
               </div>
             )}
@@ -103,9 +117,9 @@ export function FaqSection() {
               >
                 {homeFaq.chatCta}
               </Link>
-              {storeFacts.support.phone ? (
+              {phoneHref ? (
                 <a
-                  href={`tel:${storeFacts.support.phone}`}
+                  href={phoneHref}
                   className="border-border-done text-on-dark hover:bg-surface/10 rounded-pill border px-4 py-2.5 text-caption font-emphasis whitespace-nowrap transition-colors duration-200"
                 >
                   {homeFaq.callCta}
@@ -116,11 +130,11 @@ export function FaqSection() {
         </aside>
 
         <div className="flex flex-col">
-          {HOME_QUESTIONS.map((item, i) => {
+          {questions.map((item, i) => {
             const isOpen = openIndex === i;
             return (
               <div
-                key={item.q}
+                key={item.id}
                 role="button"
                 tabIndex={0}
                 aria-expanded={isOpen}
@@ -141,7 +155,7 @@ export function FaqSection() {
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-body text-primary text-pretty font-emphasis leading-7">
-                    {item.q}
+                    {item.question}
                   </h3>
                   <div
                     className="grid transition-[grid-template-rows] duration-[450ms]"
@@ -151,7 +165,7 @@ export function FaqSection() {
                       <p
                         className={`text-secondary max-w-[56ch] pt-2.5 text-caption leading-8 transition-opacity duration-[400ms] ${isOpen ? "opacity-100" : "opacity-0"}`}
                       >
-                        {item.a}
+                        {item.answer}
                       </p>
                     </div>
                   </div>

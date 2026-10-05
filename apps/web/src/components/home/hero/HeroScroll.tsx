@@ -3,22 +3,22 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { formatNumberFa, homeHero } from "@arbyte/contracts";
-import { useIsMobile, usePrefersReducedMotion } from "@/lib/hooks";
+import { usePrefersReducedMotion } from "@/lib/hooks";
 import {
   activeStep,
   bandAt,
   easeStep,
   fitTransform,
-  frameUrl,
+  frameToTime,
   HERO_STEP_RANGES,
-  nearestAvailableFrame,
   type HeroManifest,
 } from "./hero-engine";
 
 const HEADER_HEIGHT = 72;
-const EAGER_DESKTOP = 60;
-const EAGER_MOBILE = 28;
 const STEP_COUNT = homeHero.steps.length;
+const MOBILE_QUERY = "(max-width: 767px)";
+/** بعد از `load`، اگر کاربر هنوز اسکرول نکرده، ویدیو در این مهلت idle شروع می‌شود. */
+const VIDEO_IDLE_TIMEOUT_MS = 2500;
 
 interface HeroScrollProps {
   manifest: HeroManifest | null;
@@ -146,23 +146,41 @@ function HeroPoster() {
   );
 }
 
-/** manifest هست ولی prefers-reduced-motion — آخرین فریم ثابت، بدون اسکراب. */
-function HeroStatic({ manifest }: { manifest: HeroManifest }) {
-  const mobile = useIsMobile();
-  const lastIndex = manifest.count - 1;
+/** پوستر هر breakpoint با `<picture>` — بدون JS، پیش از hydration درست است. */
+function HeroPicture({
+  pair,
+  priority,
+  className,
+}: {
+  pair: HeroManifest["poster"];
+  priority?: boolean;
+  className?: string;
+}) {
+  return (
+    <picture>
+      <source media={MOBILE_QUERY} srcSet={pair.mobile} type="image/avif" />
+      <img
+        src={pair.desktop}
+        alt=""
+        decoding="async"
+        fetchPriority={priority ? "high" : "auto"}
+        className={className}
+      />
+    </picture>
+  );
+}
 
+/** manifest هست ولی prefers-reduced-motion — آخرین فریم ثابت، بدون اسکراب و بدون ویدیو. */
+function HeroStatic({ manifest }: { manifest: HeroManifest }) {
   return (
     <section className="relative overflow-hidden px-[5vw] py-16 md:py-24">
       <HeroAmbientBackground />
       <div className="relative mx-auto flex max-w-[1400px] flex-col gap-10">
         <HeroHeading />
         <div className="relative aspect-[16/10] w-full overflow-hidden rounded-card-lg">
-          {/* eslint-disable-next-line @next/next/no-img-element -- فریم‌های تولیدشده‌ی محلی‌اند، next/image نیاز نیست */}
-          <img
-            src={frameUrl(manifest, lastIndex, mobile)}
-            alt=""
-            className="size-full object-contain"
-            style={{ mixBlendMode: "multiply" }}
+          <HeroPicture
+            pair={manifest.posterEnd}
+            className="size-full object-contain mix-blend-multiply"
           />
         </div>
         <HeroStepCardsStatic />
@@ -172,180 +190,149 @@ function HeroStatic({ manifest }: { manifest: HeroManifest }) {
   );
 }
 
-const MAX_CACHED_FRAMES = 100;
+const MP4_TYPE = 'video/mp4; codecs="avc1.640028"';
+const WEBM_TYPE = 'video/webm; codecs="vp9"';
 
-/**
- * E-01 §۴ — کش LRU فریم‌های decode‌شده (`ImageBitmap`، از قبل decode
- * — نه `<img>` که هر بار paint دوباره rasterize می‌کند). سقف
- * `MAX_CACHED_FRAMES` حافظه را کراندار نگه می‌دارد؛ `touch()` هر بار
- * استفاده کلید را به انتهای Map منتقل می‌کند (ترتیب Map = ترتیب
- * least/most-recently-used)، `set()` روی سرریز قدیمی‌ترین را `close()`
- * و حذف می‌کند.
- */
-class FrameBitmapCache {
-  private map = new Map<number, ImageBitmap>();
-
-  get(index: number): ImageBitmap | undefined {
-    const bitmap = this.map.get(index);
-    if (bitmap) {
-      this.map.delete(index);
-      this.map.set(index, bitmap);
-    }
-    return bitmap;
+/** فقط یک فایل انتخاب می‌شود: MP4 (H.264) و اگر نبود WebM (VP9). */
+function pickVideoSource(
+  video: HTMLVideoElement,
+  manifest: HeroManifest,
+): string | null {
+  const key = window.matchMedia(MOBILE_QUERY).matches ? "mobile" : "desktop";
+  if (video.canPlayType(MP4_TYPE)) return manifest.video[key];
+  if (manifest.videoWebm && video.canPlayType(WEBM_TYPE)) {
+    return manifest.videoWebm[key];
   }
-
-  has(index: number): boolean {
-    return this.map.has(index);
-  }
-
-  set(index: number, bitmap: ImageBitmap): void {
-    if (this.map.has(index)) {
-      this.map.get(index)?.close();
-    }
-    this.map.set(index, bitmap);
-    while (this.map.size > MAX_CACHED_FRAMES) {
-      const oldestKey = this.map.keys().next().value;
-      if (oldestKey === undefined) break;
-      this.map.get(oldestKey)?.close();
-      this.map.delete(oldestKey);
-    }
-  }
-
-  clear(): void {
-    for (const bitmap of this.map.values()) bitmap.close();
-    this.map.clear();
-  }
+  return null;
 }
 
-async function decodeFrame(url: string): Promise<ImageBitmap> {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return createImageBitmap(blob);
+function saveDataRequested(): boolean {
+  const conn = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string };
+    }
+  ).connection;
+  return !!conn?.saveData || /(^|-)2g$/.test(conn?.effectiveType ?? "");
 }
 
 /**
- * حالت کامل اسکراب. ⚠️ اسکرول پنجره (نه کانتینر تودرتوی نمونه‌ی طراحی)،
- * listener با passive، و هیچ setState به‌ازای هر فریم — فقط transform/رسم
- * کانواس مستقیم روی ref اعمال می‌شود؛ state فقط وقتی گام فعال واقعاً عوض
- * شود. رندر روی `<canvas>` (نه عوض‌کردن `src` تصویر) با ترکیب دو فریم
- * مجاور (`globalAlpha`) چرخش را بدون پرش/چشمک نرم می‌کند.
+ * AUDIT-4 — حالت اسکراب با **یک ویدیوی کوتاه** (به‌جای ۲۲۰ فریم WebP جدا که
+ * ۳ تا ۱۱ مگابایت در چند ثانیه‌ی اول می‌کشیدند و تا decode ۶۰/۲۸ فریم یک پوشش
+ * «بارگذاری ٪» روی هیرو بود). حالا:
+ * - پوستر AVIF فریم اول بلافاصله (preload در HeroSection) و عنوان هرگز پوشانده نمی‌شود؛
+ * - ویدیو (GOP=2، seek نرم) فقط با اولین اسکرول/لمس یا بعد از `load`+idle شروع
+ *   می‌شود تا با تصاویر دسته‌ها و منابع اولیه رقابت نکند؛ Save-Data/2G = فقط پوستر؛
+ * - اسکرول پنجره → `video.currentTime` (نه setState به‌ازای هر فریم)، فقط وقتی
+ *   هیرو در دید است حلقه‌ی rAF می‌چرخد؛
+ * - کادربندی (bands/fitTransform) همان طراحی قبلی، روی یک لایه‌ی مشترک پوستر+ویدیو.
  */
 function HeroScrollEngine({ manifest }: { manifest: HeroManifest }) {
-  const mobile = useIsMobile();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const visualRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const barRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const targetFrameRef = useRef(0);
   const dispRef = useRef(0);
+  const lastSeekRef = useRef(-1);
+  const videoReadyRef = useRef(false);
   const panelSizeRef = useRef({ width: 0, height: 0 });
+  const lastTransformRef = useRef("");
+  const visibleRef = useRef(true);
   const actRef = useRef(0);
   const startedRef = useRef(false);
-  const cacheRef = useRef<FrameBitmapCache | null>(null);
-  const pendingRef = useRef<Set<number>>(new Set());
-  const dprRef = useRef(1);
 
   const [act, setAct] = useState(0);
   const [started, setStarted] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [loadPercent, setLoadPercent] = useState(0);
+  const [positioned, setPositioned] = useState(false);
+  const [videoShown, setVideoShown] = useState(false);
 
-  // decode یک فریم (اگر از قبل در کش/در حال decode نیست) و پس از پایان
-  // در کش LRU می‌گذارد — هم برای eager هم برای idle/on-demand استفاده می‌شود.
-  function requestFrame(index: number, onDone?: () => void) {
-    const cache = cacheRef.current;
-    if (!cache || cache.has(index) || pendingRef.current.has(index)) return;
-    pendingRef.current.add(index);
-    decodeFrame(frameUrl(manifest, index, mobile))
-      .then((bitmap) => {
-        pendingRef.current.delete(index);
-        cacheRef.current?.set(index, bitmap);
-        onDone?.();
-      })
-      .catch(() => {
-        pendingRef.current.delete(index);
-      });
-  }
-
-  // پیش‌بارگذاری: eager (۶۰ دسکتاپ/۲۸ موبایل) فوری و decode‌شده (createImageBitmap)،
-  // بقیه در idle — کش LRU سقف حافظه را کراندار نگه می‌دارد (E-01 §۴).
+  // ویدیو: فقط با تعامل کاربر یا پس از load + idle. هیچ درخواستی پیش از آن.
   useEffect(() => {
-    let cancelled = false;
-    cacheRef.current = new FrameBitmapCache();
-    pendingRef.current = new Set();
-    dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
+    const video = videoRef.current;
+    if (!video || saveDataRequested()) return;
+    let begun = false;
+    const events = ["scroll", "touchstart", "pointerdown", "keydown"] as const;
 
-    // اندازه‌ی بوم imperative ست می‌شود (نه prop از dprRef در render — ref
-    // تغییرش re-render نمی‌سازد) + یک‌بار scale(dpr) تا رسم‌های بعدی در
-    // حلقه‌ی rAF با مختصات منطقی manifest.width/height کار کنند.
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.width = manifest.width * dprRef.current;
-      canvas.height = manifest.height * dprRef.current;
-      canvas.getContext("2d")?.scale(dprRef.current, dprRef.current);
+    function begin() {
+      if (begun || !video) return;
+      begun = true;
+      detach();
+      const src = pickVideoSource(video, manifest);
+      if (!src) return; // هیچ کُدکی پشتیبانی نمی‌شود → پوستر می‌ماند
+      video.src = src;
+      // با preload="none" مرورگر پس از load() هیچ بایتی نمی‌گیرد و loadedmetadata
+      // (پیش‌نیاز seek) هرگز نمی‌رسد؛ از این لحظه دانلود عمداً آغاز می‌شود.
+      video.preload = "auto";
+      video.load();
     }
-
-    const eagerCount = Math.min(
-      mobile ? EAGER_MOBILE : EAGER_DESKTOP,
-      manifest.count,
-    );
-    let loaded = 0;
-
-    setReady(false);
-    setLoadPercent(0);
-
-    for (let i = 0; i < eagerCount; i++) {
-      requestFrame(i, () => {
-        if (cancelled) return;
-        loaded++;
-        setLoadPercent(Math.round((loaded / eagerCount) * 100));
-        if (loaded === eagerCount) setReady(true);
-      });
+    function detach() {
+      events.forEach((e) => window.removeEventListener(e, begin));
+      window.removeEventListener("load", afterLoad);
     }
-
-    const w = window as Window & {
-      requestIdleCallback?: (cb: () => void) => number;
-    };
-    const idle = (cb: () => void) => {
+    function afterLoad() {
+      const w = window as Window & {
+        requestIdleCallback?: (
+          cb: () => void,
+          o?: { timeout: number },
+        ) => number;
+      };
       if (typeof w.requestIdleCallback === "function") {
-        w.requestIdleCallback(cb);
+        w.requestIdleCallback(begin, { timeout: VIDEO_IDLE_TIMEOUT_MS });
       } else {
-        window.setTimeout(cb, 1);
+        window.setTimeout(begin, VIDEO_IDLE_TIMEOUT_MS);
       }
-    };
+    }
 
-    let rest = eagerCount;
-    const preloadNext = () => {
-      if (cancelled || rest >= manifest.count) return;
-      const i = rest;
-      rest++;
-      requestFrame(i);
-      idle(preloadNext);
-    };
-    idle(preloadNext);
+    events.forEach((e) =>
+      window.addEventListener(e, begin, { passive: true, once: true }),
+    );
+    if (document.readyState === "complete") afterLoad();
+    else window.addEventListener("load", afterLoad, { once: true });
 
+    function onMeta() {
+      videoReadyRef.current = true;
+      lastSeekRef.current = -1; // اولین حلقه همان فریم فعلی را seek کند
+    }
+    function onSeeked() {
+      setVideoShown(true);
+    }
+    function onError() {
+      videoReadyRef.current = false; // پوستر می‌ماند؛ صفحه نمی‌شکند
+    }
+    video.addEventListener("loadedmetadata", onMeta);
+    video.addEventListener("seeked", onSeeked);
+    video.addEventListener("error", onError);
     return () => {
-      cancelled = true;
-      cacheRef.current?.clear();
+      detach();
+      video.removeEventListener("loadedmetadata", onMeta);
+      video.removeEventListener("seeked", onSeeked);
+      video.removeEventListener("error", onError);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- requestFrame از cacheRef/pendingRef می‌خواند، وابسته به manifest/mobile نیست جدا
-  }, [manifest, mobile]);
+  }, [manifest]);
 
-  // اندازه‌ی پنل فقط روی mount/resize محاسبه می‌شود، نه هر فریم.
+  // اندازه‌ی پنل فقط روی mount/resize؛ حلقه فقط وقتی هیرو در دید است.
   useEffect(() => {
     function updatePanelSize() {
       const el = panelRef.current;
       if (!el) return;
       panelSizeRef.current = { width: el.clientWidth, height: el.clientHeight };
+      lastTransformRef.current = "";
     }
     updatePanelSize();
     window.addEventListener("resize", updatePanelSize);
-    return () => window.removeEventListener("resize", updatePanelSize);
+    const io = new IntersectionObserver(([entry]) => {
+      visibleRef.current = !!entry?.isIntersecting;
+    });
+    if (wrapperRef.current) io.observe(wrapperRef.current);
+    return () => {
+      window.removeEventListener("resize", updatePanelSize);
+      io.disconnect();
+    };
   }, []);
 
-  // اسکرول پنجره: progress را مستقیم از rect محاسبه می‌کند — نه از یک
-  // کانتینر تودرتو (تفاوت الزامی با نمونه‌ی طراحی، §۲ تسک).
+  // اسکرول پنجره: progress مستقیم از rect.
   useEffect(() => {
     function onScroll() {
       const wrapperEl = wrapperRef.current;
@@ -377,65 +364,49 @@ function HeroScrollEngine({ manifest }: { manifest: HeroManifest }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [manifest]);
 
-  // حلقه‌ی rAF: disp را به‌سمت target ease می‌کند (ضریب ۰٫۱۲، hero-engine.ts)
-  // و روی canvas دو فریم مجاور را با globalAlpha ترکیب می‌کند — هرگز
-  // setState اینجا. اگر فریمی decode نشده، نزدیک‌ترین فریم کش‌شده جایگزین
-  // می‌شود (nearestAvailableFrame)، نه جای خالی.
+  // حلقه‌ی rAF: disp را ease می‌کند، ویدیو را seek و لایه را کادربندی می‌کند.
   useEffect(() => {
     let rafId: number;
     const maxIndex = manifest.count - 1;
 
     function loop() {
+      rafId = requestAnimationFrame(loop);
+      if (!visibleRef.current && lastTransformRef.current) return;
+
       dispRef.current = easeStep(dispRef.current, targetFrameRef.current);
-      const canvas = canvasRef.current;
-      const cache = cacheRef.current;
+      const frame = Math.min(maxIndex, Math.max(0, dispRef.current));
+      const video = videoRef.current;
+      const ready = videoReadyRef.current && !!video;
 
-      if (canvas && cache) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          const clamped = Math.min(maxIndex, Math.max(0, dispRef.current));
-          const floorIndex = Math.floor(clamped);
-          const frac = clamped - floorIndex;
-          const ceilIndex = Math.min(maxIndex, floorIndex + 1);
-
-          const drawFloor = nearestAvailableFrame(cache, floorIndex, maxIndex);
-          const floorBitmap = cache.get(drawFloor);
-
-          ctx.clearRect(0, 0, manifest.width, manifest.height);
-          if (floorBitmap) {
-            ctx.globalAlpha = 1;
-            ctx.drawImage(floorBitmap, 0, 0, manifest.width, manifest.height);
-          }
-          if (frac > 0.01 && ceilIndex !== floorIndex) {
-            const ceilBitmap = cache.get(ceilIndex);
-            if (ceilBitmap) {
-              ctx.globalAlpha = frac;
-              ctx.drawImage(ceilBitmap, 0, 0, manifest.width, manifest.height);
-              ctx.globalAlpha = 1;
-            } else {
-              requestFrame(ceilIndex);
-            }
-          }
-          if (!floorBitmap) requestFrame(floorIndex);
-
-          const band = bandAt(manifest.bands, dispRef.current);
-          const { width, height } = panelSizeRef.current;
-          canvas.style.transform = fitTransform({
-            band,
-            panelHeight: height || 1,
-            panelWidth: width || 1,
-            frameWidth: manifest.width,
-            frameHeight: manifest.height,
-          });
-        }
+      if (
+        ready &&
+        video &&
+        !video.seeking &&
+        Math.abs(frame - lastSeekRef.current) >= 0.5
+      ) {
+        lastSeekRef.current = frame;
+        video.currentTime = frameToTime(frame, manifest.fps, video.duration);
       }
 
-      rafId = requestAnimationFrame(loop);
+      // تا ویدیو آماده نیست پوستر (فریم ۰) است، پس کادربندی هم فریم ۰.
+      const band = bandAt(manifest.bands, ready ? frame : 0);
+      const { width, height } = panelSizeRef.current;
+      const transform = fitTransform({
+        band,
+        panelHeight: height || 1,
+        panelWidth: width || 1,
+        frameWidth: manifest.width,
+        frameHeight: manifest.height,
+      });
+      if (transform !== lastTransformRef.current && visualRef.current) {
+        visualRef.current.style.transform = transform;
+        if (!lastTransformRef.current) setPositioned(true);
+        lastTransformRef.current = transform;
+      }
     }
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- requestFrame پایدار است (فقط از ref می‌خواند)
   }, [manifest]);
 
   return (
@@ -446,19 +417,38 @@ function HeroScrollEngine({ manifest }: { manifest: HeroManifest }) {
       >
         <HeroAmbientBackground />
 
-        <div className="relative z-10 mx-auto flex h-full max-w-[1400px] flex-col justify-between gap-6">
+        <div className="relative mx-auto flex h-full max-w-[1400px] flex-col justify-between gap-6">
           <HeroHeading />
 
           <div className="relative min-h-0 flex-1">
-            {/* ابعاد واقعی بوم (اندازه‌ی backing store × dpr) imperative در
-                effect بالا ست می‌شود، نه اینجا — dprRef یک ref است، تغییرش
-                re-render نمی‌سازد تا این prop را به‌روز کند. */}
-            <canvas
-              ref={canvasRef}
+            <div
+              ref={visualRef}
+              data-hero-visual
+              data-pending={positioned ? undefined : ""}
               aria-hidden="true"
-              className="pointer-events-none absolute start-1/2 top-full h-full w-auto max-w-none"
-              style={{ mixBlendMode: "multiply" }}
-            />
+              className="pointer-events-none absolute bottom-0 left-1/2 h-full max-w-none origin-bottom mix-blend-multiply transition-opacity duration-300"
+              style={{
+                aspectRatio: `${manifest.width} / ${manifest.height}`,
+                opacity: positioned ? 1 : 0,
+              }}
+            >
+              <HeroPicture
+                pair={manifest.poster}
+                priority
+                className="absolute inset-0 size-full"
+              />
+              <video
+                ref={videoRef}
+                muted
+                playsInline
+                preload="none"
+                disablePictureInPicture
+                disableRemotePlayback
+                tabIndex={-1}
+                className="absolute inset-0 size-full"
+                style={{ opacity: videoShown ? 1 : 0 }}
+              />
+            </div>
 
             {!started ? (
               <span className="text-caption text-secondary absolute bottom-2 start-1/2 -translate-x-1/2 animate-pulse">
@@ -502,19 +492,6 @@ function HeroScrollEngine({ manifest }: { manifest: HeroManifest }) {
 
           <HeroCtaBar currentStep={act} />
         </div>
-
-        {!ready ? (
-          <div
-            className="bg-surface pointer-events-none absolute inset-0 z-20 flex items-center justify-center transition-opacity duration-300"
-            style={{ opacity: ready ? 0 : 1 }}
-          >
-            <span className="text-body text-secondary font-emphasis">
-              {loadPercent >= 100
-                ? homeHero.readyLabel
-                : homeHero.loadingLabel(formatNumberFa(loadPercent))}
-            </span>
-          </div>
-        ) : null}
       </div>
     </div>
   );

@@ -227,6 +227,9 @@ class SpecificationDefinition(models.Model):
     is_searchable = models.BooleanField(default=False)
     is_variant_axis = models.BooleanField(default=False)
     sort_order = models.PositiveIntegerField(default=0)
+    # AUDIT §۱۲.۴ — «مشخصات کلیدی» کارت/صفحه‌ی محصول به‌صراحت در بک‌اند مرتب
+    # می‌شوند (پیش‌فرض: پردازنده، گرافیک، رم). null = جزو مشخصات کلیدی نیست.
+    key_spec_order = models.PositiveSmallIntegerField(blank=True, null=True)
 
     class Meta:
         ordering = ["sort_order", "name_fa"]

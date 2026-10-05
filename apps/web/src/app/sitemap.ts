@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/json-ld";
+import { fetchWithTimeout, UPSTREAM_TIMEOUT_MS } from "@/lib/upstream-fetch";
+import { serverApiUrl } from "@/lib/urls";
 
 export const revalidate = 3600;
 
@@ -9,23 +11,15 @@ interface SitemapData {
   posts: { slug: string; updatedAt: string }[];
 }
 
-const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!API_INTERNAL_BASE)
-  throw new Error("Set API_INTERNAL_URL for the production sitemap.");
-if (
-  process.env.VERCEL === "1" &&
-  process.env.VERCEL_ENV === "production" &&
-  API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
-) {
-  throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
-}
-
 async function getSitemapData(): Promise<SitemapData> {
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/seo/sitemap`, {
-      next: { revalidate: 3600 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/seo/sitemap`),
+      {
+        next: { revalidate: 3600 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) throw new Error(String(res.status));
     return ((await res.json()) as { data: SitemapData }).data;
   } catch {

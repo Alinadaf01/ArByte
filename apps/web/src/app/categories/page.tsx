@@ -6,6 +6,7 @@ import { CategoryCard } from "@/components/category/CategoryCard";
 import { FeaturedCategoryTile } from "@/components/category/FeaturedCategoryTile";
 import { UseCaseSwitcher } from "@/components/category/UseCaseSwitcher";
 import { getTopLevelCategories } from "@/lib/catalog";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const categories = await getTopLevelCategories();
@@ -14,6 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description: categoriesPage.subtitle(categories.length),
     alternates: { canonical: "/categories" },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title: `${categoriesPage.breadcrumb.current} | آربایت`,
       description: categoriesPage.subtitle(categories.length),
       url: "/categories",
