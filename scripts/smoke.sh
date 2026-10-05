@@ -13,9 +13,14 @@ CURL=(curl -sS --max-time 20)
 fails=0
 
 check() {  # check "توضیح" URL کد_مورد_انتظار [رشته‌ی لازم در بدنه] [هدر لازم]
-    local name="$1" url="$2" want="$3" needle="${4:-}" header="${5:-}" out code body headers
-    out="$("${CURL[@]}" -D - -o /tmp/smoke.body -w '%{http_code}' "$url" 2>/dev/null)"; code="${out: -3}"
-    headers="${out%???}"; body="$(cat /tmp/smoke.body 2>/dev/null)"
+    local name="$1" url="$2" want="$3" needle="${4:-}" header="${5:-}" out code body headers bodyfile
+    # یک فایل موقت تازه برای هر بررسی — یک مسیر ثابت مشترک (/tmp/smoke.body)
+    # بین دو فراخوانی پشت‌سرهم باعث خواندن بدنه‌ی بررسی قبلی می‌شد (دیده‌شده
+    # روی تولید: درخواست‌ها/هدرهای تازه درست بودند، ولی `cat` بدنه‌ی بررسی
+    # سلامت را برمی‌گرداند — یک باگ واقعی ابزار، نه کد برنامه).
+    bodyfile="$(mktemp)"
+    out="$("${CURL[@]}" -D - -o "$bodyfile" -w '%{http_code}' "$url" 2>/dev/null)"; code="${out: -3}"
+    headers="${out%???}"; body="$(cat "$bodyfile" 2>/dev/null)"; rm -f "$bodyfile"
     if [[ "$code" != "$want" ]]; then echo "✗ $name — $url → $code (انتظار $want)"; fails=$((fails + 1)); return; fi
     if [[ -n "$needle" && "$body" != *"$needle"* ]]; then echo "✗ $name — «$needle» در پاسخ نیست"; fails=$((fails + 1)); return; fi
     if [[ -n "$header" ]] && ! grep -qi "^$header" <<<"$headers"; then echo "✗ $name — هدر $header نیست"; fails=$((fails + 1)); return; fi
