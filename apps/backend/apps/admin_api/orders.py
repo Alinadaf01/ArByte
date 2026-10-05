@@ -2,14 +2,15 @@ import datetime
 
 import django_filters
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders import order_status, payment_state
-from apps.orders.models import Order, OrderItemUnit, Payment, Shipment
+from apps.orders import fulfilment, order_status, payment_state
+from apps.orders.models import Order, Payment
 from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
 
 from .activity import log_admin_action
@@ -222,6 +223,16 @@ def _transition_response(order: Order, to_status: str, /, **kwargs) -> Response:
     return Response(AdminOrderSerializer(order).data)
 
 
+def _ship_response(order: Order, **kwargs) -> Response:
+    """AUDIT §۱۲.۱۵ — Shipment + SHIPPED اتمیک (apps/orders/fulfilment.ship_order)."""
+    try:
+        fulfilment.ship_order(order.pk, **kwargs)
+    except InvalidOrderTransition as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    order.refresh_from_db()
+    return Response(AdminOrderSerializer(order).data)
+
+
 class AdminOrderInvoicePdfView(APIView):
     """Same document and cache as the customer-facing invoice — see
     apps/documents/invoice.py."""
@@ -232,7 +243,7 @@ class AdminOrderInvoicePdfView(APIView):
         from apps.documents.invoice import get_invoice_pdf
         from apps.documents.responses import pdf_filename, pdf_response
 
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         if order.status not in _INVOICEABLE_STATUSES:
             return Response(
                 {"detail": "فاکتور فقط برای سفارش‌های پرداخت‌شده در دسترس است."}, status=status.HTTP_400_BAD_REQUEST
@@ -248,7 +259,7 @@ class AdminOrderPackingSlipPdfView(APIView):
         from apps.documents.packing_slip import render_packing_slip_pdf
         from apps.documents.responses import pdf_filename, pdf_response
 
-        order = Order.objects.prefetch_related("items__units").get(pk=pk)
+        order = get_object_or_404(Order.objects.prefetch_related("items__units"), pk=pk)
         pdf_bytes = render_packing_slip_pdf(order)
         return pdf_response(pdf_bytes, pdf_filename(f"packing-slip-{order.order_number}"))
 
@@ -260,7 +271,7 @@ class AdminOrderWarrantyCardsPdfView(APIView):
         from apps.documents.responses import pdf_filename, pdf_response
         from apps.documents.warranty_card import render_warranty_cards_pdf
 
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         pdf_bytes = render_warranty_cards_pdf(order)
         return pdf_response(pdf_bytes, pdf_filename(f"warranty-cards-{order.order_number}"))
 
@@ -272,7 +283,7 @@ class AdminOrderShippingLabelPdfView(APIView):
         from apps.documents.responses import pdf_filename, pdf_response
         from apps.documents.shipping_label import render_shipping_label_pdf
 
-        order = Order.objects.select_related("shipment").get(pk=pk)
+        order = get_object_or_404(Order.objects.select_related("shipment"), pk=pk)
         pdf_bytes = render_shipping_label_pdf(order)
         return pdf_response(pdf_bytes, pdf_filename(f"shipping-label-{order.order_number}"))
 
@@ -305,7 +316,7 @@ class AdminOrderMarkPaidView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         if order.status not in ("AWAITING_PAYMENT", "PAYMENT_REVIEW"):
             return Response({"detail": "این سفارش در مرحله‌ی پرداخت نیست."}, status=status.HTTP_400_BAD_REQUEST)
         # AUDIT-2 — «پرداخت‌شده» یعنی همه‌ی سهم‌های باز تأیید دستی می‌شوند (ثبت در هر Payment)،
@@ -329,7 +340,7 @@ class AdminOrderStartProcessingView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         response = _transition_response(order, "PROCESSING", user=request.user)
         if response.status_code == 200:
             log_admin_action(user=request.user, action="start_processing", model_name="Order", object_id=order.pk)
@@ -340,7 +351,7 @@ class AdminOrderReadyToShipView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         response = _transition_response(order, "READY_TO_SHIP", user=request.user)
         if response.status_code == 200:
             log_admin_action(user=request.user, action="ready_to_ship", model_name="Order", object_id=order.pk)
@@ -354,22 +365,19 @@ class AdminOrderMarkShippedView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
-        tracking_number = request.data.get("tracking_number", "")
-        if not tracking_number or not str(tracking_number).strip():
+        order = get_object_or_404(Order, pk=pk)
+        tracking_number = str(request.data.get("tracking_number", "") or "").strip()
+        if not tracking_number:
             return Response(
                 {"detail": "کد رهگیری برای ثبت ارسال الزامی است."}, status=status.HTTP_400_BAD_REQUEST
             )
-        Shipment.objects.update_or_create(
-            order=order,
-            defaults={
-                "provider": request.data.get("provider", "") or "",
-                "cost": order.shipping_cost,
-                "tracking_number": tracking_number,
-                "tracking_url": request.data.get("tracking_url") or None,
-            },
+        response = _ship_response(
+            order,
+            provider=str(request.data.get("provider", "") or ""),
+            tracking_number=tracking_number,
+            tracking_url=request.data.get("tracking_url") or None,
+            user=request.user,
         )
-        response = _transition_response(order, "SHIPPED", user=request.user)
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_shipped", model_name="Order", object_id=order.pk)
         return response
@@ -379,7 +387,7 @@ class AdminOrderMarkDeliveredView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         response = _transition_response(order, "DELIVERED", user=request.user)
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_delivered", model_name="Order", object_id=order.pk)
@@ -390,7 +398,7 @@ class AdminOrderCancelView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         reason = request.data.get("reason", "")
         response = _transition_response(order, "CANCELLED", note=reason, user=request.user)
         if response.status_code == 200:
@@ -406,7 +414,7 @@ class AdminOrderTransitionView(APIView):
     permission_classes = [require_section("orders", action="edit")]
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
+        order = get_object_or_404(Order, pk=pk)
         to_status = str(request.data.get("to", ""))
         note = str(request.data.get("note", "") or "").strip()
         if to_status not in admin_transitions(order.status):
@@ -416,12 +424,12 @@ class AdminOrderTransitionView(APIView):
             provider = str(request.data.get("provider", "") or "").strip()
             if not tracking_number or not provider:
                 return Response({"detail": "شرکت ارسال و کد رهگیری برای ثبت ارسال الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
-            Shipment.objects.update_or_create(
-                order=order,
-                defaults={"provider": provider, "cost": order.shipping_cost, "tracking_number": tracking_number,
-                          "shipped_at": timezone.now()},
+            response = _ship_response(
+                order, provider=provider, tracking_number=tracking_number, tracking_url=None,
+                user=request.user, note=note,
             )
-        response = _transition_response(order, to_status, user=request.user, note=note)
+        else:
+            response = _transition_response(order, to_status, user=request.user, note=note)
         if response.status_code == 200:
             if to_status == "PAID":
                 order_status.sync_payment_status(order, "CONFIRMED")
@@ -437,17 +445,13 @@ class AdminOrderSerialsView(APIView):
     _EDITABLE_STATUSES = {"PAID", "PROCESSING"}
 
     def post(self, request, pk):
-        order = Order.objects.get(pk=pk)
-        if order.status not in self._EDITABLE_STATUSES:
-            return Response({"detail": "سریال فقط در وضعیت پرداخت‌شده یا در حال پردازش قابل ثبت است."}, status=status.HTTP_400_BAD_REQUEST)
-        rows = request.data.get("units") or []
-        units = {u.pk: u for u in OrderItemUnit.objects.filter(order_item__order=order)}
-        for row in rows:
-            unit = units.get(int(row.get("id", 0) or 0))
-            if unit is None:
-                return Response({"detail": "واحد متعلق به این سفارش نیست."}, status=status.HTTP_400_BAD_REQUEST)
-            unit.serial_number = str(row.get("serial_number", "") or "").strip() or None
-            unit.save(update_fields=["serial_number"])
+        order = get_object_or_404(Order, pk=pk)
+        try:
+            fulfilment.set_serials(
+                order.pk, request.data.get("units") or [], editable_statuses=self._EDITABLE_STATUSES
+            )
+        except fulfilment.FulfilmentError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         log_admin_action(user=request.user, action="set_serials", model_name="Order", object_id=order.pk)
         order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
         return Response(AdminOrderSerializer(order).data)

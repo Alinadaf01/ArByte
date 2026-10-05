@@ -14,7 +14,7 @@ from rest_framework.test import APIClient
 from apps.catalog.models import Brand, Category, Product, ProductVariant
 from apps.inventory.models import Inventory
 from apps.orders import order_status
-from apps.orders.models import Order, OrderItemUnit, PaymentReceipt, Shipment
+from apps.orders.models import Order, PaymentReceipt, Shipment
 from apps.public_api.jwt_tokens import issue_tokens
 from apps.settings.models import ShippingMethod, SiteSettings
 from apps.users.models import Address, User
@@ -131,7 +131,8 @@ class CustomerJourneyTests(TransactionTestCase):
         # ۴) ورود سریال (سند تسک: «فعلاً Django admin کافی است»، اینجا معادل ORM) + SHIPPED
         order_status.transition_to(order, "PROCESSING")
         item = order.items.get()
-        OrderItemUnit.objects.create(order_item=item, serial_number="SN-E05-0001")
+        # AUDIT-5: واحد در گذار PAID ساخته شده؛ فقط سریالش پر می‌شود.
+        item.units.filter(serial_number__isnull=True).update(serial_number="SN-E05-0001")
 
         Shipment.objects.create(order=order, provider="پست پیشتاز", tracking_number="TRK-E05-0001")
         order_status.transition_to(order, "READY_TO_SHIP")

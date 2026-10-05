@@ -38,6 +38,12 @@ export type VariantAxis = z.infer<typeof VariantAxisSchema>;
  * الحاقیه §۱، هشدار — `label` را سرور می‌سازد (`buildVariantLabel`،
  * catalog/variant-label.ts)، فرانت هرگز خودش نمی‌سازد.
  */
+export const SpecificationItemSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+});
+export type SpecificationItem = z.infer<typeof SpecificationItemSchema>;
+
 export const PublicVariantSchema = z.object({
   id: z.string(),
   sku: z.string(),
@@ -45,6 +51,10 @@ export const PublicVariantSchema = z.object({
   axisValues: z.record(z.string(), z.string()),
   price: PriceSchema,
   availability: AvailabilitySchema,
+  /** AUDIT §۱۲.۴ — مشخصات کلیدی همین واریانت، ترتیب صریح بک‌اند
+   * (`key_spec_order`؛ پیش‌فرض پردازنده، گرافیک، رم). اختیاری فقط برای کش
+   * ISR قدیمی پیش از این تغییر. */
+  keySpecs: z.array(SpecificationItemSchema).max(4).optional(),
 });
 export type PublicVariant = z.infer<typeof PublicVariantSchema>;
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { siteFooter } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { absoluteUrl, jsonLd } from "@/lib/json-ld";
-import { getBlogPosts, getHomepage } from "@/lib/content";
+import { getBlogPosts, getHomepage, getSiteInfo } from "@/lib/content";
 import { toJournalCards } from "@/content/home-journal";
 import { HeroSection } from "@/components/home/hero/HeroSection";
 import { CategoriesAccordion } from "@/components/home/categories/CategoriesAccordion";
@@ -53,9 +53,11 @@ const websiteLd = {
 };
 
 export default async function HomePage() {
-  const [blocks, journal] = await Promise.all([
+  // getSiteInfo همان fetch کش‌شده‌ی StorefrontShell است (dedupe در همین رندر).
+  const [blocks, journal, siteInfo] = await Promise.all([
     getHomepage(),
     getBlogPosts({ perPage: 9 }),
+    getSiteInfo(),
   ]);
 
   const hero = blocks.find((b) => b.type === "HERO");
@@ -76,7 +78,7 @@ export default async function HomePage() {
         {flagshipDuel ? <FlagshipDuel block={flagshipDuel} /> : null}
         {productRail ? <FeaturedSection block={productRail} /> : null}
         <JournalSection cards={toJournalCards(journal.items)} />
-        <FaqSection />
+        <FaqSection info={siteInfo} />
         <CommunitySection />
         {benefits ? <BenefitsSection block={benefits} /> : null}
       </main>

@@ -84,7 +84,8 @@ export default async function ProductPage({
   );
   const qualifiesForFreeShipping =
     selectedVariant.price.final >= storeFacts.policies.freeShippingMinToman;
-  const keySpecChips = product.specifications[0]?.items.slice(0, 3) ?? [];
+  // AUDIT §۱۲.۴ — مشخصات کلیدی از بک‌اند، برای همان پیکربندی انتخاب‌شده.
+  const keySpecChips = selectedVariant.keySpecs ?? [];
 
   const breadcrumbItems = [
     { label: productsPage.breadcrumbHome, href: "/" },

@@ -206,3 +206,47 @@ def live_price(variant) -> tuple[int, int | None]:
     if price >= variant.final_price:
         return variant.final_price, variant.compare_at_price
     return price, max(variant.final_price, variant.compare_at_price or 0)
+
+
+def _discounted_expression(final, rules: dict | None):
+    """همان `discounted()` + شرط `live_price` به‌صورت عبارت SQL روی bigint."""
+    from django.db.models import F, Value
+    from django.db.models.functions import Greatest, Least
+
+    rules = rules or {}
+    value = rules.get("value") or 0
+    if rules.get("discountType") == "PERCENT":
+        percent = min(max(int(value), 0), 100)
+        # تقسیم صحیح Postgres روی مقادیر مثبت = // پایتون.
+        new = final * Value(100 - percent) / Value(100 * ROUND_TO) * Value(ROUND_TO)
+    elif rules.get("discountType") == "AMOUNT":
+        new = final - Value(max(value, 0))
+    else:
+        return final
+    # live_price: max(new, ۱۰۰۰) اگر ارزان‌تر از قیمت بود، وگرنه همان قیمت.
+    return Least(Greatest(new, Value(ROUND_TO)), F("final_price"))
+
+
+def live_price_expression():
+    """AUDIT §۱۲.۱۰ — `live_price(variant)[0]` به‌صورت عبارت روی queryset
+    واریانت، تا فیلتر/مرتب‌سازی قیمت در دیتابیس انجام شود (نه بارگذاری کل
+    کاتالوگ در حافظه). همان قاعده‌ی برنده‌ی `campaign_for`: بالاترین
+    (priority, start_at) میان کمپین محصول، دسته و دسته‌ی والد. هم‌ارزی با
+    `live_price` تست دارد."""
+    from django.db.models import BigIntegerField, Case, F, Q, When
+
+    index = _active_campaign_index()
+    campaigns: dict[int, dict] = {}
+    for kind in ("product", "category"):
+        for target_id, campaign in index[kind].items():
+            entry = campaigns.setdefault(campaign.pk, {"campaign": campaign, "product": [], "category": []})
+            entry[kind].append(target_id)
+    if not campaigns:
+        return F("final_price")
+
+    whens = []
+    for entry in sorted(campaigns.values(), key=lambda e: (e["campaign"].priority, e["campaign"].start_at), reverse=True):
+        condition = Q(product_id__in=entry["product"]) | Q(product__category_id__in=entry["category"])
+        condition |= Q(product__category__parent_id__in=entry["category"])
+        whens.append(When(condition, then=_discounted_expression(F("final_price"), entry["campaign"].rules)))
+    return Case(*whens, default=F("final_price"), output_field=BigIntegerField())

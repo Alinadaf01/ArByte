@@ -20,6 +20,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from apps.catalog.key_specs import default_key_spec_order
 from apps.catalog.models import (
     Brand,
     Category,
@@ -119,7 +120,7 @@ class Command(BaseCommand):
         defs_by_key = {}
         values_by_key_value = {}
         for row in rows:
-            defn, _ = SpecificationDefinition.objects.update_or_create(
+            defn, created = SpecificationDefinition.objects.update_or_create(
                 key=row["key"],
                 defaults={
                     "name_fa": row["nameFa"],
@@ -133,6 +134,9 @@ class Command(BaseCommand):
                     "sort_order": row["sortOrder"],
                 },
             )
+            if created:  # AUDIT §۱۲.۴ — ترتیب کلیدی پیش‌فرض؛ انتخاب بعدی ادمین بازنویسی نمی‌شود
+                defn.key_spec_order = default_key_spec_order(defn.key, defn.name_fa)
+                defn.save(update_fields=["key_spec_order"])
             defs_by_key[row["key"]] = defn
             for v in row["values"]:
                 value_obj, _ = SpecificationValue.objects.update_or_create(

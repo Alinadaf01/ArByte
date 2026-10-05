@@ -15,6 +15,7 @@ import {
 import {
   ProductCardVariantSchema,
   PublicVariantSchema,
+  SpecificationItemSchema,
   VariantAxisSchema,
 } from "./variant";
 
@@ -23,11 +24,7 @@ import {
  * پیکربندی هم دقیقاً همین ساختار است: یک واریانت، `variantAxes: []`
  * (هیچ شاخه‌ی «دارد/ندارد» در فرانت لازم نیست).
  */
-export const SpecificationItemSchema = z.object({
-  name: z.string(),
-  value: z.string(),
-});
-export type SpecificationItem = z.infer<typeof SpecificationItemSchema>;
+export { SpecificationItemSchema, type SpecificationItem } from "./variant";
 export const SpecificationGroupSchema = z.object({
   groupName: z.string(),
   items: z.array(SpecificationItemSchema),

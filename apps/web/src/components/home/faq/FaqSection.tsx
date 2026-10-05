@@ -7,8 +7,9 @@ import {
   formatNumberFa,
   homeFaq,
   storeFacts,
+  type SiteInfo,
 } from "@arbyte/contracts";
-import { isWithinSupportHours } from "./support-hours";
+import { isWithinSupportHours, parseSupportHours } from "./support-hours";
 
 const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
 
@@ -18,17 +19,26 @@ const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
  * باید بعد از mount محاسبه شود (تفاوت سرور/کلاینت، هیدریشن‌سیف: پیش‌فرض
  * false تا وقتی mount واقعی ساعت را بخواند).
  */
-export function FaqSection() {
+export function FaqSection({ info }: { info: SiteInfo }) {
   const [openIndex, setOpenIndex] = useState(0);
   const [online, setOnline] = useState(false);
+  // AUDIT §۱۲.۱۲ — ساعت و تلفن از SiteSettings (همان منبع هدر/فوتر/پشتیبانی).
+  const firstHours = info.businessHours[0];
+  const hours = parseSupportHours(firstHours?.time) ?? storeFacts.support.hours;
+  const hoursText =
+    firstHours?.time ??
+    `${formatNumberFa(storeFacts.support.hours.from)} تا ${formatNumberFa(storeFacts.support.hours.to)}`;
+  const hoursLabel = firstHours?.day ?? homeFaq.hoursLabel;
+  const phoneHref =
+    info.phone?.href ??
+    (storeFacts.support.phone ? `tel:${storeFacts.support.phone}` : null);
 
   useEffect(() => {
-    const check = () =>
-      setOnline(isWithinSupportHours(new Date(), storeFacts.support.hours));
+    const check = () => setOnline(isWithinSupportHours(new Date(), hours));
     check();
     const id = window.setInterval(check, 60_000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [hours.from, hours.to]); // eslint-disable-line react-hooks/exhaustive-deps -- hours هر رندر شیء تازه است
 
   return (
     <section className="bg-paper border-border border-t px-[5vw] py-14 md:py-20">
@@ -76,22 +86,20 @@ export function FaqSection() {
                     dir="ltr"
                     className="text-on-dark text-body font-heading"
                   >
-                    {formatNumberFa(storeFacts.support.hours.from)} تا{" "}
-                    {formatNumberFa(storeFacts.support.hours.to)}
+                    {hoursText}
                   </span>
                   <span className="text-micro text-on-dark-secondary">
-                    {homeFaq.hoursLabel}
+                    {hoursLabel}
                   </span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
                 <span dir="ltr" className="text-on-dark text-body font-heading">
-                  {formatNumberFa(storeFacts.support.hours.from)} تا{" "}
-                  {formatNumberFa(storeFacts.support.hours.to)}
+                  {hoursText}
                 </span>
                 <span className="text-micro text-on-dark-secondary">
-                  {homeFaq.hoursLabel}
+                  {hoursLabel}
                 </span>
               </div>
             )}
@@ -103,9 +111,9 @@ export function FaqSection() {
               >
                 {homeFaq.chatCta}
               </Link>
-              {storeFacts.support.phone ? (
+              {phoneHref ? (
                 <a
-                  href={`tel:${storeFacts.support.phone}`}
+                  href={phoneHref}
                   className="border-border-done text-on-dark hover:bg-surface/10 rounded-pill border px-4 py-2.5 text-caption font-emphasis whitespace-nowrap transition-colors duration-200"
                 >
                   {homeFaq.callCta}

@@ -1,5 +1,6 @@
 import django_filters
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
@@ -80,7 +81,7 @@ class AdminReturnApproveView(APIView):
 
     @transaction.atomic
     def post(self, request, pk):
-        return_obj = Return.objects.prefetch_related("items").get(pk=pk)
+        return_obj = get_object_or_404(Return.objects.prefetch_related("items"), pk=pk)
         if return_obj.status != "REQUESTED":
             return Response({"detail": "فقط درخواست ثبت‌شده قابل بررسی است."}, status=status.HTTP_400_BAD_REQUEST)
         decisions = {int(d["id"]): bool(d.get("approved")) for d in request.data.get("items", []) if d.get("id")}
@@ -99,7 +100,7 @@ class AdminReturnRejectView(APIView):
     permission_classes = [require_section("returns", action="edit")]
 
     def post(self, request, pk):
-        return_obj = Return.objects.get(pk=pk)
+        return_obj = get_object_or_404(Return, pk=pk)
         admin_note = request.data.get("admin_note", "")
         response = _return_transition(return_obj, "REJECTED", admin_note=admin_note)
         if response.status_code == 200:
@@ -111,7 +112,7 @@ class AdminReturnMarkReceivedView(APIView):
     permission_classes = [require_section("returns", action="edit")]
 
     def post(self, request, pk):
-        return_obj = Return.objects.get(pk=pk)
+        return_obj = get_object_or_404(Return, pk=pk)
         response = _return_transition(return_obj, "RECEIVED")
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_received", model_name="Return", object_id=return_obj.pk)
@@ -122,7 +123,7 @@ class AdminReturnMarkRefundedView(APIView):
     permission_classes = [require_section("returns", action="edit")]
 
     def post(self, request, pk):
-        return_obj = Return.objects.get(pk=pk)
+        return_obj = get_object_or_404(Return, pk=pk)
         response = _return_transition(return_obj, "REFUNDED")
         if response.status_code == 200:
             log_admin_action(user=request.user, action="mark_refunded", model_name="Return", object_id=return_obj.pk)

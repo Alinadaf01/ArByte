@@ -71,8 +71,10 @@ export function SiteHeader({
           />
         </Link>
 
-        <div className="group flex h-full items-center gap-[clamp(14px,1.6vw,26px)] text-body font-medium">
-          <div className="relative flex h-full items-center">
+        <div className="flex h-full items-center gap-[clamp(14px,1.6vw,26px)] text-body font-medium">
+          {/* AUDIT §۱۲.۱۱ — `group` فقط روی آیتم «محصولات»؛ قبلاً روی کل ردیف
+              بود و هاور/فوکوس هر لینک (بلاگ، درباره ما…) مگامنو را باز می‌کرد. */}
+          <div className="group relative flex h-full items-center">
             <Link
               href="/products"
               className={`flex items-center gap-1.5 whitespace-nowrap ${navLinkColor(active === "products")}`}

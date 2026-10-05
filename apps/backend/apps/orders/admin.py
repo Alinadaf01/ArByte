@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.db import transaction
 
+from .fulfilment import ensure_units
 from .models import (
     Cart,
     CartItem,
@@ -55,9 +57,9 @@ class OrderItemAdmin(admin.ModelAdmin):
         # قلم برابر می‌کند (کم بود می‌سازد) — ادمین فقط serial_number را پر
         # می‌کند، نه خودش ردیف اضافه کند.
         if obj:
-            existing = obj.units.count()
-            for _ in range(obj.quantity - existing):
-                OrderItemUnit.objects.create(order_item=obj)
+            with transaction.atomic():
+                order = Order.objects.select_for_update().get(pk=obj.order_id)
+                ensure_units(order)
         return super().get_form(request, obj, **kwargs)
 
 

@@ -5,6 +5,8 @@ import uuid
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Upper
 
 
 class Cart(models.Model):
@@ -301,6 +303,14 @@ class OrderItemUnit(models.Model):
 
     class Meta:
         indexes = [models.Index(fields=["order_item"])]
+        constraints = [
+            # AUDIT §۱۲.۱۴ — یک سریال فیزیکی فقط یک واحد (بدون حساسیت به حروف).
+            models.UniqueConstraint(
+                Upper("serial_number"),
+                condition=Q(serial_number__isnull=False) & ~Q(serial_number=""),
+                name="orderitemunit_serial_unique_ci",
+            ),
+        ]
 
     def __str__(self):
         return self.certificate_id

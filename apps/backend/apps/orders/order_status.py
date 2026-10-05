@@ -103,6 +103,10 @@ def transition_to(order, to_status: str, *, user=None, note: str = "") -> None:
     if to_status == "PAID":
         order.paid_at = now
         update_fields.append("paid_at")
+        # AUDIT §۱۲.۱۴ — واحدهای سریال/کارت گارانتی در همین تراکنش ساخته می‌شوند.
+        from .fulfilment import ensure_units
+
+        ensure_units(order)
     elif to_status == "SHIPPED":
         for item in order.items.select_related("variant").filter(variant__isnull=False):
             Inventory.objects.release(item.variant, item.quantity, reference=order.order_number, user=user)

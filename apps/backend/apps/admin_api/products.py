@@ -9,6 +9,7 @@
 import django_filters
 from django.db import transaction
 from django.db.models import Count, F, Max, Min, Q, Sum
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.text import slugify
 from rest_framework import serializers, status
@@ -388,7 +389,7 @@ class AdminProductImageReorderView(APIView):
         for order, image_id in enumerate(ids, start=1):
             images[image_id].sort_order = order
         ProductImage.objects.bulk_update(images.values(), ["sort_order"])
-        _revalidate_product(Product.objects.get(pk=pk))
+        _revalidate_product(get_object_or_404(Product, pk=pk))
         return Response(AdminProductImageSerializer(sorted(images.values(), key=lambda i: i.sort_order), many=True).data)
 
 
