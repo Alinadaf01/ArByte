@@ -5,6 +5,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.public_api.seo_views import torob_feed
+from apps.torob import views as torob_views
 
 urlpatterns = [
     # D-03 — public catalog/content/health endpoints against the ArByte
@@ -12,6 +13,9 @@ urlpatterns = [
     path("api/v1/", include("apps.public_api.urls")),
     # G-02 — فید ترب؛ فروشگاه `/feeds/*` را به این مسیر rewrite می‌کند.
     path("feeds/torob", torob_feed, name="feed-torob"),
+    # AUDIT-6 — Torob API v3 (ترب POST می‌کند؛ JWT در X-Torob-Token). قبل از
+    # include("api/") تا با مسیرهای پنل تداخل نکند.
+    path("api/torob/v3/products", torob_views.products, name="torob-v3-products"),
     path("api/", include("apps.admin_api.urls")),
 ]
 

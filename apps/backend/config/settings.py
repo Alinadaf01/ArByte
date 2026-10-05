@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "apps.admin_api",
     "apps.documents",
     "apps.public_api",
+    "apps.torob",
 ]
 
 MIDDLEWARE = [

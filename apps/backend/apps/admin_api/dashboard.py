@@ -293,7 +293,8 @@ def _system_health():
             "is_active": cred.is_active,
             "has_valid_credentials": cred.has_valid_credentials(),
         }
-        for cred in ApiCredential.objects.exclude(service="kavenegar")
+        # درگاه‌های پرداخت؛ کاوه‌نگار (پیامک) و ترب (AUDIT-6) درگاه نیستند.
+        for cred in ApiCredential.objects.exclude(service__in=("kavenegar", "torob"))
     ]
 
     # D-05 §۳ — Payment دیگر وضعیت «failed» ندارد (PaymentStatus قرارداد

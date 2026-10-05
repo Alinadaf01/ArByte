@@ -3,6 +3,7 @@ import {
   saveStoredAdminAuth,
   clearStoredAdminAuth,
 } from "@/lib/adminAuthStorage";
+import type { TorobStatus, TorobValidation } from "@/types/torob";
 import type { AdminLoginResponse } from "@/types/adminAuth";
 import type { PaginatedResponse } from "@/types/api";
 import type { AdminOrder } from "@/types/order";
@@ -1133,5 +1134,20 @@ export async function listLoginAttempts(params: {
   return parseOrThrow(
     await authorizedFetch(`/login-attempts/${buildQuery(params)}`),
     "دریافت لاگ ورود ناموفق بود.",
+  );
+}
+
+// AUDIT-6 — ترب (Torob API v3)
+export async function getTorobStatus(): Promise<TorobStatus> {
+  return parseOrThrow(
+    await authorizedFetch("/torob/status/"),
+    "دریافت وضعیت ترب ناموفق بود.",
+  );
+}
+
+export async function validateTorobFeed(): Promise<TorobValidation> {
+  return parseOrThrow(
+    await authorizedFetch("/torob/validate/", { method: "POST" }),
+    "اعتبارسنجی فید ترب ناموفق بود.",
   );
 }

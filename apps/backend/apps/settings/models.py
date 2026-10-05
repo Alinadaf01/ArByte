@@ -144,6 +144,8 @@ API_CREDENTIAL_SERVICE_CHOICES = [
     # D-05 §۳ — اسکلت بله‌پی؛ بدون مستندات provider هیچ کلیدی معتبر نیست، پس
     # این ردیف تا مستندات نرسد همیشه has_valid_credentials()=False می‌ماند.
     ("balepay", "بله‌پی"),
+    # AUDIT-6 — Torob API v3: {"publicKey": "<PEM کلید عمومی ترب>"}؛ is_active = اتصال روشن.
+    ("torob", "ترب"),
 ]
 
 

@@ -1,6 +1,8 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from apps.torob import admin_views as torob_admin
+
 from . import (
     account_admin,
     activity_log_views,
@@ -116,6 +118,9 @@ urlpatterns = [
     path("admin/payments/receipts/<int:pk>/", payments.AdminPaymentReceiptReviewView.as_view(), name="admin-payment-receipt-review"),
     path("admin/payments/receipts/<int:pk>/file/", payments.AdminPaymentReceiptFileView.as_view(), name="admin-payment-receipt-file"),
     # Search Console
+    # AUDIT-6 — پنل ترب (Torob API v3)
+    path("admin/torob/status/", torob_admin.AdminTorobStatusView.as_view(), name="admin-torob-status"),
+    path("admin/torob/validate/", torob_admin.AdminTorobValidateView.as_view(), name="admin-torob-validate"),
     path("admin/search-console/status/", search_console.AdminSearchConsoleStatusView.as_view(), name="admin-sc-status"),
     path("admin/search-console/performance/", search_console.AdminSearchConsolePerformanceView.as_view(), name="admin-sc-performance"),
     path("admin/search-console/queries/", search_console.AdminSearchConsoleQueriesView.as_view(), name="admin-sc-queries"),
