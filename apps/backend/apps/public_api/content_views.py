@@ -218,6 +218,19 @@ class LegalView(PublicAPIView):
         return Response(success_response(docs, request.request_id))
 
 
+class FaqView(PublicAPIView):
+    """سوالات متداول از پنل؛ `onHome` برای آکاردئون صفحه‌ی اصلی."""
+
+    def get(self, request):
+        from apps.content.models import FaqItem
+
+        items = [
+            {"id": str(f.pk), "question": f.question, "answer": f.answer, "onHome": f.show_on_home}
+            for f in FaqItem.objects.all()
+        ]
+        return Response(success_response(items, request.request_id))
+
+
 _MOBILE = re.compile(r"^09\d{9}$")
 _CONTACT_TOPICS = {"پیش از خرید", "سفارش و ارسال", "گارانتی و خدمات", "ارتقای رم و SSD", "خرید سازمانی"}
 

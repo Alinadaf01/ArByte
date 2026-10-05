@@ -10,7 +10,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from apps.content.models import BlogPost, HomepageBlock
+from apps.content.models import BlogPost, FaqItem, HomepageBlock
 from apps.public_api.services import get_homepage
 from apps.settings.models import SiteSettings
 
@@ -60,8 +60,10 @@ class Command(BaseCommand):
 
         posts = BlogPost.objects.filter(is_published=True, published_at__lte=timezone.now()).count()
         line("JOURNAL", posts > 0, f"{posts} نوشته‌ی منتشرشده")
+        faq_home = FaqItem.objects.filter(show_on_home=True).count()
+        line("FAQ", faq_home > 0, f"{FaqItem.objects.count()} سوال؛ صفحه‌ی اصلی: {min(faq_home, 4)}")
         site = SiteSettings.load()
-        line("FAQ/SUPPORT", bool(site.phone_display and site.business_hours), f"تلفن={'دارد' if site.phone_display else 'ندارد'}، ساعت کاری={len(site.business_hours or [])} ردیف")
+        line("SUPPORT", bool(site.phone_display and site.business_hours), f"تلفن={'دارد' if site.phone_display else 'ندارد'}، ساعت کاری={len(site.business_hours or [])} ردیف")
         socials = [k for k in ("instagram_url", "telegram_url", "whatsapp_url", "linkedin_url", "youtube_url") if getattr(site, k)]
         line("COMMUNITY", bool(socials), f"شبکه‌ها: {socials or '-'}")
 

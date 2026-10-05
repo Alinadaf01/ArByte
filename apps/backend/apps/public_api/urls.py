@@ -22,6 +22,7 @@ urlpatterns = [
     path("content/about", content_views.AboutView.as_view(), name="public-content-about"),
     path("content/site-info", content_views.SiteInfoView.as_view(), name="public-content-site-info"),
     path("content/legal", content_views.LegalView.as_view(), name="public-content-legal"),
+    path("content/faq", content_views.FaqView.as_view(), name="public-content-faq"),
     path("blog", content_views.BlogListView.as_view(), name="public-blog-list"),
     path("blog/categories", content_views.BlogCategoriesView.as_view(), name="public-blog-categories"),
     path("blog/<slug:slug>", content_views.BlogDetailView.as_view(), name="public-blog-detail"),

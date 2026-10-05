@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { SiteInfo } from "@arbyte/contracts";
+import { displayRows } from "@/lib/business-hours";
 import type { CategoryTreeNode } from "@arbyte/contracts";
 import { siteHeader, toPersianDigits } from "@arbyte/contracts";
 import { useCartStore } from "@/lib/stores/cart-store";
@@ -19,6 +20,8 @@ interface SiteHeaderProps {
   isAuthenticated?: boolean;
   /** G-01 — تلفن از SiteSettings؛ null = ردیف تلفن کشو پنهان. */
   phone?: SiteInfo["phone"];
+  /** ساعت کاری SiteSettings برای ردیف «پشتیبانی آنلاین» کشو. */
+  businessHours?: SiteInfo["businessHours"];
 }
 
 const navLinkColor = (isActive: boolean) =>
@@ -29,6 +32,7 @@ export function SiteHeader({
   categories,
   isAuthenticated = false,
   phone = null,
+  businessHours = [],
 }: SiteHeaderProps) {
   const accountHref = isAuthenticated ? "/account" : "/login";
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -102,7 +106,7 @@ export function SiteHeader({
 
             {categories.length > 0 ? (
               <div
-                className="shadow-popover border-border hidden absolute end-[-16px] top-[70px] z-40 w-[min(620px,86vw)] grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4.5 gap-y-1.5 rounded-panel border bg-surface p-5 group-hover:grid group-focus-within:grid"
+                className="shadow-popover border-border hidden absolute start-[-16px] top-[70px] z-40 w-[min(620px,86vw)] grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4.5 gap-y-1.5 rounded-panel border bg-surface p-5 group-hover:grid group-focus-within:grid"
                 role="menu"
               >
                 {categories.map((category) => (
@@ -438,7 +442,9 @@ export function SiteHeader({
               className="bg-accent block h-1.5 w-1.5 rounded-full"
               aria-hidden="true"
             />
-            {siteHeader.drawer.onlineSupport}
+            {siteHeader.drawer.onlineSupport(
+              displayRows(businessHours)[0]!.time,
+            )}
           </span>
           {phone ? (
             <a

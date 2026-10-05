@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, FormField, Input, Textarea } from "@arbyte/ui";
 import { supportPage, toLatinDigits, toPersianDigits } from "@arbyte/contracts";
 import type { SiteInfo } from "@arbyte/contracts";
+import { displayRows } from "@/lib/business-hours";
 
 const PHONE_RE = /^09\d{9}$/;
 
@@ -12,7 +13,6 @@ interface SupportContentProps {
   phone: SiteInfo["phone"];
   email: string | null;
   businessHours: SiteInfo["businessHours"];
-  fallbackHours: { from: number; to: number };
 }
 
 /** G-01 — Support.dc.html. فرم → `POST /contact` (پنل «پیام‌ها»)؛ کانال تلفن فقط با شماره‌ی SiteSettings؛ مراجعه‌ی حضوری/نقشه پنهان. */
@@ -20,7 +20,6 @@ export function SupportContent({
   phone: storePhone,
   email,
   businessHours,
-  fallbackHours,
 }: SupportContentProps) {
   const [topic, setTopic] = useState(0);
   const [name, setName] = useState("");
@@ -345,18 +344,7 @@ export function SupportContent({
               {supportPage.hours.title}
             </h2>
             <div className="flex flex-col gap-2.5">
-              {(businessHours.length > 0
-                ? businessHours
-                : [
-                    {
-                      day: supportPage.hours.everyDay,
-                      time: supportPage.hours.range(
-                        toPersianDigits(fallbackHours.from),
-                        toPersianDigits(fallbackHours.to),
-                      ),
-                    },
-                  ]
-              ).map((row) => (
+              {displayRows(businessHours).map((row) => (
                 <div
                   key={row.day}
                   className="flex items-center justify-between gap-3"

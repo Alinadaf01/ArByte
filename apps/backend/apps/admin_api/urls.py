@@ -147,6 +147,7 @@ urlpatterns = [
     path("admin/redirects/<int:pk>/", redirects.AdminRedirectDetailView.as_view(), name="admin-redirect-detail"),
     path("admin/pages/about/", content_pages.AdminAboutPageView.as_view(), name="admin-page-about"),
     path("admin/pages/legal/", content_pages.AdminLegalDocumentListView.as_view(), name="admin-page-legal-list"),
+    path("admin/pages/faq/", content_pages.AdminFaqView.as_view(), name="admin-page-faq"),
     path("admin/pages/legal/<str:key>/", content_pages.AdminLegalDocumentDetailView.as_view(), name="admin-page-legal-detail"),
     path("admin/messages/", contact_messages.AdminMessageListView.as_view(), name="admin-message-list"),
     path("admin/messages/<int:pk>/", contact_messages.AdminMessageDetailView.as_view(), name="admin-message-detail"),

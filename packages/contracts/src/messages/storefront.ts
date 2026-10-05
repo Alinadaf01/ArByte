@@ -4,7 +4,6 @@
  * Support,Legal,NotFound}.dc.html`). بازنویسی یا ترجمه‌ی مجدد ممنوع (قاعده‌ی #۲).
  */
 import { toPersianDigits } from "../format/digits";
-import { faqQuestions } from "./faq";
 
 export const siteHeader = {
   logoAlt: "آربایت",
@@ -42,7 +41,7 @@ export const siteHeader = {
     sectionArbyte: "آربایت",
     blog: "بلاگ",
     about: "درباره ما",
-    onlineSupport: "پشتیبانی آنلاین ۹ تا ۲۱",
+    onlineSupport: (hours: string) => `پشتیبانی آنلاین ${hours}`,
   },
 } as const;
 
@@ -116,8 +115,11 @@ export const aboutPage = {
 export const supportPage = {
   breadcrumb: { home: "خانه", current: "پشتیبانی" },
   title: "پشتیبانی آربایت",
+  /** متا/پیش‌نمایش؛ متن صفحه با ساعت واقعی پنل از `subtitleWithHours` است. */
   subtitle:
-    "کارشناس‌ها هر روز هفته از ۹ تا ۲۱ در دسترس‌اند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.",
+    "کارشناس‌های آربایت در ساعات کاری پاسخ‌گو هستند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.",
+  subtitleWithHours: (hours: string) =>
+    `کارشناس‌ها ${hours} در دسترس‌اند. برای پیگیری سفارش، شماره سفارش را آماده داشته باشید.`,
   channels: {
     request: { title: "ثبت درخواست", meta: "پاسخ در ساعات کاری" },
     call: { title: "تماس تلفنی" },
@@ -205,12 +207,6 @@ export const legalPage = {
     noResultsCta: "پرسیدن از پشتیبانی",
   },
   askSupport: "سوالی دارید؟ بپرسید",
-  /**
-   * T-212 §۳ — از `faq.ts` می‌آید (منبع مشترک با آکاردئون صفحه اصلی)؛
-   * دو سوال «تحویل حضوری»/«اقساط» که این‌جا قبلاً بود عمداً از منبع مشترک
-   * حذف شدند (ادعای بدون پشتیبان)، نه فقط از صفحه اصلی مخفی — ر.ک. faq.ts.
-   */
-  faq: faqQuestions,
 } as const;
 
 /**
@@ -541,7 +537,7 @@ export const productDetailPage = {
  * T-215 §۱ — `/search`. طبق §۰ سند تسک: تب «نوشته‌ها» چون API وبلاگ نداریم
  * پنهان است (Q). چیپ‌های پرتکرار فهرست ثابت خودِ سند تسک‌اند، نه رونویسی
  * از طراحی (طراحی «مانیتور OLED»/«کد تخفیف» دارد که محصول ما نیست — Q).
- * نمایه‌ی راهنما = صفحات ثابت + `faqQuestions` (منبع مشترک با `/legal`).
+ * نمایه‌ی راهنما = صفحات ثابت؛ سوالات متداول از پنل در خود صفحه‌ی جستجو اضافه می‌شوند.
  */
 export const searchPage = {
   inputPlaceholder: "نام محصول، برند یا مثلاً «لپ‌تاپ ۱۸ اینچ»",
@@ -607,12 +603,6 @@ export const searchPage = {
       tag: "قوانین",
       href: "/legal",
     },
-    ...faqQuestions.map((item) => ({
-      title: item.q,
-      description: item.a,
-      tag: "سوالات",
-      href: "/legal",
-    })),
   ],
 } as const;
 

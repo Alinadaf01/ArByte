@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  faqQuestions,
   formatNumberFa,
   homeFaq,
   storeFacts,
+  type FaqItem,
   type SiteInfo,
 } from "@arbyte/contracts";
-import { isWithinSupportHours, parseSupportHours } from "./support-hours";
+import { displayRows, isOpenNow, openingTime } from "@/lib/business-hours";
 
-const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
+const HOME_LIMIT = 4;
 
 /**
  * T-212 §۳ — آکاردئون سوالات متداول (فقط ۴ مورد `onHome`) + کارت پشتیبانی
@@ -19,26 +19,30 @@ const HOME_QUESTIONS = faqQuestions.filter((q) => q.onHome);
  * باید بعد از mount محاسبه شود (تفاوت سرور/کلاینت، هیدریشن‌سیف: پیش‌فرض
  * false تا وقتی mount واقعی ساعت را بخواند).
  */
-export function FaqSection({ info }: { info: SiteInfo }) {
+export function FaqSection({
+  info,
+  items,
+}: {
+  info: SiteInfo;
+  items: FaqItem[];
+}) {
   const [openIndex, setOpenIndex] = useState(0);
   const [online, setOnline] = useState(false);
-  // AUDIT §۱۲.۱۲ — ساعت و تلفن از SiteSettings (همان منبع هدر/فوتر/پشتیبانی).
-  const firstHours = info.businessHours[0];
-  const hours = parseSupportHours(firstHours?.time) ?? storeFacts.support.hours;
-  const hoursText =
-    firstHours?.time ??
-    `${formatNumberFa(storeFacts.support.hours.from)} تا ${formatNumberFa(storeFacts.support.hours.to)}`;
-  const hoursLabel = firstHours?.day ?? homeFaq.hoursLabel;
+  // سوال‌ها از پنل («سوالات متداول»، تیک «صفحه اصلی»)؛ ساعت و تلفن از
+  // SiteSettings — همان منبع هدر، فوتر و صفحه‌ی پشتیبانی.
+  const questions = items.filter((item) => item.onHome).slice(0, HOME_LIMIT);
+  const rows = info.businessHours;
+  const first = displayRows(rows)[0]!;
   const phoneHref =
     info.phone?.href ??
     (storeFacts.support.phone ? `tel:${storeFacts.support.phone}` : null);
 
   useEffect(() => {
-    const check = () => setOnline(isWithinSupportHours(new Date(), hours));
+    const check = () => setOnline(isOpenNow(new Date(), rows));
     check();
     const id = window.setInterval(check, 60_000);
     return () => window.clearInterval(id);
-  }, [hours.from, hours.to]); // eslint-disable-line react-hooks/exhaustive-deps -- hours هر رندر شیء تازه است
+  }, [rows]);
 
   return (
     <section className="bg-paper border-border border-t px-[5vw] py-14 md:py-20">
@@ -63,7 +67,9 @@ export function FaqSection({ info }: { info: SiteInfo }) {
                 className={`size-2 rounded-full ${online ? "bg-accent" : "bg-on-dark-tertiary"}`}
               />
               <span className="text-caption text-on-dark font-emphasis">
-                {online ? homeFaq.onlineNow : homeFaq.offlineHint}
+                {online
+                  ? homeFaq.onlineNow
+                  : homeFaq.offlineHint(openingTime(rows))}
               </span>
             </div>
 
@@ -86,20 +92,20 @@ export function FaqSection({ info }: { info: SiteInfo }) {
                     dir="ltr"
                     className="text-on-dark text-body font-heading"
                   >
-                    {hoursText}
+                    {first.time}
                   </span>
                   <span className="text-micro text-on-dark-secondary">
-                    {hoursLabel}
+                    {first.day}
                   </span>
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
                 <span dir="ltr" className="text-on-dark text-body font-heading">
-                  {hoursText}
+                  {first.time}
                 </span>
                 <span className="text-micro text-on-dark-secondary">
-                  {hoursLabel}
+                  {first.day}
                 </span>
               </div>
             )}
@@ -124,11 +130,11 @@ export function FaqSection({ info }: { info: SiteInfo }) {
         </aside>
 
         <div className="flex flex-col">
-          {HOME_QUESTIONS.map((item, i) => {
+          {questions.map((item, i) => {
             const isOpen = openIndex === i;
             return (
               <div
-                key={item.q}
+                key={item.id}
                 role="button"
                 tabIndex={0}
                 aria-expanded={isOpen}
@@ -149,7 +155,7 @@ export function FaqSection({ info }: { info: SiteInfo }) {
                 </span>
                 <div className="min-w-0">
                   <h3 className="text-body text-primary text-pretty font-emphasis leading-7">
-                    {item.q}
+                    {item.question}
                   </h3>
                   <div
                     className="grid transition-[grid-template-rows] duration-[450ms]"
@@ -159,7 +165,7 @@ export function FaqSection({ info }: { info: SiteInfo }) {
                       <p
                         className={`text-secondary max-w-[56ch] pt-2.5 text-caption leading-8 transition-opacity duration-[400ms] ${isOpen ? "opacity-100" : "opacity-0"}`}
                       >
-                        {item.a}
+                        {item.answer}
                       </p>
                     </div>
                   </div>

@@ -423,3 +423,21 @@ class Redirect(models.Model):
         cls.objects.update_or_create(
             from_path=old, defaults={"to_path": new, "status_code": 301, "is_active": True, "is_auto": True}
         )
+
+
+class FaqItem(models.Model):
+    """سوالات متداول — فقط از پنل («صفحه‌های محتوا» → سوالات متداول). ترتیب
+    فهرست همان ترتیب نمایش است؛ `show_on_home` چهار مورد اول را در صفحه‌ی
+    اصلی نشان می‌دهد. صفحه‌ی قوانین، پشتیبانی و جستجو هم از همین می‌خوانند."""
+
+    question = models.CharField(max_length=300)
+    answer = models.TextField()
+    show_on_home = models.BooleanField(default=False)
+    sort_order = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+
+    def __str__(self):
+        return self.question

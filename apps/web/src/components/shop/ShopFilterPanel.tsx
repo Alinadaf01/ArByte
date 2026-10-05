@@ -53,19 +53,32 @@ export function ShopFilterPanel({
     setDragMillions(committedMillions);
   }, [committedMillions]);
 
+  // بازه از بک‌اند (`GET /catalog/filters` → priceRange)، به میلیون تومان.
+  const minMillions = Math.floor(filters.priceRange.min / 1_000_000);
+  const maxMillions = Math.max(
+    Math.ceil(filters.priceRange.max / 1_000_000),
+    minMillions + 1,
+  );
+
+  // انتهای بازه یعنی «بدون سقف» — پارامتر حذف می‌شود تا گران‌ترین محصول
+  // به‌خاطر گرد شدن به میلیون از نتیجه بیرون نیفتد.
+  function priceParam(millions: number): string | null {
+    return millions >= maxMillions ? null : String(millions * 1_000_000);
+  }
+
   function handlePriceChange(millions: number) {
     setDragMillions(millions);
     if (debounceRef.current !== undefined)
       window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
-      onUpdate({ maxPrice: String(millions * 1_000_000) });
+      onUpdate({ maxPrice: priceParam(millions) });
     }, PRICE_DEBOUNCE_MS);
   }
 
   function commitPriceNow(millions: number) {
     if (debounceRef.current !== undefined)
       window.clearTimeout(debounceRef.current);
-    onUpdate({ maxPrice: String(millions * 1_000_000) });
+    onUpdate({ maxPrice: priceParam(millions) });
   }
 
   return (
@@ -171,12 +184,9 @@ export function ShopFilterPanel({
         </div>
         <input
           type="range"
-          min={Math.floor(filters.priceRange.min / 1_000_000)}
-          max={Math.max(
-            Math.ceil(filters.priceRange.max / 1_000_000),
-            Math.floor(filters.priceRange.min / 1_000_000) + 1,
-          )}
-          step={5}
+          min={minMillions}
+          max={maxMillions}
+          step={1}
           value={dragMillions}
           onChange={(e) => handlePriceChange(Number(e.target.value))}
           onPointerUp={(e) =>
@@ -185,17 +195,14 @@ export function ShopFilterPanel({
           aria-label={productsPage.maxPriceAriaLabel}
           className="accent-brand h-6 w-full cursor-pointer"
         />
-        <div
-          dir="ltr"
-          className="text-secondary-2 -mt-1 flex justify-between text-caption"
-        >
+        {/* لغزنده در RTL است (کمینه سمت راست)؛ برچسب‌ها هم همان جهت را دارند —
+            قبلاً dir="ltr" بودند و کمینه/بیشینه برعکس نمایش داده می‌شد. */}
+        <div className="text-secondary-2 -mt-1 flex justify-between text-caption">
           <span>
-            {formatNumberFa(Math.floor(filters.priceRange.min / 1_000_000))}{" "}
-            {productsPage.millionShort}
+            {formatNumberFa(minMillions)} {productsPage.millionShort}
           </span>
           <span>
-            {formatNumberFa(Math.ceil(filters.priceRange.max / 1_000_000))}{" "}
-            {productsPage.millionShort}
+            {formatNumberFa(maxMillions)} {productsPage.millionShort}
           </span>
         </div>
 

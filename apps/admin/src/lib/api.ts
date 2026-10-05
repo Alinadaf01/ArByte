@@ -69,6 +69,7 @@ import type {
 } from "@/types/accountAdmin";
 import type {
   AboutPageContent,
+  FaqEntry,
   LegalDocumentContent,
 } from "@/types/contentPages";
 import type { AdminRedirect, RedirectFormValues } from "@/types/redirect";
@@ -1090,6 +1091,27 @@ export async function updateLegalDocument(
     body: JSON.stringify(data),
   });
   return parseOrThrow(res, "ذخیره‌ی سند ناموفق بود.");
+}
+
+// سوالات متداول (صفحه اصلی، قوانین، پشتیبانی و جستجوی فروشگاه).
+export async function getFaqEntries(): Promise<FaqEntry[]> {
+  const data = await parseOrThrow<{ items: FaqEntry[] }>(
+    await authorizedFetch("/pages/faq/"),
+    "دریافت سوالات متداول ناموفق بود.",
+  );
+  return data.items;
+}
+
+export async function saveFaqEntries(items: FaqEntry[]): Promise<FaqEntry[]> {
+  const res = await authorizedFetch("/pages/faq/", {
+    method: "PUT",
+    body: JSON.stringify({ items }),
+  });
+  const data = await parseOrThrow<{ items: FaqEntry[] }>(
+    res,
+    "ذخیره‌ی سوالات متداول ناموفق بود.",
+  );
+  return data.items;
 }
 
 // G-02 — ریدایرکت‌ها.

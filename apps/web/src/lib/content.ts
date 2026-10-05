@@ -3,6 +3,7 @@ import type {
   BlogCategory,
   BlogPostCard,
   BlogPostDetail,
+  FaqItem,
   LegalDocument,
   PaginationMeta,
   PublicHomepageBlock,
@@ -91,6 +92,11 @@ export async function getAboutContent(): Promise<AboutContent | null> {
   return (
     (await getJson<{ data: AboutContent }>("/content/about"))?.data ?? null
   );
+}
+
+/** سوالات متداول از پنل؛ خطای شبکه → فهرست خالی (بخش پنهان، صفحه نمی‌شکند). */
+export async function getFaq(): Promise<FaqItem[]> {
+  return (await getJson<{ data: FaqItem[] }>("/content/faq", 300))?.data ?? [];
 }
 
 export async function getLegalDocuments(): Promise<LegalDocument[]> {
