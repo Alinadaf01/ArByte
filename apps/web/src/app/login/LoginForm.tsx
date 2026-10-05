@@ -161,6 +161,8 @@ function OtpBoxes({
     <div
       dir="ltr"
       key={shakeKey}
+      role="group"
+      aria-label={loginPage.otpAriaLabel}
       className={`grid grid-cols-4 gap-2.5 ${hasError ? (shakeKey % 2 ? "animate-shake" : "animate-shake-b") : ""}`}
     >
       {digits.map((digit, i) => {

@@ -62,7 +62,10 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   const phoneDigits = MOBILE.slice(1); // بدون صفر ابتدایی، همان چیزی که فرم می‌گیرد
   await page.getByLabel("شماره موبایل").fill(phoneDigits);
   await page.getByRole("button", { name: "دریافت کد ورود" }).click();
-  await page.getByLabel("کد تایید چهار رقمی").fill(OTP_DEV_FIXED_CODE);
+  // T-211 §۲ بعدی — چهار خانه‌ی OTP واقعی‌اند، نه یک input پنهان؛ پر کردن
+  // خانه‌ی اول با کل کد را می‌پذیرد و بین خانه‌ها پخش می‌کند (همان رفتار
+  // پر خودکار مرورگر/Web OTP API).
+  await page.getByLabel("رقم ۱ کد تایید").fill(OTP_DEV_FIXED_CODE);
   await page.getByRole("button", { name: "تایید و ورود" }).click();
   await expect(page.getByText("خوش آمدید")).toBeVisible();
   await page.getByRole("button", { name: "رفتن به پنل کاربری" }).click();

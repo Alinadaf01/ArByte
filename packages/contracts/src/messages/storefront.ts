@@ -223,7 +223,7 @@ export const legalPage = {
 export const homeHero = {
   badgeNew: "جدید",
   badgeText: "چهار مدل تازه",
-  title: "تکنولوژی با ظرافت",
+  title: "فناوری به ظرافت",
   subtitle:
     "چهار لپ‌تاپ که کارشناسان آربایت انتخاب کرده‌اند. هر دستگاه پیش از ارسال تست می‌شود.",
   scrollHint: "اسکرول کنید",
