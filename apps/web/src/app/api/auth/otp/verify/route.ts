@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { env } from "@/lib/env";
-import { isOriginAllowed, upstreamHeaders } from "@/lib/server/bff-shared";
+import {
+  bffFetch,
+  isOriginAllowed,
+  upstreamHeaders,
+  withUpstreamErrors,
+} from "@/lib/server/bff-shared";
 import { setAuthCookies } from "@/lib/server/auth-cookies";
 
 interface VerifyBody {
@@ -14,7 +18,7 @@ interface VerifyBody {
 
 /** E-02 §۱ — تنها جایی که توکن واقعی از Django می‌رسد؛ فوراً در کوکی
  * httpOnly ذخیره می‌شود و هرگز در پاسخ به مرورگر برنمی‌گردد (فقط `user`). */
-export async function POST(request: NextRequest): Promise<Response> {
+async function handlePOST(request: NextRequest): Promise<Response> {
   if (!isOriginAllowed(request)) {
     return NextResponse.json(
       { code: "FORBIDDEN", message: "درخواست نامعتبر است." },
@@ -23,15 +27,11 @@ export async function POST(request: NextRequest): Promise<Response> {
   }
 
   const body = await request.text();
-  const upstream = await fetch(
-    `${env.NEXT_PUBLIC_API_BASE_URL}/auth/otp/verify`,
-    {
-      method: "POST",
-      headers: upstreamHeaders(request, { "content-type": "application/json" }),
-      body,
-      cache: "no-store",
-    },
-  );
+  const upstream = await bffFetch("/auth/otp/verify", {
+    method: "POST",
+    headers: upstreamHeaders(request, { "content-type": "application/json" }),
+    body,
+  });
 
   const upstreamJson = (await upstream.json()) as VerifyBody;
 
@@ -53,3 +53,5 @@ export async function POST(request: NextRequest): Promise<Response> {
     meta: { requestId: upstream.headers.get("x-request-id") ?? "unknown" },
   });
 }
+
+export const POST = withUpstreamErrors(handlePOST);

@@ -15,6 +15,7 @@ import {
   getProducts,
   getTopLevelCategories,
 } from "@/lib/catalog";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
@@ -45,7 +46,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical },
-    openGraph: { title, description, url: canonicalPath },
+    openGraph: { ...SITE_OPEN_GRAPH, title, description, url: canonicalPath },
     robots: index ? undefined : { index: false, follow: true },
   };
 }

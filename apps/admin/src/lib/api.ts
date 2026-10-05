@@ -315,14 +315,26 @@ export async function reviewReceipt(
     throw new Error(await readErrorDetail(res, "بررسی رسید ناموفق بود."));
 }
 
-/** فایل رسید فقط از مسیر احراز‌شده — بلاب با توکن گرفته و در زبانه‌ی جدید باز می‌شود. */
-export async function openReceiptFile(receiptId: number): Promise<void> {
+export interface ReceiptFile {
+  /** blob: URL — فراخوان بعد از استفاده `URL.revokeObjectURL` می‌کند. */
+  url: string;
+  type: string;
+}
+
+/**
+ * فایل رسید فقط از مسیر احراز‌شده (توکن در هدر، نه لینک عمومی).
+ * AUDIT-1 §11 — قبلاً بعد از `await` با `window.open` باز می‌شد؛ مرورگر آن
+ * را popup بدون کلیک کاربر می‌دید و بی‌صدا مسدود می‌کرد (Safari همیشه، Chrome
+ * وقتی دریافت فایل چند ثانیه طول می‌کشید). حالا داخل خود پنل پیش‌نمایش می‌شود.
+ */
+export async function fetchReceiptFile(
+  receiptId: number,
+): Promise<ReceiptFile> {
   const res = await authorizedFetch(`/payments/receipts/${receiptId}/file/`);
   if (!res.ok)
     throw new Error(await readErrorDetail(res, "دریافت فایل رسید ناموفق بود."));
-  const url = URL.createObjectURL(await res.blob());
-  window.open(url, "_blank", "noopener");
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  const blob = await res.blob();
+  return { url: URL.createObjectURL(blob), type: blob.type };
 }
 
 export type OrderDocumentKind =

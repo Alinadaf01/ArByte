@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { env } from "@/lib/env";
-import { isOriginAllowed } from "@/lib/server/bff-shared";
+import { bffFetch, isOriginAllowed } from "@/lib/server/bff-shared";
 import { clearAuthCookies, getAuthCookies } from "@/lib/server/auth-cookies";
 
 /** E-02 §۱ — کوکی همیشه پاک می‌شود، حتی اگر تماس با Django (بلک‌لیست
@@ -17,14 +16,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   const { accessToken, refreshToken } = await getAuthCookies();
   if (accessToken) {
     try {
-      await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/auth/logout`, {
+      await bffFetch("/auth/logout", {
         method: "POST",
         headers: {
           "content-type": "application/json",
           authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ refreshToken }),
-        cache: "no-store",
       });
     } catch {
       // شبکه قطع بود — کوکی محلی همچنان پاک می‌شود، پایین.

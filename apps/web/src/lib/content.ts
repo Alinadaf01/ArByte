@@ -8,29 +8,24 @@ import type {
   PublicHomepageBlock,
   SiteInfo,
 } from "@arbyte/contracts";
+import { fetchWithTimeout, UPSTREAM_TIMEOUT_MS } from "@/lib/upstream-fetch";
+import { serverApiUrl } from "@/lib/urls";
 
 /**
  * فقط سمت سرور (RSC) صدا زده می‌شود — همان الگوی `getCategoryTree` در
  * catalog.ts (T-200): اگر API در دسترس نبود یا خالی برگشت، صفحه نباید
  * بشکند، فقط بخش‌های مبتنی بر بلوک رندر نمی‌شوند.
  */
-const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!API_INTERNAL_BASE)
-  throw new Error("Set API_INTERNAL_URL for storefront requests.");
-if (
-  process.env.VERCEL === "1" &&
-  process.env.VERCEL_ENV === "production" &&
-  API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
-) {
-  throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
-}
 
 export async function getHomepage(): Promise<PublicHomepageBlock[]> {
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/content/homepage`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/content/homepage`),
+      {
+        next: { revalidate: 60 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return [];
     const body = (await res.json()) as {
       data?: { blocks?: PublicHomepageBlock[] };
@@ -43,9 +38,13 @@ export async function getHomepage(): Promise<PublicHomepageBlock[]> {
 
 async function getJson<T>(path: string, revalidate = 60): Promise<T | null> {
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}${path}`, {
-      next: { revalidate },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`${path}`),
+      {
+        next: { revalidate },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {

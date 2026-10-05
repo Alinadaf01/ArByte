@@ -4,6 +4,7 @@ import { legalPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { LegalContent } from "./LegalContent";
 import { getLegalDocuments } from "@/lib/content";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   description: legalPage.subtitle,
   alternates: { canonical: "/legal" },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: `${legalPage.breadcrumb.current} | آربایت`,
     description: legalPage.subtitle,
     url: "/legal",

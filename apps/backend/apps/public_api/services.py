@@ -5,7 +5,7 @@ Same public/active filter criteria, same sort/filter/search semantics, same
 "fetch small catalog fully, filter in Python" style Nest itself already
 uses for search()/getFilters()."""
 
-from django.db.models import Count, Min, Prefetch, Q
+from django.db.models import Count, Exists, Min, OuterRef, Prefetch, Q
 from django.utils import timezone
 
 from apps.catalog.models import (
@@ -21,10 +21,16 @@ from apps.content.models import HomepageBlock
 
 from .availability import GLOBAL_LOW_STOCK_THRESHOLD
 from .errors import not_found
+from .media import public_media_url
 from .search import normalize_search_text
 from .serializers import build_product_card, build_product_detail, to_brand_ref, to_category_card
 
-PUBLIC_CATEGORY_PRODUCT_Q = Q(status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_category=True)
+# AUDIT-1 §12.6 — محصول بدون واریانت زنده قابل فروش نیست و در هیچ خروجی
+# عمومی (فهرست، جستجو، جزئیات، صفحه‌ی اصلی، sitemap، ترب) نمی‌آید؛ قبلاً
+# کارت/جزئیاتش با IndexError روی `variants[0]` به ۵۰۰ می‌رسید.
+HAS_LIVE_VARIANT_Q = Q(Exists(ProductVariant.objects.filter(product_id=OuterRef("pk"), deleted_at__isnull=True)))
+PUBLIC_PRODUCT_Q = Q(status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True) & HAS_LIVE_VARIANT_Q
+PUBLIC_CATEGORY_PRODUCT_Q = PUBLIC_PRODUCT_Q & Q(is_visible_in_category=True)
 
 
 def _public_product_q(prefix: str = "") -> Q:
@@ -33,7 +39,17 @@ def _public_product_q(prefix: str = "") -> Q:
     filter kwargs must be prefixed with the relation name ("products__...")
     to reach Product's fields from a Category queryset, unlike a plain
     Product.objects.filter(...) where the bare field names apply directly."""
-    return Q(**{f"{prefix}status": "ACTIVE", f"{prefix}deleted_at__isnull": True, f"{prefix}is_visible_on_site": True, f"{prefix}is_visible_in_category": True})
+    return Q(
+        **{
+            f"{prefix}status": "ACTIVE",
+            f"{prefix}deleted_at__isnull": True,
+            f"{prefix}is_visible_on_site": True,
+            f"{prefix}is_visible_in_category": True,
+            # همان HAS_LIVE_VARIANT_Q؛ Count(..., distinct=True) تکرار join را خنثی می‌کند.
+            f"{prefix}variants__deleted_at__isnull": True,
+            f"{prefix}variants__isnull": False,
+        }
+    )
 
 _ORDERED_SPEC_FIELDS = ("definition", "value")
 
@@ -87,7 +103,7 @@ def get_category_tree() -> list[dict]:
                 "id": str(row["id"]),
                 "name": row["name"],
                 "slug": row["slug"],
-                "image": row["image_main"],
+                "image": public_media_url(row["image_main"]),
                 "children": build(row["id"]),
             }
             for row in by_parent.get(parent_id, [])
@@ -149,8 +165,8 @@ def get_category_by_slug(slug: str) -> dict:
         "name": category.name,
         "slug": category.slug,
         "description": category.description,
-        "imageMain": category.image_main,
-        "imageBanner": category.image_banner,
+        "imageMain": public_media_url(category.image_main),
+        "imageBanner": public_media_url(category.image_banner),
         "parent": (
             {"id": str(category.parent_id), "name": category.parent.name, "slug": category.parent.slug}
             if category.parent_id
@@ -166,9 +182,7 @@ def get_product_cards_by_slugs(slugs: list[str]) -> list[dict]:
         return []
     products = {
         p.slug: p
-        for p in _product_queryset().filter(
-            slug__in=slugs, status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True
-        )
+        for p in _product_queryset().filter(PUBLIC_PRODUCT_Q, slug__in=slugs)
     }
     return [build_product_card(products[slug], GLOBAL_LOW_STOCK_THRESHOLD) for slug in slugs if slug in products]
 
@@ -201,9 +215,7 @@ def _variant_matches(variant: ProductVariant, query: dict) -> bool:
 
 
 def list_products(query: dict) -> tuple[list[dict], int]:
-    qs = _product_queryset().filter(
-        status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_category=True
-    )
+    qs = _product_queryset().filter(PUBLIC_CATEGORY_PRODUCT_Q)
     if query.get("category"):
         qs = qs.filter(category__slug=query["category"])
     if query.get("brand"):
@@ -236,9 +248,7 @@ def list_products(query: dict) -> tuple[list[dict], int]:
 
 def get_product_by_slug(slug: str) -> dict:
     try:
-        product = _product_queryset().get(
-            slug=slug, status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True
-        )
+        product = _product_queryset().get(PUBLIC_PRODUCT_Q, slug=slug)
     except Product.DoesNotExist:
         raise not_found("محصول پیدا نشد.") from None
     return build_product_detail(product, GLOBAL_LOW_STOCK_THRESHOLD)
@@ -341,9 +351,7 @@ def get_filters(category_slug: str | None = None) -> dict:
 
 def search(query: dict) -> tuple[list[dict], int]:
     needle = normalize_search_text(query["q"])
-    candidates = _product_queryset().filter(
-        status="ACTIVE", deleted_at__isnull=True, is_visible_on_site=True, is_visible_in_search=True
-    ).order_by("-priority", "-created_at")
+    candidates = _product_queryset().filter(PUBLIC_PRODUCT_Q, is_visible_in_search=True).order_by("-priority", "-created_at")
 
     products = [
         p

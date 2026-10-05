@@ -1,5 +1,6 @@
 import type { ProductCard, PublicProductDetail } from "@arbyte/contracts";
 import { env } from "./env";
+import { joinUrl } from "./urls";
 
 /**
  * T-215 §۱/§۳ — نسخه‌ی سمت مرورگر همان توابع `lib/catalog.ts` (که فقط از
@@ -7,7 +8,6 @@ import { env } from "./env";
  * شخصی/بدون ایندکس است، پس واکشی کلاینتی مجاز است (§۳ سند تسک)؛ سبد
  * افزودن دستگاه به `/compare` هم یک تعامل کاملاً کلاینتی است.
  */
-const API_BASE = env.NEXT_PUBLIC_API_BASE_URL;
 
 /** محصول حذف‌شده/غیرفعال → `null`، نه throw — صفحه نباید بشکند (§۳). */
 export async function getProductBySlugClient(
@@ -15,7 +15,10 @@ export async function getProductBySlugClient(
 ): Promise<PublicProductDetail | null> {
   try {
     const res = await fetch(
-      `${API_BASE}/catalog/products/${encodeURIComponent(slug)}`,
+      joinUrl(
+        env.NEXT_PUBLIC_API_BASE_URL,
+        `/catalog/products/${encodeURIComponent(slug)}`,
+      ),
     );
     if (!res.ok) return null;
     const body = (await res.json()) as { data: PublicProductDetail };
@@ -37,7 +40,10 @@ export async function searchProductsClient(q: string): Promise<ProductCard[]> {
   if (!q.trim()) return [];
   try {
     const res = await fetch(
-      `${API_BASE}/catalog/search?q=${encodeURIComponent(q)}&perPage=8`,
+      joinUrl(
+        env.NEXT_PUBLIC_API_BASE_URL,
+        `/catalog/search?q=${encodeURIComponent(q)}&perPage=8`,
+      ),
     );
     if (!res.ok) return [];
     const body = (await res.json()) as { data?: ProductCard[] };

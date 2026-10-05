@@ -4,6 +4,7 @@ import { storeFacts, supportPage } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { SupportContent } from "./SupportContent";
 import { getSiteInfo } from "@/lib/content";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 export const revalidate = 300;
 
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
   description: supportPage.subtitle,
   alternates: { canonical: "/support" },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: `${supportPage.breadcrumb.current} | آربایت`,
     description: supportPage.subtitle,
     url: "/support",

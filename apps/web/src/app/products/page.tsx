@@ -9,6 +9,7 @@ import { ProductGridSkeleton } from "@/components/category/ProductGridSkeleton";
 import { parseShopParams } from "@/components/shop/shop-params";
 import { computeShopRobotsAndCanonical } from "@/components/shop/shop-seo";
 import { getFilters, getProducts, getTopLevelCategories } from "@/lib/catalog";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 interface ProductsPageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,6 +27,7 @@ export async function generateMetadata({
     title: `${productsPage.title} | آربایت`,
     description: productsPage.subtitle,
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title: `${productsPage.title} | آربایت`,
       description: productsPage.subtitle,
       url: "/products",

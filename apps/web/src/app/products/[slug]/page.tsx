@@ -12,6 +12,7 @@ import { ProductReviews } from "@/components/product/ProductReviews";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
 import { resolveInitialVariant } from "@/components/product/resolve-variant";
 import { getProductBySlug } from "@/lib/catalog";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -50,6 +51,7 @@ export async function generateMetadata({
     // بند ۳ سند تسک — canonical همیشه بدون `?v=`.
     alternates: { canonical: product.seo.canonical ?? url },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       title,
       description,
       url,

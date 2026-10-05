@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextFetchEvent, NextRequest } from "next/server";
+import { fetchWithTimeout, UPSTREAM_TIMEOUT_MS } from "@/lib/upstream-fetch";
+import { publicApiBaseUrl, serverApiUrl } from "@/lib/urls";
 
 /**
  * G-02 — ریدایرکت‌های پنل (و خودکارِ تغییر slug/حذف محصول). جدول کامل هر
@@ -16,29 +18,14 @@ const REDIRECT_TTL_MS = 60_000;
 let redirectTable: { at: number; map: Map<string, RedirectRule> } | null = null;
 let redirectLoading: Promise<Map<string, RedirectRule>> | null = null;
 
-function apiBase(): string {
-  const base =
-    process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!base) throw new Error("Set API_INTERNAL_URL for storefront requests.");
-  if (
-    process.env.VERCEL === "1" &&
-    process.env.VERCEL_ENV === "production" &&
-    base !== "https://api.arbyte.ir/api/v1"
-  ) {
-    throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
-  }
-  return base;
-}
-
-async function loadRedirects(): Promise<Map<string, RedirectRule>> {
-  if (redirectTable && Date.now() - redirectTable.at < REDIRECT_TTL_MS) {
-    return redirectTable.map;
-  }
+function refreshRedirects(): Promise<Map<string, RedirectRule>> {
   redirectLoading ??= (async () => {
     try {
-      const res = await fetch(`${apiBase()}/seo/redirects`, {
-        cache: "no-store",
-      });
+      const res = await fetchWithTimeout(
+        serverApiUrl("/seo/redirects"),
+        { cache: "no-store" },
+        UPSTREAM_TIMEOUT_MS.middleware,
+      );
       if (!res.ok) throw new Error(String(res.status));
       const body = (await res.json()) as { data: RedirectRule[] };
       const map = new Map(body.data.map((r) => [r.from, r]));
@@ -51,6 +38,25 @@ async function loadRedirects(): Promise<Map<string, RedirectRule>> {
     }
   })();
   return redirectLoading;
+}
+
+/**
+ * AUDIT-1 §12.9 — middleware روی مسیر هر صفحه است. قبلاً هر بار که کش این
+ * نمونه‌ی Edge سرد/منقضی بود، خود درخواست کاربر منتظر رفت‌وبرگشت Vercel →
+ * ایران می‌ماند (بدون timeout). حالا جدول کهنه فوراً استفاده و در پس‌زمینه
+ * تازه می‌شود؛ فقط نمونه‌ی کاملاً سرد منتظر می‌ماند، آن هم حداکثر
+ * `UPSTREAM_TIMEOUT_MS.middleware`.
+ */
+async function getRedirects(
+  event: NextFetchEvent,
+): Promise<Map<string, RedirectRule>> {
+  if (redirectTable) {
+    if (Date.now() - redirectTable.at >= REDIRECT_TTL_MS) {
+      event.waitUntil(refreshRedirects());
+    }
+    return redirectTable.map;
+  }
+  return refreshRedirects();
 }
 
 function normalizePath(pathname: string): string {
@@ -81,16 +87,18 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     !SKIP_REDIRECT.test(pathname) &&
     (request.method === "GET" || request.method === "HEAD")
   ) {
-    const rule = (await loadRedirects()).get(normalizePath(pathname));
+    const rule = (await getRedirects(event)).get(normalizePath(pathname));
     if (rule) {
       const target = rule.to.startsWith("http")
         ? new URL(rule.to)
         : new URL(rule.to, request.url);
       if (!rule.to.startsWith("http")) target.search = request.nextUrl.search;
       event.waitUntil(
-        fetch(`${apiBase()}/seo/redirects/${rule.id}/hit`, {
-          method: "POST",
-        }).catch(() => undefined),
+        fetchWithTimeout(
+          serverApiUrl(`/seo/redirects/${rule.id}/hit`),
+          { method: "POST" },
+          UPSTREAM_TIMEOUT_MS.middleware,
+        ).catch(() => undefined),
       );
       return NextResponse.redirect(target, rule.status === 302 ? 302 : 301);
     }
@@ -110,7 +118,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   // مسدود می‌کرد (بدون هیچ خطای قابل‌مشاهده‌ای در network لاگ) — همان الگوی
   // خطای ADR-005 (مسدودشدن بی‌صدا)، این‌بار برای fetch نه hydration.
   // Django API زیرساخت خودِ ما است (بند ۸ فقط دامنه‌ی خارجی را منع می‌کند).
-  const apiOrigin = new URL(apiBase()).origin;
+  const apiOrigin = new URL(publicApiBaseUrl()).origin;
   const cspHeader = [
     "default-src 'self'",
     scriptSrc,

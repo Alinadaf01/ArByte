@@ -8,29 +8,24 @@ import type {
   ProductSort,
   PublicProductDetail,
 } from "@arbyte/contracts";
+import { fetchWithTimeout, UPSTREAM_TIMEOUT_MS } from "@/lib/upstream-fetch";
+import { serverApiUrl } from "@/lib/urls";
 
 /**
  * فقط سمت سرور (RSC) صدا زده می‌شود — بدون مرورگر، پس نیازی به CORS/rewrite
  * نیست؛ مستقیم به Django API وصل می‌شود. §۳.۱ سند T-200: اگر API در
  * دسترس نبود یا خالی برگشت، منو خالی می‌ماند نه اینکه صفحه بشکند.
  */
-const API_INTERNAL_BASE =
-  process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL;
-if (!API_INTERNAL_BASE)
-  throw new Error("Set API_INTERNAL_URL for storefront requests.");
-if (
-  process.env.VERCEL === "1" &&
-  process.env.VERCEL_ENV === "production" &&
-  API_INTERNAL_BASE !== "https://api.arbyte.ir/api/v1"
-) {
-  throw new Error("Production API URL must be https://api.arbyte.ir/api/v1.");
-}
 
 export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/catalog/categories`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/catalog/categories`),
+      {
+        next: { revalidate: 60 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return [];
     const body = (await res.json()) as { data?: CategoryTreeNode[] };
     return body.data ?? [];
@@ -42,9 +37,10 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
 /** T-202 §۱.۱ — صفحه‌ی `/categories`. */
 export async function getTopLevelCategories(): Promise<CategoryCard[]> {
   try {
-    const res = await fetch(
-      `${API_INTERNAL_BASE}/catalog/categories/top-level`,
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/catalog/categories/top-level`),
       { next: { revalidate: 60 } },
+      UPSTREAM_TIMEOUT_MS.rsc,
     );
     if (!res.ok) return [];
     const body = (await res.json()) as { data?: CategoryCard[] };
@@ -63,9 +59,10 @@ export async function getTopLevelCategories(): Promise<CategoryCard[]> {
 export async function getCategoryBySlug(
   slug: string,
 ): Promise<CategoryDetail | null> {
-  const res = await fetch(
-    `${API_INTERNAL_BASE}/catalog/categories/${encodeURIComponent(slug)}`,
+  const res = await fetchWithTimeout(
+    serverApiUrl(`/catalog/categories/${encodeURIComponent(slug)}`),
     { next: { revalidate: 60 } },
+    UPSTREAM_TIMEOUT_MS.rsc,
   );
   if (res.status === 404) return null;
   if (!res.ok)
@@ -82,9 +79,10 @@ export async function getCategoryBySlug(
 export async function getProductBySlug(
   slug: string,
 ): Promise<PublicProductDetail | null> {
-  const res = await fetch(
-    `${API_INTERNAL_BASE}/catalog/products/${encodeURIComponent(slug)}`,
+  const res = await fetchWithTimeout(
+    serverApiUrl(`/catalog/products/${encodeURIComponent(slug)}`),
     { next: { revalidate: 30 } },
+    UPSTREAM_TIMEOUT_MS.rsc,
   );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GET /catalog/products/${slug} → ${res.status}`);
@@ -132,9 +130,13 @@ export async function getProducts(
   }
 
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/catalog/products?${qs}`, {
-      next: { revalidate: 30 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/catalog/products?${qs}`),
+      {
+        next: { revalidate: 30 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return { items: [], pagination: EMPTY_PAGINATION };
     const body = (await res.json()) as {
       data?: ProductCard[];
@@ -156,9 +158,13 @@ export async function searchProducts(
 ): Promise<{ items: ProductCard[]; total: number }> {
   const qs = new URLSearchParams({ q, perPage: String(perPage) });
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/catalog/search?${qs}`, {
-      next: { revalidate: 30 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/catalog/search?${qs}`),
+      {
+        next: { revalidate: 30 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return { items: [], total: 0 };
     const body = (await res.json()) as {
       data?: ProductCard[];
@@ -188,9 +194,13 @@ export async function getFilters(
   if (category) qs.set("category", category);
 
   try {
-    const res = await fetch(`${API_INTERNAL_BASE}/catalog/filters?${qs}`, {
-      next: { revalidate: 30 },
-    });
+    const res = await fetchWithTimeout(
+      serverApiUrl(`/catalog/filters?${qs}`),
+      {
+        next: { revalidate: 30 },
+      },
+      UPSTREAM_TIMEOUT_MS.rsc,
+    );
     if (!res.ok) return EMPTY_FILTERS;
     const body = (await res.json()) as { data?: CatalogFiltersData };
     return body.data ?? EMPTY_FILTERS;

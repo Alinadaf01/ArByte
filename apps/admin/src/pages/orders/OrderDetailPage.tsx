@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
@@ -15,7 +15,8 @@ import {
 } from "@/pages/orders/useOrderDocuments";
 import {
   getOrder,
-  openReceiptFile,
+  fetchReceiptFile,
+  type ReceiptFile,
   reviewReceipt,
   saveOrderSerials,
   type OrderDocumentKind,
@@ -48,6 +49,66 @@ function useInvalidateOrder(orderId: string) {
   };
 }
 
+/** AUDIT-1 §11 — پیش‌نمایش داخل پنل؛ blob هنگام بستن آزاد می‌شود. */
+function ReceiptPreview({ receiptId }: { receiptId: number }) {
+  const [file, setFile] = useState<ReceiptFile | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    let url: string | null = null;
+    fetchReceiptFile(receiptId)
+      .then((result) => {
+        url = result.url;
+        if (alive) setFile(result);
+        else URL.revokeObjectURL(result.url);
+      })
+      .catch((e: Error) => alive && setError(e.message));
+    return () => {
+      alive = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [receiptId]);
+
+  if (error) return <p className="m-0 text-xs text-danger">{error}</p>;
+  if (!file) return <Skeleton className="h-48 w-full" />;
+  const isImage = file.type.startsWith("image/");
+  return (
+    <div className="flex flex-col gap-2">
+      {isImage ? (
+        <a href={file.url} target="_blank" rel="noreferrer">
+          <img
+            src={file.url}
+            alt="تصویر رسید پرداخت"
+            className="max-h-[480px] w-full rounded-lg border border-white/[0.06] bg-ink-900 object-contain"
+          />
+        </a>
+      ) : (
+        <p className="m-0 text-xs text-slate-400">
+          فایل PDF است و در پنل پیش‌نمایش نمی‌شود.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={file.url}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs font-semibold text-brand-300 underline"
+        >
+          باز کردن در زبانه‌ی جدید
+        </a>
+        <a
+          href={file.url}
+          download={`receipt-${receiptId}`}
+          className="text-xs font-semibold text-brand-300 underline"
+        >
+          دانلود
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function ReceiptRow({
   order,
   receipt,
@@ -58,6 +119,7 @@ function ReceiptRow({
   const toast = useToast();
   const invalidate = useInvalidateOrder(order.id);
   const [rejecting, setRejecting] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [reason, setReason] = useState("");
   const mutation = useMutation({
     mutationFn: (decision: "APPROVE" | "REJECT") =>
@@ -108,13 +170,10 @@ function ReceiptRow({
         <Button
           size="sm"
           variant="secondary"
-          onClick={() =>
-            openReceiptFile(receipt.id).catch((e: Error) =>
-              toast.showError(e.message),
-            )
-          }
+          aria-expanded={previewing}
+          onClick={() => setPreviewing((v) => !v)}
         >
-          مشاهده‌ی فایل رسید
+          {previewing ? "بستن پیش‌نمایش" : "مشاهده‌ی فایل رسید"}
         </Button>
         {pending && order.status === "PAYMENT_REVIEW" && (
           <>
@@ -135,6 +194,7 @@ function ReceiptRow({
           </>
         )}
       </div>
+      {previewing && <ReceiptPreview receiptId={receipt.id} />}
       {rejecting && (
         <div className="flex flex-col gap-2">
           <Textarea

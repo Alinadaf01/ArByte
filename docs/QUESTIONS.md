@@ -431,3 +431,8 @@
 ## Q-46 · G-04 · زمان پاسخ Vercel ↔ سرور ایران
 
 اندازه‌گیری واقعی ممکن نبود (سرور هنوز نیست). روش: `scripts/measure-latency.sh` (DEPLOY §۴.۳). اگر TTFB صفحه‌های ISR بیش از ۸۰۰ms شد، گزینه‌ها: region `fra1`/`ist1` برای توابع Vercel، یا انتقال فروشگاه به همین سرور (یک سرویس Next در compose). تصمیم بعد از اندازه‌گیری با PM.
+
+## Q-47 · AUDIT-1 · region توابع Vercel
+
+یافته: هر درخواست RSC/BFF یک رفت‌وبرگشت Vercel ↔ سرور ایران است. region پیش‌فرض Vercel (`iad1`، آمریکا) بیشترین فاصله را دارد.
+پیشنهاد: Vercel → Project → Settings → Functions → Region = `fra1` (Frankfurt). تغییری در کد لازم نیست و تصمیم با مالک است، چون روی هزینه/پلن اثر دارد.

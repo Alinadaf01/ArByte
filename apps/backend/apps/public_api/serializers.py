@@ -9,6 +9,7 @@ same as every apps/admin_api response already relies on."""
 from apps.catalog.pricing import live_price
 
 from .availability import compute_availability
+from .media import public_media_url
 from .variant import build_variant_label, select_card_variant
 
 _NULL_SEO = {"title": None, "description": None, "canonical": None}
@@ -112,7 +113,7 @@ def build_product_card(product, global_threshold: int, spec_filters: dict[str, s
     actual_default_id = str(actual_default.id) if actual_default else variants[0]["id"]
     chosen = select_card_variant(variants, actual_default_id, spec_filters)
 
-    images = list(product.images.all())
+    images = [img for img in product.images.all() if public_media_url(img.url)]
     primary_image = next((img for img in images if img.is_primary), images[0] if images else None)
 
     return {
@@ -123,7 +124,7 @@ def build_product_card(product, global_threshold: int, spec_filters: dict[str, s
         "category": to_category_ref(product),
         "condition": product.condition,
         "image": (
-            {"url": primary_image.url, "alt": primary_image.alt_text, "order": primary_image.sort_order}
+            {"url": public_media_url(primary_image.url), "alt": primary_image.alt_text, "order": primary_image.sort_order}
             if primary_image
             else None
         ),
@@ -146,7 +147,9 @@ def build_product_detail(product, global_threshold: int) -> dict:
     default_variant_id = str(actual_default.id) if actual_default else variants[0]["id"]
 
     images = [
-        {"url": img.url, "alt": img.alt_text, "order": img.sort_order} for img in product.images.all()
+        {"url": url, "alt": img.alt_text, "order": img.sort_order}
+        for img in product.images.all()
+        if (url := public_media_url(img.url))
     ]
 
     return {
@@ -191,7 +194,9 @@ def to_category_card(category, min_price: int | None = None) -> dict:
         "id": str(category.id),
         "name": category.name,
         "slug": category.slug,
-        "image": {"url": category.image_main, "alt": category.name} if category.image_main else None,
+        "image": (
+            {"url": url, "alt": category.name} if (url := public_media_url(category.image_main)) else None
+        ),
         "productCount": category.product_count,
         "description": category.description,
         "minPrice": min_price,

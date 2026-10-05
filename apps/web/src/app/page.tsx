@@ -12,6 +12,7 @@ import { JournalSection } from "@/components/home/journal/JournalSection";
 import { FaqSection } from "@/components/home/faq/FaqSection";
 import { CommunitySection } from "@/components/home/community/CommunitySection";
 import { BenefitsSection } from "@/components/home/BenefitsSection";
+import { SITE_OPEN_GRAPH } from "@/lib/seo";
 
 /**
  * T-211/T-212 — ترتیب بخش‌ها عیناً `Home.dc.html` است: Hero → Categories →
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
   description: siteFooter.tagline,
   alternates: { canonical: "/" },
   openGraph: {
+    ...SITE_OPEN_GRAPH,
     title: "آربایت | فروشگاه لپ‌تاپ و سخت‌افزار تست‌شده",
     description: siteFooter.tagline,
     url: "/",

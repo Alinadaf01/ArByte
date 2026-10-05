@@ -3,7 +3,5 @@ export function jsonLd(data: unknown): { __html: string } {
   return { __html: JSON.stringify(data).replace(/</g, "\\u003c") };
 }
 
-export function absoluteUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  return new URL(path, base).toString();
-}
+// AUDIT-1 §12.8 — ساخت آدرس مطلق فقط در lib/urls.
+export { absoluteUrl } from "./urls";
