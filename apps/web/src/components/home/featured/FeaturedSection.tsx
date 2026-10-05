@@ -40,7 +40,12 @@ export function FeaturedSection({ block }: FeaturedSectionProps) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <article className="border-border grid grid-cols-1 overflow-hidden rounded-card-lg border md:grid-cols-2">
+        <article className="border-border relative grid grid-cols-1 overflow-hidden rounded-card-lg border md:grid-cols-2">
+          <Link
+            href={`/products/${big.slug}`}
+            aria-label={big.name}
+            className="absolute inset-0 z-[1]"
+          />
           <div className="from-brand-tint-1 to-brand-tint-3 relative min-h-60 bg-gradient-to-br">
             {big.image ? (
               <Image
@@ -108,8 +113,17 @@ export function FeaturedSection({ block }: FeaturedSectionProps) {
             return (
               <article
                 key={product.id}
-                className="border-border hover:border-brand-tint-2 flex flex-col overflow-hidden rounded-card border transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-popover"
+                className="border-border hover:border-brand-tint-2 relative flex flex-col overflow-hidden rounded-card border transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-popover"
               >
+                {/* بند «stretched link» همان ProductCard.tsx — این کارت‌ها قبلاً
+                    فقط دکمه‌ی «افزودن به سبد» را داشتند، کلیک روی عکس/عنوان
+                    هیچ‌جا نمی‌رفت. z-[1]: بالاتر از کانتینر عکس (relative
+                    برای next/image fill)، پایین‌تر از AddToCartButton (z-10). */}
+                <Link
+                  href={`/products/${product.slug}?v=${product.defaultVariant.id}`}
+                  aria-label={product.name}
+                  className="absolute inset-0 z-[1]"
+                />
                 <div className="bg-surface-muted relative aspect-[16/11]">
                   {product.image ? (
                     <Image

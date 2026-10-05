@@ -26,6 +26,7 @@ export async function getHomepage(): Promise<PublicHomepageBlock[]> {
         next: { revalidate: 60 },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
+      1,
     );
     if (!res.ok) return [];
     const body = (await res.json()) as {
@@ -45,6 +46,7 @@ async function getJson<T>(path: string, revalidate = 60): Promise<T | null> {
         next: { revalidate },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
+      1,
     );
     if (!res.ok) return null;
     return (await res.json()) as T;

@@ -22,7 +22,7 @@ export class UpstreamTimeoutError extends Error {
   }
 }
 
-export async function fetchWithTimeout(
+async function fetchOnce(
   url: string,
   init: RequestInit & { next?: { revalidate?: number | false } },
   timeoutMs: number,
@@ -36,5 +36,26 @@ export async function fetchWithTimeout(
   } catch (error) {
     if (timeout.aborted) throw new UpstreamTimeoutError(url, timeoutMs);
     throw error;
+  }
+}
+
+/**
+ * `retries` (پیش‌فرض ۰): فقط برای GETهای عمومی/idempotent بده (کاتالوگ،
+ * محتوا) — اتصال Vercel↔سرور ایران گاهی یک تلاش را با ECONNREFUSED/timeout
+ * گذرا از دست می‌دهد (دیده‌شده روی تولید، خودبه‌خود در درخواست بعدی خوب
+ * می‌شد)؛ یک تلاش دوباره‌ی فوری همان را همین‌جا جبران می‌کند به‌جای اینکه
+ * کاربر «۰ نتیجه» ببیند تا revalidate بعدی. برای نوشتن (BFF) retries نده.
+ */
+export async function fetchWithTimeout(
+  url: string,
+  init: RequestInit & { next?: { revalidate?: number | false } },
+  timeoutMs: number,
+  retries = 0,
+): Promise<Response> {
+  try {
+    return await fetchOnce(url, init, timeoutMs);
+  } catch (error) {
+    if (retries <= 0) throw error;
+    return fetchWithTimeout(url, init, timeoutMs, retries - 1);
   }
 }

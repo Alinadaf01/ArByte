@@ -88,10 +88,7 @@ export function FaqSection({
                   </span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span
-                    dir="ltr"
-                    className="text-on-dark text-body font-heading"
-                  >
+                  <span className="text-on-dark text-body font-heading">
                     {first.time}
                   </span>
                   <span className="text-micro text-on-dark-secondary">
@@ -101,7 +98,7 @@ export function FaqSection({
               </div>
             ) : (
               <div className="flex flex-col gap-0.5">
-                <span dir="ltr" className="text-on-dark text-body font-heading">
+                <span className="text-on-dark text-body font-heading">
                   {first.time}
                 </span>
                 <span className="text-micro text-on-dark-secondary">

@@ -91,7 +91,7 @@ export function SiteHeader({
                   viewBox="0 0 18 18"
                   fill="none"
                   aria-hidden="true"
-                  className="transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180"
+                  className="transition-transform duration-300 [.group:hover_&]:rotate-180 group-focus-within:rotate-180"
                 >
                   <path
                     d="m4.5 7.2 3.8 3.8a1 1 0 0 0 1.4 0l3.8-3.8"
@@ -106,7 +106,7 @@ export function SiteHeader({
 
             {categories.length > 0 ? (
               <div
-                className="shadow-popover border-border hidden absolute start-[-16px] top-[70px] z-40 w-[min(620px,86vw)] grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4.5 gap-y-1.5 rounded-panel border bg-surface p-5 group-hover:grid group-focus-within:grid"
+                className="shadow-popover border-border hidden absolute start-[-16px] top-[70px] z-40 w-[min(620px,86vw)] grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-x-4.5 gap-y-1.5 rounded-panel border bg-surface p-5 [.group:hover_&]:grid group-focus-within:grid"
                 role="menu"
               >
                 {categories.map((category) => (

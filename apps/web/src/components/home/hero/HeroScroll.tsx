@@ -14,9 +14,16 @@ import {
   type HeroManifest,
 } from "./hero-engine";
 
-const HEADER_HEIGHT = 72;
 const STEP_COUNT = homeHero.steps.length;
 const MOBILE_QUERY = "(max-width: 767px)";
+/** باید دقیقاً با ارتفاع هدر چسبان SiteHeader یکی باشد: موبایل h-14 (۵۶px)،
+ * دسکتاپ h-18 (۷۲px، ≥۷۶۸px همان MOBILE_QUERY). قبلاً همیشه ۷۲ بود — روی
+ * موبایل یعنی پنل چسبان ۱۶px پایین‌تر از لبه‌ی واقعی هدر می‌نشست و یک شکاف
+ * قابل‌دیدن زیر هدر، بین هدر و محتوای هیرو، باز می‌شد. */
+function headerHeightPx(): number {
+  if (typeof window === "undefined") return 72;
+  return window.matchMedia(MOBILE_QUERY).matches ? 56 : 72;
+}
 /** بعد از `load`، اگر کاربر هنوز اسکرول نکرده، ویدیو در این مهلت idle شروع می‌شود. */
 const VIDEO_IDLE_TIMEOUT_MS = 2500;
 
@@ -46,9 +53,10 @@ function clamp01(n: number): number {
 function computeProgress(wrapperEl: HTMLElement): number {
   const rect = wrapperEl.getBoundingClientRect();
   const viewportH = window.innerHeight;
-  const denom = rect.height - (viewportH - HEADER_HEIGHT);
+  const headerHeight = headerHeightPx();
+  const denom = rect.height - (viewportH - headerHeight);
   if (denom <= 0) return 0;
-  return clamp01((HEADER_HEIGHT - rect.top) / denom);
+  return clamp01((headerHeight - rect.top) / denom);
 }
 
 /** بج «جدید» + عنوان/زیرمتن هیرو — در هر سه حالت (پوستر/استاتیک/اسکراب) یکسان است. */
@@ -410,10 +418,10 @@ function HeroScrollEngine({ manifest }: { manifest: HeroManifest }) {
   }, [manifest]);
 
   return (
-    <div ref={wrapperRef} className="relative h-[320vh] md:h-[520vh]">
+    <div ref={wrapperRef} className="relative h-[230vh] md:h-[360vh]">
       <div
         ref={panelRef}
-        className="sticky top-[72px] h-[calc(100dvh-72px)] overflow-hidden px-[5vw] py-10 md:py-16"
+        className="sticky top-14 h-[calc(100dvh-56px)] overflow-hidden px-[5vw] py-10 md:top-[72px] md:h-[calc(100dvh-72px)] md:py-16"
       >
         <HeroAmbientBackground />
 

@@ -93,29 +93,96 @@ function LoginBackground({ done }: { done: boolean }) {
   );
 }
 
+/** هر خانه یک `<input>` واقعی است (نه کادر نمایشی + یک input پنهان روی همه):
+ * خانه‌ی اول فوکوس/تایپ/کلیک مستقیم دارد و با `autoComplete="one-time-code"`
+ * پر خودکار مرورگر (که معمولاً کل کد را یک‌جا در همان خانه‌ی اول می‌ریزد) را
+ * هم می‌پذیرد و بین خانه‌ها پخش می‌کند. الگوی قبلی (کادرهای span نمایشی +
+ * یک input شفاف روی کل عرض) روی ویندوز کلیک را به input پنهان نمی‌رساند و
+ * روی موبایل هنگام پر شدن خودکار یک جعبه‌ی سفید خالی از رندر مرورگر روی
+ * صفحه می‌ماند — هر دو با input واقعی در هر خانه از بین می‌روند. */
 function OtpBoxes({
   code,
   hasError,
   shakeKey,
+  length,
+  onCodeChange,
 }: {
   code: string;
   hasError: boolean;
   shakeKey: number;
+  length: number;
+  onCodeChange: (code: string) => void;
 }) {
-  const digits = code.split("");
+  const refs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = Array.from({ length }, (_, i) => code[i] ?? "");
+
+  function commit(nextDigits: string[]) {
+    onCodeChange(nextDigits.join("").replace(/\s+$/, "").slice(0, length));
+  }
+
+  function handleChange(index: number, raw: string) {
+    const value = onlyDigits(raw);
+    if (!value) return;
+    if (value.length > 1) {
+      // پر خودکار مرورگر/جای‌گذاری کل کد در یک خانه — بین خانه‌ها پخش می‌شود.
+      const spread = value.slice(0, length);
+      commit(spread.split(""));
+      refs.current[Math.min(spread.length, length) - 1]?.focus();
+      return;
+    }
+    const next = digits.slice();
+    next[index] = value;
+    commit(next);
+    if (index < length - 1) refs.current[index + 1]?.focus();
+  }
+
+  function handleKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      e.preventDefault();
+      const next = digits.slice();
+      next[index - 1] = "";
+      commit(next);
+      refs.current[index - 1]?.focus();
+    }
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const value = onlyDigits(e.clipboardData.getData("text")).slice(0, length);
+    if (!value) return;
+    e.preventDefault();
+    commit(value.split(""));
+    refs.current[Math.min(value.length, length) - 1]?.focus();
+  }
+
   return (
     <div
       dir="ltr"
       key={shakeKey}
       className={`grid grid-cols-4 gap-2.5 ${hasError ? (shakeKey % 2 ? "animate-shake" : "animate-shake-b") : ""}`}
     >
-      {[0, 1, 2, 3].map((i) => {
-        const filled = digits.length > i;
-        const active = digits.length === i && !hasError;
+      {digits.map((digit, i) => {
+        const filled = digit !== "";
+        const active =
+          digits.slice(0, i).every(Boolean) && !filled && !hasError;
         return (
-          <span
+          <input
             key={i}
-            className={`flex min-h-[62px] items-center justify-center rounded-tile border-2 text-[25px] font-bold transition-all duration-200 ${
+            ref={(el) => {
+              refs.current[i] = el;
+            }}
+            type="text"
+            inputMode="numeric"
+            autoComplete={i === 0 ? "one-time-code" : "off"}
+            maxLength={i === 0 ? length : 1}
+            aria-label={`رقم ${toPersianDigits(String(i + 1))} کد تایید`}
+            value={filled ? toPersianDigits(digit) : ""}
+            onChange={(e) => handleChange(i, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            onPaste={handlePaste}
+            className={`flex min-h-[62px] w-full items-center justify-center rounded-tile border-2 text-center text-[25px] font-bold outline-none transition-all duration-200 ${
               hasError
                 ? "border-danger bg-danger-tint text-danger"
                 : filled
@@ -124,9 +191,7 @@ function OtpBoxes({
                     ? "border-brand bg-white/4 text-on-dark shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-brand)_30%,transparent),0_0_24px_color-mix(in_srgb,var(--color-brand)_25%,transparent)]"
                     : "border-border-done/30 bg-white/4 text-on-dark"
             }`}
-          >
-            {filled ? toPersianDigits(digits[i]!) : ""}
-          </span>
+          />
         );
       })}
     </div>
@@ -296,7 +361,7 @@ export function LoginForm() {
   return (
     <div
       dir="rtl"
-      className="bg-login-canvas text-on-dark relative flex min-h-screen items-center justify-center overflow-hidden px-[5vw] py-14 font-sans"
+      className="bg-login-canvas text-on-dark relative flex min-h-dvh items-center justify-center overflow-hidden px-[5vw] py-14 font-sans"
     >
       <LoginBackground done={done} />
 
@@ -369,7 +434,13 @@ export function LoginForm() {
               </header>
 
               {step === "phone" ? (
-                <div className="flex flex-col gap-4">
+                <form
+                  className="flex flex-col gap-4"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSend();
+                  }}
+                >
                   <div
                     dir="ltr"
                     className={`grid grid-cols-[auto_minmax(0,1fr)] items-center overflow-hidden rounded-tile border-[1.5px] transition-all duration-200 ${
@@ -403,8 +474,7 @@ export function LoginForm() {
                     </p>
                   ) : null}
                   <button
-                    type="button"
-                    onClick={handleSend}
+                    type="submit"
                     disabled={!canSend || sending}
                     className={`min-h-13.5 rounded-tile text-body font-semibold transition-all duration-200 ${
                       canSend
@@ -417,31 +487,25 @@ export function LoginForm() {
                   <p className="text-on-dark-secondary m-0 text-center text-caption leading-loose">
                     {loginPage.otpHelperNote}
                   </p>
-                </div>
+                </form>
               ) : (
-                <div className="animate-step-in flex flex-col gap-4.5">
-                  <div className="relative">
-                    <OtpBoxes
-                      code={code}
-                      hasError={hasError}
-                      shakeKey={shakeKey}
-                    />
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={OTP_LENGTH}
-                      autoComplete="one-time-code"
-                      aria-label={loginPage.otpAriaLabel}
-                      value={code}
-                      onChange={(e) => {
-                        setCode(
-                          onlyDigits(e.target.value).slice(0, OTP_LENGTH),
-                        );
-                        setHasError(false);
-                      }}
-                      className="absolute inset-0 h-full w-full cursor-pointer border-0 bg-transparent opacity-0"
-                    />
-                  </div>
+                <form
+                  className="animate-step-in flex flex-col gap-4.5"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleVerify();
+                  }}
+                >
+                  <OtpBoxes
+                    code={code}
+                    hasError={hasError}
+                    shakeKey={shakeKey}
+                    length={OTP_LENGTH}
+                    onCodeChange={(next) => {
+                      setCode(next);
+                      setHasError(false);
+                    }}
+                  />
 
                   <p
                     role="alert"
@@ -452,8 +516,7 @@ export function LoginForm() {
                   </p>
 
                   <button
-                    type="button"
-                    onClick={handleVerify}
+                    type="submit"
                     disabled={code.length < OTP_LENGTH || busy}
                     className={`flex min-h-13.5 items-center justify-center gap-2.5 rounded-tile text-body font-semibold transition-all duration-200 ${
                       code.length === OTP_LENGTH
@@ -518,7 +581,7 @@ export function LoginForm() {
                       {loginPage.editNumberCta}
                     </button>
                   </div>
-                </div>
+                </form>
               )}
             </div>
           ) : (

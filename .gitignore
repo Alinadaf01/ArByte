@@ -54,3 +54,5 @@ apps/backend/staticfiles/
 apps/backend/media/
 apps/backend/private_media/
 apps/backend/.pytest_cache/
+.vercel
+.env*

@@ -110,11 +110,12 @@ export function fitTransform(input: {
 
 /**
  * رشته‌ی eased-ease شبیه‌سازی‌شده‌ی loop() طراحی — یک گام از disp به سمت
- * target. ضریب ۰٫۱۲ (E-01 §۴ — قبلاً ۰٫۴۲؛ چرخش نرم‌تر بدون دو برابر کردن
- * حجم، ترکیب دو فریم مجاور در HeroScrollEngine باقی نرمی را می‌دهد).
+ * target. ضریب ۰٫۲۲ (قبلاً ۰٫۴۲ بود، بعد برای نرمی به ۰٫۱۲ کم شد — اما
+ * ۰٫۱۲ چنان عقب‌تر از اسکرول واقعی می‌ماند که لپ‌تاپ کند و بی‌حس حرکت
+ * می‌کرد؛ ۰٫۲۲ بین آن دو، هم‌زمان با اسکرول حس می‌شود بدون لرزش فریم به فریم).
  */
 export function easeStep(disp: number, target: number): number {
   const d = target - disp;
   if (Math.abs(d) < 0.05) return target;
-  return disp + d * 0.12;
+  return disp + d * 0.22;
 }

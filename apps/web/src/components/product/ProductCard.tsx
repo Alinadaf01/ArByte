@@ -44,10 +44,13 @@ export function ProductCard({
 
   return (
     <article className="border-border hover:border-brand-tint-2 relative flex h-full flex-col overflow-hidden rounded-card border transition-[border-color,transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-popover">
+      {/* z-[1]: باید بالاتر از کانتینر عکس (relative برای next/image fill، بدون
+          z-index خودش یعنی هم‌سطح z-0) بنشیند وگرنه کلیک روی عکس را می‌قاپد؛
+          هنوز پایین‌تر از دکمه‌های تعاملی واقعی کارت (AddToCartButton: z-10). */}
       <Link
         href={href}
         aria-label={product.name}
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-[1]"
       />
 
       <div className="bg-surface-muted relative aspect-[16/11] w-full shrink-0">

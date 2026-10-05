@@ -91,7 +91,7 @@ describe("easeStep", () => {
     expect(easeStep(9.98, 10)).toBe(10);
   });
 
-  it("در غیر این صورت با ضریب ۰٫۱۲ به target نزدیک می‌شود (E-01 §۴)", () => {
-    expect(easeStep(0, 10)).toBeCloseTo(1.2, 5);
+  it("در غیر این صورت با ضریب ۰٫۲۲ به target نزدیک می‌شود", () => {
+    expect(easeStep(0, 10)).toBeCloseTo(2.2, 5);
   });
 });
