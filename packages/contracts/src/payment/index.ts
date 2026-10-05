@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { successResponseSchema } from "../common/response";
-import { PaymentMethodSchema } from "../common/enums";
+import { PaymentMethodSchema, PaymentPlanSchema } from "../common/enums";
 import { MoneyAmountSchema } from "../validators";
 
 export * from "./scrub-payload";
@@ -71,5 +71,30 @@ export const PaymentReturnResponseSchema = successResponseSchema(
     orderNumber: z.string(),
     /** فقط برای نمایش «در حال بررسی...» به کاربر؛ وضعیت واقعی از وب‌هوک می‌آید. */
     pendingVerification: z.boolean(),
+  }),
+);
+
+/** AUDIT-2 — `GET /payment-plans`: سه روش برای جمع سبد همین کاربر (سمت سرور). */
+export const PaymentPlanOptionSchema = z.object({
+  plan: PaymentPlanSchema,
+  available: z.boolean(),
+  reason: z.string().nullable(),
+  onlineAmount: MoneyAmountSchema,
+  bankAmount: MoneyAmountSchema,
+});
+export const PaymentPlanListResponseSchema = successResponseSchema(
+  z.object({
+    total: MoneyAmountSchema,
+    onlineLimit: MoneyAmountSchema,
+    plans: z.array(PaymentPlanOptionSchema),
+  }),
+);
+
+/** AUDIT-2 — `POST /orders/:n/payment/online`: لینک یک‌بارمصرف ربات بله. */
+export const StartOnlinePaymentResponseSchema = successResponseSchema(
+  z.object({
+    deepLink: z.string().url(),
+    amount: MoneyAmountSchema,
+    expiresAt: z.string().datetime({ offset: true }),
   }),
 );

@@ -8,6 +8,7 @@ from apps.catalog.models import Brand, Category, Product, ProductVariant
 from apps.content.models import Coupon
 from apps.inventory.models import Inventory
 from apps.orders.models import Order
+from apps.orders.testing import enable_payments
 from apps.public_api.jwt_tokens import issue_tokens
 from apps.settings.models import ApiCredential, ShippingMethod, SiteSettings
 from apps.users.models import Address, User
@@ -133,6 +134,7 @@ class PublicOptionListTests(TestCase):
 
 class OrderInvoiceAndIdempotencyTests(TransactionTestCase):
     def setUp(self):
+        enable_payments(limit_rial=10**12)  # AUDIT-2 — مثل تولید پیکربندی، سقف خارج از دامنه‌ی این تست
         self.client = APIClient()
         self.user = User.objects.create_user(phone="09121110061", is_verified=True)
         access, _ = issue_tokens(self.user)

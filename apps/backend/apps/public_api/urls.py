@@ -82,6 +82,17 @@ urlpatterns = [
     # E-02 §۳/۴ — گزینه‌های عمومی چک‌اوت
     path("shipping-methods", checkout_views.ShippingMethodListView.as_view(), name="public-shipping-methods"),
     path("payment-methods", checkout_views.PaymentMethodListView.as_view(), name="public-payment-methods"),
+    path("payment-plans", checkout_views.PaymentPlanListView.as_view(), name="public-payment-plans"),
+    path(
+        "orders/<str:order_number>/payment/online",
+        order_views.OrderOnlinePaymentStartView.as_view(),
+        name="public-order-payment-online",
+    ),
+    path(
+        "orders/<str:order_number>/payment/move-to-bank",
+        order_views.OrderMoveToBankView.as_view(),
+        name="public-order-payment-move-to-bank",
+    ),
 
     # D-05 §۲/۵ — سفارش. track باید قبل از <str:order_number> ثبت شود.
     path("orders/track", order_views.OrderTrackView.as_view(), name="public-order-track"),

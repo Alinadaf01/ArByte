@@ -8,8 +8,8 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.orders import order_status
-from apps.orders.models import Order, OrderItemUnit, Shipment
+from apps.orders import order_status, payment_state
+from apps.orders.models import Order, OrderItemUnit, Payment, Shipment
 from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
 
 from .activity import log_admin_action
@@ -80,8 +80,27 @@ class AdminPaymentSerializer(serializers.Serializer):
     amount = serializers.IntegerField()
     status = serializers.CharField()
     provider_ref = serializers.CharField(allow_null=True)
+    paid_at = serializers.DateTimeField(allow_null=True)
+    failure_reason = serializers.CharField()
+    bale = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
+
+    def get_bale(self, obj) -> dict | None:
+        """AUDIT-2 §۶/§۸ — آخرین جلسه‌ی بله (بدون توکن/chat_id)."""
+        if obj.method != "GATEWAY":
+            return None
+        session = obj.bale_sessions.order_by("-created_at").first()
+        if session is None:
+            return None
+        return {
+            "status": session.status,
+            "providerPaymentChargeId": session.provider_payment_charge_id,
+            "amountRial": session.amount_rial,
+            "createdAt": session.created_at,
+            "paidAt": session.paid_at,
+            "failureReason": session.failure_reason,
+        }
 
 
 class AdminShipmentSerializer(serializers.Serializer):
@@ -114,11 +133,12 @@ class AdminOrderSerializer(serializers.ModelSerializer):
     user_phone = serializers.CharField(source="user.phone", default=None)
     allowed_transitions = serializers.SerializerMethodField()
     missing_serial_item_ids = serializers.SerializerMethodField()
+    payment_breakdown = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
-            "id", "order_number", "user", "status", "payment_status",
+            "id", "order_number", "user", "status", "payment_status", "payment_plan", "payment_breakdown",
             "shipping_recipient_name", "shipping_mobile", "shipping_province",
             "shipping_city", "shipping_address_line", "shipping_postal_code",
             "subtotal", "discount_total", "shipping_cost", "final_total", "cancel_reason",
@@ -130,6 +150,9 @@ class AdminOrderSerializer(serializers.ModelSerializer):
 
     def get_id(self, obj: Order) -> str:
         return str(obj.pk)
+
+    def get_payment_breakdown(self, obj: Order) -> dict:
+        return payment_state.breakdown(obj)
 
     def get_allowed_transitions(self, obj: Order) -> list[str]:
         return admin_transitions(obj.status)
@@ -283,11 +306,23 @@ class AdminOrderMarkPaidView(APIView):
 
     def post(self, request, pk):
         order = Order.objects.get(pk=pk)
-        response = _transition_response(order, "PAID", user=request.user)
-        if response.status_code == 200:
-            order_status.sync_payment_status(order, "CONFIRMED")
-            log_admin_action(user=request.user, action="mark_paid", model_name="Order", object_id=order.pk)
-        return response
+        if order.status not in ("AWAITING_PAYMENT", "PAYMENT_REVIEW"):
+            return Response({"detail": "این سفارش در مرحله‌ی پرداخت نیست."}, status=status.HTTP_400_BAD_REQUEST)
+        # AUDIT-2 — «پرداخت‌شده» یعنی همه‌ی سهم‌های باز تأیید دستی می‌شوند (ثبت در هر Payment)،
+        # نه پرچم کلی روی سفارش؛ ترکیب پرداخت در پنل درست می‌ماند.
+        open_payments = [p for p in payment_state.active_payments(order) if p.status != "CONFIRMED"]
+        if not payment_state.active_payments(order):
+            # سفارش بدون ردیف پرداخت (مثلاً واریز نقدی بیرون از سیستم): یک سهم دستی.
+            open_payments = [
+                Payment.objects.create(
+                    order=order, method="MANUAL_CARD_TO_CARD", amount=order.final_total, status="UNPAID"
+                )
+            ]
+        for payment in open_payments:
+            payment_state.confirm_payment(payment, provider_ref="manual", user=request.user, note="تأیید دستی ادمین")
+        log_admin_action(user=request.user, action="mark_paid", model_name="Order", object_id=order.pk)
+        order.refresh_from_db()
+        return Response(AdminOrderSerializer(order).data)
 
 
 class AdminOrderStartProcessingView(APIView):

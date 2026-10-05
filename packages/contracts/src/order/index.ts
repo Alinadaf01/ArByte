@@ -9,6 +9,7 @@ import {
   PaymentMethodSchema,
   PaymentProviderSchema,
   PaymentStatusSchema,
+  PaymentPlanSchema,
   ReceiptStatusSchema,
   ReturnStatusSchema,
 } from "../common/enums";
@@ -58,6 +59,27 @@ export const OrderPaymentSummarySchema = z.object({
   provider: PaymentProviderSchema,
   status: PaymentStatusSchema,
 });
+
+/** AUDIT-2 — یک سهم پرداخت (آنلاین یا واریز) از سفارش. */
+export const OrderPaymentLineSchema = z.object({
+  id: z.string(),
+  method: PaymentMethodSchema,
+  provider: PaymentProviderSchema,
+  status: PaymentStatusSchema,
+  amount: MoneyAmountSchema,
+  paidAt: z.string().datetime({ offset: true }).nullable(),
+});
+export type OrderPaymentLine = z.infer<typeof OrderPaymentLineSchema>;
+
+export const OrderPaymentBreakdownSchema = z.object({
+  plan: PaymentPlanSchema,
+  total: MoneyAmountSchema,
+  paid: MoneyAmountSchema,
+  remaining: MoneyAmountSchema,
+  onlinePaid: MoneyAmountSchema,
+  bankPaid: MoneyAmountSchema,
+});
+export type OrderPaymentBreakdown = z.infer<typeof OrderPaymentBreakdownSchema>;
 
 /**
  * E-05 §۱ — «اطلاعات حساب از API، نه هاردکد». فقط وقتی `payment.method`
@@ -113,6 +135,10 @@ export const OrderSchema = z.object({
   invoice: OrderInvoiceSchema,
   payment: OrderPaymentSummarySchema.nullable(),
   cardToCardAccount: CardToCardAccountSchema,
+  /** AUDIT-2 §۶ — ترکیب پرداخت (اختیاری برای سازگاری با پاسخ‌های کش‌شده‌ی قدیمی). */
+  paymentPlan: PaymentPlanSchema.optional(),
+  payments: z.array(OrderPaymentLineSchema).optional(),
+  paymentBreakdown: OrderPaymentBreakdownSchema.optional(),
   shipment: OrderShipmentSummarySchema,
   createdAt: z.string().datetime(),
 });
@@ -135,7 +161,10 @@ export type Order = z.infer<typeof OrderSchema>;
 export const CreateOrderBodySchema = z
   .object({
     addressId: z.string(),
-    paymentMethod: PaymentMethodSchema,
+    /** AUDIT-2 — سه روش؛ سرور سقف/فعال‌بودن را اجبار می‌کند. */
+    paymentPlan: PaymentPlanSchema.optional(),
+    /** قدیمی: MANUAL_CARD_TO_CARD → BANK_TRANSFER، GATEWAY → ONLINE. */
+    paymentMethod: PaymentMethodSchema.optional(),
     shippingMethodId: z.string().optional(),
     couponCode: z.string().optional(),
     invoiceType: InvoiceTypeSchema.default("PERSONAL"),
@@ -143,6 +172,10 @@ export const CreateOrderBodySchema = z
     nationalId: z.string().length(11).optional(),
     economicCode: z.string().optional(),
     registrationNumber: z.string().optional(),
+  })
+  .refine((body) => !!body.paymentPlan || !!body.paymentMethod, {
+    message: "روش پرداخت را انتخاب کنید.",
+    path: ["paymentPlan"],
   })
   .refine(
     (body) =>

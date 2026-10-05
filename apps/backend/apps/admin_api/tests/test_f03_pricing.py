@@ -26,6 +26,7 @@ from apps.catalog.models import (
 from apps.content.models import Campaign, CampaignProduct
 from apps.inventory.models import Inventory
 from apps.orders.models import Order
+from apps.orders.testing import enable_payments
 from apps.public_api.jwt_tokens import issue_tokens
 from apps.settings.models import ShippingMethod
 from apps.users.models import Address
@@ -267,6 +268,7 @@ class CampaignTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(cart["subtotal"], 36_000_000)
         ShippingMethod.objects.create(name="پست", cost=0, is_active=True, order=0)
         address = Address.objects.create(user=user, province="تهران", city="تهران", line="x", postal_code="1234567890", receiver_name="x", receiver_phone=user.phone)
+        enable_payments(limit_rial=10**12)
         response = client.post("/api/v1/orders", {"addressId": address.pk, "paymentMethod": "GATEWAY"}, format="json")
         self.assertEqual(response.status_code, 201, response.data)
         order = Order.objects.get(order_number=response.data["data"]["orderNumber"])

@@ -90,6 +90,12 @@ PAYMENT_STATUS_CHOICES = [
     ("RECEIPT_UPLOADED", "رسید ارسال شده"),
     ("UNDER_REVIEW", "در حال بررسی"),
     ("CONFIRMED", "تأیید شده"),
+    # AUDIT-2 — فقط Order.payment_status: بخشی پرداخت شده (پرداخت ترکیبی).
+    ("PARTIALLY_PAID", "پرداخت بخشی"),
+    # AUDIT-2 — فقط Payment.status: پرداخت آنلاین ناموفق / ردیف کنار گذاشته‌شده
+    # (مثلاً باقی‌مانده‌ی آنلاین که به واریز مستقیم منتقل شد).
+    ("FAILED", "ناموفق"),
+    ("VOID", "باطل"),
 ]
 
 PAYMENT_METHOD_CHOICES = [
@@ -135,6 +141,13 @@ PAYMENT_GATEWAY_CHOICES = [
 # E-02 §۴ — فاکتور شخصی/حقوقی (Q-22 D-05 حل شد؛ سند تسک صریح می‌خواهد).
 # بدون معادل Prisma (الحاقیه‌ی Django) — طراحی (Checkout.dc.html) این را
 # می‌خواهد، مدل داده باید عقب بماند تا آن، نه برعکس.
+# AUDIT-2 — سه روش پرداخت (AUDIT.md §۵).
+PAYMENT_PLAN_CHOICES = [
+    ("ONLINE", "پرداخت آنلاین"),
+    ("BANK_TRANSFER", "واریز مستقیم به حساب"),
+    ("COMBINED", "پرداخت ترکیبی"),
+]
+
 INVOICE_TYPE_CHOICES = [
     ("PERSONAL", "شخصی"),
     ("CORPORATE", "حقوقی"),
@@ -153,6 +166,7 @@ class Order(models.Model):
     # تصمیم ب (T-003) — منبع حقیقت پرداخت Payment.status است؛ این فیلد هرگز
     # مستقیم از Payment ست نمی‌شود، فقط توسط order_status.py synchronize می‌شود.
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="UNPAID")
+    payment_plan = models.CharField(max_length=20, choices=PAYMENT_PLAN_CHOICES, default="BANK_TRANSFER")
 
     shipping_recipient_name = models.CharField(max_length=100)
     shipping_mobile = models.CharField(max_length=20)
@@ -329,11 +343,17 @@ class Payment(models.Model):
     amount = models.PositiveIntegerField()
     provider_ref = models.CharField(max_length=100, blank=True, null=True)
     provider_payload = models.JSONField(blank=True, null=True)
+    paid_at = models.DateTimeField(blank=True, null=True)
+    failure_reason = models.CharField(max_length=255, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [models.Index(fields=["order"])]
+
+    @property
+    def is_online(self) -> bool:
+        return self.method == "GATEWAY"
 
     def __str__(self):
         return f"{self.order.order_number} — {self.method} ({self.status})"
@@ -456,3 +476,64 @@ class CouponUsage(models.Model):
 
     def __str__(self):
         return f"{self.coupon.code} on {self.order.order_number}"
+
+
+def _bale_token() -> str:
+    # ۲۴ بایت تصادفی → ۳۲ کاراکتر URL-safe؛ پارامتر start بله فقط [A-Za-z0-9_-] تا ۶۴.
+    return secrets.token_urlsafe(24)
+
+
+def _bale_payload() -> str:
+    return secrets.token_hex(16)
+
+
+BALE_SESSION_STATUS_CHOICES = [
+    ("CREATED", "ساخته شد"),
+    ("INVOICE_SENT", "فاکتور در بله ارسال شد"),
+    ("PRECHECKOUT_OK", "در حال پرداخت"),
+    ("PAID", "پرداخت شد"),
+    ("FAILED", "ناموفق"),
+    ("EXPIRED", "منقضی"),
+    # پول گرفته شد ولی با سفارش نمی‌خواند — تطبیق دستی ادمین (هرگز خودکار PAID نمی‌شود).
+    ("NEEDS_REVIEW", "نیازمند بررسی"),
+]
+
+
+class BalePaySession(models.Model):
+    """AUDIT-2 §۴/§۹/§۱۰ — یک تلاش پرداخت آنلاین در «بله» برای یک Payment.
+
+    مشتری با لینک `ble.ir/<bot>?start=<token>` وارد ربات می‌شود؛ ربات گفت‌وگو
+    را به همین جلسه می‌چسباند و فاکتور (مبلغ از سرور) می‌فرستد. فقط
+    SuccessfulPayment معتبر (payload + مبلغ + گفت‌وگو) پرداخت را تأیید
+    می‌کند؛ `provider_payment_charge_id` یکتاست (ضد پرداخت/وب‌هوک تکراری).
+    شماره‌ی تلفن هرگز chat_id فرض نمی‌شود و chat_id هرگز به فرانت نمی‌رود."""
+
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name="bale_sessions")
+    token = models.CharField(max_length=64, unique=True, default=_bale_token, editable=False)
+    invoice_payload = models.CharField(max_length=64, unique=True, default=_bale_payload, editable=False)
+    chat_id = models.BigIntegerField(blank=True, null=True)
+    amount_rial = models.PositiveBigIntegerField()
+    status = models.CharField(max_length=20, choices=BALE_SESSION_STATUS_CHOICES, default="CREATED")
+    expires_at = models.DateTimeField()
+    provider_payment_charge_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    telegram_payment_charge_id = models.CharField(max_length=100, blank=True, default="")
+    failure_reason = models.CharField(max_length=255, blank=True, default="")
+    paid_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["status", "created_at"])]
+
+    def __str__(self):
+        return f"{self.payment.order.order_number} bale {self.status}"
+
+
+class BaleUpdate(models.Model):
+    """AUDIT-2 §۹ — ضد تکرار وب‌هوک: هر update_id بله فقط یک بار پردازش می‌شود."""
+
+    update_id = models.BigIntegerField(unique=True)
+    kind = models.CharField(max_length=30, blank=True)
+    received_at = models.DateTimeField(auto_now_add=True)
+

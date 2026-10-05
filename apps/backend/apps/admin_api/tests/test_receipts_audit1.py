@@ -17,8 +17,17 @@ PDF = b"%PDF-1.4\n" + b"0" * 1024
 
 
 class ReceiptEndToEndTests(AdminApiTestMixin, tests_d05_orders.ReceiptTests):
-    # TransactionTestCase جدول‌ها را خالی می‌کند؛ نقش‌های پیش‌فرض (data migration) باید بمانند.
-    serialized_rollback = True
+    def setUp(self):
+        super().setUp()
+        # TransactionTestCase جدول‌ها را خالی می‌کند؛ نقش‌های پیش‌فرض (data migration) دوباره ساخته می‌شوند.
+        from django.apps import apps as global_apps
+        from django.db import connection
+
+        from apps.admin_api.models import AdminRole
+
+        if not AdminRole.objects.exists():
+            migration = __import__("apps.admin_api.migrations.0002_default_roles", fromlist=["create_default_roles"])
+            migration.create_default_roles(global_apps, connection.schema_editor())
 
     def _upload_bytes(self, content: bytes, name: str, content_type: str):
         file_obj = SimpleUploadedFile(name, content, content_type=content_type)

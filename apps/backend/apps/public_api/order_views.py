@@ -6,6 +6,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from apps.orders import payment_state
 from apps.orders import services as order_services
 from apps.orders.models import Order, Return, ReturnItem
 from apps.orders.services import CheckoutError, InsufficientStockCheckoutError, PriceChangedError
@@ -57,8 +58,26 @@ def _order_item_to_dict(item, *, include_units: bool = False) -> dict:
     return data
 
 
+def _payments_to_dict(order: Order) -> list[dict]:
+    """AUDIT-2 §۶ — ترکیب پرداخت (آنلاین/واریز، مبلغ، وضعیت)؛ بدون شناسه‌ی داخلی بله."""
+    return [
+        {
+            "id": str(p.pk),
+            "method": p.method,
+            "provider": p.provider,
+            "status": p.status,
+            "amount": p.amount,
+            "paidAt": p.paid_at.isoformat() if p.paid_at else None,
+        }
+        for p in payment_state.active_payments(order)
+    ]
+
+
 def _order_to_dict(order: Order, *, include_units: bool = False) -> dict:
-    payment = order.payments.order_by("-created_at").first()
+    payments = payment_state.active_payments(order)
+    # همان ردیف اصلی قبلی برای سازگاری؛ در ترکیبی، سهم واریزِ باز (حساب مقصد را می‌خواهد).
+    bank_open = next((p for p in payments if not p.is_online and p.status != "CONFIRMED"), None)
+    payment = bank_open or (payments[-1] if payments else None)
     shipment = getattr(order, "shipment", None)
     return {
         "orderNumber": order.order_number,
@@ -87,7 +106,10 @@ def _order_to_dict(order: Order, *, include_units: bool = False) -> dict:
         "payment": (
             {"method": payment.method, "provider": payment.provider, "status": payment.status} if payment else None
         ),
-        "cardToCardAccount": _card_to_card_account(payment),
+        "cardToCardAccount": _card_to_card_account(bank_open),
+        "paymentPlan": order.payment_plan,
+        "payments": _payments_to_dict(order),
+        "paymentBreakdown": payment_state.breakdown(order),
         "shipment": (
             {
                 "provider": shipment.provider,
@@ -115,6 +137,8 @@ def _checkout_error_to_api_error(exc: CheckoutError) -> ApiError:
         "UPLOAD_INVALID_TYPE": 415,
         "GATEWAY_ERROR": 502,
         "GATEWAY_AMOUNT_MISMATCH": 409,
+        "ONLINE_PAYMENT_LIMIT_EXCEEDED": 409,
+        "CONFLICT": 409,
         "NOT_FOUND": 404,
     }
     field_errors = {exc.field: exc.message} if exc.field else None
@@ -158,10 +182,10 @@ class OrderListCreateView(PublicAPIView):
         # درخواست شبکه، نه فیلد فرم)؛ نبودش یعنی سفارش همیشه تازه ساخته شود.
         idempotency_key = request.headers.get("Idempotency-Key") or None
 
-        if payment_method not in {"MANUAL_CARD_TO_CARD", "GATEWAY"}:
-            raise validation_error({"paymentMethod": "روش پرداخت نامعتبر است."})
-        if payment_method == "MANUAL_CARD_TO_CARD" and not order_services.card_to_card_enabled():
-            raise ApiError("GATEWAY_ERROR", status=409, message="روش کارت‌به‌کارت در حال حاضر فعال نیست.")
+        # AUDIT-2 — `paymentPlan` (سه روش)؛ `paymentMethod` قدیمی تا جلسه‌ی ۳ نگاشت می‌شود.
+        payment_plan = request.data.get("payment_plan") or payment_state.LEGACY_METHOD_TO_PLAN.get(payment_method)
+        if payment_plan not in {payment_state.PLAN_ONLINE, payment_state.PLAN_BANK, payment_state.PLAN_COMBINED}:
+            raise validation_error({"paymentPlan": "روش پرداخت نامعتبر است."})
 
         try:
             address = Address.objects.get(pk=address_id, user=request.user)
@@ -172,7 +196,7 @@ class OrderListCreateView(PublicAPIView):
             order = order_services.checkout(
                 user=request.user,
                 address=address,
-                payment_method=payment_method,
+                payment_plan=payment_plan,
                 shipping_method_id=shipping_method_id,
                 coupon_code=coupon_code,
                 idempotency_key=idempotency_key,
@@ -194,6 +218,8 @@ class OrderListCreateView(PublicAPIView):
             ) from None
         except CheckoutError as exc:
             raise _checkout_error_to_api_error(exc) from None
+        except payment_state.PaymentPlanError as exc:
+            raise ApiError(exc.code, status=exc.status, message=exc.message) from None
 
         return Response(success_response(_order_to_dict(order), request.request_id), status=201)
 
@@ -392,3 +418,56 @@ class OrderTrackView(PublicAPIView):
         if not order:
             raise not_found("سفارشی با این مشخصات پیدا نشد.")
         return Response(success_response(_order_to_guest_dict(order), request.request_id))
+
+
+def _owned_order(request, order_number: str) -> Order:
+    order = Order.objects.filter(order_number=order_number, user=request.user).first()
+    if order is None:
+        raise not_found("سفارش پیدا نشد.")
+    return order
+
+
+class OrderOnlinePaymentStartView(PublicAPIView):
+    """AUDIT-2 — `POST /orders/:n/payment/online`: لینک یک‌بارمصرف ربات بله برای
+    سهم آنلاینِ پرداخت‌نشده. مبلغ فقط از سرور؛ chat_id هرگز برنمی‌گردد."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_number):
+        from apps.orders.balepay.config import load_config
+        from apps.orders.balepay.service import BalePayError, deep_link, start_session
+
+        assert_not_impersonating(request)
+        order = _owned_order(request, order_number)
+        try:
+            session = start_session(order)
+        except BalePayError as exc:
+            raise ApiError(exc.code, status=exc.status, message=exc.message) from None
+        return Response(
+            success_response(
+                {
+                    "deepLink": deep_link(load_config().bot_username, session.token),
+                    "amount": session.payment.amount,
+                    "expiresAt": session.expires_at.isoformat(),
+                },
+                request.request_id,
+            ),
+            status=201,
+        )
+
+
+class OrderMoveToBankView(PublicAPIView):
+    """AUDIT-2 / ADDENDUM §C — پرداخت آنلاین نشد (مثلاً سقف روزانه‌ی بله) →
+    باقی‌مانده با واریز مستقیم؛ سفارش باز می‌ماند."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_number):
+        assert_not_impersonating(request)
+        order = _owned_order(request, order_number)
+        try:
+            payment_state.move_online_remainder_to_bank(order, user=request.user)
+        except payment_state.PaymentPlanError as exc:
+            raise ApiError(exc.code, status=exc.status, message=exc.message) from None
+        order.refresh_from_db()
+        return Response(success_response(_order_to_dict(order), request.request_id))
