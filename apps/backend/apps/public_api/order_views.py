@@ -435,7 +435,7 @@ class OrderOnlinePaymentStartView(PublicAPIView):
 
     def post(self, request, order_number):
         from apps.orders.balepay.config import load_config
-        from apps.orders.balepay.service import BalePayError, deep_link, start_session
+        from apps.orders.balepay.service import BalePayError, deep_link, qr_data_uri, start_session
 
         assert_not_impersonating(request)
         order = _owned_order(request, order_number)
@@ -443,10 +443,13 @@ class OrderOnlinePaymentStartView(PublicAPIView):
             session = start_session(order)
         except BalePayError as exc:
             raise ApiError(exc.code, status=exc.status, message=exc.message) from None
+        link = deep_link(load_config().bot_username, session.token)
         return Response(
             success_response(
                 {
-                    "deepLink": deep_link(load_config().bot_username, session.token),
+                    "deepLink": link,
+                    # کاربر دسکتاپ: اسکن با گوشی (SVG سمت سرور، بدون کتابخانه‌ی JS).
+                    "qrDataUri": qr_data_uri(link),
                     "amount": session.payment.amount,
                     "expiresAt": session.expires_at.isoformat(),
                 },

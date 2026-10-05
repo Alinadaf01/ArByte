@@ -7,6 +7,7 @@ from . import (
     account_admin,
     activity_log_views,
     auth,
+    balepay_admin,
     blog,
     campaigns,
     categories,
@@ -118,6 +119,11 @@ urlpatterns = [
     path("admin/payments/receipts/<int:pk>/", payments.AdminPaymentReceiptReviewView.as_view(), name="admin-payment-receipt-review"),
     path("admin/payments/receipts/<int:pk>/file/", payments.AdminPaymentReceiptFileView.as_view(), name="admin-payment-receipt-file"),
     # Search Console
+    # AUDIT-3 — بخش «بله پی»
+    path("admin/balepay/settings/", balepay_admin.AdminBalePaySettingsView.as_view(), name="admin-balepay-settings"),
+    path("admin/balepay/test/", balepay_admin.AdminBalePayTestView.as_view(), name="admin-balepay-test"),
+    path("admin/balepay/webhook/", balepay_admin.AdminBalePayWebhookView.as_view(), name="admin-balepay-webhook"),
+    path("admin/balepay/sessions/", balepay_admin.AdminBalePaySessionListView.as_view(), name="admin-balepay-sessions"),
     # AUDIT-6 — پنل ترب (Torob API v3)
     path("admin/torob/status/", torob_admin.AdminTorobStatusView.as_view(), name="admin-torob-status"),
     path("admin/torob/validate/", torob_admin.AdminTorobValidateView.as_view(), name="admin-torob-validate"),

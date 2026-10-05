@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { successResponseSchema } from "../common/response";
 import { PaymentMethodSchema, PaymentPlanSchema } from "../common/enums";
-import { MoneyAmountSchema } from "../validators";
+import { MoneyAmountSchema, MoneyOrZeroSchema } from "../validators";
 
 export * from "./scrub-payload";
 
@@ -79,8 +79,8 @@ export const PaymentPlanOptionSchema = z.object({
   plan: PaymentPlanSchema,
   available: z.boolean(),
   reason: z.string().nullable(),
-  onlineAmount: MoneyAmountSchema,
-  bankAmount: MoneyAmountSchema,
+  onlineAmount: MoneyOrZeroSchema,
+  bankAmount: MoneyOrZeroSchema,
 });
 export const PaymentPlanListResponseSchema = successResponseSchema(
   z.object({

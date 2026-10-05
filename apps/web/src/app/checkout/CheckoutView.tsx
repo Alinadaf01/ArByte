@@ -3,22 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { Cart } from "@arbyte/contracts";
+import type { Cart, PaymentPlan } from "@arbyte/contracts";
 import { checkoutPage, formatPrice, toPersianDigits } from "@arbyte/contracts";
 import { fetchCart } from "@/lib/cart-api";
 import {
   createAddress,
   createOrder,
   fetchAddresses,
-  fetchPaymentMethods,
-  initiateGatewayPayment,
+  fetchPaymentPlans,
   type CreateAddressInput,
+  type PaymentPlanList,
 } from "@/lib/checkout-api";
 
 type Address = Awaited<ReturnType<typeof fetchAddresses>>[number];
-type PaymentMethodOption = Awaited<
-  ReturnType<typeof fetchPaymentMethods>
->[number];
 type InvoiceType = "PERSONAL" | "CORPORATE";
 
 function money(amount: number): string {
@@ -41,8 +38,8 @@ export function CheckoutView() {
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<Cart | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
-    [],
+  const [paymentPlans, setPaymentPlans] = useState<PaymentPlanList | null>(
+    null,
   );
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
@@ -53,9 +50,7 @@ export function CheckoutView() {
     useState<CreateAddressInput>(EMPTY_NEW_ADDRESS);
   const [savingAddress, setSavingAddress] = useState(false);
 
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<
-    "MANUAL_CARD_TO_CARD" | "GATEWAY" | null
-  >(null);
+  const [selectedPlan, setSelectedPlan] = useState<PaymentPlan | null>(null);
   const [invoiceType, setInvoiceType] = useState<InvoiceType>("PERSONAL");
   const [companyName, setCompanyName] = useState("");
   const [nationalId, setNationalId] = useState("");
@@ -68,10 +63,10 @@ export function CheckoutView() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [freshCart, addressList, methods] = await Promise.all([
+      const [freshCart, addressList, plans] = await Promise.all([
         fetchCart(),
         fetchAddresses(),
-        fetchPaymentMethods(),
+        fetchPaymentPlans(),
       ]);
       if (cancelled) return;
       if (!freshCart || freshCart.items.length === 0) {
@@ -80,12 +75,14 @@ export function CheckoutView() {
       }
       setCart(freshCart);
       setAddresses(addressList);
-      setPaymentMethods(methods);
+      setPaymentPlans(plans);
       const defaultAddress =
         addressList.find((a) => a.isDefault) ?? addressList[0];
       if (defaultAddress) setSelectedAddressId(defaultAddress.id);
       else setShowNewAddressForm(true);
-      if (methods.length === 1) setSelectedPaymentMethod(methods[0]!.method);
+      // پیش‌فرض: اولین روش در دسترس (آنلاین زیر سقف، وگرنه واریز).
+      const firstAvailable = plans?.plans.find((p) => p.available);
+      if (firstAvailable) setSelectedPlan(firstAvailable.plan);
       setLoading(false);
     })();
     return () => {
@@ -107,8 +104,7 @@ export function CheckoutView() {
   }
 
   async function handlePlaceOrder() {
-    if (!cart || !selectedAddressId || !selectedPaymentMethod || placing)
-      return;
+    if (!cart || !selectedAddressId || !selectedPlan || placing) return;
     if (
       invoiceType === "CORPORATE" &&
       (!companyName.trim() || !nationalId.trim())
@@ -126,7 +122,7 @@ export function CheckoutView() {
     const result = await createOrder(
       {
         addressId: selectedAddressId,
-        paymentMethod: selectedPaymentMethod,
+        paymentPlan: selectedPlan,
         invoiceType,
         companyName: invoiceType === "CORPORATE" ? companyName : undefined,
         nationalId: invoiceType === "CORPORATE" ? nationalId : undefined,
@@ -152,17 +148,8 @@ export function CheckoutView() {
       return;
     }
 
-    if (selectedPaymentMethod === "GATEWAY") {
-      const initiated = await initiateGatewayPayment(result.order.orderNumber);
-      setPlacing(false);
-      if (initiated) {
-        window.location.href = initiated.redirectUrl;
-      } else {
-        setGeneralError("اتصال به درگاه ناموفق بود.");
-      }
-      return;
-    }
-
+    // پرداخت آنلاین/ترکیبی در صفحه‌ی سفارش ادامه می‌یابد («باز کردن بله» با کلیک
+    // خود کاربر، تا مرورگر/سیستم‌عامل باز شدن اپ را مسدود نکند).
     router.push(`/orders/${result.order.orderNumber}`);
   }
 
@@ -174,11 +161,11 @@ export function CheckoutView() {
     );
   }
 
+  const selectedOption = paymentPlans?.plans.find(
+    (p) => p.plan === selectedPlan,
+  );
   const canPlaceOrder =
-    !!selectedAddressId &&
-    !!selectedPaymentMethod &&
-    !placing &&
-    paymentMethods.length > 0;
+    !!selectedAddressId && !!selectedOption?.available && !placing;
 
   return (
     <div>
@@ -372,27 +359,72 @@ export function CheckoutView() {
             <h2 className="text-primary m-0 text-body font-bold">
               {checkoutPage.paymentSectionTitle}
             </h2>
-            {paymentMethods.length === 0 ? (
+            {!paymentPlans || paymentPlans.plans.every((p) => !p.available) ? (
               <p className="text-secondary-2 m-0 text-caption">
                 {checkoutPage.noPaymentMethodsNote}
               </p>
             ) : (
-              <div className="flex flex-col gap-2">
-                {paymentMethods.map((option) => {
-                  const active = selectedPaymentMethod === option.method;
+              <div role="radiogroup" className="flex flex-col gap-2.5">
+                {paymentPlans.plans.map((option) => {
+                  const copy = checkoutPage.paymentPlans[option.plan];
+                  const active = selectedPlan === option.plan;
                   return (
                     <button
-                      key={option.method}
+                      key={option.plan}
                       type="button"
-                      onClick={() => setSelectedPaymentMethod(option.method)}
-                      className={`flex items-start gap-3 rounded-tile p-3.5 text-start ${
-                        active
-                          ? "bg-brand-tint-2 border-brand border-[1.5px]"
-                          : "border-border-input border-[1.5px] bg-paper"
+                      role="radio"
+                      aria-checked={active}
+                      aria-disabled={!option.available}
+                      disabled={!option.available}
+                      onClick={() => setSelectedPlan(option.plan)}
+                      className={`flex items-start gap-3 rounded-tile p-4 text-start transition-colors ${
+                        !option.available
+                          ? "border-border bg-surface-muted cursor-not-allowed border-[1.5px] opacity-70"
+                          : active
+                            ? "bg-brand-tint-2 border-brand border-[1.5px]"
+                            : "border-border-input border-[1.5px] bg-paper"
                       }`}
                     >
-                      <span className="text-primary text-caption font-semibold">
-                        {option.label}
+                      <span
+                        aria-hidden="true"
+                        className={`mt-1 h-4 w-4 flex-none rounded-full border-2 ${
+                          active
+                            ? "border-brand bg-brand"
+                            : "border-border-input"
+                        }`}
+                      />
+                      <span className="flex min-w-0 flex-col gap-1">
+                        <span className="text-primary flex flex-wrap items-center gap-2 text-body font-semibold">
+                          {copy.title}
+                          {!option.available ? (
+                            <span className="text-secondary-2 text-micro font-medium">
+                              {checkoutPage.paymentPlans.unavailableBadge}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="text-secondary text-caption leading-relaxed">
+                          {copy.description}
+                        </span>
+                        {option.plan === "ONLINE" ? (
+                          <span className="text-secondary-2 text-micro">
+                            {checkoutPage.paymentPlans.ONLINE.limitNote(
+                              money(paymentPlans.onlineLimit),
+                            )}
+                          </span>
+                        ) : null}
+                        {option.plan === "COMBINED" && option.available ? (
+                          <span className="text-primary text-caption font-medium">
+                            {checkoutPage.paymentPlans.COMBINED.split(
+                              money(option.onlineAmount),
+                              money(option.bankAmount),
+                            )}
+                          </span>
+                        ) : null}
+                        {!option.available && option.reason ? (
+                          <span className="text-warning text-micro font-medium">
+                            {option.reason}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   );
@@ -574,23 +606,13 @@ export function CheckoutView() {
                 />
               ) : null}
               {placing
-                ? selectedPaymentMethod === "GATEWAY"
-                  ? checkoutPage.placeOrderCta.placingGateway
-                  : checkoutPage.placeOrderCta.placingCardToCard
+                ? checkoutPage.placeOrderCta.placingCardToCard
                 : checkoutPage.placeOrderCta.idle}
             </button>
             <p className="text-secondary-2 m-0 text-center text-micro leading-relaxed">
               {checkoutPage.legalNote}
             </p>
           </div>
-
-          {selectedPaymentMethod === "GATEWAY" ? (
-            <div className="border-border rounded-panel bg-paper flex items-start gap-2.5 border p-4">
-              <p className="text-secondary m-0 text-body leading-loose">
-                {checkoutPage.escrowNote}
-              </p>
-            </div>
-          ) : null}
         </aside>
       </div>
     </div>

@@ -28,6 +28,7 @@ import CouponsPage from "@/pages/CouponsPage";
 import ReturnsPage from "@/pages/ReturnsPage";
 import SearchConsolePage from "@/pages/SearchConsolePage";
 import TorobPage from "@/pages/TorobPage";
+import BalePayPage from "@/pages/BalePayPage";
 import RolesPage from "@/pages/RolesPage";
 import ActivityLogPage from "@/pages/ActivityLogPage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -77,6 +78,7 @@ export const router = createBrowserRouter([
           { path: "returns", element: <ReturnsPage /> },
           { path: "search-console", element: <SearchConsolePage /> },
           { path: "torob", element: <TorobPage /> },
+          { path: "balepay", element: <BalePayPage /> },
           { path: "roles", element: <RolesPage /> },
           { path: "activity-log", element: <ActivityLogPage /> },
           { path: "*", element: <NotFoundPage /> },

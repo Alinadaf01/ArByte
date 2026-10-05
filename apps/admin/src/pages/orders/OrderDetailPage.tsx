@@ -24,7 +24,9 @@ import {
 import { formatPrice, formatJalaliDateTime } from "@/lib/formatters";
 import { useToast } from "@/lib/ToastContext";
 import {
+  BALE_SESSION_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
+  PAYMENT_PLAN_LABELS,
   PAYMENT_STATUS_LABELS,
   RECEIPT_STATUS_LABELS,
   STATUS_TONE,
@@ -216,6 +218,124 @@ function ReceiptRow({
   );
 }
 
+/**
+ * AUDIT-3 §۶/§۱۶ — ترکیب پرداخت: کل، آنلاین، واریز، پرداخت‌شده، باقی‌مانده و
+ * هر سهم با وضعیت، شناسه‌ی پرداخت بله و رسیدهای همان سهم (ادمین حدس نمی‌زند).
+ */
+function PaymentBreakdownCard({ order }: { order: AdminOrder }) {
+  const b = order.paymentBreakdown;
+  const shares = order.payments.filter((p) => p.status !== "VOID");
+  const voided = order.payments.filter((p) => p.status === "VOID");
+  return (
+    <section className="glass-card flex flex-col gap-4 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="m-0 text-sm font-bold text-white">
+          پرداخت · {PAYMENT_PLAN_LABELS[order.paymentPlan]}
+        </h2>
+        <Chip
+          tone={order.paymentStatus === "CONFIRMED" ? "success" : "warning"}
+        >
+          {PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus}
+        </Chip>
+      </div>
+      <dl className="m-0 grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {(
+          [
+            ["مبلغ سفارش", b.total],
+            ["آنلاین پرداخت‌شده", b.onlinePaid],
+            ["واریز تأییدشده", b.bankPaid],
+            ["کل پرداخت‌شده", b.paid],
+            ["باقی‌مانده", b.remaining],
+          ] as const
+        ).map(([label, value]) => (
+          <div key={label} className="flex flex-col gap-1">
+            <dt className="text-[11px] text-slate-500">{label}</dt>
+            <dd
+              className={`m-0 text-sm font-bold ${label === "باقی‌مانده" && value > 0 ? "text-warning" : "text-white"}`}
+            >
+              {formatPrice(value)}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        {shares.map((payment) => (
+          <li
+            key={payment.id}
+            className="flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-ink-800/40 px-4 py-3 text-sm"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-semibold text-white">
+                {PAYMENT_METHOD_LABELS[payment.method] ?? payment.method} ·{" "}
+                {formatPrice(payment.amount)}
+              </span>
+              <Chip
+                tone={
+                  payment.status === "CONFIRMED"
+                    ? "success"
+                    : payment.status === "FAILED"
+                      ? "danger"
+                      : "warning"
+                }
+              >
+                {PAYMENT_STATUS_LABELS[payment.status] ?? payment.status}
+              </Chip>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-400">
+              {payment.paidAt && (
+                <span>پرداخت: {formatJalaliDateTime(payment.paidAt)}</span>
+              )}
+              {payment.bale && (
+                <span>
+                  بله:{" "}
+                  {BALE_SESSION_STATUS_LABELS[payment.bale.status] ??
+                    payment.bale.status}
+                </span>
+              )}
+              {payment.bale?.providerPaymentChargeId && (
+                <span dir="ltr">
+                  charge {payment.bale.providerPaymentChargeId}
+                </span>
+              )}
+              {payment.providerRef && !payment.bale && (
+                <span dir="ltr">ref {payment.providerRef}</span>
+              )}
+            </div>
+            {(payment.failureReason || payment.bale?.failureReason) && (
+              <p className="m-0 text-xs text-danger">
+                {payment.failureReason || payment.bale?.failureReason}
+              </p>
+            )}
+            {payment.receipts.length > 0 && (
+              <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                {payment.receipts.map((receipt) => (
+                  <ReceiptRow
+                    key={receipt.id}
+                    order={order}
+                    receipt={receipt}
+                  />
+                ))}
+              </ul>
+            )}
+            {payment.method === "MANUAL_CARD_TO_CARD" &&
+              payment.receipts.length === 0 &&
+              payment.status !== "CONFIRMED" && (
+                <p className="m-0 text-xs text-slate-500">
+                  رسیدی هنوز بارگذاری نشده.
+                </p>
+              )}
+          </li>
+        ))}
+      </ul>
+      {voided.length > 0 && (
+        <p className="m-0 text-[11px] text-slate-500">
+          {voided.length} سهم آنلاین به واریز مستقیم منتقل شد.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function SerialsCard({ order }: { order: AdminOrder }) {
   const toast = useToast();
   const invalidate = useInvalidateOrder(order.id);
@@ -352,8 +472,6 @@ export default function OrderDetailPage() {
     );
   }
 
-  const receipts = order.payments.flatMap((payment) => payment.receipts);
-
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -390,18 +508,7 @@ export default function OrderDetailPage() {
 
       <OrderStatusActions key={order.status} order={order} />
 
-      {receipts.length > 0 && (
-        <section className="glass-card p-6">
-          <h2 className="m-0 text-sm font-bold text-white">
-            رسیدهای کارت‌به‌کارت
-          </h2>
-          <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
-            {receipts.map((receipt) => (
-              <ReceiptRow key={receipt.id} order={order} receipt={receipt} />
-            ))}
-          </ul>
-        </section>
-      )}
+      <PaymentBreakdownCard order={order} />
 
       <SerialsCard key={`${order.id}-${order.updatedAt}`} order={order} />
 
@@ -512,13 +619,6 @@ export default function OrderDetailPage() {
               PAYMENT_STATUS_LABELS[order.paymentStatus] ?? order.paymentStatus
             }
           />
-          {order.payments.map((payment) => (
-            <InfoRow
-              key={payment.id}
-              label={PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}
-              value={`${formatPrice(payment.amount)}${payment.providerRef ? ` · ${payment.providerRef}` : ""}`}
-            />
-          ))}
           {order.cancelReason && (
             <InfoRow label="دلیل لغو" value={order.cancelReason} />
           )}

@@ -14,6 +14,7 @@ import {
 } from "@arbyte/contracts";
 import { formatDateFa } from "@arbyte/contracts/date";
 import { downloadProxyFile } from "@/lib/download-file";
+import { OrderPaymentPanel } from "@/components/order/OrderPaymentPanel";
 import {
   OrderTimeline,
   ORDER_STATUS_TO_STEP,
@@ -225,7 +226,7 @@ export function OrderStatusView({ orderNumber }: OrderStatusViewProps) {
     const input: UploadReceiptInput = {
       orderNumber,
       file,
-      amount: order.finalTotal,
+      amount: bankAmount,
     };
     const ok = await uploadReceipt(input);
     setSending(false);
@@ -292,10 +293,21 @@ export function OrderStatusView({ orderNumber }: OrderStatusViewProps) {
     order.status !== "CANCELLED" && orderIndex >= PAID_INDEX;
   const warrantyAvailable =
     order.status !== "CANCELLED" && orderIndex >= SHIPPED_INDEX;
+  // AUDIT-3 — سهم واریز مستقیمِ باز (در ترکیبی همان باقی‌مانده)، نه کل سفارش.
+  const bankShare = order.payments?.find(
+    (p) => p.method === "MANUAL_CARD_TO_CARD" && p.status !== "CONFIRMED",
+  );
+  const bankAmount = bankShare?.amount ?? order.finalTotal;
   const isCardToCard =
-    order.payment?.method === "MANUAL_CARD_TO_CARD" &&
-    order.cardToCardAccount !== null;
-  const showReceiptUpload = isCardToCard && order.paymentStatus !== "CONFIRMED";
+    order.cardToCardAccount !== null &&
+    (order.payments
+      ? bankShare !== undefined
+      : order.payment?.method === "MANUAL_CARD_TO_CARD");
+  const receiptPending = bankShare?.status === "RECEIPT_UPLOADED";
+  const showReceiptUpload =
+    isCardToCard &&
+    (sent || !receiptPending) &&
+    (order.status === "AWAITING_PAYMENT" || order.status === "PAYMENT_REVIEW");
 
   const heroNote =
     returnPhase === "checking"
@@ -348,6 +360,14 @@ export function OrderStatusView({ orderNumber }: OrderStatusViewProps) {
             </div>
           </div>
 
+          <OrderPaymentPanel order={order} onRefresh={load} />
+
+          {receiptPending && !sent ? (
+            <p className="border-border rounded-card bg-paper text-secondary m-0 border p-4 text-caption leading-loose">
+              {orderStatusPage.payment.receiptPendingNote}
+            </p>
+          ) : null}
+
           {showReceiptUpload ? (
             <section className="border-border rounded-card bg-paper flex flex-col gap-4.5 border p-5.5">
               <h2 className="text-primary m-0 text-body font-bold">
@@ -397,6 +417,10 @@ export function OrderStatusView({ orderNumber }: OrderStatusViewProps) {
                     </button>
                   </div>
                 ))}
+                <p className="text-on-dark m-0 text-caption font-semibold">
+                  {orderStatusPage.payment.bankAmountLabel}:{" "}
+                  {formatPrice(BigInt(bankAmount))}
+                </p>
                 <p className="text-on-dark-secondary m-0 text-micro leading-loose">
                   {orderStatusPage.cardToCard.amountNote(order.orderNumber)}
                 </p>

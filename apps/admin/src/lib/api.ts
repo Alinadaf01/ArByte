@@ -4,6 +4,13 @@ import {
   clearStoredAdminAuth,
 } from "@/lib/adminAuthStorage";
 import type { TorobStatus, TorobValidation } from "@/types/torob";
+import type {
+  BalePaySession,
+  BalePaySettings,
+  BalePaySettingsInput,
+  BalePayTestResult,
+  BalePayWebhookStatus,
+} from "@/types/balepay";
 import type { AdminLoginResponse } from "@/types/adminAuth";
 import type { PaginatedResponse } from "@/types/api";
 import type { AdminOrder } from "@/types/order";
@@ -1149,5 +1156,69 @@ export async function validateTorobFeed(): Promise<TorobValidation> {
   return parseOrThrow(
     await authorizedFetch("/torob/validate/", { method: "POST" }),
     "اعتبارسنجی فید ترب ناموفق بود.",
+  );
+}
+
+// AUDIT-3 — بله پی
+export async function getBalePaySettings(): Promise<BalePaySettings> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/settings/"),
+    "دریافت تنظیمات بله پی ناموفق بود.",
+  );
+}
+
+export async function saveBalePaySettings(
+  input: BalePaySettingsInput,
+): Promise<BalePaySettings> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/settings/", {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }),
+    "ذخیره‌ی تنظیمات بله پی ناموفق بود.",
+  );
+}
+
+export async function testBalePayConnection(): Promise<BalePayTestResult> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/test/", { method: "POST" }),
+    "تست اتصال ناموفق بود.",
+  );
+}
+
+export async function getBalePayWebhook(): Promise<BalePayWebhookStatus> {
+  return parseOrThrow(
+    await authorizedFetch("/balepay/webhook/"),
+    "دریافت وضعیت وب‌هوک ناموفق بود.",
+  );
+}
+
+export async function registerBalePayWebhook(): Promise<BalePayWebhookStatus> {
+  const res = await authorizedFetch("/balepay/webhook/", { method: "POST" });
+  return (await res.json()) as BalePayWebhookStatus;
+}
+
+export async function listBalePaySessions(params: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+  order?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  amountMin?: string;
+  amountMax?: string;
+}): Promise<PaginatedResponse<BalePaySession>> {
+  const { dateFrom, dateTo, amountMin, amountMax, ...rest } = params;
+  return parseOrThrow(
+    await authorizedFetch(
+      `/balepay/sessions/${buildQuery({
+        ...rest,
+        date_from: dateFrom,
+        date_to: dateTo,
+        amount_min: amountMin,
+        amount_max: amountMax,
+      })}`,
+    ),
+    "دریافت پرداخت‌های بله ناموفق بود.",
   );
 }

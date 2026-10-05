@@ -65,8 +65,32 @@ export interface OrderPayment {
   amount: number;
   status: string;
   providerRef: string | null;
+  paidAt: string | null;
+  failureReason: string;
+  bale: OrderBaleSession | null;
   createdAt: string;
   receipts: OrderReceipt[];
+}
+
+/** AUDIT-3 — آخرین جلسه‌ی پرداخت در بله (بدون توکن/chat_id). */
+export interface OrderBaleSession {
+  status: string;
+  providerPaymentChargeId: string | null;
+  amountRial: number;
+  createdAt: string;
+  paidAt: string | null;
+  failureReason: string;
+}
+
+export type PaymentPlan = "ONLINE" | "BANK_TRANSFER" | "COMBINED";
+
+export interface PaymentBreakdown {
+  plan: PaymentPlan;
+  total: number;
+  paid: number;
+  remaining: number;
+  onlinePaid: number;
+  bankPaid: number;
 }
 
 export interface OrderShipment {
@@ -93,6 +117,8 @@ export interface AdminOrder {
   userPhone: string | null;
   status: OrderStatus;
   paymentStatus: string;
+  paymentPlan: PaymentPlan;
+  paymentBreakdown: PaymentBreakdown;
   shippingRecipientName: string;
   shippingMobile: string;
   shippingProvince: string;
@@ -124,8 +150,24 @@ export interface AdminOrder {
 }
 
 export const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  GATEWAY: "درگاه پرداخت",
-  MANUAL_CARD_TO_CARD: "کارت‌به‌کارت",
+  GATEWAY: "پرداخت آنلاین (بله)",
+  MANUAL_CARD_TO_CARD: "واریز مستقیم",
+};
+
+export const PAYMENT_PLAN_LABELS: Record<PaymentPlan, string> = {
+  ONLINE: "پرداخت آنلاین",
+  BANK_TRANSFER: "واریز مستقیم به حساب",
+  COMBINED: "پرداخت ترکیبی",
+};
+
+export const BALE_SESSION_STATUS_LABELS: Record<string, string> = {
+  CREATED: "لینک ساخته شد",
+  INVOICE_SENT: "فاکتور در بله ارسال شد",
+  PRECHECKOUT_OK: "در حال پرداخت",
+  PAID: "پرداخت شد",
+  FAILED: "ناموفق",
+  EXPIRED: "منقضی",
+  NEEDS_REVIEW: "نیازمند بررسی",
 };
 
 export const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -133,6 +175,9 @@ export const PAYMENT_STATUS_LABELS: Record<string, string> = {
   RECEIPT_UPLOADED: "رسید ارسال شده",
   UNDER_REVIEW: "در حال بررسی",
   CONFIRMED: "تأیید شده",
+  PARTIALLY_PAID: "پرداخت بخشی",
+  FAILED: "ناموفق",
+  VOID: "باطل",
 };
 
 export const RECEIPT_STATUS_LABELS: Record<ReceiptStatus, string> = {

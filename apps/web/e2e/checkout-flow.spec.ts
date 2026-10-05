@@ -78,10 +78,8 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   await page.getByLabel("نشانی کامل").fill("خیابان تست، پلاک ۱");
   await page.getByRole("button", { name: "ذخیره آدرس" }).click();
 
-  const cardToCard = page.getByRole("button", { name: "کارت‌به‌کارت" });
-  if (await cardToCard.isVisible().catch(() => false)) {
-    await cardToCard.click();
-  }
+  // AUDIT-3 — سه کارت روش پرداخت (radio)؛ واریز مستقیم = همان کارت‌به‌کارت.
+  await page.getByRole("radio", { name: /واریز مستقیم به حساب/ }).click();
 
   await page.getByRole("button", { name: "پرداخت و ثبت سفارش" }).click();
   await expect(page).toHaveURL(/\/orders\/ARB-/, { timeout: 15_000 });

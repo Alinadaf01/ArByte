@@ -1,5 +1,10 @@
-import type { AddressSchema, Order, ShippingMethod } from "@arbyte/contracts";
-import { PaymentMethodOptionSchema } from "@arbyte/contracts";
+import type {
+  AddressSchema,
+  Order,
+  PaymentPlan,
+  ShippingMethod,
+} from "@arbyte/contracts";
+import { PaymentPlanListResponseSchema } from "@arbyte/contracts";
 import { z } from "zod";
 
 /**
@@ -10,7 +15,6 @@ import { z } from "zod";
  */
 const PROXY_BASE = "/api/proxy";
 type Address = z.infer<typeof AddressSchema>;
-type PaymentMethodOption = z.infer<typeof PaymentMethodOptionSchema>;
 
 export async function fetchAddresses(): Promise<Address[]> {
   const res = await fetch(`${PROXY_BASE}/account/addresses`);
@@ -50,18 +54,21 @@ export async function fetchShippingMethods(): Promise<ShippingMethod[]> {
   return body.data;
 }
 
-export async function fetchPaymentMethods(): Promise<PaymentMethodOption[]> {
-  const res = await fetch(`${PROXY_BASE}/payment-methods`, {
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const body = (await res.json()) as { data: PaymentMethodOption[] };
-  return body.data;
+export type PaymentPlanList = z.infer<
+  typeof PaymentPlanListResponseSchema
+>["data"];
+
+/** AUDIT-3 — سه روش برای جمع سبد (سرور حساب می‌کند، نه کلاینت). */
+export async function fetchPaymentPlans(): Promise<PaymentPlanList | null> {
+  const res = await fetch(`${PROXY_BASE}/payment-plans`, { cache: "no-store" });
+  if (!res.ok) return null;
+  const parsed = PaymentPlanListResponseSchema.safeParse(await res.json());
+  return parsed.success ? parsed.data.data : null;
 }
 
 export interface CreateOrderInput {
   addressId: string;
-  paymentMethod: "MANUAL_CARD_TO_CARD" | "GATEWAY";
+  paymentPlan: PaymentPlan;
   invoiceType: "PERSONAL" | "CORPORATE";
   companyName?: string;
   nationalId?: string;
@@ -117,16 +124,4 @@ export async function createOrder(
     };
   }
   return { ok: true, order: body.data! };
-}
-
-export async function initiateGatewayPayment(
-  orderNumber: string,
-): Promise<{ redirectUrl: string } | null> {
-  const res = await fetch(
-    `${PROXY_BASE}/orders/${encodeURIComponent(orderNumber)}/payment/initiate`,
-    { method: "POST" },
-  );
-  if (!res.ok) return null;
-  const body = (await res.json()) as { data: { redirectUrl: string } };
-  return body.data;
 }

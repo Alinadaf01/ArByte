@@ -45,6 +45,15 @@ def deep_link(bot_username: str, token: str) -> str:
     return f"https://ble.ir/{bot_username}?start={token}"
 
 
+def qr_data_uri(url: str) -> str:
+    import base64
+
+    from apps.documents.qr_barcode import qr_code_svg
+
+    svg = str(qr_code_svg(url, box_size=8)).encode()
+    return "data:image/svg+xml;base64," + base64.b64encode(svg).decode()
+
+
 # ---------------------------------------------------------------- session
 
 

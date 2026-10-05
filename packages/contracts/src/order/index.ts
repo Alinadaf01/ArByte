@@ -13,7 +13,7 @@ import {
   ReceiptStatusSchema,
   ReturnStatusSchema,
 } from "../common/enums";
-import { MoneyAmountSchema } from "../validators";
+import { MoneyAmountSchema, MoneyOrZeroSchema } from "../validators";
 
 /**
  * سفارش — T-004 §۳ (سند اصلی) + §۵/۷ (الحاقیه: مشتق‌بودن status از
@@ -74,10 +74,10 @@ export type OrderPaymentLine = z.infer<typeof OrderPaymentLineSchema>;
 export const OrderPaymentBreakdownSchema = z.object({
   plan: PaymentPlanSchema,
   total: MoneyAmountSchema,
-  paid: MoneyAmountSchema,
-  remaining: MoneyAmountSchema,
-  onlinePaid: MoneyAmountSchema,
-  bankPaid: MoneyAmountSchema,
+  paid: MoneyOrZeroSchema,
+  remaining: MoneyOrZeroSchema,
+  onlinePaid: MoneyOrZeroSchema,
+  bankPaid: MoneyOrZeroSchema,
 });
 export type OrderPaymentBreakdown = z.infer<typeof OrderPaymentBreakdownSchema>;
 

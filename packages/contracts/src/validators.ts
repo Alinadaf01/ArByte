@@ -64,6 +64,8 @@ export const SlugSchema = z
  * شکل روی سیم (wire format) است.
  */
 export const MoneyAmountSchema = z.number().int().positive();
+/** AUDIT-3 — مبلغی که صفر هم معتبر است (پرداخت‌شده/باقی‌مانده/سهم ناموجود). */
+export const MoneyOrZeroSchema = z.number().int().nonnegative();
 
 /**
  * تحت‌اللفظ‌نویسی (transliteration) نام فارسی به اسلاگ لاتین — T-004 بخش ۴:
