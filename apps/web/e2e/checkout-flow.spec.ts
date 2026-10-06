@@ -25,10 +25,16 @@ test("مهمان → سبد → کوپن → ورود → ادغام → آدر�
   // ۱) افزودن به سبد مهمان — با page.evaluate (نه page.request) چون پراکسی
   // برای نوشتن هدر Origin واقعی مرورگر می‌خواهد (ضد CSRF، E-02 §۱)؛
   // request context مستقل پلی‌رایت آن را نمی‌فرستد.
-  // سبد خودِ صفحه هنگام mount کلید X-Cart-Session را می‌نویسد؛ تا آرام نشود
-  // fetch خام زیر ممکن است سبد دیگری بسازد و کلیدش بعد بازنویسی شود
-  // (با سبک‌تر شدن هیرو در AUDIT-4 این رقابت در CI رخ داد).
-  await page.goto("/", { waitUntil: "networkidle" });
+  // سبد خودِ صفحه هنگام mount کلید X-Cart-Session را می‌نویسد؛ تا ننوشته
+  // fetch خام زیر ممکن است سبد دیگری بسازد و کلیدش بعد بازنویسی شود. قبلاً
+  // این صبر با `waitUntil: "networkidle"` تقریب زده می‌شد — یک پراکسی غیرمستقیم
+  // و شکننده که با هر تغییر بی‌ربطی در حجم/زمان شبکه‌ی خود صفحه‌ی اصلی (فونت،
+  // عکس هیرو، …) می‌توانست تایم‌اوت ۳۰ثانیه‌ای CI را رد کند. حالا مستقیم
+  // همان شرط واقعی را صبر می‌کنیم: خودِ کلید localStorage نوشته شود.
+  await page.goto("/");
+  await page.waitForFunction(
+    () => window.localStorage.getItem("arbyte:cart-session:v1") !== null,
+  );
   const addStatus = await page.evaluate(async (id) => {
     // هدر X-Cart-Session را باید دقیقاً مثل lib/cart-api.ts بخوانیم/بنویسیم،
     // وگرنه هر fetch خام یک سبد مهمان تازه و جدا می‌سازد.
