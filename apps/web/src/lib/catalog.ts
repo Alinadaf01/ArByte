@@ -25,7 +25,6 @@ export async function getCategoryTree(): Promise<CategoryTreeNode[]> {
         next: { revalidate: 60 },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
-      1,
     );
     if (!res.ok) return [];
     const body = (await res.json()) as { data?: CategoryTreeNode[] };
@@ -42,7 +41,6 @@ export async function getTopLevelCategories(): Promise<CategoryCard[]> {
       serverApiUrl(`/catalog/categories/top-level`),
       { next: { revalidate: 60 } },
       UPSTREAM_TIMEOUT_MS.rsc,
-      1,
     );
     if (!res.ok) return [];
     const body = (await res.json()) as { data?: CategoryCard[] };
@@ -65,7 +63,6 @@ export async function getCategoryBySlug(
     serverApiUrl(`/catalog/categories/${encodeURIComponent(slug)}`),
     { next: { revalidate: 60 } },
     UPSTREAM_TIMEOUT_MS.rsc,
-    1,
   );
   if (res.status === 404) return null;
   if (!res.ok)
@@ -86,7 +83,6 @@ export async function getProductBySlug(
     serverApiUrl(`/catalog/products/${encodeURIComponent(slug)}`),
     { next: { revalidate: 30 } },
     UPSTREAM_TIMEOUT_MS.rsc,
-    1,
   );
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GET /catalog/products/${slug} → ${res.status}`);
@@ -140,7 +136,6 @@ export async function getProducts(
         next: { revalidate: 30 },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
-      1,
     );
     if (!res.ok) return { items: [], pagination: EMPTY_PAGINATION };
     const body = (await res.json()) as {
@@ -169,7 +164,6 @@ export async function searchProducts(
         next: { revalidate: 30 },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
-      1,
     );
     if (!res.ok) return { items: [], total: 0 };
     const body = (await res.json()) as {
@@ -206,7 +200,6 @@ export async function getFilters(
         next: { revalidate: 30 },
       },
       UPSTREAM_TIMEOUT_MS.rsc,
-      1,
     );
     if (!res.ok) return EMPTY_FILTERS;
     const body = (await res.json()) as { data?: CatalogFiltersData };
