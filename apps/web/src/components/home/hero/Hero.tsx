@@ -1,17 +1,16 @@
 import Link from "next/link";
-import { formatNumberFa, homeHero, storeFacts } from "@arbyte/contracts";
-import { IranMap } from "@/components/home/community/IranMap";
-import { RoutePulses } from "@/components/home/community/route-pulses";
+import { homeHero } from "@arbyte/contracts";
 
 /**
  * جایگزین هیروی اسکرولی قبلی (ویدیوی ۲٫۵–۵ مگابایتی + موتور اسکراب
  * فریم‌به‌فریم با RAF). با اینترنت ضعیف/موبایل‌های کم‌توان در ایران آن
  * طراحی هم سنگین بود هم روی موبایل ناهماهنگ با ارتفاع واقعی هدر.
  *
- * این نسخه هیچ تصویر/ویدیویی دانلود نمی‌کند — کل بخش فقط متن + یک SVG
- * برداری (همان نقشه‌ی ایران صفحه‌ی «جامعه» + نقطه‌های نورانی SMIL روی
- * مسیرهای ارسال از تهران) است؛ وزن شبکه‌اش عملاً صفر و روی هر دستگاهی
- * با همان سرعت بار می‌شود. بدون اسکرول‌جکینگ — یک سکشن ایستای معمولی.
+ * بدون اسکرول‌جکینگ — یک سکشن ایستای معمولی. نسخه‌ی نقشه‌ی ایران (که
+ * اینجا هم بود) برداشته شد — جایش را یک تصویر محصول واقعی می‌گیرد؛ تا
+ * وقتی آن تصویر نرسیده، `HeroVisualPlaceholder` (یک SVG سبک، صفر وزن
+ * شبکه) دقیقاً همان جای نهایی را پر می‌کند تا جایگزینی بعداً فقط یک
+ * `<Image>` باشد.
  */
 export function Hero() {
   return (
@@ -62,44 +61,97 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="relative mx-auto aspect-[640/380] w-full max-w-[560px]">
-          <IranMap className="size-full" />
-          <RoutePulses />
-          {storeFacts.stats.deliveredOrders != null ? (
-            <div className="border-border bg-surface shadow-popover absolute -bottom-3 start-2 flex items-center gap-2.5 rounded-panel border p-3 backdrop-blur-sm sm:start-6">
-              <span
-                aria-hidden="true"
-                className="bg-brand-tint-1 flex size-9 shrink-0 items-center justify-center rounded-tile"
-              >
-                <svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--color-brand)"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 4h2.2l2 11h9.3l2-8H7" />
-                  <circle cx="9.5" cy="19" r="1.5" />
-                  <circle cx="17" cy="19" r="1.5" />
-                </svg>
-              </span>
-              <div className="flex flex-col">
-                <span className="text-caption text-primary font-emphasis">
-                  +{formatNumberFa(storeFacts.stats.deliveredOrders)}
-                </span>
-                <span className="text-micro text-secondary">
-                  ارسال به سراسر ایران
-                </span>
-              </div>
-            </div>
-          ) : null}
+        <div className="relative mx-auto aspect-[4/3] w-full max-w-[560px]">
+          <HeroVisualPlaceholder />
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * جای تصویر نهایی محصول تا وقتی برسد — یک ترکیب انتزاعی سبک (گرادیان +
+ * چند کارت شناور)، صفر وزن شبکه. جایگزینی: این تابع را با یک
+ * `<Image src="/hero/hero-visual.png" fill .../>` عوض کنید، همین
+ * `div` بیرونی (aspect-[4/3]) را نگه دارید.
+ */
+function HeroVisualPlaceholder() {
+  return (
+    <div className="relative size-full">
+      {/* کیف‌فریم محلی همین کامپوننت — طبق یادداشت packages/tokens/index.css
+          («فقط مال یک صفحه‌اند، اینجا تعریف نشوند»)، در توکن‌های سراسری اضافه نشد. */}
+      <style>{`
+        @keyframes arb-hero-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+      `}</style>
+      <div
+        aria-hidden="true"
+        className="bg-brand/25 absolute left-1/2 top-1/2 size-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+      />
+      <div className="motion-reduce:animate-none relative flex size-full items-center justify-center animate-[arb-hero-float_5s_ease-in-out_infinite]">
+        <svg
+          viewBox="0 0 400 300"
+          className="h-[78%] w-[78%] drop-shadow-2xl"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="arbHeroScreen" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="var(--color-brand)" />
+              <stop offset="100%" stopColor="var(--color-accent)" />
+            </linearGradient>
+          </defs>
+          <rect
+            x="54"
+            y="26"
+            width="292"
+            height="186"
+            rx="16"
+            fill="var(--color-primary)"
+          />
+          <rect
+            x="66"
+            y="38"
+            width="268"
+            height="162"
+            rx="8"
+            fill="url(#arbHeroScreen)"
+          />
+          <rect
+            x="86"
+            y="58"
+            width="130"
+            height="10"
+            rx="5"
+            fill="var(--color-surface)"
+            opacity="0.85"
+          />
+          <rect
+            x="86"
+            y="78"
+            width="90"
+            height="10"
+            rx="5"
+            fill="var(--color-surface)"
+            opacity="0.6"
+          />
+          <path
+            d="M70,236 L330,236 L358,256 L42,256 Z"
+            fill="var(--color-secondary-2)"
+            opacity="0.18"
+          />
+          <ellipse
+            cx="200"
+            cy="280"
+            rx="110"
+            ry="10"
+            fill="var(--color-primary)"
+            opacity="0.08"
+          />
+        </svg>
+      </div>
+    </div>
   );
 }
 
