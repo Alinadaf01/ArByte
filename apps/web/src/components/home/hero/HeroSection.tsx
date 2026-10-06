@@ -1,58 +1,15 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import type { PublicHomepageBlock } from "@arbyte/contracts";
-import { HeroScroll } from "./HeroScroll";
-import type { HeroManifest } from "./hero-engine";
+import { Hero } from "./Hero";
 
 interface HeroSectionProps {
   block: Extract<PublicHomepageBlock, { type: "HERO" }>;
 }
 
 /**
- * T-211 §۲ — پوسته‌ی سروری هیرو: مانیفست ویدیو/پوستر را از دیسک می‌خواند (فایل
- * استاتیک در public/، نه فراخوانی شبکه) و به HeroScroll (کلاینت) می‌دهد.
- * اگر فایل نبود یا شکل نامعتبر داشت، `null` می‌رود — HeroScroll خودش
- * پوستر ثابت را رندر می‌کند، صفحه نمی‌شکند.
+ * پوسته‌ی سروری هیرو — فقط دروازه‌ی روشن/خاموش از پنل (بلوک HERO فعال
+ * باشد یا نه). محتوای واقعی در `Hero.tsx` است و دیگر به `block.config`
+ * (مانیفست ویدیو) نیازی ندارد.
  */
-export async function HeroSection({ block }: HeroSectionProps) {
-  const manifest = await readHeroManifest(block.framesManifest);
-  return <HeroScroll manifest={manifest} />;
-}
-
-async function readHeroManifest(
-  manifestPath: string | null,
-): Promise<HeroManifest | null> {
-  if (!manifestPath) return null;
-  try {
-    const relative = manifestPath.replace(/^\/+/, "");
-    const filePath = path.join(process.cwd(), "public", relative);
-    const raw = await readFile(filePath, "utf-8");
-    const parsed: unknown = JSON.parse(raw);
-    if (!isHeroManifest(parsed)) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function isHeroManifest(value: unknown): value is HeroManifest {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.count === "number" &&
-    typeof v.width === "number" &&
-    typeof v.height === "number" &&
-    typeof v.fps === "number" &&
-    isMediaPair(v.video) &&
-    (v.videoWebm === undefined || isMediaPair(v.videoWebm)) &&
-    isMediaPair(v.poster) &&
-    isMediaPair(v.posterEnd) &&
-    Array.isArray(v.bands)
-  );
-}
-
-function isMediaPair(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Record<string, unknown>;
-  return typeof v.desktop === "string" && typeof v.mobile === "string";
+export function HeroSection(_props: HeroSectionProps) {
+  return <Hero />;
 }

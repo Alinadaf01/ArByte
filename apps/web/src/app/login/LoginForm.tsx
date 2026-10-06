@@ -188,7 +188,10 @@ function OtpBoxes({
               hasError
                 ? "border-danger bg-danger-tint text-danger"
                 : filled
-                  ? "border-brand/75 bg-brand-tint-2 text-on-dark"
+                  ? // bg-brand-tint-2 یک رنگ کم‌رنگ تقریباً سفید است (برای کارت‌های
+                    // روشن طراحی شده)؛ روی این کارت تیره با text-on-dark سفید
+                    // عملاً ناخوانا می‌شد و کادر «سفید» به نظر می‌رسید.
+                    "border-brand/75 bg-white/10 text-on-dark"
                   : active
                     ? "border-brand bg-white/4 text-on-dark shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-brand)_30%,transparent),0_0_24px_color-mix(in_srgb,var(--color-brand)_25%,transparent)]"
                     : "border-border-done/30 bg-white/4 text-on-dark"
@@ -464,7 +467,10 @@ export function LoginForm() {
                       }
                       placeholder={loginPage.phonePlaceholder}
                       maxLength={10}
-                      className="text-on-dark min-h-14 min-w-0 border-0 bg-transparent px-4 text-start text-body font-semibold tracking-wide outline-none"
+                      // text-body روی موبایل ۱۵px می‌شود؛ هر input زیر ۱۶px روی
+                      // iOS Safari با فوکوس خودکار زوم می‌کند (و چون RTL است
+                      // انگار صفحه به راست کشیده می‌شود). ۱۶px ثابت جلوش را می‌گیرد.
+                      className="text-on-dark min-h-14 min-w-0 border-0 bg-transparent px-4 text-start text-[16px] font-semibold tracking-wide outline-none"
                     />
                   </div>
                   {phoneError ? (

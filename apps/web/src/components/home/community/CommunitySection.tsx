@@ -5,6 +5,7 @@ import {
   toPersianDigits,
 } from "@arbyte/contracts";
 import { IranMap } from "./IranMap";
+import { RoutePulses } from "./route-pulses";
 
 /**
  * T-212 §۴ — «جامعه آربایت». نقشه از `IranMap.tsx` (SVG ایستا، تولیدشده‌ی
@@ -64,8 +65,9 @@ export function CommunitySection() {
         </div>
 
         <div className="flex min-w-0 flex-col gap-3.5">
-          <div className="h-65 md:h-95">
+          <div className="relative h-65 md:h-95">
             <IranMap />
+            <RoutePulses />
           </div>
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <div className="border-border bg-paper flex items-center gap-2.5 rounded-tile border px-3.5 py-2.5">
