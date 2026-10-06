@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { homeHero } from "@arbyte/contracts";
 
@@ -6,11 +7,10 @@ import { homeHero } from "@arbyte/contracts";
  * فریم‌به‌فریم با RAF). با اینترنت ضعیف/موبایل‌های کم‌توان در ایران آن
  * طراحی هم سنگین بود هم روی موبایل ناهماهنگ با ارتفاع واقعی هدر.
  *
- * بدون اسکرول‌جکینگ — یک سکشن ایستای معمولی. نسخه‌ی نقشه‌ی ایران (که
- * اینجا هم بود) برداشته شد — جایش را یک تصویر محصول واقعی می‌گیرد؛ تا
- * وقتی آن تصویر نرسیده، `HeroVisualPlaceholder` (یک SVG سبک، صفر وزن
- * شبکه) دقیقاً همان جای نهایی را پر می‌کند تا جایگزینی بعداً فقط یک
- * `<Image>` باشد.
+ * بدون اسکرول‌جکینگ — یک سکشن ایستای معمولی. تصویر (public/hero/hero-visual.png)
+ * یک PNG با آلفای واقعی است (نه پس‌زمینه‌ی سفید تخت) — `.trim()` شده
+ * برای حذف حاشیه‌ی شفاف اضافه؛ next/image خودش فرمت/سایز مناسب هر
+ * دستگاه را تولید می‌کند.
  */
 export function Hero() {
   return (
@@ -62,96 +62,29 @@ export function Hero() {
         </div>
 
         <div className="relative mx-auto aspect-[4/3] w-full max-w-[560px]">
-          <HeroVisualPlaceholder />
+          <div
+            aria-hidden="true"
+            className="bg-brand/25 absolute left-1/2 top-1/2 size-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+          />
+          <Image
+            src="/hero/hero-visual.png"
+            alt=""
+            fill
+            priority
+            sizes="(max-width: 768px) 80vw, 560px"
+            className="motion-reduce:animate-none object-contain drop-shadow-2xl animate-[arb-hero-float_5s_ease-in-out_infinite]"
+          />
+          {/* کیف‌فریم محلی همین کامپوننت — طبق یادداشت packages/tokens/index.css
+              («فقط مال یک صفحه‌اند، اینجا تعریف نشوند»)، در توکن‌های سراسری اضافه نشد. */}
+          <style>{`
+            @keyframes arb-hero-float {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-10px); }
+            }
+          `}</style>
         </div>
       </div>
     </section>
-  );
-}
-
-/**
- * جای تصویر نهایی محصول تا وقتی برسد — یک ترکیب انتزاعی سبک (گرادیان +
- * چند کارت شناور)، صفر وزن شبکه. جایگزینی: این تابع را با یک
- * `<Image src="/hero/hero-visual.png" fill .../>` عوض کنید، همین
- * `div` بیرونی (aspect-[4/3]) را نگه دارید.
- */
-function HeroVisualPlaceholder() {
-  return (
-    <div className="relative size-full">
-      {/* کیف‌فریم محلی همین کامپوننت — طبق یادداشت packages/tokens/index.css
-          («فقط مال یک صفحه‌اند، اینجا تعریف نشوند»)، در توکن‌های سراسری اضافه نشد. */}
-      <style>{`
-        @keyframes arb-hero-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-      `}</style>
-      <div
-        aria-hidden="true"
-        className="bg-brand/25 absolute left-1/2 top-1/2 size-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-      />
-      <div className="motion-reduce:animate-none relative flex size-full items-center justify-center animate-[arb-hero-float_5s_ease-in-out_infinite]">
-        <svg
-          viewBox="0 0 400 300"
-          className="h-[78%] w-[78%] drop-shadow-2xl"
-          aria-hidden="true"
-        >
-          <defs>
-            <linearGradient id="arbHeroScreen" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="var(--color-brand)" />
-              <stop offset="100%" stopColor="var(--color-accent)" />
-            </linearGradient>
-          </defs>
-          <rect
-            x="54"
-            y="26"
-            width="292"
-            height="186"
-            rx="16"
-            fill="var(--color-primary)"
-          />
-          <rect
-            x="66"
-            y="38"
-            width="268"
-            height="162"
-            rx="8"
-            fill="url(#arbHeroScreen)"
-          />
-          <rect
-            x="86"
-            y="58"
-            width="130"
-            height="10"
-            rx="5"
-            fill="var(--color-surface)"
-            opacity="0.85"
-          />
-          <rect
-            x="86"
-            y="78"
-            width="90"
-            height="10"
-            rx="5"
-            fill="var(--color-surface)"
-            opacity="0.6"
-          />
-          <path
-            d="M70,236 L330,236 L358,256 L42,256 Z"
-            fill="var(--color-secondary-2)"
-            opacity="0.18"
-          />
-          <ellipse
-            cx="200"
-            cy="280"
-            rx="110"
-            ry="10"
-            fill="var(--color-primary)"
-            opacity="0.08"
-          />
-        </svg>
-      </div>
-    </div>
   );
 }
 
