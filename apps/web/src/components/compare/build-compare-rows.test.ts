@@ -14,6 +14,7 @@ function makeProduct(
     brand: { id: "b", name: "B", slug: "b" },
     category: { id: "c", name: "C", slug: "c" },
     condition: "NEW",
+    grade: null,
     images: [],
     shortDescription: null,
     description: null,

@@ -21,6 +21,7 @@ FIELDS: dict[str, str] = {
     "brand": "برند",
     "category": "دسته",
     "condition": "شرایط کالا",
+    "grade": "گرید",
     "sku": "SKU",
     "variant_name": "نام واریانت",
     "supplier": "تأمین‌کننده",
@@ -90,8 +91,9 @@ def _lookup(model, value: str):
 
 def plan_rows(headers: list[str], rows: list[list], mapping: dict) -> list[dict]:
     """هر ردیف: {row, sku, action: create|update|error, errors, data}. بدون نوشتن."""
-    from .models import Brand, Category, ProductVariant, SpecificationDefinition, Supplier
+    from .models import PRODUCT_GRADE_CHOICES, Brand, Category, ProductVariant, SpecificationDefinition, Supplier
 
+    valid_grades = {code.upper(): code for code, _ in PRODUCT_GRADE_CHOICES}
     index = {h: i for i, h in enumerate(headers)}
     spec_defs = {d.key: d for d in SpecificationDefinition.objects.all()}
     existing_skus = set(ProductVariant.objects.filter(deleted_at__isnull=True).values_list("sku", flat=True))
@@ -127,6 +129,10 @@ def plan_rows(headers: list[str], rows: list[list], mapping: dict) -> list[dict]
         data["condition"] = _CONDITIONS.get(condition_text.lower() if condition_text.isascii() else condition_text) if condition_text else None
         if condition_text and not data["condition"]:
             errors.append(f"شرایط کالای «{condition_text}» شناخته نشد.")
+        grade_text = get("grade").strip()
+        data["grade"] = valid_grades.get(grade_text.upper()) if grade_text else None
+        if grade_text and not data["grade"]:
+            errors.append(f"گرید «{grade_text}» شناخته نشد.")
         brand, category = _lookup(Brand, get("brand")), _lookup(Category, get("category"))
         if get("brand") and not brand:
             errors.append(f"برند «{get('brand')}» وجود ندارد.")
@@ -172,7 +178,7 @@ def _product_for(row: dict, cache: dict):
         product = cache[parent]
     else:
         product = Product.objects.filter(slug=slug, deleted_at__isnull=True).first() or Product(slug=slug)
-    for field, value in (("name", data["name"]), ("brand_id", data["brand_id"]), ("category_id", data["category_id"]), ("condition", data["condition"])):
+    for field, value in (("name", data["name"]), ("brand_id", data["brand_id"]), ("category_id", data["category_id"]), ("condition", data["condition"]), ("grade", data["grade"])):
         if value:
             setattr(product, field, value)
     product.save()
@@ -275,6 +281,7 @@ def template_workbook() -> Workbook:
         "SKU کلید تطبیق است: SKU موجود به‌روز می‌شود، SKU تازه ساخته می‌شود. اجرای دوباره تکراری نمی‌سازد.",
         "برند، دسته و تأمین‌کننده باید از قبل در پنل تعریف شده باشند (نام یا slug).",
         "شرایط کالا: آکبند، اپن باکس، استوک، در حد نو.",
+        "گرید اختیاری است؛ مقادیر مجاز: A، A+، A++، A+++، B، B+، OPENBOX، KY.PEN.A، KY.PEN.A+، BOX، A++BOX.",
         "قیمت نهایی خالی و قیمت همکار پر = قیمت با قانون سود حساب می‌شود.",
         "برای مشخصات، ستونی با نام فارسی همان مشخصه اضافه کنید و در نگاشت انتخابش کنید.",
     ]:

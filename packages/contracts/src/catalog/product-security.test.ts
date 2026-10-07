@@ -17,6 +17,7 @@ describe("PublicProductDetailSchema — هرگز فیلد حساس لو نمی�
     brand: { id: "b_1", name: "MSI", slug: "msi" },
     category: { id: "c_1", name: "لپ‌تاپ گیمینگ", slug: "gaming-laptop" },
     condition: "NEW",
+    grade: null,
     images: [],
     shortDescription: null,
     description: null,

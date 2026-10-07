@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumb } from "@arbyte/ui";
-import { productsPage, storeFacts } from "@arbyte/contracts";
+import { productDetailPage, productsPage, storeFacts } from "@arbyte/contracts";
 import type { Availability } from "@arbyte/contracts";
 import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { ProductGallery } from "@/components/product/ProductGallery";
@@ -169,6 +169,14 @@ export default async function ProductPage({
                 <span className="text-caption text-secondary">
                   {product.category.name}
                 </span>
+                {product.grade ? (
+                  <span
+                    dir="ltr"
+                    className="bg-brand-tint-1 text-brand-active rounded-pill px-2.5 py-1 text-caption font-emphasis"
+                  >
+                    {productDetailPage.gradeLabel(product.grade)}
+                  </span>
+                ) : null}
               </div>
               <h1 className="text-hero text-primary font-heading tracking-tight">
                 {product.name}

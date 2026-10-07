@@ -92,6 +92,23 @@ export const PRODUCT_STATUS_VALUES = ["ACTIVE", "INACTIVE"] as const;
 export const ProductStatusSchema = z.enum(PRODUCT_STATUS_VALUES);
 export type ProductStatus = z.infer<typeof ProductStatusSchema>;
 
+/** از `condition` جداست — درجه‌ی کیفیت داخلی تیم فروش؛ محصول می‌تواند گرید نداشته باشد. */
+export const PRODUCT_GRADE_VALUES = [
+  "A",
+  "A+",
+  "A++",
+  "A+++",
+  "B",
+  "B+",
+  "OPENBOX",
+  "KY.PEN.A",
+  "KY.PEN.A+",
+  "BOX",
+  "A++BOX",
+] as const;
+export const ProductGradeSchema = z.enum(PRODUCT_GRADE_VALUES);
+export type ProductGrade = z.infer<typeof ProductGradeSchema>;
+
 /**
  * §۷.۳۸ — مشتق‌شده از quantity/threshold (T-003-DECISION)، نه یک ستون
  * دیتابیسی؛ اما روی سیم (پاسخ عمومی/ادمین) به‌عنوان یک مقدار enum است.

@@ -486,6 +486,8 @@ export const categoryDetailPage = {
  */
 export const productDetailPage = {
   configLabel: "پیکربندی",
+  /** کدهای گرید خودشان لیبل‌اند (A+, OPENBOX, ...)؛ فقط پیشوند فارسی اضافه می‌شود. */
+  gradeLabel: (grade: string) => `گرید ${grade}`,
   decreaseQtyAriaLabel: "کم کردن",
   increaseQtyAriaLabel: "اضافه کردن",
   addToCartCta: "افزودن به سبد خرید",

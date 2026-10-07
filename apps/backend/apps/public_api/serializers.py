@@ -175,6 +175,7 @@ def build_product_detail(product, global_threshold: int) -> dict:
         "brand": to_brand_ref(product),
         "category": to_category_ref(product),
         "condition": product.condition,
+        "grade": product.grade,
         "images": images,
         "shortDescription": product.short_description,
         "description": product.description,

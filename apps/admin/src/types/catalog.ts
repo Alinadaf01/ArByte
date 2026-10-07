@@ -2,6 +2,19 @@
 
 export type ProductCondition = "NEW" | "OPEN_BOX" | "STOCK" | "LIKE_NEW";
 export type ProductStatus = "ACTIVE" | "INACTIVE";
+/** از «condition» جداست — درجه‌ی کیفیت داخلی تیم فروش؛ محصول می‌تواند بدون گرید باشد. */
+export type ProductGrade =
+  | "A"
+  | "A+"
+  | "A++"
+  | "A+++"
+  | "B"
+  | "B+"
+  | "OPENBOX"
+  | "KY.PEN.A"
+  | "KY.PEN.A+"
+  | "BOX"
+  | "A++BOX";
 
 /** برچسب‌ها همان enum-labels فروشگاه (بریف E-04 اصلاح ۶). */
 export const CONDITION_LABELS: Record<ProductCondition, string> = {
@@ -10,6 +23,21 @@ export const CONDITION_LABELS: Record<ProductCondition, string> = {
   STOCK: "استوک",
   LIKE_NEW: "در حد نو",
 };
+
+/** کدهای گرید خودشان لیبل‌اند — همان چیزی که تیم فروش استفاده می‌کند. */
+export const GRADE_OPTIONS: ProductGrade[] = [
+  "A",
+  "A+",
+  "A++",
+  "A+++",
+  "B",
+  "B+",
+  "OPENBOX",
+  "KY.PEN.A",
+  "KY.PEN.A+",
+  "BOX",
+  "A++BOX",
+];
 
 export interface AdminCategory {
   id: string;
@@ -41,6 +69,7 @@ export interface AdminProductListItem {
   brand: { id: string; name: string };
   category: { id: string; name: string };
   condition: ProductCondition;
+  grade: ProductGrade | null;
   status: ProductStatus;
   isVisibleOnSite: boolean;
   priority: number;
@@ -78,6 +107,7 @@ export interface AdminProduct {
   brand: string;
   category: string;
   condition: ProductCondition;
+  grade: ProductGrade | null;
   status: ProductStatus;
   isVisibleOnSite: boolean;
   isVisibleInSearch: boolean;

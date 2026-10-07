@@ -4,7 +4,11 @@ import {
   paginatedResponseSchema,
 } from "../common/response";
 import { PaginationQuerySchema } from "../common/pagination";
-import { ProductConditionSchema, ProductSortSchema } from "../common/enums";
+import {
+  ProductConditionSchema,
+  ProductGradeSchema,
+  ProductSortSchema,
+} from "../common/enums";
 import { MoneyAmountSchema, SlugSchema } from "../validators";
 import {
   BrandRefSchema,
@@ -38,6 +42,7 @@ export const PublicProductDetailSchema = z.object({
   brand: BrandRefSchema,
   category: CategoryRefSchema,
   condition: ProductConditionSchema,
+  grade: ProductGradeSchema.nullable(),
   images: z.array(ProductImageSchema),
   /** T-214 §۱ — زیرعنوان کوتاه زیر h1؛ از `description` (بررسی چندپاراگرافی تب) جداست. */
   shortDescription: z.string().nullable(),

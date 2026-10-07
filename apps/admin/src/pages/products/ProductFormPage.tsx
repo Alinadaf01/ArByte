@@ -21,6 +21,7 @@ import {
 import { useToast } from "@/lib/ToastContext";
 import {
   CONDITION_LABELS,
+  GRADE_OPTIONS,
   type AdminProduct,
   type ProductFormValues,
   type ProductSeo,
@@ -48,6 +49,7 @@ function toForm(p: AdminProduct | null): ProductFormValues {
     brand: p?.brand ?? "",
     category: p?.category ?? "",
     condition: p?.condition ?? "NEW",
+    grade: p?.grade ?? null,
     status: p?.status ?? "ACTIVE",
     isVisibleOnSite: p?.isVisibleOnSite ?? true,
     isVisibleInSearch: p?.isVisibleInSearch ?? true,
@@ -246,6 +248,25 @@ export default function ProductFormPage() {
                 {Object.entries(CONDITION_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="گرید" htmlFor="p-grade">
+              <Select
+                id="p-grade"
+                value={form.grade ?? ""}
+                onChange={(e) =>
+                  set(
+                    "grade",
+                    (e.target.value || null) as ProductFormValues["grade"],
+                  )
+                }
+              >
+                <option value="">بدون گرید</option>
+                {GRADE_OPTIONS.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
                   </option>
                 ))}
               </Select>

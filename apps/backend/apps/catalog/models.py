@@ -85,6 +85,23 @@ PRODUCT_STATUS_CHOICES = [
     ("INACTIVE", "غیرفعال"),
 ]
 
+# درخواست کاربر — کدهای داخلی درجه‌بندی کیفیت کالا (جدا از `condition`؛ یک
+# محصول «استوک» می‌تواند درجه‌ی A یا B+ باشد). خودِ کدها همان چیزی‌اند که
+# تیم فروش استفاده می‌کند، لیبل جداگانه ندارند.
+PRODUCT_GRADE_CHOICES = [
+    ("A", "A"),
+    ("A+", "A+"),
+    ("A++", "A++"),
+    ("A+++", "A+++"),
+    ("B", "B"),
+    ("B+", "B+"),
+    ("OPENBOX", "OPENBOX"),
+    ("KY.PEN.A", "KY.PEN.A"),
+    ("KY.PEN.A+", "KY.PEN.A+"),
+    ("BOX", "BOX"),
+    ("A++BOX", "A++BOX"),
+]
+
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
@@ -97,6 +114,10 @@ class Product(models.Model):
     description = models.TextField(blank=True, null=True)
     short_description = models.CharField(max_length=160, blank=True, null=True)
     condition = models.CharField(max_length=10, choices=PRODUCT_CONDITION_CHOICES)
+    # نوع کالا (آکبند/اپن‌باکس/استوک) از «گرید» جداست — گرید درجه‌ی کیفیت
+    # داخلی تیم فروش است (مثلاً استوک درجه A یا B+)؛ هر محصولی لزوماً گرید
+    # ندارد (محصول آکبند معمولاً خالی می‌ماند).
+    grade = models.CharField(max_length=20, choices=PRODUCT_GRADE_CHOICES, blank=True, null=True)
     status = models.CharField(max_length=10, choices=PRODUCT_STATUS_CHOICES, default="ACTIVE")
     is_visible_on_site = models.BooleanField(default=True)
     is_visible_in_search = models.BooleanField(default=True)
