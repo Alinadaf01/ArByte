@@ -22,6 +22,8 @@ FIELDS: dict[str, str] = {
     "category": "دسته",
     "condition": "شرایط کالا",
     "grade": "گرید",
+    "short_description": "توضیح کوتاه",
+    "description": "توضیح کامل",
     "sku": "SKU",
     "variant_name": "نام واریانت",
     "supplier": "تأمین‌کننده",
@@ -113,8 +115,10 @@ def plan_rows(headers: list[str], rows: list[list], mapping: dict) -> list[dict]
         else:
             seen[sku] = row_number
         action = "update" if sku in existing_skus else "create"
-        for field in ("parent_code", "name", "variant_name"):
+        for field in ("parent_code", "name", "variant_name", "short_description", "description"):
             data[field] = get(field)
+        if len(data["short_description"]) > 160:
+            errors.append("توضیح کوتاه نباید بیش از ۱۶۰ نویسه باشد.")
         for field in ("supplier_price", "final_price", "stock"):
             try:
                 data[field] = _int(get(field))
@@ -178,7 +182,11 @@ def _product_for(row: dict, cache: dict):
         product = cache[parent]
     else:
         product = Product.objects.filter(slug=slug, deleted_at__isnull=True).first() or Product(slug=slug)
-    for field, value in (("name", data["name"]), ("brand_id", data["brand_id"]), ("category_id", data["category_id"]), ("condition", data["condition"]), ("grade", data["grade"])):
+    for field, value in (
+        ("name", data["name"]), ("brand_id", data["brand_id"]), ("category_id", data["category_id"]),
+        ("condition", data["condition"]), ("grade", data["grade"]),
+        ("short_description", data["short_description"]), ("description", data["description"]),
+    ):
         if value:
             setattr(product, field, value)
     product.save()
