@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { formatPrice } from "@arbyte/contracts";
+import { formatPrice, productDetailPage } from "@arbyte/contracts";
 import type { ProductCard as ProductCardData } from "@arbyte/contracts";
 import {
   AVAILABILITY_TEXT_TONE,
@@ -63,6 +63,11 @@ export function ProductCard({
             sizes={imageSizes ?? "(max-width: 768px) 50vw, 25vw"}
             className="object-contain p-4"
           />
+        ) : null}
+        {product.isPresale ? (
+          <span className="bg-accent text-accent-badge-ink pointer-events-none absolute start-3 top-3 rounded-pill px-2.5 py-1 text-caption font-emphasis whitespace-nowrap">
+            {productDetailPage.presaleLabel}
+          </span>
         ) : null}
         <span
           className={`bg-surface border-border pointer-events-none absolute end-3 top-3 rounded-pill border px-2.5 py-1 text-caption font-emphasis whitespace-nowrap ${AVAILABILITY_TEXT_TONE[availabilityTone(availability)]}`}

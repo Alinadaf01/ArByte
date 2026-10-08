@@ -440,7 +440,7 @@ export function CartView() {
                         setCouponError(null);
                       }}
                       placeholder={cartPage.couponPlaceholder}
-                      className={`min-h-11 min-w-0 rounded-tile-sm border px-3.5 text-caption ${couponError ? "border-danger" : "border-border-input"}`}
+                      className={`min-h-11 min-w-0 rounded-tile-sm border px-3.5 text-input ${couponError ? "border-danger" : "border-border-input"}`}
                     />
                     <button
                       type="button"

@@ -138,6 +138,7 @@ def build_product_card(product, global_threshold: int, spec_filters: dict[str, s
         "brand": to_brand_ref(product),
         "category": to_category_ref(product),
         "condition": product.condition,
+        "isPresale": product.is_presale,
         "image": (
             {"url": public_media_url(primary_image.url), "alt": primary_image.alt_text, "order": primary_image.sort_order}
             if primary_image
@@ -176,9 +177,15 @@ def build_product_detail(product, global_threshold: int) -> dict:
         "category": to_category_ref(product),
         "condition": product.condition,
         "grade": product.grade,
+        "isPresale": product.is_presale,
         "images": images,
         "shortDescription": product.short_description,
         "description": product.description,
+        # یادداشت ارسال/مرجوعی مخصوص این محصول (پنل: AdminProductSerializer) —
+        # وقتی ست باشد جای متن عمومی storeFacts.policies می‌نشیند (زمان ارسال/
+        # مرجوعی یک دستگاه می‌تواند با بقیه فرق کند: پیش‌فروش، حجیم، و…).
+        "shippingNote": product.shipping_note,
+        "returnPolicyNote": product.return_policy_note,
         "defaultVariantId": default_variant_id,
         "variantAxes": variant_axes,
         "variants": [

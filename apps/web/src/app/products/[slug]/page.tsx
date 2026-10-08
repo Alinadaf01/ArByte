@@ -170,11 +170,13 @@ export default async function ProductPage({
                   {product.category.name}
                 </span>
                 {product.grade ? (
-                  <span
-                    dir="ltr"
-                    className="bg-brand-tint-1 text-brand-active rounded-pill px-2.5 py-1 text-caption font-emphasis"
-                  >
+                  <span className="bg-brand-tint-1 text-brand-active rounded-pill px-2.5 py-1 text-caption font-emphasis">
                     {productDetailPage.gradeLabel(product.grade)}
+                  </span>
+                ) : null}
+                {product.isPresale ? (
+                  <span className="bg-accent text-accent-badge-ink rounded-pill px-2.5 py-1 text-caption font-emphasis">
+                    {productDetailPage.presaleLabel}
                   </span>
                 ) : null}
               </div>
@@ -215,6 +217,9 @@ export default async function ProductPage({
           specifications={product.specifications}
           description={product.description}
           qualifiesForFreeShipping={qualifiesForFreeShipping}
+          isPresale={product.isPresale}
+          shippingNote={product.shippingNote}
+          returnPolicyNote={product.returnPolicyNote}
         />
 
         <ProductReviews productSlug={product.slug} />

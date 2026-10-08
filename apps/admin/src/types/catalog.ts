@@ -70,6 +70,7 @@ export interface AdminProductListItem {
   category: { id: string; name: string };
   condition: ProductCondition;
   grade: ProductGrade | null;
+  isPresale: boolean;
   status: ProductStatus;
   isVisibleOnSite: boolean;
   priority: number;
@@ -108,6 +109,7 @@ export interface AdminProduct {
   category: string;
   condition: ProductCondition;
   grade: ProductGrade | null;
+  isPresale: boolean;
   status: ProductStatus;
   isVisibleOnSite: boolean;
   isVisibleInSearch: boolean;

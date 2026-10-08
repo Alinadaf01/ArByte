@@ -50,6 +50,7 @@ function toForm(p: AdminProduct | null): ProductFormValues {
     category: p?.category ?? "",
     condition: p?.condition ?? "NEW",
     grade: p?.grade ?? null,
+    isPresale: p?.isPresale ?? false,
     status: p?.status ?? "ACTIVE",
     isVisibleOnSite: p?.isVisibleOnSite ?? true,
     isVisibleInSearch: p?.isVisibleInSearch ?? true,
@@ -390,6 +391,13 @@ export default function ProductFormPage() {
                 checked={form.requiresSerial}
                 onChange={(v) => set("requiresSerial", v)}
                 label="سریال‌دار (ثبت سریال قبل از ارسال)"
+              />
+            </div>
+            <div className="flex items-end pb-2">
+              <Switch
+                checked={form.isPresale}
+                onChange={(v) => set("isPresale", v)}
+                label="پیش‌فروش (تهیه از امارات پس از ثبت سفارش، ۲ تا ۴ هفته)"
               />
             </div>
           </div>

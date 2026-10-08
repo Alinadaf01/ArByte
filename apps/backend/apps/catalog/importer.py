@@ -22,8 +22,11 @@ FIELDS: dict[str, str] = {
     "category": "دسته",
     "condition": "شرایط کالا",
     "grade": "گرید",
+    "is_presale": "پیش‌فروش",
     "short_description": "توضیح کوتاه",
     "description": "توضیح کامل",
+    "shipping_note": "یادداشت ارسال",
+    "return_policy_note": "یادداشت مرجوعی",
     "sku": "SKU",
     "variant_name": "نام واریانت",
     "supplier": "تأمین‌کننده",
@@ -37,6 +40,8 @@ _CONDITIONS = {
     "آکبند": "NEW", "new": "NEW", "اپن باکس": "OPEN_BOX", "اپن‌باکس": "OPEN_BOX", "open_box": "OPEN_BOX", "open box": "OPEN_BOX",
     "استوک": "STOCK", "stock": "STOCK", "در حد نو": "LIKE_NEW", "درحدنو": "LIKE_NEW", "like_new": "LIKE_NEW", "like new": "LIKE_NEW",
 }
+_PRESALE_TRUE = {"بله", "پیش فروش", "پیش‌فروش", "yes", "y", "true", "1"}
+_PRESALE_FALSE = {"خیر", "no", "n", "false", "0", "-"}
 _PERSIAN_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٬,", "0123456789  ")
 
 
@@ -115,10 +120,21 @@ def plan_rows(headers: list[str], rows: list[list], mapping: dict) -> list[dict]
         else:
             seen[sku] = row_number
         action = "update" if sku in existing_skus else "create"
-        for field in ("parent_code", "name", "variant_name", "short_description", "description"):
+        for field in ("parent_code", "name", "variant_name", "short_description", "description", "shipping_note", "return_policy_note"):
             data[field] = get(field)
         if len(data["short_description"]) > 160:
             errors.append("توضیح کوتاه نباید بیش از ۱۶۰ نویسه باشد.")
+        presale_text = get("is_presale").strip()
+        presale_key = presale_text.lower()
+        if not presale_text:
+            data["is_presale"] = None
+        elif presale_text in _PRESALE_TRUE or presale_key in _PRESALE_TRUE:
+            data["is_presale"] = True
+        elif presale_text in _PRESALE_FALSE or presale_key in _PRESALE_FALSE:
+            data["is_presale"] = False
+        else:
+            errors.append(f"پیش‌فروش «{presale_text}» شناخته نشد؛ «بله» یا «خیر» بنویسید.")
+            data["is_presale"] = None
         for field in ("supplier_price", "final_price", "stock"):
             try:
                 data[field] = _int(get(field))
@@ -186,9 +202,13 @@ def _product_for(row: dict, cache: dict):
         ("name", data["name"]), ("brand_id", data["brand_id"]), ("category_id", data["category_id"]),
         ("condition", data["condition"]), ("grade", data["grade"]),
         ("short_description", data["short_description"]), ("description", data["description"]),
+        ("shipping_note", data["shipping_note"]), ("return_policy_note", data["return_policy_note"]),
     ):
         if value:
             setattr(product, field, value)
+    # bool واقعی است؛ False هم مقدار معتبر است — نمی‌شود مثل بقیه با `if value` رد شد.
+    if data["is_presale"] is not None:
+        product.is_presale = data["is_presale"]
     product.save()
     cache[parent] = product
     return product, existing
@@ -290,6 +310,8 @@ def template_workbook() -> Workbook:
         "برند، دسته و تأمین‌کننده باید از قبل در پنل تعریف شده باشند (نام یا slug).",
         "شرایط کالا: آکبند، اپن باکس، استوک، در حد نو.",
         "گرید اختیاری است؛ مقادیر مجاز: A، A+، A++، A+++، B، B+، OPENBOX، KY.PEN.A، KY.PEN.A+، BOX، A++BOX.",
+        "پیش‌فروش اختیاری است؛ برای فعال‌کردن «بله» بنویسید، برای خالی‌کردن «خیر» — ستون خالی یعنی بدون تغییر. محصول پیش‌فروش روی بج صفحه‌اش مشخص می‌شود و در بخش ارسال، مهلت ۲ تا ۴ هفته و تهیه از امارات نشان داده می‌شود.",
+        "یادداشت ارسال/یادداشت مرجوعی اختیاری‌اند؛ اگر پر باشند به‌جای متن عمومی ارسال/مرجوعی همان محصول نشان داده می‌شوند (برای محصول پیش‌فروش، یادداشت ارسال نادیده گرفته می‌شود و متن ثابت پیش‌فروش نشان داده می‌شود).",
         "قیمت نهایی خالی و قیمت همکار پر = قیمت با قانون سود حساب می‌شود.",
         "برای مشخصات، ستونی با نام فارسی همان مشخصه اضافه کنید و در نگاشت انتخابش کنید.",
     ]:

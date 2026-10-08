@@ -10,6 +10,11 @@ interface ProductInfoTabsProps {
   specifications: PublicProductDetail["specifications"];
   description: string | null;
   qualifiesForFreeShipping: boolean;
+  isPresale: boolean;
+  /** یادداشت ارسال/مرجوعی مخصوص همین محصول (پنل) — وقتی ست باشد جای متن
+   * عمومی storeFacts.policies می‌نشیند. */
+  shippingNote: string | null;
+  returnPolicyNote: string | null;
 }
 
 /**
@@ -21,6 +26,9 @@ export function ProductInfoTabs({
   specifications,
   description,
   qualifiesForFreeShipping,
+  isPresale,
+  shippingNote,
+  returnPolicyNote,
 }: ProductInfoTabsProps) {
   const paragraphs = description?.split("\n").filter(Boolean) ?? [];
   const { policies } = storeFacts;
@@ -110,15 +118,23 @@ export function ProductInfoTabs({
                   {productDetailPage.shippingPolicy.heading}
                 </p>
                 <p className="text-caption text-secondary leading-loose">
-                  {productDetailPage.shippingPolicy.body(
-                    formatNumberFa(policies.sameDayCutoffHour),
-                    formatNumberFa(policies.tehranDeliveryDays),
-                    formatNumberFa(policies.provinceDeliveryDays[0]),
-                    formatNumberFa(policies.provinceDeliveryDays[1]),
+                  {isPresale ? (
+                    productDetailPage.presaleShippingNote
+                  ) : shippingNote ? (
+                    shippingNote
+                  ) : (
+                    <>
+                      {productDetailPage.shippingPolicy.body(
+                        formatNumberFa(policies.sameDayCutoffHour),
+                        formatNumberFa(policies.tehranDeliveryDays),
+                        formatNumberFa(policies.provinceDeliveryDays[0]),
+                        formatNumberFa(policies.provinceDeliveryDays[1]),
+                      )}
+                      {qualifiesForFreeShipping
+                        ? ` ${productDetailPage.shippingPolicy.freeShippingNote}`
+                        : ""}
+                    </>
                   )}
-                  {qualifiesForFreeShipping
-                    ? ` ${productDetailPage.shippingPolicy.freeShippingNote}`
-                    : ""}
                 </p>
               </div>
               <div className="flex flex-col gap-2">
@@ -126,9 +142,11 @@ export function ProductInfoTabs({
                   {productDetailPage.returnPolicy.heading}
                 </p>
                 <p className="text-caption text-secondary leading-loose">
-                  {productDetailPage.returnPolicy.body(
-                    formatNumberFa(policies.returnDays),
-                  )}
+                  {returnPolicyNote
+                    ? returnPolicyNote
+                    : productDetailPage.returnPolicy.body(
+                        formatNumberFa(policies.returnDays),
+                      )}
                 </p>
               </div>
             </div>

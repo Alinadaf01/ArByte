@@ -488,6 +488,9 @@ export const productDetailPage = {
   configLabel: "پیکربندی",
   /** کدهای گرید خودشان لیبل‌اند (A+, OPENBOX, ...)؛ فقط پیشوند فارسی اضافه می‌شود. */
   gradeLabel: (grade: string) => `گرید ${grade}`,
+  presaleLabel: "پیش‌فروش",
+  presaleShippingNote:
+    "این محصول به‌صورت پیش‌فروش است؛ پس از ثبت سفارش و پرداخت بیعانه، از امارات برای شما تهیه و ارسال می‌شود. زمان تحویل: ۲ تا ۴ هفته.",
   decreaseQtyAriaLabel: "کم کردن",
   increaseQtyAriaLabel: "اضافه کردن",
   addToCartCta: "افزودن به سبد خرید",

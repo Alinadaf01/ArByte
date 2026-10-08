@@ -43,10 +43,17 @@ export const PublicProductDetailSchema = z.object({
   category: CategoryRefSchema,
   condition: ProductConditionSchema,
   grade: ProductGradeSchema.nullable(),
+  /** پیش‌فروش: کالا از امارات پس از ثبت سفارش/بیعانه تهیه می‌شود — بج جدا +
+   * مهلت ارسال پیش‌فرض «۲ تا ۴ هفته» (مگر shippingNote خودش را داشته باشد). */
+  isPresale: z.boolean(),
   images: z.array(ProductImageSchema),
   /** T-214 §۱ — زیرعنوان کوتاه زیر h1؛ از `description` (بررسی چندپاراگرافی تب) جداست. */
   shortDescription: z.string().nullable(),
   description: z.string().nullable(),
+  /** یادداشت ارسال/مرجوعی مخصوص همین محصول (پنل) — وقتی ست باشد جای متن
+   * عمومی storeFacts.policies می‌نشیند. */
+  shippingNote: z.string().nullable(),
+  returnPolicyNote: z.string().nullable(),
 
   defaultVariantId: z.string(),
   /** کدام مشخصات پیکربندی‌ها را جدا می‌کنند؛ محصول بدون پیکربندی = آرایه‌ی خالی. */
@@ -86,6 +93,7 @@ export const ProductCardSchema = z.object({
   brand: BrandRefSchema,
   category: CategoryRefSchema,
   condition: ProductConditionSchema,
+  isPresale: z.boolean(),
   image: ProductImageSchema.nullable(),
   /** T-150 — گپ سند تسک/قرارداد: کارت طراحی حداکثر چهار مشخصه نشان می‌دهد؛
    * قرارداد اولیه‌ی T-004 این فیلد را نداشت (تصمیم مدیر پروژه: اضافه شود). */

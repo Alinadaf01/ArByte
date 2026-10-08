@@ -87,7 +87,7 @@ function AddressForm({
             onChange({ ...value, recipientName: e.target.value })
           }
           placeholder={checkoutPage.addressForm.recipientNamePlaceholder}
-          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
         />
       </label>
       <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -97,7 +97,7 @@ function AddressForm({
           value={value.mobile}
           onChange={(e) => onChange({ ...value, mobile: e.target.value })}
           placeholder={checkoutPage.addressForm.mobilePlaceholder}
-          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
         />
       </label>
       <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -107,7 +107,7 @@ function AddressForm({
           value={value.province}
           onChange={(e) => onChange({ ...value, province: e.target.value })}
           placeholder={checkoutPage.addressForm.provincePlaceholder}
-          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
         />
       </label>
       <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -117,7 +117,7 @@ function AddressForm({
           value={value.city}
           onChange={(e) => onChange({ ...value, city: e.target.value })}
           placeholder={checkoutPage.addressForm.cityPlaceholder}
-          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
         />
       </label>
       <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -127,7 +127,7 @@ function AddressForm({
           value={value.postalCode}
           onChange={(e) => onChange({ ...value, postalCode: e.target.value })}
           placeholder={checkoutPage.addressForm.postalCodePlaceholder}
-          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+          className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
         />
       </label>
       <label className="text-secondary-2 col-span-full flex flex-col gap-1.5 text-micro">
@@ -137,7 +137,7 @@ function AddressForm({
           value={value.addressLine}
           onChange={(e) => onChange({ ...value, addressLine: e.target.value })}
           placeholder={checkoutPage.addressForm.addressLinePlaceholder}
-          className="border-border-input text-primary resize-y rounded-tile border px-3.5 py-3 text-body leading-loose"
+          className="border-border-input text-primary resize-y rounded-tile border px-3.5 py-3 text-input leading-loose"
         />
       </label>
       <div className="col-span-full flex gap-2">
@@ -612,7 +612,7 @@ export function AccountView() {
                       setFirstName(e.target.value);
                       setInfoSaved(false);
                     }}
-                    className="border-border-input text-primary min-h-12 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-12 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -624,7 +624,7 @@ export function AccountView() {
                       setLastName(e.target.value);
                       setInfoSaved(false);
                     }}
-                    className="border-border-input text-primary min-h-12 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-12 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -635,7 +635,7 @@ export function AccountView() {
                     value={profile ? toPersianDigits(profile.mobile) : ""}
                     readOnly
                     aria-describedby="arb-account-phone-lock"
-                    className="border-border text-secondary bg-surface-muted min-h-12 rounded-tile border px-3.5 text-body"
+                    className="border-border text-secondary bg-surface-muted min-h-12 rounded-tile border px-3.5 text-input"
                   />
                   <span id="arb-account-phone-lock" className="sr-only">
                     {accountPage.info.mobileLockedNote}

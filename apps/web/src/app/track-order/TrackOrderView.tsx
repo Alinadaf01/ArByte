@@ -111,7 +111,7 @@ export function TrackOrderView() {
                   setBad(false);
                 }}
                 placeholder={trackOrderPage.orderNumberPlaceholder}
-                className={`text-primary min-h-12.5 rounded-tile border px-3.5 text-right text-body ${
+                className={`text-primary min-h-12.5 rounded-tile border px-3.5 text-right text-input ${
                   bad && !orderNumber.trim()
                     ? "border-danger-border"
                     : "border-border-input"
@@ -129,7 +129,7 @@ export function TrackOrderView() {
                   setBad(false);
                 }}
                 placeholder={trackOrderPage.mobilePlaceholder}
-                className={`text-primary min-h-12.5 rounded-tile border px-3.5 text-right text-body ${
+                className={`text-primary min-h-12.5 rounded-tile border px-3.5 text-right text-input ${
                   bad && !mobile.trim()
                     ? "border-danger-border"
                     : "border-border-input"

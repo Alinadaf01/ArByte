@@ -140,7 +140,7 @@ class AdminProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "slug", "brand", "category", "condition", "grade", "status", "is_visible_on_site", "priority",
+            "id", "name", "slug", "brand", "category", "condition", "grade", "is_presale", "status", "is_visible_on_site", "priority",
             "primary_image", "variants_count", "price_min", "price_max", "stock_available", "skus", "updated_at",
         ]
 
@@ -171,7 +171,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "slug", "brand", "category", "condition", "grade", "status",
+            "id", "name", "slug", "brand", "category", "condition", "grade", "is_presale", "status",
             "is_visible_on_site", "is_visible_in_search", "is_visible_in_category", "priority",
             "short_description", "description", "model_number", "gtin", "part_number",
             "warranty_months", "warranty_provider", "requires_serial", "shipping_note", "return_policy_note",
@@ -230,6 +230,7 @@ class AdminProductFilter(django_filters.FilterSet):
     status = django_filters.CharFilter(field_name="status")
     condition = django_filters.CharFilter(field_name="condition")
     grade = django_filters.CharFilter(field_name="grade")
+    is_presale = django_filters.BooleanFilter(field_name="is_presale")
     stock = django_filters.CharFilter(method="filter_stock")
     search = django_filters.CharFilter(method="filter_search")
 

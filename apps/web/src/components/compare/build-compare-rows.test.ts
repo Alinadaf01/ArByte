@@ -15,9 +15,12 @@ function makeProduct(
     category: { id: "c", name: "C", slug: "c" },
     condition: "NEW",
     grade: null,
+    isPresale: false,
     images: [],
     shortDescription: null,
     description: null,
+    shippingNote: null,
+    returnPolicyNote: null,
     defaultVariantId: "v1",
     variantAxes: [],
     variants: [

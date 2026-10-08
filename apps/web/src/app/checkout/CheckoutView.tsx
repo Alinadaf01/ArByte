@@ -272,7 +272,7 @@ export function CheckoutView() {
                     placeholder={
                       checkoutPage.addressForm.recipientNamePlaceholder
                     }
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -284,7 +284,7 @@ export function CheckoutView() {
                       setNewAddress((s) => ({ ...s, mobile: e.target.value }))
                     }
                     placeholder={checkoutPage.addressForm.mobilePlaceholder}
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -296,7 +296,7 @@ export function CheckoutView() {
                       setNewAddress((s) => ({ ...s, province: e.target.value }))
                     }
                     placeholder={checkoutPage.addressForm.provincePlaceholder}
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -308,7 +308,7 @@ export function CheckoutView() {
                       setNewAddress((s) => ({ ...s, city: e.target.value }))
                     }
                     placeholder={checkoutPage.addressForm.cityPlaceholder}
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -323,7 +323,7 @@ export function CheckoutView() {
                       }))
                     }
                     placeholder={checkoutPage.addressForm.postalCodeLabel}
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 col-span-full flex flex-col gap-1.5 text-micro">
@@ -340,7 +340,7 @@ export function CheckoutView() {
                     placeholder={
                       checkoutPage.addressForm.addressLinePlaceholder
                     }
-                    className="border-border-input text-primary resize-y rounded-tile border px-3.5 py-3 text-body leading-loose"
+                    className="border-border-input text-primary resize-y rounded-tile border px-3.5 py-3 text-input leading-loose"
                   />
                 </label>
                 <button
@@ -472,7 +472,7 @@ export function CheckoutView() {
                     placeholder={
                       checkoutPage.invoiceForm.companyNamePlaceholder
                     }
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -482,7 +482,7 @@ export function CheckoutView() {
                     value={nationalId}
                     onChange={(e) => setNationalId(e.target.value)}
                     placeholder={checkoutPage.invoiceForm.nationalIdPlaceholder}
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
                 <label className="text-secondary-2 flex flex-col gap-1.5 text-micro">
@@ -494,7 +494,7 @@ export function CheckoutView() {
                     placeholder={
                       checkoutPage.invoiceForm.economicCodePlaceholder
                     }
-                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-body"
+                    className="border-border-input text-primary min-h-11.5 rounded-tile border px-3.5 text-input"
                   />
                 </label>
               </div>

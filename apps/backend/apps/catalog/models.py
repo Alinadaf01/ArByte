@@ -118,6 +118,11 @@ class Product(models.Model):
     # داخلی تیم فروش است (مثلاً استوک درجه A یا B+)؛ هر محصولی لزوماً گرید
     # ندارد (محصول آکبند معمولاً خالی می‌ماند).
     grade = models.CharField(max_length=20, choices=PRODUCT_GRADE_CHOICES, blank=True, null=True)
+    # پیش‌فروش: کالا هنوز نرسیده — بعد از ثبت سفارش و پرداخت بیعانه از امارات
+    # تهیه و ارسال می‌شود (برخلاف بقیه‌ی موجودی که همین الان قابل ارسال است).
+    # بج جدا روی صفحه‌ی محصول دارد و مهلت ارسال پیش‌فرضش «۲ تا ۴ هفته» است —
+    # اگر محصول «یادداشت ارسال» خودش را هم داشته باشد، آن یادداشت مقدم است.
+    is_presale = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=PRODUCT_STATUS_CHOICES, default="ACTIVE")
     is_visible_on_site = models.BooleanField(default=True)
     is_visible_in_search = models.BooleanField(default=True)
