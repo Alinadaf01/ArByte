@@ -186,6 +186,10 @@ def build_product_detail(product, global_threshold: int) -> dict:
         # مرجوعی یک دستگاه می‌تواند با بقیه فرق کند: پیش‌فروش، حجیم، و…).
         "shippingNote": product.shipping_note,
         "returnPolicyNote": product.return_policy_note,
+        # خالی = گارانتی عمومی storeFacts.policies (اکثر محصولات)؛ ست‌شده
+        # یعنی این محصول گارانتی/مدت فرق دارد (مثلاً گارانتی فروشنده نه شرکتی).
+        "warrantyMonths": product.warranty_months,
+        "warrantyProvider": product.warranty_provider,
         "defaultVariantId": default_variant_id,
         "variantAxes": variant_axes,
         "variants": [

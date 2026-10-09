@@ -491,6 +491,12 @@ export const productDetailPage = {
   presaleLabel: "پیش‌فروش",
   presaleShippingNote:
     "این محصول به‌صورت پیش‌فروش است؛ پس از ثبت سفارش و پرداخت بیعانه، از امارات برای شما تهیه و ارسال می‌شود. زمان تحویل: ۲ تا ۴ هفته.",
+  /** بنر بزرگ بالای صفحه‌ی محصول پیش‌فروش — همان لحظه‌ی ورود روشن شود که
+   * دستگاه در تهران موجود نیست، نه زیر یک تب. */
+  presaleBanner: {
+    title: "این لپ‌تاپ هم‌اکنون در تهران موجود نیست",
+    body: "پیش‌فروش است؛ پس از ثبت سفارش و پرداخت بیعانه، از امارات برای شما تهیه می‌شود. زمان تحویل: ۲ تا ۴ هفته.",
+  },
   decreaseQtyAriaLabel: "کم کردن",
   increaseQtyAriaLabel: "اضافه کردن",
   addToCartCta: "افزودن به سبد خرید",
@@ -512,11 +518,18 @@ export const productDetailPage = {
     freeShippingTitle: "ارسال رایگان",
     /** طبق storeFacts.policies.tehranDeliveryDays فعلی (۱ روز = «فردا»). */
     tehranSubtitle: "تهران فردا",
+    /** پیش‌فروش: به‌جای «ارسال رایگان / تهران فردا» (گمراه‌کننده برای کالایی
+     * که هنوز در تهران نیست). */
+    presaleShippingTitle: "ارسال از امارات",
+    presaleShippingSubtitle: "۲ تا ۴ هفته",
   },
   warrantyPolicy: {
     heading: "گارانتی",
     body: (months: string) =>
       `${months} ماه گارانتی رسمی شرکتی با کارت همراه دستگاه. در ۷۲ ساعت اول، ایراد سخت‌افزاری یعنی تعویض کامل دستگاه، نه تعمیر.`,
+    /** گارانتی‌فروشنده یا مدت فرق‌کرده (warrantyProvider مخصوص این محصول). */
+    bodyWithProvider: (months: string, provider: string) =>
+      `${months} ماه ${provider} با کارت همراه دستگاه. در ۷۲ ساعت اول، ایراد سخت‌افزاری یعنی تعویض کامل دستگاه، نه تعمیر.`,
   },
   shippingPolicy: {
     heading: "ارسال",

@@ -15,6 +15,9 @@ interface ProductInfoTabsProps {
    * عمومی storeFacts.policies می‌نشیند. */
   shippingNote: string | null;
   returnPolicyNote: string | null;
+  /** خالی = گارانتی عمومی storeFacts.policies. */
+  warrantyMonths: number | null;
+  warrantyProvider: string | null;
 }
 
 /**
@@ -29,6 +32,8 @@ export function ProductInfoTabs({
   isPresale,
   shippingNote,
   returnPolicyNote,
+  warrantyMonths,
+  warrantyProvider,
 }: ProductInfoTabsProps) {
   const paragraphs = description?.split("\n").filter(Boolean) ?? [];
   const { policies } = storeFacts;
@@ -108,9 +113,18 @@ export function ProductInfoTabs({
                   {productDetailPage.warrantyPolicy.heading}
                 </p>
                 <p className="text-caption text-secondary leading-loose">
-                  {productDetailPage.warrantyPolicy.body(
-                    formatNumberFa(policies.warrantyMonths),
-                  )}
+                  {warrantyProvider
+                    ? productDetailPage.warrantyPolicy.bodyWithProvider(
+                        formatNumberFa(
+                          warrantyMonths ?? policies.warrantyMonths,
+                        ),
+                        warrantyProvider,
+                      )
+                    : productDetailPage.warrantyPolicy.body(
+                        formatNumberFa(
+                          warrantyMonths ?? policies.warrantyMonths,
+                        ),
+                      )}
                 </p>
               </div>
               <div className="flex flex-col gap-2">

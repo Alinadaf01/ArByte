@@ -54,6 +54,9 @@ export const PublicProductDetailSchema = z.object({
    * عمومی storeFacts.policies می‌نشیند. */
   shippingNote: z.string().nullable(),
   returnPolicyNote: z.string().nullable(),
+  /** خالی = گارانتی عمومی storeFacts.policies. */
+  warrantyMonths: z.number().int().positive().nullable(),
+  warrantyProvider: z.string().nullable(),
 
   defaultVariantId: z.string(),
   /** کدام مشخصات پیکربندی‌ها را جدا می‌کنند؛ محصول بدون پیکربندی = آرایه‌ی خالی. */

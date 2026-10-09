@@ -7,6 +7,7 @@ import { StorefrontShell } from "@/components/shell/StorefrontShell";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { TrustTiles } from "@/components/product/TrustTiles";
+import { PresaleBanner } from "@/components/product/PresaleBanner";
 import { ProductInfoTabs } from "@/components/product/ProductInfoTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
@@ -153,6 +154,8 @@ export default async function ProductPage({
       <div className="flex flex-col gap-7 px-[5vw] py-6 md:gap-8 md:py-9">
         <Breadcrumb items={breadcrumbItems} />
 
+        {product.isPresale ? <PresaleBanner /> : null}
+
         <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-2 lg:gap-11">
           <ProductGallery productName={product.name} images={product.images} />
 
@@ -209,7 +212,12 @@ export default async function ProductPage({
               selectedVariantId={selectedVariant.id}
             />
 
-            <TrustTiles selectedVariantPrice={selectedVariant.price.final} />
+            <TrustTiles
+              selectedVariantPrice={selectedVariant.price.final}
+              isPresale={product.isPresale}
+              warrantyMonths={product.warrantyMonths}
+              warrantyProvider={product.warrantyProvider}
+            />
           </div>
         </div>
 
@@ -220,6 +228,8 @@ export default async function ProductPage({
           isPresale={product.isPresale}
           shippingNote={product.shippingNote}
           returnPolicyNote={product.returnPolicyNote}
+          warrantyMonths={product.warrantyMonths}
+          warrantyProvider={product.warrantyProvider}
         />
 
         <ProductReviews productSlug={product.slug} />

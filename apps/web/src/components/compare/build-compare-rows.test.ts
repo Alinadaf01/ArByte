@@ -21,6 +21,8 @@ function makeProduct(
     description: null,
     shippingNote: null,
     returnPolicyNote: null,
+    warrantyMonths: null,
+    warrantyProvider: null,
     defaultVariantId: "v1",
     variantAxes: [],
     variants: [

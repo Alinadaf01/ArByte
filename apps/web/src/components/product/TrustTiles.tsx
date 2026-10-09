@@ -9,6 +9,10 @@ import { TRUST_ICON_PATHS } from "@/components/icons/trust-icon-paths";
 interface TrustTilesProps {
   /** قیمت واریانت انتخاب‌شده — برای شرط «ارسال رایگان فقط اگر ≥ آستانه». */
   selectedVariantPrice: number;
+  isPresale: boolean;
+  /** خالی = گارانتی عمومی storeFacts.policies. */
+  warrantyMonths: number | null;
+  warrantyProvider: string | null;
 }
 
 /**
@@ -16,25 +20,40 @@ interface TrustTilesProps {
  * عیناً همان اصلاح T-212 است (`homePage.benefits.testedBeforeShipping`) —
  * نه رونویسی طراحی («سریال در پرونده»، ادعای بدون پشتیبان).
  */
-export function TrustTiles({ selectedVariantPrice }: TrustTilesProps) {
+export function TrustTiles({
+  selectedVariantPrice,
+  isPresale,
+  warrantyMonths,
+  warrantyProvider,
+}: TrustTilesProps) {
   const qualifiesForFreeShipping =
+    !isPresale &&
     selectedVariantPrice >= storeFacts.policies.freeShippingMinToman;
 
   const tiles = [
     {
       key: "warranty",
       title: productDetailPage.trustTiles.warrantyTitle(
-        formatNumberFa(storeFacts.policies.warrantyMonths),
+        formatNumberFa(warrantyMonths ?? storeFacts.policies.warrantyMonths),
       ),
-      subtitle: productDetailPage.trustTiles.replacementSubtitle,
+      subtitle:
+        warrantyProvider ?? productDetailPage.trustTiles.replacementSubtitle,
     },
-    qualifiesForFreeShipping
+    // پیش‌فروش: «ارسال رایگان / تهران فردا» گمراه‌کننده است — دستگاه هنوز
+    // در تهران نیست.
+    isPresale
       ? {
           key: "freeShipping",
-          title: productDetailPage.trustTiles.freeShippingTitle,
-          subtitle: productDetailPage.trustTiles.tehranSubtitle,
+          title: productDetailPage.trustTiles.presaleShippingTitle,
+          subtitle: productDetailPage.trustTiles.presaleShippingSubtitle,
         }
-      : null,
+      : qualifiesForFreeShipping
+        ? {
+            key: "freeShipping",
+            title: productDetailPage.trustTiles.freeShippingTitle,
+            subtitle: productDetailPage.trustTiles.tehranSubtitle,
+          }
+        : null,
     {
       key: "testedBeforeShipping",
       title: homePage.benefits.testedBeforeShipping.title,
