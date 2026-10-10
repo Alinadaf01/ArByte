@@ -6,6 +6,8 @@ snake_case-keyed dicts on purpose — DRF's CamelCaseJSONRenderer (already
 global, see config/settings.py) converts them to camelCase on the way out,
 same as every apps/admin_api response already relies on."""
 
+import re
+
 from apps.catalog.key_specs import MAX_KEY_SPECS
 from apps.catalog.pricing import live_price
 
@@ -14,6 +16,13 @@ from .media import public_media_url
 from .variant import build_variant_label, select_card_variant
 
 _NULL_SEO = {"title": None, "description": None, "canonical": None}
+
+
+def included_accessories_of(text: str | None) -> list[str]:
+    """یک مورد در هر خط (یا جداشده با ، یا ,) → آرایه‌ی تمیز، بدون خالی."""
+    if not text:
+        return []
+    return [item.strip() for item in re.split(r"[\n,،]+", text) if item.strip()]
 
 
 def spec_value_of(spec) -> str:
@@ -190,6 +199,8 @@ def build_product_detail(product, global_threshold: int) -> dict:
         # یعنی این محصول گارانتی/مدت فرق دارد (مثلاً گارانتی فروشنده نه شرکتی).
         "warrantyMonths": product.warranty_months,
         "warrantyProvider": product.warranty_provider,
+        # اقلام رایگان همراه دستگاه (مثلاً کیف اشانتیون)؛ خالی = آرایه‌ی خالی.
+        "includedAccessories": included_accessories_of(product.included_accessories),
         "defaultVariantId": default_variant_id,
         "variantAxes": variant_axes,
         "variants": [

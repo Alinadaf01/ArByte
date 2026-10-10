@@ -307,9 +307,12 @@ export function SiteFooter({ info }: { info: SiteInfo }) {
                   </li>
                 ) : null}
               </ul>
-              {info.trustBadge ? (
-                <TrustBadge badge={info.trustBadge} size="size-16" />
-              ) : null}
+              <div className="flex flex-wrap items-start gap-2.5">
+                {info.trustBadge ? (
+                  <TrustBadge badge={info.trustBadge} size="size-16" />
+                ) : null}
+                <EmallsBadge size="w-[75px]" />
+              </div>
             </div>
           ) : null}
         </div>
@@ -489,9 +492,12 @@ function MobileFooter({
           ))}
         </div>
 
-        {info.trustBadge ? (
-          <TrustBadge badge={info.trustBadge} size="size-15" />
-        ) : null}
+        <div className="flex flex-wrap items-start gap-2.5">
+          {info.trustBadge ? (
+            <TrustBadge badge={info.trustBadge} size="size-15" />
+          ) : null}
+          <EmallsBadge size="w-[70px]" />
+        </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-4.5">
           <div className="flex gap-4.5">
@@ -589,5 +595,27 @@ function TrustBadge({
     </a>
   ) : (
     <span className="self-start">{img}</span>
+  );
+}
+
+/** نشان اعتباری ایمالز — کد embed ثابت خود ایمالز (نه از تنظیمات پنل)؛
+ * سرور خودش تصویر امتیاز را hotlink می‌دهد، دقیقاً مثل اینماد. */
+function EmallsBadge({ size }: { size: string }) {
+  return (
+    <a
+      href="https://emalls.ir/Shop/27413/"
+      target="_blank"
+      rel="noopener noreferrer"
+      referrerPolicy="origin"
+      className="self-start"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="https://service.emalls.ir/neshan?id=27413"
+        alt="نشان اعتباری ایمالز"
+        referrerPolicy="origin"
+        className={`${size} rounded-tile-sm bg-white object-contain p-1`}
+      />
+    </a>
   );
 }

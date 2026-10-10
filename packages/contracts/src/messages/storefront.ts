@@ -547,6 +547,7 @@ export const productDetailPage = {
     body: (days: string) =>
       `تا ${days} روز پس از تحویل، با جعبه و لوازم کامل، بدون نیاز به دلیل. هزینه بازگشت با ماست.`,
   },
+  includedAccessoriesHeading: "اقلام همراه",
   relatedTitle: "گزینه‌های هم‌رده",
   relatedViewAllCta: (categoryName: string) => `همه ${categoryName}`,
 } as const;

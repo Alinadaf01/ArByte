@@ -27,6 +27,7 @@ FIELDS: dict[str, str] = {
     "description": "توضیح کامل",
     "shipping_note": "یادداشت ارسال",
     "return_policy_note": "یادداشت مرجوعی",
+    "included_accessories": "اقلام همراه",
     "sku": "SKU",
     "variant_name": "نام واریانت",
     "supplier": "تأمین‌کننده",
@@ -120,7 +121,10 @@ def plan_rows(headers: list[str], rows: list[list], mapping: dict) -> list[dict]
         else:
             seen[sku] = row_number
         action = "update" if sku in existing_skus else "create"
-        for field in ("parent_code", "name", "variant_name", "short_description", "description", "shipping_note", "return_policy_note"):
+        for field in (
+            "parent_code", "name", "variant_name", "short_description", "description",
+            "shipping_note", "return_policy_note", "included_accessories",
+        ):
             data[field] = get(field)
         if len(data["short_description"]) > 160:
             errors.append("توضیح کوتاه نباید بیش از ۱۶۰ نویسه باشد.")
@@ -203,6 +207,7 @@ def _product_for(row: dict, cache: dict):
         ("condition", data["condition"]), ("grade", data["grade"]),
         ("short_description", data["short_description"]), ("description", data["description"]),
         ("shipping_note", data["shipping_note"]), ("return_policy_note", data["return_policy_note"]),
+        ("included_accessories", data["included_accessories"]),
     ):
         if value:
             setattr(product, field, value)
@@ -248,6 +253,16 @@ def _apply_row(row: dict, cache: dict, user) -> str:
         Inventory.objects.adjust(variant, data["stock"] - inventory.quantity, note="ورود اکسل", user=user)
     for key, value in data["specs"].items():
         definition = SpecificationDefinition.objects.get(key=key)
+        if definition.is_variant_axis and definition.category_id and definition.category_id != product.category_id:
+            # ستون اکسل یک‌بار، هنگام نگاشت، به یک تعریف خاص وصل شده — اما این
+            # ردیف محصولی از دسته‌ی دیگری است. محور دسته‌بندی‌شده (پردازنده/
+            # گرافیک/رم/فضا) باید زیر تعریفِ همین دسته بنشیند، وگرنه چند تعریف
+            # موازی با مقدار یکسان ثبت می‌شود (باگ تکرار چیپ مشخصات کلیدی).
+            correct = SpecificationDefinition.objects.filter(
+                name_fa=definition.name_fa, category_id=product.category_id
+            ).first()
+            if correct:
+                definition = correct
         spec_value = definition.values.filter(value=value).first()
         target = {"variant": variant} if definition.is_variant_axis else {"product": product}
         ProductSpecification.objects.update_or_create(
@@ -312,6 +327,7 @@ def template_workbook() -> Workbook:
         "گرید اختیاری است؛ مقادیر مجاز: A، A+، A++، A+++، B، B+، OPENBOX، KY.PEN.A، KY.PEN.A+، BOX، A++BOX.",
         "پیش‌فروش اختیاری است؛ برای فعال‌کردن «بله» بنویسید، برای خالی‌کردن «خیر» — ستون خالی یعنی بدون تغییر. محصول پیش‌فروش روی بج صفحه‌اش مشخص می‌شود و در بخش ارسال، مهلت ۲ تا ۴ هفته و تهیه از امارات نشان داده می‌شود.",
         "یادداشت ارسال/یادداشت مرجوعی اختیاری‌اند؛ اگر پر باشند به‌جای متن عمومی ارسال/مرجوعی همان محصول نشان داده می‌شوند (برای محصول پیش‌فروش، یادداشت ارسال نادیده گرفته می‌شود و متن ثابت پیش‌فروش نشان داده می‌شود).",
+        "اقلام همراه اختیاری است؛ هر مورد را در یک خط جدا بنویسید (مثلاً «کیف اشانتیون») — همان‌ها در صفحه‌ی محصول فهرست می‌شوند.",
         "قیمت نهایی خالی و قیمت همکار پر = قیمت با قانون سود حساب می‌شود.",
         "برای مشخصات، ستونی با نام فارسی همان مشخصه اضافه کنید و در نگاشت انتخابش کنید.",
     ]:

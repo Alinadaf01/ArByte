@@ -23,6 +23,7 @@ function makeProduct(
     returnPolicyNote: null,
     warrantyMonths: null,
     warrantyProvider: null,
+    includedAccessories: [],
     defaultVariantId: "v1",
     variantAxes: [],
     variants: [

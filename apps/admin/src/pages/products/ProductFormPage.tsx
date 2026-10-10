@@ -66,6 +66,7 @@ function toForm(p: AdminProduct | null): ProductFormValues {
     requiresSerial: p?.requiresSerial ?? true,
     shippingNote: p?.shippingNote ?? "",
     returnPolicyNote: p?.returnPolicyNote ?? "",
+    includedAccessories: p?.includedAccessories ?? "",
     seo: { ...EMPTY_SEO, ...(p?.seo ?? {}) },
   };
 }
@@ -414,6 +415,16 @@ export default function ProductFormPage() {
                 id="p-return"
                 value={form.returnPolicyNote ?? ""}
                 onChange={(e) => set("returnPolicyNote", e.target.value)}
+              />
+            </Field>
+            <Field
+              label="اقلام همراه (یک مورد در هر خط — مثلاً کیف اشانتیون)"
+              htmlFor="p-accessories"
+            >
+              <Textarea
+                id="p-accessories"
+                value={form.includedAccessories ?? ""}
+                onChange={(e) => set("includedAccessories", e.target.value)}
               />
             </Field>
           </div>

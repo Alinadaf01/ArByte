@@ -175,6 +175,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
             "is_visible_on_site", "is_visible_in_search", "is_visible_in_category", "priority",
             "short_description", "description", "model_number", "gtin", "part_number",
             "warranty_months", "warranty_provider", "requires_serial", "shipping_note", "return_policy_note",
+            "included_accessories",
             "seo", "images", "updated_at",
         ]
         read_only_fields = ["updated_at"]
@@ -479,12 +480,16 @@ def _variant_rows(product: Product, *, include_cost: bool) -> list[dict]:
         .prefetch_related("specifications__definition", "specifications__value")
         .order_by("id")
     )
+    valid_axis_ids = {d.pk for d in _definitions_for(product).filter(is_variant_axis=True)}
     axis_order = [str(d.pk) for d in _definitions_for(product).filter(is_variant_axis=True).order_by("sort_order", "id")]
     rows = []
     for v in variants:
         axis_values, axis_text = {}, {}
         for spec in v.specifications.all():
-            if spec.definition.is_variant_axis and spec.value_id:
+            # محور دسته‌ی دیگری (مثلاً مانده از نگاشت اشتباه اکسل قبلی) هرگز
+            # نباید اینجا سر دربیاورد — وگرنه ذخیره‌ی جدول با «محور نامعتبر»
+            # رد می‌شود چون این مقدار در axis_defsِ سمت سرور نیست.
+            if spec.definition.is_variant_axis and spec.value_id and spec.definition_id in valid_axis_ids:
                 axis_values[str(spec.definition_id)] = str(spec.value_id)
                 axis_text[str(spec.definition_id)] = spec.value.value
         inventory = getattr(v, "inventory", None)

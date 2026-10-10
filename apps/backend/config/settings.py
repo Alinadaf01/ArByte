@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.documents",
     "apps.public_api",
     "apps.torob",
+    "apps.emalls",
 ]
 
 MIDDLEWARE = [

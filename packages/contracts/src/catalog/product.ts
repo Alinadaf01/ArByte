@@ -57,6 +57,8 @@ export const PublicProductDetailSchema = z.object({
   /** خالی = گارانتی عمومی storeFacts.policies. */
   warrantyMonths: z.number().int().positive().nullable(),
   warrantyProvider: z.string().nullable(),
+  /** اقلام رایگان همراه دستگاه (مثلاً کیف اشانتیون)؛ خالی = آرایه‌ی خالی. */
+  includedAccessories: z.array(z.string()),
 
   defaultVariantId: z.string(),
   /** کدام مشخصات پیکربندی‌ها را جدا می‌کنند؛ محصول بدون پیکربندی = آرایه‌ی خالی. */

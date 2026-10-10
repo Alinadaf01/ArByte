@@ -59,7 +59,7 @@ export function JournalCard({ card, reducedMotion }: JournalCardProps) {
             <span className="text-micro text-on-dark font-emphasis">
               {card.tag}
             </span>
-            <h3 className="text-caption text-on-dark text-pretty font-heading leading-6">
+            <h3 className="text-caption text-on-dark text-pretty font-heading line-clamp-3 leading-6">
               {card.title}
             </h3>
           </div>
@@ -91,7 +91,7 @@ export function JournalCard({ card, reducedMotion }: JournalCardProps) {
             <span className="text-micro text-on-dark font-emphasis">
               {card.tag}
             </span>
-            <h3 className="text-caption text-on-dark text-pretty font-heading leading-6">
+            <h3 className="text-caption text-on-dark text-pretty font-heading line-clamp-3 leading-6">
               {card.title}
             </h3>
           </div>

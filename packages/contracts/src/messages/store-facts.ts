@@ -13,7 +13,7 @@
  */
 export const storeFacts = {
   policies: {
-    freeShippingMinToman: 50_000_000,
+    freeShippingMinToman: 500_000_000,
     returnDays: 7,
     sameDayCutoffHour: 14,
     tehranDeliveryDays: 1,

@@ -129,6 +129,9 @@ class Product(models.Model):
     is_visible_in_category = models.BooleanField(default=True)
     return_policy_note = models.TextField(blank=True, null=True)
     shipping_note = models.TextField(blank=True, null=True)
+    # اقلام رایگان همراه دستگاه (مثلاً کیف اشانتیون روی برخی لپ‌تاپ‌های
+    # آکبند) — یک مورد در هر خط؛ خالی یعنی بدون اقلام همراه.
+    included_accessories = models.TextField(blank=True, null=True)
     priority = models.IntegerField(default=0)
 
     # E-03 §۳ — گارانتی/سریال حالا قابلیت واقعی است (کارت گارانتی، E-04).

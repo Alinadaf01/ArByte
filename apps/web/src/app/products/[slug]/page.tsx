@@ -8,6 +8,7 @@ import { ProductGallery } from "@/components/product/ProductGallery";
 import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { TrustTiles } from "@/components/product/TrustTiles";
 import { PresaleBanner } from "@/components/product/PresaleBanner";
+import { IncludedAccessories } from "@/components/product/IncludedAccessories";
 import { ProductInfoTabs } from "@/components/product/ProductInfoTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
@@ -205,6 +206,8 @@ export default async function ProductPage({
                 ))}
               </div>
             ) : null}
+
+            <IncludedAccessories items={product.includedAccessories} />
 
             <PurchasePanel
               productSlug={product.slug}

@@ -26,6 +26,7 @@ describe("PublicProductDetailSchema — هرگز فیلد حساس لو نمی�
     returnPolicyNote: null,
     warrantyMonths: null,
     warrantyProvider: null,
+    includedAccessories: [],
     defaultVariantId: "v_1",
     variantAxes: [],
     specifications: [],

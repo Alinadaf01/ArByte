@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
+from apps.emalls import views as emalls_views
 from apps.orders.balepay import views as balepay_views
 from apps.public_api.seo_views import torob_feed
 from apps.torob import views as torob_views
@@ -17,6 +18,10 @@ urlpatterns = [
     # AUDIT-6 — Torob API v3 (ترب POST می‌کند؛ JWT در X-Torob-Token). قبل از
     # include("api/") تا با مسیرهای پنل تداخل نکند.
     path("api/torob/v3/products", torob_views.products, name="torob-v3-products"),
+    # راهنمای ایمالز (سند کاربر) — بدون احراز هویت، GET/POST با page/item_per_page؛
+    # هم روی دامنه‌ی فروشگاه (rewrite فروشگاه برای feeds/*) هم مستقیم روی API.
+    path("feeds/emalls", emalls_views.product_list, name="feed-emalls"),
+    path("api/emalls/list", emalls_views.product_list, name="emalls-list"),
     # AUDIT-2 — وب‌هوک ربات بله (مسیر مخفی؛ apps/orders/balepay/views.py).
     path("api/bale/webhook/<str:secret>", balepay_views.webhook, name="bale-webhook"),
     path("api/", include("apps.admin_api.urls")),

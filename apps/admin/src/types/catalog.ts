@@ -125,6 +125,7 @@ export interface AdminProduct {
   requiresSerial: boolean;
   shippingNote: string | null;
   returnPolicyNote: string | null;
+  includedAccessories: string | null;
   seo: ProductSeo | null;
   images: ProductImage[];
   storefrontUrl: string;
