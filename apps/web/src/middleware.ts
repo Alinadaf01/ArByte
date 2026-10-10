@@ -123,8 +123,8 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    // G-01 — نماد اعتماد اینماد باید مستقیم از سرور خودش بارگذاری شود.
-    "img-src 'self' data: blob: https://trustseal.enamad.ir",
+    // G-01 — نماد اعتماد اینماد و ایمالز باید مستقیم از سرور خودشان بارگذاری شوند.
+    "img-src 'self' data: blob: https://trustseal.enamad.ir https://service.emalls.ir",
     "font-src 'self'",
     `connect-src 'self' ${apiOrigin}`,
     "frame-ancestors 'none'",
