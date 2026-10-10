@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { siteFooter } from "@arbyte/contracts";
 import type { SiteInfo } from "@arbyte/contracts";
@@ -312,6 +313,7 @@ export function SiteFooter({ info }: { info: SiteInfo }) {
                   <TrustBadge badge={info.trustBadge} size="size-16" />
                 ) : null}
                 <EmallsBadge size="w-[75px]" />
+                <BalePayBadge width={150} />
               </div>
             </div>
           ) : null}
@@ -497,6 +499,7 @@ function MobileFooter({
             <TrustBadge badge={info.trustBadge} size="size-15" />
           ) : null}
           <EmallsBadge size="w-[70px]" />
+          <BalePayBadge width={140} />
         </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-4.5">
@@ -595,6 +598,21 @@ function TrustBadge({
     </a>
   ) : (
     <span className="self-start">{img}</span>
+  );
+}
+
+/** بج «پرداخت امن با بله» — فایل محلی (نه از تنظیمات پنل، چون فیلد
+ * trust_badge فقط یک اسلات دارد و همان برای اینماد استفاده شده). */
+function BalePayBadge({ width }: { width: number }) {
+  const height = Math.round((width * 615) / 1320);
+  return (
+    <Image
+      src="/trust-badges/bale-pay.webp"
+      alt="پرداخت امن با بله"
+      width={width}
+      height={height}
+      className="self-start rounded-tile-sm bg-white object-contain p-1"
+    />
   );
 }
 
