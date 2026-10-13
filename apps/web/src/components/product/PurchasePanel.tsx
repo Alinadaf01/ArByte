@@ -12,9 +12,11 @@ import { Badge, Toast } from "@arbyte/ui";
 import { availabilityLabel, availabilityTone } from "@/lib/labels";
 import { useCartStore } from "@/lib/stores/cart-store";
 import { useWishlistStore } from "@/lib/stores/wishlist-store";
+import { trackAddToCart } from "@/lib/analytics/ecommerce";
 
 interface PurchasePanelProps {
   productSlug: string;
+  productName: string;
   variants: PublicVariant[];
   selectedVariantId: string;
 }
@@ -30,6 +32,7 @@ const MAX_QTY = 5;
  */
 export function PurchasePanel({
   productSlug,
+  productName,
   variants,
   selectedVariantId,
 }: PurchasePanelProps) {
@@ -68,10 +71,18 @@ export function PurchasePanel({
     setQtyTick((t) => t + 1);
   }
 
-  function handleAdd() {
-    addItem(selected.id, productSlug, qty);
+  async function handleAdd() {
+    const ok = await addItem(selected.id, productSlug, qty);
+    if (!ok) return;
     setAdded(true);
     setToastOpen(true);
+    trackAddToCart({
+      id: selected.id,
+      name: productName,
+      variant: selected.label,
+      price: selected.price.final,
+      quantity: qty,
+    });
   }
 
   function toggleWishlist() {

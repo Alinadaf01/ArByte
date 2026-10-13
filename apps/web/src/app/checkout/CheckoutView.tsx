@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Cart, PaymentPlan } from "@arbyte/contracts";
 import { checkoutPage, formatPrice, toPersianDigits } from "@arbyte/contracts";
 import { fetchCart } from "@/lib/cart-api";
+import { trackBeginCheckout } from "@/lib/analytics/ecommerce";
 import {
   createAddress,
   createOrder,
@@ -74,6 +75,16 @@ export function CheckoutView() {
         return;
       }
       setCart(freshCart);
+      trackBeginCheckout(
+        freshCart.items.map((item) => ({
+          id: item.variant.id,
+          name: item.variant.productName,
+          variant: item.variant.label,
+          price: item.variant.price.final,
+          quantity: item.quantity,
+        })),
+        freshCart.finalTotal,
+      );
       setAddresses(addressList);
       setPaymentPlans(plans);
       const defaultAddress =

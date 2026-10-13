@@ -20,6 +20,7 @@
     "@arbyte/contracts": "workspace:*",
     "@arbyte/tokens": "workspace:*",
     "@arbyte/ui": "workspace:*",
+    "@next/third-parties": "^16.4.0",
     "next": "^15.5.24",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

@@ -63,7 +63,11 @@ export default async function BlogPostPage({ params }: PostPageProps) {
     "@type": "Article",
     headline: post.title,
     description: post.excerpt,
-    image: post.cover?.url ? [absoluteUrl(post.cover.url)] : undefined,
+    // ARBYTE-SEO-IMPLEMENTATION.md §3.B — بدون کاور اختصاصی، image را کلاً
+    // حذف نکن (گوگل Article schema را رد می‌کند)؛ تصویر سطح‌سایت واقعی و در
+    // دسترس (همان opengraph-image.png پیش‌فرض Next، نه یک عکس محصول نامربوط
+    // که بشود ادعای غلط «عکس این مقاله» کرد).
+    image: [absoluteUrl(post.cover?.url || "/opengraph-image.png")],
     datePublished: post.publishedAt,
     dateModified: post.updatedAt,
     author: { "@type": "Person", name: post.author },

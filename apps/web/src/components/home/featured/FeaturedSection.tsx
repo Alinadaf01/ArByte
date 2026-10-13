@@ -93,6 +93,9 @@ export function FeaturedSection({ block }: FeaturedSectionProps) {
                 variantId={big.defaultVariant.id}
                 productSlug={big.slug}
                 outOfStock={bigAvailability.status === "OUT_OF_STOCK"}
+                productName={big.name}
+                variantLabel={big.defaultVariant.label}
+                price={big.defaultVariant.price}
               />
               <Link
                 href={`/products/${big.slug}`}
@@ -170,6 +173,9 @@ export function FeaturedSection({ block }: FeaturedSectionProps) {
                       variantId={product.defaultVariant.id}
                       productSlug={product.slug}
                       outOfStock={availability.status === "OUT_OF_STOCK"}
+                      productName={product.name}
+                      variantLabel={product.defaultVariant.label}
+                      price={product.defaultVariant.price}
                     />
                   </div>
                 </div>

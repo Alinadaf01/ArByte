@@ -118,11 +118,18 @@ function getServerSnapshot(): readonly CartLine[] {
   return EMPTY;
 }
 
-/** `productSlug` فقط برای سازگاری امضا با نسخه‌ی محلی قبلی نگه داشته شده — سرور خودش آن را برمی‌گرداند. */
-async function addItem(variantId: string, _productSlug: string, qty = 1) {
+/** `productSlug` فقط برای سازگاری امضا با نسخه‌ی محلی قبلی نگه داشته شده — سرور خودش آن را برمی‌گرداند.
+ * مقدار بازگشتی: موفق یا نه — فقط برای رویداد GA4 `add_to_cart` لازم است
+ * (نباید حتی برای شکست‌ها/دکمه‌ی غیرفعال فایر شود). */
+async function addItem(
+  variantId: string,
+  _productSlug: string,
+  qty = 1,
+): Promise<boolean> {
   await hydrate();
   const cart = await addCartItem(variantId, qty);
   if (cart) applyCart(cart);
+  return Boolean(cart);
 }
 
 async function setQty(variantId: string, qty: number) {

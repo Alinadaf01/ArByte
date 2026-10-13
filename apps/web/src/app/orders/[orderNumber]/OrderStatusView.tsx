@@ -14,6 +14,7 @@ import {
 } from "@arbyte/contracts";
 import { formatDateFa } from "@arbyte/contracts/date";
 import { downloadProxyFile } from "@/lib/download-file";
+import { trackPurchase } from "@/lib/analytics/ecommerce";
 import { OrderPaymentPanel } from "@/components/order/OrderPaymentPanel";
 import {
   OrderTimeline,
@@ -184,6 +185,30 @@ export function OrderStatusView({ orderNumber }: OrderStatusViewProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // ARBYTE-SEO-IMPLEMENTATION.md §2 — رویداد GA4 `purchase` فقط وقتی سفارش
+  // واقعاً تأیید پرداخت شده (PAID یا جلوترش)، نه فقط ایجادشده. گارد
+  // localStorage (نه ref در حافظه) چون کاربر ممکن است همین صفحه را رفرش یا
+  // دوباره باز کند — باید فقط یک‌بار برای هر شماره سفارش فایر شود.
+  useEffect(() => {
+    if (!order) return;
+    const orderIdx = ORDER_STATUS_VALUES.indexOf(order.status);
+    if (orderIdx < PAID_INDEX) return;
+    const key = `arbyte:ga4-purchase-tracked:${order.orderNumber}`;
+    if (window.localStorage.getItem(key)) return;
+    trackPurchase({
+      transactionId: order.orderNumber,
+      totalToman: order.finalTotal,
+      items: order.items.map((item) => ({
+        id: item.variantId ?? item.sku,
+        name: item.productName,
+        variant: item.variantLabel,
+        price: item.unitPrice,
+        quantity: item.quantity,
+      })),
+    });
+    window.localStorage.setItem(key, "1");
+  }, [order]);
 
   useEffect(() => {
     if (!isPaymentReturn) return;

@@ -126,7 +126,10 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     // G-01 — نماد اعتماد اینماد و ایمالز باید مستقیم از سرور خودشان بارگذاری شوند.
     "img-src 'self' data: blob: https://trustseal.enamad.ir https://service.emalls.ir",
     "font-src 'self'",
-    `connect-src 'self' ${apiOrigin}`,
+    // اسکریپت GTM خودش زیر strict-dynamic مجاز است (همان nonce را دارد)،
+    // ولی ارسال داده‌ی GA4 (beacon/fetch) یک دامنه‌ی جدا است که فقط با
+    // connect-src صریح باز می‌شود.
+    `connect-src 'self' ${apiOrigin} https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com`,
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

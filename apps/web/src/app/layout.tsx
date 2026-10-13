@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
+import { GoogleTagManager } from "@next/third-parties/google";
 import { siteFooter } from "@arbyte/contracts";
 import "./globals.css";
 import { ImpersonationBanner } from "@/components/shell/ImpersonationBanner";
@@ -43,7 +45,20 @@ const organizationLd = {
   logo: absoluteUrl("/icon.png"),
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  // ARBYTE-SEO-IMPLEMENTATION.md §1 — فقط GTM را این‌جا بار می‌کنیم؛ تگ/
+  // تنظیمات GA4 داخل خودِ workspace گوگل‌تگ‌منیجر ساخته می‌شود (یک‌بار نصب،
+  // نه دو نصب مجزای GA4). بدون GTM_ID ردیابی بی‌صدا غیرفعال می‌ماند.
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+  // nonce همان چیزی است که middleware برای CSP ساخته — بدون این، اسکریپت
+  // GTM توسط script-src (strict-dynamic فقط اسکریپت‌های nonce‌دار را
+  // مرجع اعتماد اولیه می‌داند) مسدود می‌شود.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="fa" dir="rtl">
       <head>
@@ -64,6 +79,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
       </head>
       <body>
+        {gtmId ? <GoogleTagManager gtmId={gtmId} nonce={nonce} /> : null}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={jsonLd(organizationLd)}

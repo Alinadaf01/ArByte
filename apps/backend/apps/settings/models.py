@@ -153,6 +153,9 @@ API_CREDENTIAL_SERVICE_CHOICES = [
     ("balepay", "بله‌پی"),
     # AUDIT-6 — Torob API v3: {"publicKey": "<PEM کلید عمومی ترب>"}؛ is_active = اتصال روشن.
     ("torob", "ترب"),
+    # {"serviceAccount": {...JSON کامل فایل کلید سرویس‌اکانت گوگل کلاود...},
+    # "siteUrl": "sc-domain:arbyte.ir"} — راهنمای ساخت در admin_api/search_console_sync.py.
+    ("search_console", "سرچ کنسول"),
 ]
 
 

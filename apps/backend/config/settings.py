@@ -321,6 +321,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.catalog.tasks.revalidate_campaign_boundaries",
         "schedule": crontab(minute="*/5"),
     },
+    # بخش سرچ کنسول پنل — بدون credentials فعال فقط skip می‌شود (هیچ خطایی نمی‌دهد).
+    "sync-search-console": {
+        "task": "apps.admin_api.tasks.sync_search_console",
+        "schedule": crontab(hour=3, minute=30),
+    },
 }
 
 # D-05 §۲ — پیش‌فرض ۲۴ ساعت (کارت‌به‌کارت)؛ از env قابل تنظیم.

@@ -82,7 +82,7 @@ export function ShopFilterPanel({
   }
 
   return (
-    <div className="grid grid-cols-1 divide-y md:grid-cols-3 md:divide-x md:divide-y-0 md:[&>*]:first:pe-0 [&>*]:divide-border-divider md:[&>*]:px-5">
+    <div className="grid grid-cols-1 divide-y md:h-[460px] md:grid-cols-3 md:items-stretch md:divide-x md:divide-y-0 md:[&>*]:first:pe-0 [&>*]:divide-border-divider md:[&>*]:overflow-y-auto md:[&>*]:px-5">
       <div className="flex flex-col gap-2.5 px-5 py-4.5 md:px-0">
         <p className="text-caption text-primary font-emphasis">
           {productsPage.categoryLabel}

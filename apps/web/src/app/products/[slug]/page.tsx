@@ -9,6 +9,7 @@ import { PurchasePanel } from "@/components/product/PurchasePanel";
 import { TrustTiles } from "@/components/product/TrustTiles";
 import { PresaleBanner } from "@/components/product/PresaleBanner";
 import { IncludedAccessories } from "@/components/product/IncludedAccessories";
+import { ViewItemTracker } from "@/components/product/ViewItemTracker";
 import { ProductInfoTabs } from "@/components/product/ProductInfoTabs";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { RelatedProducts } from "@/components/product/RelatedProducts";
@@ -151,6 +152,12 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
       />
+      <ViewItemTracker
+        variantId={selectedVariant.id}
+        productName={product.name}
+        variantLabel={selectedVariant.label}
+        price={selectedVariant.price.final}
+      />
 
       <div className="flex flex-col gap-7 px-[5vw] py-6 md:gap-8 md:py-9">
         <Breadcrumb items={breadcrumbItems} />
@@ -211,6 +218,7 @@ export default async function ProductPage({
 
             <PurchasePanel
               productSlug={product.slug}
+              productName={product.name}
               variants={product.variants}
               selectedVariantId={selectedVariant.id}
             />

@@ -34,6 +34,9 @@ const REQUIRED_CREDENTIAL_KEYS: Record<ApiCredentialService, string[]> = {
   digipay: ["clientId", "clientSecret"],
   // AUDIT-6 — کلید عمومی ترب (PEM)؛ یک‌خطی هم پذیرفته می‌شود.
   torob: ["publicKey"],
+  // serviceAccount = کل محتوای فایل JSON کلید سرویس‌اکانت گوگل کلاود (همان
+  // که از Google Cloud Console دانلود می‌شود)، عیناً این‌جا پیست شود.
+  search_console: ["serviceAccount", "siteUrl"],
 };
 
 export function CredentialFormModal({

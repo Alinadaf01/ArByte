@@ -22,7 +22,15 @@ async function getSitemapData(): Promise<SitemapData> {
     );
     if (!res.ok) throw new Error(String(res.status));
     return ((await res.json()) as { data: SitemapData }).data;
-  } catch {
+  } catch (error) {
+    // ARBYTE-SEO-IMPLEMENTATION.md §3.A — شکست بی‌صدا یعنی قطعی موقت بک‌اند
+    // کل محتوای پویا (محصولات/دسته‌ها/نوشته‌ها) را از sitemap حذف می‌کرد
+    // بدون هیچ ردی. صفحه‌های ثابت هنوز fallback می‌مانند (sitemap نمی‌شکند)
+    // ولی حالا حداقل در لاگ سرور دیده می‌شود.
+    console.error(
+      "sitemap: /seo/sitemap fetch failed, falling back to static pages only",
+      error,
+    );
     return { products: [], categories: [], posts: [] };
   }
 }

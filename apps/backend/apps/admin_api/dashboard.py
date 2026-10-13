@@ -45,10 +45,20 @@ def _needs_action():
         "unread_messages": ContactMessage.objects.filter(is_read=False).count(),
         "pending_reviews": ProductReview.objects.filter(status="pending").count(),
         "low_stock_count": Inventory.objects.filter(
-            low_stock_threshold__isnull=False, available_quantity__lte=F("low_stock_threshold")
+            low_stock_threshold__isnull=False,
+            available_quantity__lte=F("low_stock_threshold"),
+            variant__deleted_at__isnull=True,
+            variant__product__deleted_at__isnull=True,
         ).count(),
+        # ⚠️ واریانت/محصول حذف‌نرم‌شده هم status="ACTIVE" را نگه می‌دارد (آن
+        # فیلد جدا از deleted_at است) — بدون این دو شرط، یک واریانت باقی‌مانده
+        # از محصولی که کامل متوقف شده («ارباط لپتاپ لنوو لیجن ۷i» مثلاً) هنوز
+        # اینجا شمرده می‌شود و یک محصول فعال قلابی ناموجود نشان می‌دهد.
         "out_of_stock_active": Inventory.objects.filter(
-            quantity=0, variant__product__status="ACTIVE"
+            quantity=0,
+            variant__product__status="ACTIVE",
+            variant__deleted_at__isnull=True,
+            variant__product__deleted_at__isnull=True,
         ).count(),
         # D-05 §۱ — «در انتظار پرداخت» قبلاً یک وضعیت (pending) بود، حالا دو
         # وضعیت پشت سر هم (PENDING تازه‌ساخته + AWAITING_PAYMENT رسمی).
@@ -309,7 +319,10 @@ def _system_health():
     ).count()
 
     discrepancies = []
-    for inventory in Inventory.objects.select_related("variant__product").all():
+    live_inventory = Inventory.objects.select_related("variant__product").filter(
+        variant__deleted_at__isnull=True, variant__product__deleted_at__isnull=True
+    )
+    for inventory in live_inventory:
         latest = (
             InventoryTransaction.objects.filter(variant_id=inventory.variant_id).order_by("-created_at").first()
         )

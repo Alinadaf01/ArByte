@@ -115,6 +115,9 @@ export function ProductCard({
               variantId={product.defaultVariant.id}
               productSlug={product.slug}
               outOfStock={outOfStock}
+              productName={product.name}
+              variantLabel={product.defaultVariant.label}
+              price={product.defaultVariant.price}
             />
           )}
         </div>
