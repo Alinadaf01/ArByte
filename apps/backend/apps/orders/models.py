@@ -299,6 +299,12 @@ class OrderItemUnit(models.Model):
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name="units")
     serial_number = models.CharField(max_length=100, blank=True, null=True)
     certificate_id = models.CharField(max_length=20, unique=True, default=_generate_certificate_id)
+    # درخواست مدیر — بعضی مشتری‌ها گارانتی/مهلت تست غیر از پیش‌فرض محصول/سایت
+    # می‌گیرند (مثلاً ۳ ماه به‌جای گارانتی استاندارد محصول). خالی یعنی از
+    # پیش‌فرض (Product.warranty_months / SiteSettings.test_period_days)
+    # استفاده شود — ر.ک. apps/documents/warranty_card.py's build_warranty_card.
+    warranty_months_override = models.PositiveSmallIntegerField(blank=True, null=True)
+    test_period_days_override = models.PositiveSmallIntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -29,6 +29,8 @@ export interface OrderUnit {
   id: number;
   serialNumber: string | null;
   certificateId: string;
+  warrantyMonthsOverride: number | null;
+  testPeriodDaysOverride: number | null;
 }
 
 export interface OrderItem {

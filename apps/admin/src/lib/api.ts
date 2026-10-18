@@ -298,7 +298,12 @@ export async function transitionOrder(
 
 export async function saveOrderSerials(
   id: string,
-  units: { id: number; serialNumber: string }[],
+  units: {
+    id: number;
+    serialNumber: string;
+    warrantyMonths?: number | null;
+    testPeriodDays?: number | null;
+  }[],
 ): Promise<AdminOrder> {
   const res = await authorizedFetch(`/orders/${id}/serials/`, {
     method: "POST",
@@ -306,6 +311,48 @@ export async function saveOrderSerials(
   });
   if (!res.ok)
     throw new Error(await readErrorDetail(res, "ثبت سریال ناموفق بود."));
+  return res.json();
+}
+
+export interface OrderVariantSearchRow {
+  id: string;
+  sku: string;
+  name: string;
+  productName: string;
+  finalPrice: number;
+  available: number;
+}
+
+export async function searchOrderVariants(
+  search: string,
+): Promise<OrderVariantSearchRow[]> {
+  const res = await authorizedFetch(
+    `/orders/variants/${buildQuery({ search })}`,
+  );
+  return parseOrThrow(res, "جست‌وجوی محصول ناموفق بود.");
+}
+
+export interface ManualOrderInput {
+  mobile: string;
+  recipientName: string;
+  shippingProvince: string;
+  shippingCity: string;
+  shippingAddressLine: string;
+  shippingPostalCode?: string;
+  items: { variantId: string; quantity: number }[];
+  paymentPlan: "ONLINE" | "BANK_TRANSFER" | "COMBINED";
+  markPaid: boolean;
+}
+
+export async function createManualOrder(
+  data: ManualOrderInput,
+): Promise<AdminOrder> {
+  const res = await authorizedFetch("/orders/manual/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "ثبت سفارش دستی ناموفق بود."));
   return res.json();
 }
 

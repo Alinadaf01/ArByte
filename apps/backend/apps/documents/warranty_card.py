@@ -61,7 +61,12 @@ def _key_specs(item: OrderItem) -> list[dict]:
 def build_warranty_card(unit: OrderItemUnit) -> dict:
     """یک کارت به ازای هر واحد (E-03 §۳'س OrderItemUnit) -- سریال و
     certificate_id از همان‌جا. مهلت تست/گارانتی هر دو از DELIVERED شروع
-    می‌شوند (docs/QUESTIONS.md، تصمیم مدیر پروژه)."""
+    می‌شوند (docs/QUESTIONS.md، تصمیم مدیر پروژه).
+
+    `unit.test_period_days_override`/`warranty_months_override` — اگر ادمین
+    موقع ثبت سریال برای همین مشتری مهلت/گارانتی اختصاصی ست کرده باشد
+    (مثلاً ۳ ماه به‌جای گارانتی استاندارد محصول)، همان جای پیش‌فرض
+    محصول/سایت را می‌گیرد؛ خالی یعنی همان پیش‌فرض."""
     order = unit.order_item.order
     item = unit.order_item
     variant = item.variant
@@ -69,9 +74,18 @@ def build_warranty_card(unit: OrderItemUnit) -> dict:
     settings_obj = SiteSettings.load()
     shipment = getattr(order, "shipment", None)
 
-    test_period = _period_dates(order.delivered_at, days=settings_obj.test_period_days)
-    has_warranty = bool(product and product.warranty_months)
-    warranty = _period_dates(order.delivered_at, months=product.warranty_months) if has_warranty else None
+    test_period_days = (
+        unit.test_period_days_override if unit.test_period_days_override is not None else settings_obj.test_period_days
+    )
+    warranty_months = (
+        unit.warranty_months_override
+        if unit.warranty_months_override is not None
+        else (product.warranty_months if product else None)
+    )
+
+    test_period = _period_dates(order.delivered_at, days=test_period_days)
+    has_warranty = bool(warranty_months)
+    warranty = _period_dates(order.delivered_at, months=warranty_months) if has_warranty else None
     has_shipping = bool(shipment and (shipment.provider or shipment.tracking_number))
     shipped_at = (shipment.shipped_at if shipment else None) or order.shipped_at
 
@@ -88,13 +102,13 @@ def build_warranty_card(unit: OrderItemUnit) -> dict:
         "key_specs": _key_specs(item),
         "serial_number": unit.serial_number or "",
         "purchase_date": format_jalali_date_fa(order.paid_at or order.created_at),
-        "test_period_days": settings_obj.test_period_days,
-        "test_period_days_fa": to_persian_digits(str(settings_obj.test_period_days)),
+        "test_period_days": test_period_days,
+        "test_period_days_fa": to_persian_digits(str(test_period_days)),
         "test_period": test_period,
         "has_warranty": has_warranty,
-        "warranty_months": product.warranty_months if has_warranty else None,
-        "warranty_months_fa": to_persian_digits(str(product.warranty_months)) if has_warranty else "",
-        "warranty_provider": (product.warranty_provider or "") if has_warranty else "",
+        "warranty_months": warranty_months if has_warranty else None,
+        "warranty_months_fa": to_persian_digits(str(warranty_months)) if has_warranty else "",
+        "warranty_provider": (product.warranty_provider or "") if has_warranty and product else "",
         "warranty": warranty,
         "shipping_method": order.shipping_method_name,
         "is_delivered": order.delivered_at is not None,

@@ -34,10 +34,26 @@ def ensure_units(order: Order) -> None:
         unit.save()  # certificate_id پیش‌فرض تصادفی/یکتا هر ردیف — نه bulk_create با default مشترک
 
 
+def _parse_override(raw) -> int | None:
+    """خالی/None یعنی «از پیش‌فرض استفاده شود» -- تهاجمی‌ترین مقدار (۰) هم
+    مجاز است (یعنی صراحتاً بدون گارانتی/مهلت تست)."""
+    if raw in (None, ""):
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        raise FulfilmentError("مهلت تست و گارانتی باید عدد صحیح باشند.") from None
+    if value < 0:
+        raise FulfilmentError("مهلت تست و گارانتی نمی‌توانند منفی باشند.")
+    return value
+
+
 @transaction.atomic
 def set_serials(order_pk: int, rows: list[dict], *, editable_statuses: set[str]) -> Order:
     """همه‌ی ردیف‌ها اول اعتبارسنجی، بعد با هم ذخیره؛ یکتایی سریال (بدون حساسیت
-    به حروف) هم در همین درخواست و هم در کل دیتابیس."""
+    به حروف) هم در همین درخواست و هم در کل دیتابیس. هر ردیف علاوه‌بر سریال
+    می‌تواند `warranty_months`/`test_period_days` اختصاصی همان واحد را هم
+    بفرستد (برای override کارت گارانتی، مستقل از پیش‌فرض محصول/سایت)."""
     order = Order.objects.select_for_update().get(pk=order_pk)
     if order.status not in editable_statuses:
         raise FulfilmentError("سریال فقط در وضعیت پرداخت‌شده یا در حال پردازش قابل ثبت است.")
@@ -45,6 +61,7 @@ def set_serials(order_pk: int, rows: list[dict], *, editable_statuses: set[str])
     units = {u.pk: u for u in OrderItemUnit.objects.filter(order_item__order=order)}
 
     changes: dict[int, str | None] = {}
+    overrides: dict[int, tuple[int | None, int | None]] = {}
     for row in rows:
         try:
             unit_id = int(row.get("id", 0) or 0)
@@ -53,6 +70,10 @@ def set_serials(order_pk: int, rows: list[dict], *, editable_statuses: set[str])
         if unit_id not in units:
             raise FulfilmentError("واحد متعلق به این سفارش نیست.")
         changes[unit_id] = str(row.get("serial_number", "") or "").strip() or None
+        overrides[unit_id] = (
+            _parse_override(row.get("warranty_months")),
+            _parse_override(row.get("test_period_days")),
+        )
 
     final = {pk: changes.get(pk, unit.serial_number or None) for pk, unit in units.items()}
     seen: set[str] = set()
@@ -74,9 +95,13 @@ def set_serials(order_pk: int, rows: list[dict], *, editable_statuses: set[str])
 
     for pk, serial in changes.items():
         units[pk].serial_number = serial
+        units[pk].warranty_months_override, units[pk].test_period_days_override = overrides[pk]
     try:
         with transaction.atomic():
-            OrderItemUnit.objects.bulk_update([units[pk] for pk in changes], ["serial_number"])
+            OrderItemUnit.objects.bulk_update(
+                [units[pk] for pk in changes],
+                ["serial_number", "warranty_months_override", "test_period_days_override"],
+            )
     except IntegrityError as exc:  # رقابت هم‌زمان با یک ثبت دیگر — قید یکتای دیتابیس
         raise FulfilmentError("این سریال هم‌زمان برای واحد دیگری ثبت شد؛ دوباره تلاش کنید.") from exc
     return order

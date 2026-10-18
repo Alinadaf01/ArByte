@@ -99,6 +99,8 @@ urlpatterns = [
     path("admin/categories/<int:pk>/", categories.AdminCategoryDetailView.as_view(), name="admin-category-detail"),
     # Orders
     path("admin/orders/", orders.AdminOrderListView.as_view(), name="admin-order-list"),
+    path("admin/orders/manual/", orders.AdminManualOrderCreateView.as_view(), name="admin-order-manual-create"),
+    path("admin/orders/variants/", orders.AdminOrderVariantSearchView.as_view(), name="admin-order-variant-search"),
     path("admin/orders/<int:pk>/", orders.AdminOrderDetailView.as_view(), name="admin-order-detail"),
     path("admin/orders/<int:pk>/mark-paid/", orders.AdminOrderMarkPaidView.as_view(), name="admin-order-mark-paid"),
     path("admin/orders/<int:pk>/start-processing/", orders.AdminOrderStartProcessingView.as_view(), name="admin-order-start-processing"),

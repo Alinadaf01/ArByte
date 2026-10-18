@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { JalaliDateInput } from "@/components/ui/JalaliDateInput";
 import { useState } from "react";
-import { ShoppingCart, Truck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, ShoppingCart, Truck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Input, Select } from "@/components/ui/Field";
@@ -17,6 +18,7 @@ import { ORDER_STATUSES, statusLabel } from "@/types/order";
 const PAGE_SIZE = 12;
 
 export default function OrdersPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useQueryFilters({
     page: "1",
     status: "",
@@ -66,15 +68,21 @@ export default function OrdersPage() {
         title="سفارش‌ها"
         description="فیلتر نُه وضعیت، جستجوی شماره سفارش یا موبایل، و صفحه‌ی جزئیات با گذارهای مجاز."
         actions={
-          <Button
-            variant="secondary"
-            size="sm"
-            disabled={listDownloading}
-            onClick={downloadDailyList}
-          >
-            <Truck className="size-4" strokeWidth={1.8} />
-            {listDownloading ? "در حال آماده‌سازی…" : "لیست ارسال روزانه"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={listDownloading}
+              onClick={downloadDailyList}
+            >
+              <Truck className="size-4" strokeWidth={1.8} />
+              {listDownloading ? "در حال آماده‌سازی…" : "لیست ارسال روزانه"}
+            </Button>
+            <Button size="sm" onClick={() => navigate("/orders/manual")}>
+              <Plus className="size-4" strokeWidth={1.8} />
+              ثبت سفارش دستی
+            </Button>
+          </div>
         }
       />
 

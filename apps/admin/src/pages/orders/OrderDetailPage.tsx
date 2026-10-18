@@ -336,15 +336,28 @@ function PaymentBreakdownCard({ order }: { order: AdminOrder }) {
   );
 }
 
+interface UnitFormValues {
+  serialNumber: string;
+  warrantyMonths: string;
+  testPeriodDays: string;
+}
+
 function SerialsCard({ order }: { order: AdminOrder }) {
   const toast = useToast();
   const invalidate = useInvalidateOrder(order.id);
   const units = order.items.flatMap((item) =>
     item.units.map((unit) => ({ unit, item })),
   );
-  const [values, setValues] = useState<Record<number, string>>(() =>
+  const [values, setValues] = useState<Record<number, UnitFormValues>>(() =>
     Object.fromEntries(
-      units.map(({ unit }) => [unit.id, unit.serialNumber ?? ""]),
+      units.map(({ unit }) => [
+        unit.id,
+        {
+          serialNumber: unit.serialNumber ?? "",
+          warrantyMonths: unit.warrantyMonthsOverride?.toString() ?? "",
+          testPeriodDays: unit.testPeriodDaysOverride?.toString() ?? "",
+        },
+      ]),
     ),
   );
   const editable = SERIAL_EDITABLE.has(order.status);
@@ -352,10 +365,15 @@ function SerialsCard({ order }: { order: AdminOrder }) {
     mutationFn: () =>
       saveOrderSerials(
         order.id,
-        units.map(({ unit }) => ({
-          id: unit.id,
-          serialNumber: values[unit.id] ?? "",
-        })),
+        units.map(({ unit }) => {
+          const v = values[unit.id];
+          return {
+            id: unit.id,
+            serialNumber: v?.serialNumber ?? "",
+            warrantyMonths: v?.warrantyMonths ? Number(v.warrantyMonths) : null,
+            testPeriodDays: v?.testPeriodDays ? Number(v.testPeriodDays) : null,
+          };
+        }),
       ),
     onSuccess: () => {
       invalidate();
@@ -368,21 +386,30 @@ function SerialsCard({ order }: { order: AdminOrder }) {
   });
   if (units.length === 0) return null;
 
+  function patch(unitId: number, field: keyof UnitFormValues, value: string) {
+    setValues((v) => ({
+      ...v,
+      [unitId]: { ...v[unitId], [field]: value } as UnitFormValues,
+    }));
+  }
+
   return (
     <section className="glass-card flex flex-col gap-3 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="m-0 text-sm font-bold text-white">سریال واحدها</h2>
+        <h2 className="m-0 text-sm font-bold text-white">
+          سریال و گارانتی واحدها
+        </h2>
         {!editable && (
           <span className="text-[11px] text-slate-500">
             فقط در وضعیت پرداخت‌شده یا در حال پردازش قابل ویرایش است.
           </span>
         )}
       </div>
-      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
         {units.map(({ unit, item }, index) => (
           <li
             key={unit.id}
-            className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_16rem]"
+            className="flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-ink-800/40 px-3.5 py-3"
           >
             <div className="min-w-0">
               <p className="m-0 truncate text-sm text-white">
@@ -395,16 +422,40 @@ function SerialsCard({ order }: { order: AdminOrder }) {
                 {unit.certificateId}
               </p>
             </div>
-            <Input
-              dir="ltr"
-              aria-label={`سریال واحد ${index + 1}`}
-              placeholder="شماره سریال"
-              disabled={!editable}
-              value={values[unit.id] ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, [unit.id]: e.target.value }))
-              }
-            />
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Input
+                dir="ltr"
+                aria-label={`سریال واحد ${index + 1}`}
+                placeholder="شماره سریال"
+                disabled={!editable}
+                value={values[unit.id]?.serialNumber ?? ""}
+                onChange={(e) => patch(unit.id, "serialNumber", e.target.value)}
+              />
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                aria-label={`گارانتی (ماه) واحد ${index + 1}`}
+                placeholder="گارانتی (ماه) — پیش‌فرض محصول"
+                disabled={!editable}
+                value={values[unit.id]?.warrantyMonths ?? ""}
+                onChange={(e) =>
+                  patch(unit.id, "warrantyMonths", e.target.value)
+                }
+              />
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                aria-label={`مهلت تست (روز) واحد ${index + 1}`}
+                placeholder="مهلت تست (روز) — پیش‌فرض سایت"
+                disabled={!editable}
+                value={values[unit.id]?.testPeriodDays ?? ""}
+                onChange={(e) =>
+                  patch(unit.id, "testPeriodDays", e.target.value)
+                }
+              />
+            </div>
           </li>
         ))}
       </ul>
@@ -415,7 +466,7 @@ function SerialsCard({ order }: { order: AdminOrder }) {
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? "در حال ذخیره…" : "ذخیره‌ی سریال‌ها"}
+            {mutation.isPending ? "در حال ذخیره…" : "ذخیره‌ی سریال و گارانتی"}
           </Button>
         </div>
       )}

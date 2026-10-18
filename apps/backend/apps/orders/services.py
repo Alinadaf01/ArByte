@@ -295,6 +295,120 @@ def checkout(
     return order
 
 
+# ---------- سفارش دستی ادمین (تلفن/واتس‌اپ) ----------
+
+
+@transaction.atomic
+def admin_create_order(
+    *,
+    staff_user,
+    customer_user,
+    recipient_name: str,
+    recipient_phone: str,
+    province: str,
+    city: str,
+    address_line: str,
+    postal_code: str | None,
+    items: list[dict],
+    payment_plan: str,
+    mark_paid: bool,
+) -> Order:
+    """ادمین سفارشی را که در واتس‌اپ/تلفن مذاکره شده مستقیم ثبت می‌کند —
+    بدون سبد خرید و بدون چک‌اوت مشتری (که در نشست جعل‌هویت مسدود است، درست
+    هم همین است: ثبت سفارش واقعی باید از مسیر ادمین باشد، نه جای مشتری).
+    همان قوانین قیمت/موجودی زنده‌ی checkout() را روی `items` (به‌جای
+    CartItem) اعمال می‌کند؛ کوپن ندارد (تخفیف دستی اینجا معنا ندارد)."""
+    from apps.catalog.models import ProductVariant
+    from apps.inventory.models import InsufficientStockError, Inventory
+
+    from . import order_status
+    from .payment_state import create_payments, split_for_plan
+
+    if not items:
+        raise CheckoutError("VALIDATION_ERROR", "حداقل یک قلم برای سفارش لازم است.", field="items")
+
+    variant_ids = sorted({int(row["variant_id"]) for row in items})
+    Inventory.objects.select_for_update().filter(variant_id__in=variant_ids).select_related("variant")
+    variants = {
+        v.pk: v
+        for v in ProductVariant.objects.select_related("product", "inventory").filter(
+            pk__in=variant_ids, deleted_at__isnull=True, product__deleted_at__isnull=True
+        )
+    }
+
+    from apps.public_api.cart_service import available_quantity_for
+
+    shortages: list[dict] = []
+    order_items_data = []
+    subtotal = 0
+    for row in items:
+        variant = variants.get(int(row["variant_id"]))
+        quantity = int(row["quantity"])
+        if not variant or quantity < 1:
+            raise CheckoutError("VALIDATION_ERROR", "قلم سفارش نامعتبر است.", field="items")
+        available = available_quantity_for(variant)
+        if quantity > available:
+            shortages.append({"variantId": str(variant.id), "available": available})
+        price = live_price(variant)[0]
+        final_price = price * quantity
+        subtotal += final_price
+        order_items_data.append({"variant": variant, "unit_price": price, "quantity": quantity, "final_price": final_price})
+
+    if shortages:
+        raise InsufficientStockCheckoutError(shortages)
+
+    final_total = subtotal
+    split_for_plan(payment_plan, final_total)
+
+    order = Order.objects.create(
+        user=customer_user,
+        shipping_recipient_name=recipient_name,
+        shipping_mobile=recipient_phone,
+        shipping_province=province,
+        shipping_city=city,
+        shipping_address_line=address_line,
+        shipping_postal_code=postal_code,
+        subtotal=subtotal,
+        shipping_cost=0,
+        shipping_method_name="ثبت دستی (واتس‌اپ/تلفن)",
+        final_total=final_total,
+    )
+
+    for data in order_items_data:
+        variant = data["variant"]
+        product = variant.product
+        OrderItem.objects.create(
+            order=order,
+            variant=variant,
+            product_name_snapshot=product.name,
+            variant_name_snapshot=variant.name or None,
+            sku_snapshot=variant.sku,
+            unit_price=data["unit_price"],
+            quantity=data["quantity"],
+            final_price=data["final_price"],
+        )
+        try:
+            Inventory.objects.reserve(variant, data["quantity"], reference=order.order_number, user=staff_user)
+        except InsufficientStockError:
+            raise InsufficientStockCheckoutError(
+                [{"variantId": str(variant.id), "available": available_quantity_for(variant)}]
+            ) from None
+
+    create_payments(order, payment_plan)
+    order_status.transition_to(order, "AWAITING_PAYMENT", user=staff_user, note="سفارش دستی توسط ادمین")
+
+    if mark_paid:
+        from . import payment_state
+
+        for payment in payment_state.active_payments(order):
+            payment_state.confirm_payment(
+                payment, provider_ref="manual", user=staff_user, note="سفارش دستی — پرداخت قبلاً دریافت شده"
+            )
+        order.refresh_from_db()
+
+    return order
+
+
 # ---------- کارت‌به‌کارت (§۳) ----------
 
 MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024  # ۵ مگابایت

@@ -6,6 +6,7 @@ import ChangePasswordPage from "@/pages/ChangePasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import OrdersPage from "@/pages/OrdersPage";
 import OrderDetailPage from "@/pages/orders/OrderDetailPage";
+import ManualOrderPage from "@/pages/orders/ManualOrderPage";
 import ProductsPage from "@/pages/ProductsPage";
 import ProductFormPage from "@/pages/products/ProductFormPage";
 import HomepagePage from "@/pages/HomepagePage";
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardPage /> },
           { path: "orders", element: <OrdersPage /> },
+          { path: "orders/manual", element: <ManualOrderPage /> },
           { path: "orders/:id", element: <OrderDetailPage /> },
           { path: "products", element: <ProductsPage /> },
           { path: "products/new", element: <ProductFormPage /> },

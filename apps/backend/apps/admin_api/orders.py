@@ -9,9 +9,13 @@ from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.catalog.models import ProductVariant
 from apps.orders import fulfilment, order_status, payment_state
+from apps.orders import services as order_services
 from apps.orders.models import Order, Payment
 from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
+from apps.orders.services import CheckoutError, InsufficientStockCheckoutError
+from apps.users.models import User, phone_validator
 
 from .activity import log_admin_action
 from .permissions import require_section
@@ -43,6 +47,8 @@ class AdminOrderUnitSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     serial_number = serializers.CharField(allow_null=True)
     certificate_id = serializers.CharField()
+    warranty_months_override = serializers.IntegerField(allow_null=True)
+    test_period_days_override = serializers.IntegerField(allow_null=True)
 
 
 class AdminOrderItemSerializer(serializers.Serializer):
@@ -438,7 +444,9 @@ class AdminOrderTransitionView(APIView):
 
 
 class AdminOrderSerialsView(APIView):
-    """F-01 §۳ — ورود سریال هر واحد: `{units: [{id, serialNumber}]}`. فقط
+    """F-01 §۳ — ورود سریال هر واحد: `{units: [{id, serialNumber,
+    warrantyMonths, testPeriodDays}]}`. دو فیلد آخر اختیاری‌اند (override
+    اختصاصی همین واحد روی کارت گارانتی — خالی یعنی پیش‌فرض محصول/سایت). فقط
     تا قبل از READY_TO_SHIP (بعد از آن کارت گارانتی/بسته‌بندی چاپ شده‌اند)."""
 
     permission_classes = [require_section("orders", action="edit")]
@@ -455,3 +463,110 @@ class AdminOrderSerialsView(APIView):
         log_admin_action(user=request.user, action="set_serials", model_name="Order", object_id=order.pk)
         order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
         return Response(AdminOrderSerializer(order).data)
+
+
+class AdminOrderVariantSearchSerializer(serializers.ModelSerializer):
+    id = serializers.SerializerMethodField()
+    product_name = serializers.CharField(source="product.name")
+    available = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductVariant
+        fields = ["id", "sku", "name", "product_name", "final_price", "available"]
+
+    def get_id(self, obj) -> str:
+        return str(obj.pk)
+
+    def get_available(self, obj) -> int:
+        from apps.public_api.cart_service import available_quantity_for
+
+        return available_quantity_for(obj)
+
+
+class AdminOrderVariantSearchView(ListAPIView):
+    """جست‌وجوی واریانت برای فرم «سفارش دستی» — زیر دسترسی orders (نه
+    pricing) تا کارمند فقط-سفارش هم بتواند محصول انتخاب کند."""
+
+    permission_classes = [require_section("orders")]
+    serializer_class = AdminOrderVariantSearchSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        term = str(self.request.query_params.get("search", "")).strip()
+        qs = ProductVariant.objects.select_related("product", "inventory").filter(
+            deleted_at__isnull=True, product__deleted_at__isnull=True
+        )
+        if term:
+            qs = qs.filter(Q(sku__icontains=term) | Q(product__name__icontains=term) | Q(name__icontains=term))
+        return qs.order_by("product__name", "sku")[:20]
+
+
+class AdminManualOrderCreateView(APIView):
+    """سفارشی که در واتس‌اپ/تلفن با مشتری نهایی شده، مستقیم از پنل ثبت
+    می‌شود — بدون این‌که مشتری خودش چک‌اوت کند (که در نشست جعل‌هویت هم
+    عمداً مسدود است، §۶ الحاقیه). مشتری با موبایل پیدا یا ساخته می‌شود
+    (`is_verified=True` چون کارمند احراز هویتش کرده، دقیقاً طبق
+    apps/users/models.py's User docstring)."""
+
+    permission_classes = [require_section("orders", action="edit")]
+
+    def post(self, request):
+        data = request.data
+        mobile = str(data.get("mobile", "") or "").strip()
+        try:
+            phone_validator(mobile)
+        except Exception:
+            return Response({"detail": "شماره موبایل نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        recipient_name = str(data.get("recipient_name", "") or "").strip()
+        province = str(data.get("shipping_province", "") or "").strip()
+        city = str(data.get("shipping_city", "") or "").strip()
+        address_line = str(data.get("shipping_address_line", "") or "").strip()
+        if not recipient_name or not province or not city or not address_line:
+            return Response({"detail": "گیرنده، استان، شهر و نشانی الزامی‌اند."}, status=status.HTTP_400_BAD_REQUEST)
+
+        raw_items = data.get("items") or []
+        if not isinstance(raw_items, list) or not raw_items:
+            return Response({"detail": "حداقل یک قلم برای سفارش لازم است."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            items = [{"variant_id": int(row["variant_id"]), "quantity": int(row["quantity"])} for row in raw_items]
+        except (KeyError, TypeError, ValueError):
+            return Response({"detail": "قلم سفارش نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_plan = str(data.get("payment_plan", "") or "BANK_TRANSFER")
+        mark_paid = bool(data.get("mark_paid", False))
+
+        customer_user, _ = User.objects.get_or_create(
+            phone=mobile, defaults={"is_verified": True, "first_name": recipient_name}
+        )
+
+        try:
+            order = order_services.admin_create_order(
+                staff_user=request.user,
+                customer_user=customer_user,
+                recipient_name=recipient_name,
+                recipient_phone=mobile,
+                province=province,
+                city=city,
+                address_line=address_line,
+                postal_code=data.get("shipping_postal_code") or None,
+                items=items,
+                payment_plan=payment_plan,
+                mark_paid=mark_paid,
+            )
+        except InsufficientStockCheckoutError as exc:
+            return Response(
+                {
+                    "detail": "موجودی برخی اقلام کافی نیست.",
+                    "shortages": exc.shortages,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+        except CheckoutError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+        except payment_state.PaymentPlanError as exc:
+            return Response({"detail": exc.message}, status=exc.status)
+
+        log_admin_action(user=request.user, action="create_manual_order", model_name="Order", object_id=order.pk)
+        order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
+        return Response(AdminOrderSerializer(order).data, status=status.HTTP_201_CREATED)
