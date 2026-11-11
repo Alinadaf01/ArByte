@@ -56,7 +56,11 @@
   <table style="width:70mm;">
     <tbody>
       <tr><td>جمع کل</td><td class="num">{{ subtotal }}</td></tr>
-      {% if discount_total %}<tr><td>تخفیف</td><td class="num">{{ discount_total }}</td></tr>{% endif %}
+      {% if discount_lines %}
+        {% for line in discount_lines %}<tr><td>{{ line.label }}</td><td class="num">{{ line.amount }}</td></tr>{% endfor %}
+      {% elif discount_total %}
+        <tr><td>تخفیف</td><td class="num">{{ discount_total }}</td></tr>
+      {% endif %}
       {% if shipping_cost %}<tr><td>هزینه ارسال</td><td class="num">{{ shipping_cost }}</td></tr>{% endif %}
     </tbody>
     <tfoot>

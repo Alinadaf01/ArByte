@@ -73,6 +73,15 @@ import type {
   LegalDocumentContent,
 } from "@/types/contentPages";
 import type { AdminRedirect, RedirectFormValues } from "@/types/redirect";
+import type {
+  AdminDeviceLabel,
+  DeviceLabelFormValues,
+} from "@/types/deviceLabel";
+import type {
+  MarketingAudienceUser,
+  MarketingCampaignResult,
+  MarketingUserCart,
+} from "@/types/marketing";
 
 // No fake-data phase here, unlike the storefront's src/lib/api.ts — B6's
 // real /api/admin/ endpoints already exist, so every function below always
@@ -342,6 +351,7 @@ export interface ManualOrderInput {
   items: { variantId: string; quantity: number }[];
   paymentPlan: "ONLINE" | "BANK_TRANSFER" | "COMBINED";
   markPaid: boolean;
+  discountLines: { label: string; amount: number }[];
 }
 
 export async function createManualOrder(
@@ -1265,6 +1275,135 @@ export async function getBalePayWebhook(): Promise<BalePayWebhookStatus> {
 export async function registerBalePayWebhook(): Promise<BalePayWebhookStatus> {
   const res = await authorizedFetch("/balepay/webhook/", { method: "POST" });
   return (await res.json()) as BalePayWebhookStatus;
+}
+
+// ---------------------------------------------------------------------------
+// لیبل دستگاه (محموله‌های استوک — فقط بک‌اند)
+// ---------------------------------------------------------------------------
+
+export async function listDeviceLabels(params: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+}): Promise<PaginatedResponse<AdminDeviceLabel>> {
+  return parseOrThrow(
+    await authorizedFetch(`/device-labels/${buildQuery(params)}`),
+    "دریافت لیبل‌ها ناموفق بود.",
+  );
+}
+
+export async function createDeviceLabel(
+  data: DeviceLabelFormValues,
+): Promise<AdminDeviceLabel> {
+  const res = await authorizedFetch("/device-labels/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return parseOrThrow(res, "ثبت لیبل ناموفق بود.");
+}
+
+export async function updateDeviceLabel(
+  id: string,
+  data: Partial<DeviceLabelFormValues>,
+): Promise<AdminDeviceLabel> {
+  const res = await authorizedFetch(`/device-labels/${id}/`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+  return parseOrThrow(res, "ویرایش لیبل ناموفق بود.");
+}
+
+export async function deleteDeviceLabel(id: string): Promise<void> {
+  const res = await authorizedFetch(`/device-labels/${id}/`, {
+    method: "DELETE",
+  });
+  await throwIfError(res, "حذف لیبل ناموفق بود.");
+}
+
+export async function downloadDeviceLabelPdf(
+  id: string,
+  code: string,
+): Promise<void> {
+  const res = await authorizedFetch(`/device-labels/${id}/pdf/`);
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "دانلود لیبل ناموفق بود."));
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `label-${code}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// بازاریابی پیامکی
+// ---------------------------------------------------------------------------
+
+export async function listMarketingAudience(params: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  hasCart?: string;
+}): Promise<PaginatedResponse<MarketingAudienceUser>> {
+  return parseOrThrow(
+    await authorizedFetch(`/marketing/audience/${buildQuery(params)}`),
+    "دریافت فهرست مخاطبان ناموفق بود.",
+  );
+}
+
+export async function getMarketingUserCart(
+  userId: string,
+): Promise<MarketingUserCart> {
+  return parseOrThrow(
+    await authorizedFetch(`/marketing/audience/${userId}/cart/`),
+    "دریافت سبد خرید کاربر ناموفق بود.",
+  );
+}
+
+export async function sendMarketingCampaign(
+  userIds: string[],
+  message: string,
+): Promise<MarketingCampaignResult> {
+  const res = await authorizedFetch("/marketing/campaigns/", {
+    method: "POST",
+    body: JSON.stringify({ user_ids: userIds, message }),
+  });
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "ارسال کمپین ناموفق بود."));
+  return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// باسلام
+// ---------------------------------------------------------------------------
+
+export interface BasalamStatus {
+  enabled: boolean;
+  keyConfigured: boolean;
+  itemCount: number;
+}
+
+export async function getBasalamStatus(): Promise<BasalamStatus> {
+  return parseOrThrow(
+    await authorizedFetch("/basalam/status/"),
+    "دریافت وضعیت باسلام ناموفق بود.",
+  );
+}
+
+export async function downloadBasalamProductsXlsx(): Promise<void> {
+  const res = await authorizedFetch("/basalam/products/");
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "خروجی اکسل ناموفق بود."));
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "basalam-products.xlsx";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function listBalePaySessions(params: {

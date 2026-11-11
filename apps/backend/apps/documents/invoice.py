@@ -57,6 +57,13 @@ def build_invoice_context(order: Order) -> dict:
             ],
             "subtotal": format_toman_fa(order.subtotal),
             "discount_total": format_toman_fa(order.discount_total) if order.discount_total else "",
+            # درخواست مدیر — سفارش دستی می‌تواند چند تخفیف برچسب‌دار داشته
+            # باشد («تخفیف بابت کیف اشانتیون»، «تخفیف نقدی»)؛ اگر این ردیف‌ها
+            # باشند، تک‌خطی discount_total بالا در تمپلیت جایشان را می‌دهد —
+            # سفارش‌های قدیمی‌تر (فقط کوپن) این ردیف‌ها را ندارند، همان خط قبلی می‌ماند.
+            "discount_lines": [
+                {"label": line.label, "amount": format_toman_fa(line.amount)} for line in order.discount_lines.all()
+            ],
             "shipping_cost": format_toman_fa(order.shipping_cost) if order.shipping_cost else "",
             "total": format_toman_fa(order.final_total),
             "total_in_words": amount_in_words_fa(order.final_total),

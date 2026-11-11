@@ -25,7 +25,7 @@ from .permissions import require_section
 # discount->discount_total، OrderStatusLog->status_history، gateway->method/
 # provider/gateway، ref_id->provider_ref. tax حذف شد (نه در Prisma، پیکربندی
 # نرخ مالیات هیچ‌وقت نبود).
-ORDER_PREFETCH = ("items__units", "payments__receipts", "status_history")
+ORDER_PREFETCH = ("items__units", "payments__receipts", "status_history", "discount_lines")
 
 # F-01 §۳ — گذارهایی که ادمین دستی از پنل می‌زند. PENDING→AWAITING_PAYMENT
 # سیستمی است (چک‌اوت)؛ PAYMENT_REVIEW→AWAITING_PAYMENT فقط با رد رسید
@@ -130,12 +130,19 @@ class AdminOrderStatusHistorySerializer(serializers.Serializer):
         return obj.changed_by.get_full_name() if obj.changed_by else None
 
 
+class AdminOrderDiscountLineSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    label = serializers.CharField()
+    amount = serializers.IntegerField()
+
+
 class AdminOrderSerializer(serializers.ModelSerializer):
     id = serializers.SerializerMethodField()
     user = serializers.IntegerField(source="user_id")
     items = AdminOrderItemSerializer(many=True, read_only=True)
     payments = AdminPaymentSerializer(many=True, read_only=True)
     status_history = AdminOrderStatusHistorySerializer(many=True, read_only=True)
+    discount_lines = AdminOrderDiscountLineSerializer(many=True, read_only=True)
     shipment = serializers.SerializerMethodField()
     user_phone = serializers.CharField(source="user.phone", default=None)
     allowed_transitions = serializers.SerializerMethodField()
@@ -148,7 +155,7 @@ class AdminOrderSerializer(serializers.ModelSerializer):
             "id", "order_number", "user", "status", "payment_status", "payment_plan", "payment_breakdown",
             "shipping_recipient_name", "shipping_mobile", "shipping_province",
             "shipping_city", "shipping_address_line", "shipping_postal_code",
-            "subtotal", "discount_total", "shipping_cost", "final_total", "cancel_reason",
+            "subtotal", "discount_total", "discount_lines", "shipping_cost", "final_total", "cancel_reason",
             "shipping_method_name", "invoice_type", "company_name", "national_id", "economic_code",
             "registration_number", "user_phone", "allowed_transitions", "missing_serial_item_ids",
             "items", "payments", "shipment", "status_history",
@@ -535,6 +542,10 @@ class AdminManualOrderCreateView(APIView):
 
         payment_plan = str(data.get("payment_plan", "") or "BANK_TRANSFER")
         mark_paid = bool(data.get("mark_paid", False))
+        raw_discount_lines = data.get("discount_lines") or []
+        if not isinstance(raw_discount_lines, list):
+            return Response({"detail": "فهرست تخفیف‌ها نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+        discount_lines = [{"label": row.get("label"), "amount": row.get("amount")} for row in raw_discount_lines]
 
         customer_user, _ = User.objects.get_or_create(
             phone=mobile, defaults={"is_verified": True, "first_name": recipient_name}
@@ -553,6 +564,7 @@ class AdminManualOrderCreateView(APIView):
                 items=items,
                 payment_plan=payment_plan,
                 mark_paid=mark_paid,
+                discount_lines=discount_lines,
             )
         except InsufficientStockCheckoutError as exc:
             return Response(

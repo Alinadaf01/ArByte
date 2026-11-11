@@ -151,11 +151,18 @@ API_CREDENTIAL_SERVICE_CHOICES = [
     # D-05 §۳ — اسکلت بله‌پی؛ بدون مستندات provider هیچ کلیدی معتبر نیست، پس
     # این ردیف تا مستندات نرسد همیشه has_valid_credentials()=False می‌ماند.
     ("balepay", "بله‌پی"),
+    # اسکلت فروش اقساطی (درخواست مدیر) — همان احتیاط بله‌پی: فیلدهای
+    # provider (apps/orders/providers/torobpay.py) از مستند غیررسمی نوشته
+    # شده، قبل از فعال‌سازی با پشتیبانی ترب‌پی و اعتبارنامه‌ی sandbox تطبیق بده.
+    ("torobpay", "ترب‌پی"),
     # AUDIT-6 — Torob API v3: {"publicKey": "<PEM کلید عمومی ترب>"}؛ is_active = اتصال روشن.
     ("torob", "ترب"),
     # {"serviceAccount": {...JSON کامل فایل کلید سرویس‌اکانت گوگل کلاود...},
     # "siteUrl": "sc-domain:arbyte.ir"} — راهنمای ساخت در admin_api/search_console_sync.py.
     ("search_console", "سرچ کنسول"),
+    # Salam API (developers.basalam.com) — {"clientId","clientSecret","vendorId"}؛
+    # OAuth Authorization Code، راهنما در admin_api/basalam_sync.py.
+    ("basalam", "باسلام"),
 ]
 
 

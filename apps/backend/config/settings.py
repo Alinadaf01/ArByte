@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     "apps.public_api",
     "apps.torob",
     "apps.emalls",
+    "apps.devicelabels",
+    "apps.basalam",
 ]
 
 MIDDLEWARE = [

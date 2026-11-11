@@ -68,6 +68,30 @@ class AdminManualOrderCreateTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(any(row["sku"] == self.variant.sku for row in response.data))
 
+    def test_discount_lines_reduce_final_total_and_are_labeled(self):
+        response = self._create(
+            discount_lines=[
+                {"label": "تخفیف بابت کیف اشانتیون", "amount": 1_900_000},
+                {"label": "تخفیف نقدی", "amount": 1_000_000},
+            ]
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["discount_total"], 2_900_000)
+        self.assertEqual(response.data["final_total"], 91_900_000 - 2_900_000)
+        labels = {line["label"]: line["amount"] for line in response.data["discount_lines"]}
+        self.assertEqual(labels["تخفیف بابت کیف اشانتیون"], 1_900_000)
+        self.assertEqual(labels["تخفیف نقدی"], 1_000_000)
+
+    def test_discount_lines_cannot_exceed_subtotal(self):
+        response = self._create(discount_lines=[{"label": "تخفیف نقدی", "amount": 999_999_999}])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+
+    def test_discount_line_missing_label_rejected(self):
+        response = self._create(discount_lines=[{"label": "", "amount": 1000}])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+
 
 class WarrantyCardOverrideTests(AdminApiTestMixin, APITestCase):
     """ثبت سریال با مهلت تست/گارانتی اختصاصی (مستقل از پیش‌فرض محصول)."""

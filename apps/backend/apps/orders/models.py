@@ -250,6 +250,26 @@ class Order(models.Model):
         return self.order_number
 
 
+class OrderDiscountLine(models.Model):
+    """درخواست مدیر — سفارش دستی باید بتواند چند تخفیف جدا و برچسب‌دار داشته
+    باشد (نه فقط یک `Order.discount_total` خام)، مثلاً «تخفیف بابت کیف
+    اشانتیون» و «تخفیف نقدی» در یک سفارش، هرکدام مبلغ و برچسب خودشان را
+    روی فاکتور نشان بدهند تا مشتری ارزش واقعی هرکدام را بفهمد. مجموع این
+    ردیف‌ها همان `Order.discount_total` است (در admin_create_order ست
+    می‌شود) — این مدل فقط شکستن همان عدد به اجزای قابل‌نمایش است."""
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="discount_lines")
+    label = models.CharField(max_length=200)
+    amount = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["pk"]
+
+    def __str__(self):
+        return f"{self.label}: {self.amount}"
+
+
 class OrderItem(models.Model):
     """Snapshot کامل — تغییر بعدی محصول/واریانت را تحت‌تأثیر قرار نمی‌دهد.
     `variant` عمداً nullable می‌ماند: اگر واریانت بعداً حذف شد، سفارش قدیمی

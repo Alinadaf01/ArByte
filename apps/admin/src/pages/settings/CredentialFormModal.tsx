@@ -32,11 +32,15 @@ const REQUIRED_CREDENTIAL_KEYS: Record<ApiCredentialService, string[]> = {
   idpay: ["apiKey"],
   snapppay: ["clientId", "clientSecret", "username", "password"],
   digipay: ["clientId", "clientSecret"],
+  torobpay: ["clientId", "clientSecret", "username", "password"],
   // AUDIT-6 — کلید عمومی ترب (PEM)؛ یک‌خطی هم پذیرفته می‌شود.
   torob: ["publicKey"],
   // serviceAccount = کل محتوای فایل JSON کلید سرویس‌اکانت گوگل کلاود (همان
   // که از Google Cloud Console دانلود می‌شود)، عیناً این‌جا پیست شود.
   search_console: ["serviceAccount", "siteUrl"],
+  // Salam API (developers.basalam.com) — clientId/clientSecret از پنل
+  // توسعه‌دهندگان باسلام، vendorId همان شناسه‌ی غرفه است.
+  basalam: ["clientId", "clientSecret", "vendorId"],
 };
 
 export function CredentialFormModal({

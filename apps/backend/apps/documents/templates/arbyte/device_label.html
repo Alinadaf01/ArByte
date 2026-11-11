@@ -1,0 +1,50 @@
+{% extends "arbyte/base.html" %}
+{% block extra_style %}
+  .code-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--ink);
+    color: #fff;
+    border-radius: 3mm;
+    padding: 4mm 6mm;
+    margin-bottom: 5mm;
+  }
+  .code-box .code { font-size: 26pt; font-weight: 700; direction: ltr; }
+  .code-box .grade { font-size: 12pt; font-weight: 600; }
+  .device-name { font-size: 15pt; font-weight: 700; margin-bottom: 4mm; }
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 6mm; margin-bottom: 4mm; }
+  .spec-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 1.5mm; }
+  .spec-row .label { color: var(--ink-2); font-size: 9pt; }
+  .spec-row .value { font-weight: 600; font-size: 10pt; }
+  .defects-card { border: 1.5px solid var(--brand); background: #fff; }
+  .defects-card .section-title { color: var(--brand-deep); margin-top: 0; }
+{% endblock %}
+{% block content %}
+<div class="code-box">
+  <span class="code">{{ code }}</span>
+  {% if grade %}<span class="grade">درجه {{ grade }}</span>{% endif %}
+</div>
+
+<div class="device-name">{{ device_name }}</div>
+
+{% if specs %}
+<div class="spec-grid">
+  {% for name, value in specs %}
+  <div class="spec-row">
+    <span class="label">{{ name }}</span>
+    <span class="value">{{ value }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if battery_line %}
+<div class="card" style="margin-bottom:4mm;">{{ battery_line }}</div>
+{% endif %}
+
+{% if defect_notes %}
+<div class="section-title">ایرادها/نکات</div>
+<div class="card defects-card">{{ defect_notes|linebreaksbr }}</div>
+{% endif %}
+{% endblock %}

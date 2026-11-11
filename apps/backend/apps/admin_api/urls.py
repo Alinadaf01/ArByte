@@ -8,6 +8,7 @@ from . import (
     activity_log_views,
     auth,
     balepay_admin,
+    basalam_admin,
     blog,
     campaigns,
     categories,
@@ -15,9 +16,11 @@ from . import (
     content_pages,
     coupons,
     dashboard,
+    device_labels,
     homepage,
     imports,
     inventory,
+    marketing,
     orders,
     payments,
     pricing,
@@ -194,4 +197,15 @@ urlpatterns = [
     # Activity log
     path("admin/login-attempts/", activity_log_views.AdminLoginAttemptListView.as_view(), name="admin-login-attempts"),
     path("admin/activity-log/", activity_log_views.AdminActivityLogListView.as_view(), name="admin-activity-log"),
+    # لیبل دستگاه (محموله‌های استوک — فقط بک‌اند)
+    path("admin/device-labels/", device_labels.AdminDeviceLabelListCreateView.as_view(), name="admin-device-label-list"),
+    path("admin/device-labels/<int:pk>/", device_labels.AdminDeviceLabelDetailView.as_view(), name="admin-device-label-detail"),
+    path("admin/device-labels/<int:pk>/pdf/", device_labels.AdminDeviceLabelPdfView.as_view(), name="admin-device-label-pdf"),
+    # بازاریابی پیامکی (کاربران ثبت‌نام‌کرده بدون خرید)
+    path("admin/marketing/audience/", marketing.AdminMarketingAudienceListView.as_view(), name="admin-marketing-audience"),
+    path("admin/marketing/audience/<int:user_id>/cart/", marketing.AdminMarketingUserCartView.as_view(), name="admin-marketing-user-cart"),
+    path("admin/marketing/campaigns/", marketing.AdminMarketingCampaignSendView.as_view(), name="admin-marketing-campaign-send"),
+    # باسلام
+    path("admin/basalam/status/", basalam_admin.AdminBasalamStatusView.as_view(), name="admin-basalam-status"),
+    path("admin/basalam/products/", basalam_admin.AdminBasalamProductsExportView.as_view(), name="admin-basalam-products-export"),
 ]

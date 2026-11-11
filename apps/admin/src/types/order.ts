@@ -112,6 +112,12 @@ export interface OrderStatusLog {
   createdAt: string;
 }
 
+export interface OrderDiscountLine {
+  id: number;
+  label: string;
+  amount: number;
+}
+
 export interface AdminOrder {
   id: string;
   orderNumber: string;
@@ -135,6 +141,7 @@ export interface AdminOrder {
   registrationNumber: string | null;
   subtotal: number;
   discountTotal: number;
+  discountLines: OrderDiscountLine[];
   shippingCost: number;
   finalTotal: number;
   cancelReason: string | null;

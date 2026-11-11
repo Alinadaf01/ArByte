@@ -37,6 +37,9 @@ import BrandsPage from "@/pages/BrandsPage";
 import SuppliersPage from "@/pages/SuppliersPage";
 import ImportPage from "@/pages/ImportPage";
 import CampaignsPage from "@/pages/CampaignsPage";
+import DeviceLabelsPage from "@/pages/DeviceLabelsPage";
+import MarketingPage from "@/pages/MarketingPage";
+import BasalamPage from "@/pages/BasalamPage";
 
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -83,6 +86,9 @@ export const router = createBrowserRouter([
           { path: "balepay", element: <BalePayPage /> },
           { path: "roles", element: <RolesPage /> },
           { path: "activity-log", element: <ActivityLogPage /> },
+          { path: "device-labels", element: <DeviceLabelsPage /> },
+          { path: "marketing", element: <MarketingPage /> },
+          { path: "basalam", element: <BasalamPage /> },
           { path: "*", element: <NotFoundPage /> },
         ],
       },

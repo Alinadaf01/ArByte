@@ -613,12 +613,22 @@ export default function OrderDetailPage() {
             <span>جمع جزء</span>
             <span>{formatPrice(order.subtotal)}</span>
           </div>
-          {order.discountTotal > 0 && (
+          {order.discountLines.length > 0 ? (
+            order.discountLines.map((line) => (
+              <div
+                key={line.id}
+                className="flex justify-between text-slate-400"
+              >
+                <span>{line.label}</span>
+                <span>-{formatPrice(line.amount)}</span>
+              </div>
+            ))
+          ) : order.discountTotal > 0 ? (
             <div className="flex justify-between text-slate-400">
               <span>تخفیف</span>
               <span>-{formatPrice(order.discountTotal)}</span>
             </div>
-          )}
+          ) : null}
           <div className="flex justify-between text-slate-400">
             <span>هزینه ارسال</span>
             <span>{formatPrice(order.shippingCost)}</span>

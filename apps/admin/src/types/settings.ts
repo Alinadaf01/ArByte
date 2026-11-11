@@ -50,8 +50,10 @@ export type ApiCredentialService =
   | "idpay"
   | "snapppay"
   | "digipay"
+  | "torobpay"
   | "torob"
-  | "search_console";
+  | "search_console"
+  | "basalam";
 
 export const API_CREDENTIAL_SERVICE_LABELS: Record<
   ApiCredentialService,
@@ -62,8 +64,10 @@ export const API_CREDENTIAL_SERVICE_LABELS: Record<
   idpay: "آیدی‌پی",
   snapppay: "اسنپ‌پی",
   digipay: "دیجی‌پی",
+  torobpay: "ترب‌پی (فروش اقساطی)",
   torob: "ترب (Torob API v3)",
   search_console: "سرچ کنسول",
+  basalam: "باسلام",
 };
 
 export interface ApiCredential {

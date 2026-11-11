@@ -312,16 +312,24 @@ def admin_create_order(
     items: list[dict],
     payment_plan: str,
     mark_paid: bool,
+    discount_lines: list[dict] | None = None,
 ) -> Order:
     """ادمین سفارشی را که در واتس‌اپ/تلفن مذاکره شده مستقیم ثبت می‌کند —
     بدون سبد خرید و بدون چک‌اوت مشتری (که در نشست جعل‌هویت مسدود است، درست
     هم همین است: ثبت سفارش واقعی باید از مسیر ادمین باشد، نه جای مشتری).
     همان قوانین قیمت/موجودی زنده‌ی checkout() را روی `items` (به‌جای
-    CartItem) اعمال می‌کند؛ کوپن ندارد (تخفیف دستی اینجا معنا ندارد)."""
+    CartItem) اعمال می‌کند؛ کوپن ندارد (تخفیف دستی اینجا معنا ندارد).
+
+    `discount_lines` — درخواست مدیر: تخفیف دستی باید برچسب‌دار و چندتایی
+    باشد («تخفیف بابت کیف اشانتیون»، «تخفیف نقدی» و...)، نه یک عدد خام.
+    قلم اشانتیون (مثل کیف) هم یک OrderItem عادی با قیمت کامل است؛ ارزشش را
+    همین یک ردیف تخفیف با همان مبلغ روی فاکتور نشان می‌دهد — نیازی به
+    فلگ جدا روی OrderItem نیست."""
     from apps.catalog.models import ProductVariant
     from apps.inventory.models import InsufficientStockError, Inventory
 
     from . import order_status
+    from .models import OrderDiscountLine
     from .payment_state import create_payments, split_for_plan
 
     if not items:
@@ -357,7 +365,18 @@ def admin_create_order(
     if shortages:
         raise InsufficientStockCheckoutError(shortages)
 
-    final_total = subtotal
+    clean_discount_lines = []
+    for line in discount_lines or []:
+        label = str(line.get("label", "") or "").strip()
+        amount = int(line.get("amount", 0) or 0)
+        if not label or amount <= 0:
+            raise CheckoutError("VALIDATION_ERROR", "برچسب و مبلغ هر ردیف تخفیف الزامی است.", field="discountLines")
+        clean_discount_lines.append({"label": label, "amount": amount})
+    discount_total = sum(line["amount"] for line in clean_discount_lines)
+    if discount_total > subtotal:
+        raise CheckoutError("VALIDATION_ERROR", "مجموع تخفیف‌ها نمی‌تواند از جمع سفارش بیشتر باشد.", field="discountLines")
+
+    final_total = subtotal - discount_total
     split_for_plan(payment_plan, final_total)
 
     order = Order.objects.create(
@@ -369,10 +388,13 @@ def admin_create_order(
         shipping_address_line=address_line,
         shipping_postal_code=postal_code,
         subtotal=subtotal,
+        discount_total=discount_total,
         shipping_cost=0,
         shipping_method_name="ثبت دستی (واتس‌اپ/تلفن)",
         final_total=final_total,
     )
+    for line in clean_discount_lines:
+        OrderDiscountLine.objects.create(order=order, label=line["label"], amount=line["amount"])
 
     for data in order_items_data:
         variant = data["variant"]

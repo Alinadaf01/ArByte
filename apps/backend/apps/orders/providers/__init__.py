@@ -3,18 +3,22 @@ from .base import PaymentProvider, PaymentProviderError, PaymentRequestResult, P
 from .digipay import DigiPayProvider
 from .idpay import IdPayProvider
 from .snapppay import SnapPayProvider
+from .torobpay import TorobPayProvider
 from .zarinpal import ZarinpalProvider
 
-# Adding a fifth gateway means adding one class + one line here — nothing
+# Adding a new gateway means adding one class + one line here — nothing
 # else in this file, base.py, or the views/services that use get_provider()
 # needs to change. D-05 §۳ — چهارتای وایب در ثبت می‌مانند (کد موجود است)
 # اما ApiCredential غیرفعال یعنی هرگز در initiate_payment انتخاب نمی‌شوند؛
 # بله‌پی تنها گزینه‌ای است که واقعاً در دسترس (البته اسکلت) قرار دارد.
+# ترب‌پی هم به همین بستر اضافه شد (درخواست مدیر — بررسی گزینه‌ی فروش
+# اقساطی) — تا اعتبارنامه‌ی واقعی وارد نشود، ApiCredential غیرفعال می‌ماند.
 PAYMENT_PROVIDERS: dict[str, type[PaymentProvider]] = {
     ZarinpalProvider.code: ZarinpalProvider,
     IdPayProvider.code: IdPayProvider,
     SnapPayProvider.code: SnapPayProvider,
     DigiPayProvider.code: DigiPayProvider,
+    TorobPayProvider.code: TorobPayProvider,
     BalePayProvider.code: BalePayProvider,
 }
 

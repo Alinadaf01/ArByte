@@ -30,6 +30,9 @@ SECTIONS = [
     ("roles", "مدیریت نقش‌ها و دسترسی", ["view", "edit"]),
     ("activity_log", "لاگ فعالیت", ["view"]),
     ("search_console", "سرچ کنسول", ["view"]),
+    ("device_labels", "لیبل دستگاه", ["view", "create", "edit", "delete"]),
+    ("marketing", "بازاریابی پیامکی", ["view", "create"]),
+    ("basalam", "باسلام", ["view", "edit"]),
 ]
 
 SECTION_KEYS = [key for key, _, _ in SECTIONS]
@@ -80,6 +83,7 @@ DEFAULT_ROLES = {
             "stock_ledger": ["view", "create"],
             "returns": ["view", "edit"],
             "messages": ["view", "edit"],
+            "device_labels": ["view", "create", "edit", "delete"],
         },
     },
     "پشتیبانی": {
