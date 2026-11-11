@@ -21,6 +21,7 @@ class DeviceLabel(models.Model):
     display = models.CharField(max_length=150, blank=True)
     battery_health_percent = models.PositiveSmallIntegerField(blank=True, null=True)
     battery_cycle_count = models.PositiveIntegerField(blank=True, null=True)
+    storage_health_percent = models.PositiveSmallIntegerField(blank=True, null=True)
     grade = models.CharField(max_length=20, choices=PRODUCT_GRADE_CHOICES, blank=True)
     defect_notes = models.TextField(blank=True)
     created_by = models.ForeignKey(

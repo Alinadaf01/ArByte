@@ -37,6 +37,7 @@ const EMPTY_DRAFT: DeviceLabelFormValues = {
   display: "",
   batteryHealthPercent: null,
   batteryCycleCount: null,
+  storageHealthPercent: null,
   grade: "",
   defectNotes: "",
 };
@@ -62,6 +63,7 @@ function DeviceLabelForm({
           display: label.display,
           batteryHealthPercent: label.batteryHealthPercent,
           batteryCycleCount: label.batteryCycleCount,
+          storageHealthPercent: label.storageHealthPercent,
           grade: label.grade,
           defectNotes: label.defectNotes,
         }
@@ -186,6 +188,22 @@ function DeviceLabelForm({
             onChange={(e) =>
               set(
                 "batteryCycleCount",
+                e.target.value === "" ? null : Number(e.target.value),
+              )
+            }
+          />
+        </Field>
+        <Field label="سلامت هارد (٪)" htmlFor="dl-storage-health">
+          <Input
+            id="dl-storage-health"
+            type="number"
+            min={0}
+            max={100}
+            dir="ltr"
+            value={draft.storageHealthPercent ?? ""}
+            onChange={(e) =>
+              set(
+                "storageHealthPercent",
                 e.target.value === "" ? null : Number(e.target.value),
               )
             }

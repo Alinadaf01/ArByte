@@ -21,6 +21,7 @@ class AdminDeviceLabelTests(AdminApiTestMixin, APITestCase):
                 "storage": "512GB",
                 "battery_health_percent": 92,
                 "battery_cycle_count": 140,
+                "storage_health_percent": 97,
                 "grade": "A+",
                 "defect_notes": "هاله مشکی روی کیبورد",
             },
@@ -29,6 +30,7 @@ class AdminDeviceLabelTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.status_code, 201, response.data)
         self.assertEqual(response.data["code"], "1412")
         self.assertEqual(response.data["grade_display"], "A+")
+        self.assertEqual(response.data["storage_health_percent"], 97)
 
         list_response = self.client.get(reverse("admin-device-label-list"))
         self.assertEqual(list_response.data["count"], 1)

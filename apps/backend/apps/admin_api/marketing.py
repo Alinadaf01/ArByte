@@ -68,9 +68,10 @@ class AdminMarketingAudienceFilter(django_filters.FilterSet):
 
 
 class AdminMarketingAudienceListView(ListAPIView):
-    """کاربران ثبت‌نام‌کرده (غیر staff) بدون هیچ سفارشی — «بانک شماره»ی
-    بازگشت‌پذیر. تعداد قلم سبد فعلی‌شان هم همراه می‌آید تا قبل از باز کردن
-    جزئیات هم معلوم باشد کدام‌ها چیزی در سبد رها کرده‌اند."""
+    """همه‌ی کاربران ثبت‌نام‌کرده (غیر staff) — «بانک شماره»ی سایت، برای
+    کمپین پیامکی. محدود به کسانی که هیچ سفارشی نداشته‌اند نیست؛ کسی که
+    سبدش هم خالی است ولی ثبت‌نام کرده باید قابل پیامک‌دادن باشد. تعداد قلم
+    سبد فعلی‌شان همراه می‌آید تا معلوم باشد کدام‌ها چیزی در سبد رها کرده‌اند."""
 
     permission_classes = [require_section("marketing")]
     serializer_class = AdminMarketingAudienceSerializer
@@ -79,8 +80,6 @@ class AdminMarketingAudienceListView(ListAPIView):
     def get_queryset(self):
         return (
             User.objects.filter(is_staff=False)
-            .annotate(order_count=Count("orders", distinct=True))
-            .filter(order_count=0)
             .annotate(cart_item_count=Count("carts__items", distinct=True))
             .order_by("-created_at")
         )

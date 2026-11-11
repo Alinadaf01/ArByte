@@ -18,8 +18,8 @@ class AdminDeviceLabelSerializer(serializers.ModelSerializer):
         model = DeviceLabel
         fields = [
             "id", "code", "device_name", "model_number", "cpu", "ram", "storage", "display",
-            "battery_health_percent", "battery_cycle_count", "grade", "grade_display", "defect_notes",
-            "created_at", "updated_at",
+            "battery_health_percent", "battery_cycle_count", "storage_health_percent", "grade",
+            "grade_display", "defect_notes", "created_at", "updated_at",
         ]
 
     def get_id(self, obj: DeviceLabel) -> str:

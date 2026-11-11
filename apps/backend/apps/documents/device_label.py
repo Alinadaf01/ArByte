@@ -19,12 +19,14 @@ def build_device_label_context(label) -> dict:
         battery_parts.append(f"سلامت باتری {label.battery_health_percent}٪")
     if label.battery_cycle_count is not None:
         battery_parts.append(f"سایکل {label.battery_cycle_count}")
+    storage_line = f"سلامت هارد {label.storage_health_percent}٪" if label.storage_health_percent is not None else ""
     ctx.update(
         {
             "code": label.code,
             "device_name": label.device_name,
             "specs": [(name, value) for name, value in specs if value],
             "battery_line": " · ".join(battery_parts),
+            "storage_health_line": storage_line,
             "grade": label.get_grade_display() if label.grade else "",
             "defect_notes": label.defect_notes,
         }

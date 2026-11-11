@@ -14,7 +14,9 @@ class AdminMarketingTests(AdminApiTestMixin, APITestCase):
         self.product = self.make_product(stock=5)
         self.variant = self.product.variants.first()
 
-    def test_audience_excludes_users_with_orders(self):
+    def test_audience_includes_all_registered_users_regardless_of_orders(self):
+        """درخواست مدیر — مخاطب کمپین باید همه‌ی ثبت‌نام‌کرده‌ها باشد، نه فقط
+        کسانی که هیچ سفارشی ندارند؛ حتی با سبد خالی هم باید قابل پیامک‌دادن باشند."""
         no_order_user = self.make_customer(phone="09120000011")
         has_order_user = self.make_customer(phone="09120000012")
         from apps.orders.models import Order
@@ -27,7 +29,7 @@ class AdminMarketingTests(AdminApiTestMixin, APITestCase):
         response = self.client.get(reverse("admin-marketing-audience"))
         phones = {row["phone"] for row in response.data["results"]}
         self.assertIn(no_order_user.phone, phones)
-        self.assertNotIn(has_order_user.phone, phones)
+        self.assertIn(has_order_user.phone, phones)
 
     def test_audience_shows_cart_item_count(self):
         user = self.make_customer(phone="09120000013")

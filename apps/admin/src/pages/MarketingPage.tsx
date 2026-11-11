@@ -164,7 +164,7 @@ export default function MarketingPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="بازاریابی پیامکی"
-        description="کاربرانی که ثبت‌نام کرده‌اند ولی هنوز خریدی نداشته‌اند — متن دلخواه (مثلاً کد تخفیف) با کاوه‌نگار برایشان بفرست و سبد خریدشان را ببین تا بفهمی چرا نخریده‌اند."
+        description="همه‌ی کاربران ثبت‌نام‌کرده — متن دلخواه (مثلاً کد تخفیف) با کاوه‌نگار برایشان بفرست؛ سبد خریدشان را هم ببین تا بفهمی چرا نخریده‌اند."
       />
 
       <section className="glass-card overflow-hidden p-0">
@@ -196,7 +196,7 @@ export default function MarketingPage() {
           <EmptyState
             icon={Megaphone}
             title="مخاطبی یافت نشد"
-            description="همه‌ی کاربران ثبت‌نام‌کرده حداقل یک سفارش دارند."
+            description="هیچ کاربری با این جست‌وجو پیدا نشد."
           />
         ) : (
           <>

@@ -9,6 +9,7 @@ export interface AdminDeviceLabel {
   display: string;
   batteryHealthPercent: number | null;
   batteryCycleCount: number | null;
+  storageHealthPercent: number | null;
   grade: string;
   gradeDisplay: string;
   defectNotes: string;

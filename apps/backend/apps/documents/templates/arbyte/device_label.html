@@ -39,8 +39,11 @@
 </div>
 {% endif %}
 
-{% if battery_line %}
-<div class="card" style="margin-bottom:4mm;">{{ battery_line }}</div>
+{% if battery_line or storage_health_line %}
+<div class="card" style="margin-bottom:4mm; display:flex; flex-wrap:wrap; gap:1.5mm 6mm;">
+  {% if battery_line %}<span>{{ battery_line }}</span>{% endif %}
+  {% if storage_health_line %}<span>{{ storage_health_line }}</span>{% endif %}
+</div>
 {% endif %}
 
 {% if defect_notes %}
