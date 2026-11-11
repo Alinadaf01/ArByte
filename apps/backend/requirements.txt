@@ -25,3 +25,4 @@ python-barcode==0.15.1
 python-dateutil==2.9.0.post0
 google-api-python-client==2.201.0
 google-auth==2.62.0
+packaging==26.2
