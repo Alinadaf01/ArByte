@@ -255,6 +255,13 @@ class PublicApiPerformanceTests(PublicApiSeededTestCase):
     """D-03 §3 — 'بدون N+1: فهرست ۲۴ محصولی حداکثر ۵ کوئری.'"""
 
     def test_product_list_24_items_at_most_5_queries(self):
+        # apps/catalog/pricing.py's _active_campaign_index() has a 5-second
+        # process-local (wall-clock, not per-test) cache — a cold cache adds
+        # one extra query that has nothing to do with this endpoint's N+1
+        # behavior, just whichever test happened to run in the last 5s. One
+        # warm-up call makes the assertion measure steady-state query count
+        # (what the §3 budget is actually about) instead of racing the cache.
+        self.client.get("/api/v1/catalog/products?perPage=24")
         with CaptureQueriesContext(connection) as ctx:
             response = self.client.get("/api/v1/catalog/products?perPage=24")
         self.assertEqual(response.status_code, 200)
