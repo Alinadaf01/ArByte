@@ -46,6 +46,10 @@ const nextConfig: NextConfig = {
     // خودمان تولیدشان کرده‌ایم (نه آپلود کاربر) — امن برای فعال‌سازی.
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
+    // پیش‌فرض نکست (۶۰ ثانیه) باعث می‌شد CDN/مرورگر مدام عکس محصول را دوباره
+    // از مبدأ بگیرند. نام فایل آپلودها hash محتواست (uploads/products/<hash>.webp)
+    // — عکس جدید یعنی URL جدید، پس کش طولانی برای همین URL همیشه امن است.
+    minimumCacheTTL: 2678400,
   },
   // F-02 — تصاویری که از پنل ادمین آپلود می‌شوند (Django، WebP) مسیر نسبی
   // `/media/...` دارند؛ این rewrite آن‌ها را هم‌مبدأ از بک‌اند می‌آورد تا
