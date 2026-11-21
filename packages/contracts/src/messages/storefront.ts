@@ -178,6 +178,9 @@ export const supportPage = {
     noteRateLimited: "تعداد درخواست‌ها زیاد است؛ کمی بعد دوباره تلاش کنید.",
     sending: "در حال ارسال…",
   },
+  addresses: {
+    title: "آدرس‌ها",
+  },
   hours: {
     title: "ساعات پاسخ‌گویی",
     everyDay: "همه‌روزه",

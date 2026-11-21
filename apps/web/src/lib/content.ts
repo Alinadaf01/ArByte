@@ -108,7 +108,7 @@ export async function getLegalDocuments(): Promise<LegalDocument[]> {
 const EMPTY_SITE_INFO: SiteInfo = {
   phone: null,
   email: null,
-  address: null,
+  addresses: [],
   businessHours: [],
   socials: {},
   trustBadge: null,

@@ -13,6 +13,7 @@ interface SupportContentProps {
   phone: SiteInfo["phone"];
   email: string | null;
   businessHours: SiteInfo["businessHours"];
+  addresses: SiteInfo["addresses"];
 }
 
 /** G-01 — Support.dc.html. فرم → `POST /contact` (پنل «پیام‌ها»)؛ کانال تلفن فقط با شماره‌ی SiteSettings؛ مراجعه‌ی حضوری/نقشه پنهان. */
@@ -20,6 +21,7 @@ export function SupportContent({
   phone: storePhone,
   email,
   businessHours,
+  addresses,
 }: SupportContentProps) {
   const [topic, setTopic] = useState(0);
   const [name, setName] = useState("");
@@ -358,6 +360,41 @@ export function SupportContent({
               {supportPage.hours.outsideHours}
             </p>
           </div>
+
+          {addresses.length > 0 ? (
+            <div className="border-border bg-surface flex flex-col gap-3.5 rounded-panel border p-5">
+              <h2 className="text-[14.5px] font-heading">
+                {supportPage.addresses.title}
+              </h2>
+              <ul className="m-0 flex list-none flex-col gap-3 p-0">
+                {addresses.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-brand mt-0.5 shrink-0"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" />
+                      <circle cx="12" cy="9.5" r="2.3" />
+                    </svg>
+                    <address className="text-secondary text-caption leading-relaxed not-italic">
+                      {a.label ? (
+                        <span className="font-emphasis">{a.label}: </span>
+                      ) : null}
+                      {a.address}
+                    </address>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {email ? (
             <div className="bg-surface-dark text-on-dark flex flex-col gap-2.5 rounded-panel p-5">

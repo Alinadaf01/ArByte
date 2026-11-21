@@ -146,7 +146,7 @@ const PinIcon = (
 export function SiteFooter({ info }: { info: SiteInfo }) {
   const socials = socialLinks.filter((s) => info.socials[s.key]);
   const hasContact = Boolean(
-    info.email || info.phone || info.address || info.trustBadge,
+    info.email || info.phone || info.addresses.length || info.trustBadge,
   );
   return (
     <>
@@ -299,14 +299,19 @@ export function SiteFooter({ info }: { info: SiteInfo }) {
                     </a>
                   </li>
                 ) : null}
-                {info.address ? (
-                  <li className="flex items-start gap-2.5">
+                {info.addresses.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
                     {PinIcon}
                     <address className="text-on-dark-tertiary text-body leading-[1.85] not-italic">
-                      {info.address}
+                      {a.label ? (
+                        <span className="text-on-dark-secondary font-emphasis">
+                          {a.label}:{" "}
+                        </span>
+                      ) : null}
+                      {a.address}
                     </address>
                   </li>
-                ) : null}
+                ))}
               </ul>
               <div className="flex flex-wrap items-start gap-2.5">
                 {info.trustBadge ? (
@@ -314,6 +319,7 @@ export function SiteFooter({ info }: { info: SiteInfo }) {
                 ) : null}
                 <EmallsBadge size="w-[75px]" />
                 <BalePayBadge width={150} />
+                <TorobBadge size="w-[75px]" />
               </div>
             </div>
           ) : null}
@@ -436,7 +442,7 @@ function MobileFooter({
             </FooterAccordionLink>
           </FooterAccordionSection>
 
-          {info.email || info.phone || info.address ? (
+          {info.email || info.phone || info.addresses.length ? (
             <FooterAccordionSection
               title={siteFooter.contactColumn.title}
               isOpen={open.contact}
@@ -466,14 +472,19 @@ function MobileFooter({
                     </a>
                   </li>
                 ) : null}
-                {info.address ? (
-                  <li className="flex items-start gap-2.5">
+                {info.addresses.map((a, i) => (
+                  <li key={i} className="flex items-start gap-2.5">
                     {PinIcon}
                     <address className="text-on-dark-tertiary text-body leading-[1.9] not-italic">
-                      {info.address}
+                      {a.label ? (
+                        <span className="text-on-dark-secondary font-emphasis">
+                          {a.label}:{" "}
+                        </span>
+                      ) : null}
+                      {a.address}
                     </address>
                   </li>
-                ) : null}
+                ))}
               </ul>
             </FooterAccordionSection>
           ) : null}
@@ -500,6 +511,7 @@ function MobileFooter({
           ) : null}
           <EmallsBadge size="w-[70px]" />
           <BalePayBadge width={140} />
+          <TorobBadge size="w-[70px]" />
         </div>
 
         <div className="flex flex-col gap-3 border-t border-white/10 pt-4.5">
@@ -631,6 +643,31 @@ function EmallsBadge({ size }: { size: string }) {
       <img
         src="https://service.emalls.ir/neshan?id=27413"
         alt="نشان اعتباری ایمالز"
+        referrerPolicy="origin"
+        className={`${size} rounded-tile-sm bg-white object-contain p-1`}
+      />
+    </a>
+  );
+}
+
+/** نشان ضمانت ترب — کد embed ثابت خود ترب (نه از تنظیمات پنل)؛ سرور ترب
+ * خودش تصویر هولوگرام را hotlink می‌دهد، دقیقاً مثل ایمالز/اینماد.
+ * referrerPolicy="origin" عمدی است: طبق راهنمای ترب، سیاست Referrer نباید
+ * کاملاً مسدود شود (no-referrer) و باید با دامنه‌ی ثبت‌شده مطابقت کند —
+ * "origin" دقیقاً همین را می‌دهد (فقط https://arbyte.ir، بدون مسیر صفحه). */
+function TorobBadge({ size }: { size: string }) {
+  return (
+    <a
+      href="https://torob.com/shop/29614"
+      target="_blank"
+      rel="nofollow"
+      referrerPolicy="origin"
+      className="self-start"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="https://api.torob.com/third-party/guarantee/v1/hologram/?instance_id=29614"
+        alt="نشان ضمانت ترب"
         referrerPolicy="origin"
         className={`${size} rounded-tile-sm bg-white object-contain p-1`}
       />

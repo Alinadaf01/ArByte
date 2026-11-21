@@ -3,6 +3,11 @@ export interface BusinessHour {
   time: string;
 }
 
+export interface SiteAddress {
+  label: string;
+  address: string;
+}
+
 export interface AdminSiteSettings {
   businessName: string;
   economicCode: string;
@@ -10,7 +15,7 @@ export interface AdminSiteSettings {
   phoneDisplay: string;
   phoneHref: string;
   email: string;
-  address: string;
+  addresses: SiteAddress[];
   businessHours: BusinessHour[];
   instagramUrl: string;
   telegramUrl: string;

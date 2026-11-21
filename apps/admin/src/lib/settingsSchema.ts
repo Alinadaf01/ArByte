@@ -5,6 +5,11 @@ export const businessHourSchema = z.object({
   time: z.string().min(1, "ساعت الزامی است."),
 });
 
+export const siteAddressSchema = z.object({
+  label: z.string().min(1, "برچسب الزامی است."),
+  address: z.string().min(1, "آدرس الزامی است."),
+});
+
 export const siteSettingsFormSchema = z.object({
   businessName: z.string(),
   economicCode: z.string(),
@@ -12,7 +17,7 @@ export const siteSettingsFormSchema = z.object({
   phoneDisplay: z.string(),
   phoneHref: z.string(),
   email: z.union([z.literal(""), z.string().email("ایمیل معتبر نیست.")]),
-  address: z.string(),
+  addresses: z.array(siteAddressSchema),
   businessHours: z.array(businessHourSchema),
   instagramUrl: z.string(),
   telegramUrl: z.string(),

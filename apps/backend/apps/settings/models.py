@@ -17,7 +17,10 @@ class SiteSettings(models.Model):
     phone_display = models.CharField(max_length=30, blank=True)
     phone_href = models.CharField(max_length=30, blank=True, help_text='e.g. "+982112345678" for tel:')
     email = models.EmailField(blank=True)
-    address = models.CharField(max_length=300, blank=True)
+    # چند آدرس (دفتر مرکزی + انبارها) — همان الگوی business_hours، یک لیست
+    # JSON به‌جای یک رشته‌ی تکی: [{label, address}, ...]. ترتیب نمایش = ترتیب
+    # لیست (بدون فیلد sort جدا، دقیقاً مثل business_hours).
+    addresses = models.JSONField(default=list, help_text="[{label, address}, ...] — مثلاً دفتر مرکزی، انبار قم")
     # E-03 §۳ — سند تسک store_postal_code را برای فاکتور/کارت گارانتی
     # می‌خواست؛ نام/شناسه‌ی حقوقی/کد اقتصادی/آدرس/تلفن از قبل به همین
     # منظور بالا موجود بودند (business_name/national_id/economic_code/
@@ -140,6 +143,15 @@ class SiteSettings(models.Model):
     @property
     def owner_notification_phone_list(self) -> list[str]:
         return [p.strip() for p in self.owner_notification_phone.split(",") if p.strip()]
+
+    @property
+    def primary_address(self) -> str:
+        """آدرس قانونی/اصلی برای اسناد (فاکتور، کارت گارانتی) — همیشه اولین
+        ردیف از addresses (ترتیب لیست = ترتیب نمایش، دفتر مرکزی همیشه اول)."""
+        for a in self.addresses or []:
+            if isinstance(a, dict) and a.get("address"):
+                return str(a["address"])
+        return ""
 
 
 API_CREDENTIAL_SERVICE_CHOICES = [

@@ -31,7 +31,7 @@ def base_context(
         "doc_number": doc_number,
         "doc_date": doc_date or generated_at,
         "business_name": settings_obj.business_name or "آربایت",
-        "seller_address": settings_obj.address,
+        "seller_address": settings_obj.primary_address,
         "wordmark_svg": mark_safe(store_wordmark_svg()),
         "font_regular": peyda_font_uri("Peyda-Regular.woff2"),
         "font_medium": peyda_font_uri("Peyda-Medium.woff2"),

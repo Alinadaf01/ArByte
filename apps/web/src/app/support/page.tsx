@@ -59,6 +59,7 @@ export default async function SupportPage() {
           phone={info.phone}
           email={info.email}
           businessHours={info.businessHours}
+          addresses={info.addresses}
         />
       </div>
     </StorefrontShell>

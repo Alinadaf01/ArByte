@@ -33,7 +33,7 @@ def _configure_seller():
     settings_obj.business_name = "فروشگاه آربایت"
     settings_obj.national_id = "10861234567"
     settings_obj.economic_code = "411234567890"
-    settings_obj.address = "تهران، خیابان ولیعصر، پلاک ۱۲۳"
+    settings_obj.addresses = [{"label": "دفتر مرکزی", "address": "تهران، خیابان ولیعصر، پلاک ۱۲۳"}]
     settings_obj.postal_code = "1234567890"
     settings_obj.phone_display = "۰۲۱-۱۲۳۴۵۶۷۸"
     settings_obj.test_period_days = 7

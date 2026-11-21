@@ -57,7 +57,7 @@ def _build_demo_order() -> Order:
     s.business_name = "فروشگاه آربایت (DEMO)"
     s.national_id = "10860000000"
     s.economic_code = "411000000000"
-    s.address = "تهران، نشانی نمونه‌ی فروشگاه (DEMO)"
+    s.addresses = [{"label": "دفتر مرکزی", "address": "تهران، نشانی نمونه‌ی فروشگاه (DEMO)"}]
     s.postal_code = "1000000000"
     s.phone_display = "۰۲۱-۰۰۰۰۰۰۰۰"
     s.save()

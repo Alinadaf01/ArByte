@@ -27,7 +27,7 @@ _URL_FIELDS = [
 # on the way in rather than making the panel responsible for never
 # producing null.
 _NULLABLE_AS_BLANK_FIELDS = _URL_FIELDS + [
-    "business_name", "economic_code", "national_id", "phone_display", "phone_href", "email", "address",
+    "business_name", "economic_code", "national_id", "phone_display", "phone_href", "email",
     "trust_badge_label", "payment_gateway_label", "google_analytics_id", "google_tag_manager_id",
     "owner_notification_phone", "google_maps_embed",
     "postal_code", "warranty_terms", "card_to_card_holder_name", "card_to_card_number", "card_to_card_sheba",
@@ -42,7 +42,7 @@ class AdminSiteSettingsSerializer(serializers.ModelSerializer):
         model = SiteSettings
         fields = [
             "business_name", "economic_code", "national_id",
-            "phone_display", "phone_href", "email", "address", "business_hours",
+            "phone_display", "phone_href", "email", "addresses", "business_hours",
             "instagram_url", "telegram_url", "whatsapp_url", "linkedin_url", "youtube_url", "pinterest_url",
             "google_maps_embed", "latitude", "longitude",
             "trust_badge_label", "trust_badge_image", "trust_badge_image_url", "trust_badge_url",

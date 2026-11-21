@@ -165,7 +165,7 @@ export const CreateReviewRequestSchema = z.object({
 export const SiteInfoSchema = z.object({
   phone: z.object({ display: z.string(), href: z.string() }).nullable(),
   email: z.string().nullable(),
-  address: z.string().nullable(),
+  addresses: z.array(z.object({ label: z.string(), address: z.string() })),
   businessHours: z.array(z.object({ day: z.string(), time: z.string() })),
   socials: z.object({
     instagram: z.string().optional(),

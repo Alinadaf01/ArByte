@@ -58,7 +58,7 @@ export function SiteInfoTab() {
       phoneDisplay: "",
       phoneHref: "",
       email: "",
-      address: "",
+      addresses: [],
       businessHours: [],
       instagramUrl: "",
       telegramUrl: "",
@@ -90,6 +90,14 @@ export function SiteInfoTab() {
     control,
     name: "businessHours",
   });
+  const {
+    fields: addressFields,
+    append: appendAddress,
+    remove: removeAddress,
+  } = useFieldArray({
+    control,
+    name: "addresses",
+  });
 
   useEffect(() => {
     if (!settings) return;
@@ -100,7 +108,7 @@ export function SiteInfoTab() {
       phoneDisplay: settings.phoneDisplay,
       phoneHref: settings.phoneHref,
       email: settings.email,
-      address: settings.address,
+      addresses: settings.addresses,
       businessHours: settings.businessHours,
       instagramUrl: settings.instagramUrl,
       telegramUrl: settings.telegramUrl,
@@ -227,13 +235,6 @@ export function SiteInfoTab() {
             <Input id="s-email" dir="ltr" {...register("email")} />
           </Field>
           <Field
-            label="آدرس"
-            htmlFor="s-address"
-            error={errors.address?.message}
-          >
-            <Input id="s-address" {...register("address")} />
-          </Field>
-          <Field
             label="کد پستی"
             htmlFor="s-postal"
             error={errors.postalCode?.message}
@@ -242,6 +243,63 @@ export function SiteInfoTab() {
             <Input id="s-postal" dir="ltr" {...register("postalCode")} />
           </Field>
         </div>
+      </section>
+
+      <section className="glass-card flex flex-col gap-4 p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="m-0 text-sm font-bold text-white">آدرس‌ها</h2>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => appendAddress({ label: "", address: "" })}
+          >
+            + افزودن آدرس
+          </Button>
+        </div>
+        <p className="m-0 text-xs text-slate-500">
+          دفتر مرکزی، انبارها و... — در فوتر و صفحه‌ی تماس با ما نمایش داده
+          می‌شوند.
+        </p>
+        {addressFields.length === 0 ? (
+          <p className="m-0 text-xs text-slate-500">آدرسی ثبت نشده.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {addressFields.map((field, index) => (
+              <div key={field.id} className="flex items-start gap-2">
+                <Input
+                  className="w-40 shrink-0"
+                  placeholder="برچسب (مثلاً دفتر مرکزی)"
+                  {...register(`addresses.${index}.label`)}
+                />
+                <Input
+                  placeholder="آدرس کامل"
+                  {...register(`addresses.${index}.address`)}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeAddress(index)}
+                  aria-label="حذف"
+                  className="icon-btn !h-10 !w-10 shrink-0 hover:!text-danger"
+                >
+                  <svg
+                    className="size-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth="1.8"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="glass-card flex flex-col gap-4 p-6">

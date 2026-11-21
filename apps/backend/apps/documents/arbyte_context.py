@@ -26,7 +26,7 @@ def arbyte_base_context(
         "seller_name": settings_obj.business_name or "آربایت",
         "seller_national_id": settings_obj.national_id,
         "seller_economic_code": settings_obj.economic_code,
-        "seller_address": settings_obj.address,
+        "seller_address": settings_obj.primary_address,
         "seller_postal_code": settings_obj.postal_code,
         "seller_phone": settings_obj.phone_display,
         "logo_uri": brand_logo_uri(f"logo-{logo_variant}.png"),

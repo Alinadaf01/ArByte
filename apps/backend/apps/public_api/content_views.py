@@ -372,7 +372,11 @@ class SiteInfoView(PublicAPIView):
         data = {
             "phone": {"display": s.phone_display, "href": phone_href} if s.phone_display and phone_href else None,
             "email": s.email or None,
-            "address": s.address or None,
+            "addresses": [
+                {"label": str(a.get("label") or "").strip(), "address": str(a.get("address") or "").strip()}
+                for a in (s.addresses or [])
+                if isinstance(a, dict) and str(a.get("address") or "").strip()
+            ],
             "businessHours": [
                 {"day": str(h.get("day") or "").strip(), "time": str(h.get("time") or "").strip()}
                 for h in (s.business_hours or [])
