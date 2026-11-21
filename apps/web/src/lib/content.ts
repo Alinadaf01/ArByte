@@ -114,10 +114,14 @@ const EMPTY_SITE_INFO: SiteInfo = {
   trustBadge: null,
 };
 
-/** G-01 — تماس/شبکه‌ها/نماد از SiteSettings؛ API در دسترس نبود = همه پنهان. */
+/** G-01 — تماس/شبکه‌ها/نماد از SiteSettings؛ API در دسترس نبود = همه پنهان.
+ * `addresses` هم با `?? []` پیش‌فرض می‌شود، نه فقط کل شیء: در یک دیپلوی
+ * غیرهم‌زمان (فرانت تازه‌تر از بک‌اند، یا برعکس) پاسخ API ممکن است این
+ * فیلد را هنوز نداشته باشد — بدون این، `info.addresses.map(...)` در فوتر
+ * با خطای رندر کل صفحه را می‌شکند. */
 export async function getSiteInfo(): Promise<SiteInfo> {
-  return (
-    (await getJson<{ data: SiteInfo }>("/content/site-info", 300))?.data ??
-    EMPTY_SITE_INFO
-  );
+  const data = (await getJson<{ data: SiteInfo }>("/content/site-info", 300))
+    ?.data;
+  if (!data) return EMPTY_SITE_INFO;
+  return { ...data, addresses: data.addresses ?? [] };
 }
