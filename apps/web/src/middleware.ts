@@ -124,7 +124,11 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     // G-01 — نماد اعتماد اینماد/ایمالز/ترب باید مستقیم از سرور خودشان بارگذاری شوند.
-    "img-src 'self' data: blob: https://trustseal.enamad.ir https://service.emalls.ir https://api.torob.com",
+    // نشان ترب از api.torob.com با ۳۰۲ به storage3.torob.com ریدایرکت می‌شود —
+    // مرورگر img-src را روی مقصد نهایی چک می‌کند، نه URL اول؛ بدون این خط
+    // تصویر بی‌صدا توسط CSP مسدود می‌شد (شبیه باگ قبلی ایمالز، فقط این‌بار
+    // به‌خاطر ریدایرکت، نه فراموشی کامل دامنه).
+    "img-src 'self' data: blob: https://trustseal.enamad.ir https://service.emalls.ir https://api.torob.com https://storage3.torob.com",
     "font-src 'self'",
     // اسکریپت GTM خودش زیر strict-dynamic مجاز است (همان nonce را دارد)،
     // ولی ارسال داده‌ی GA4 (beacon/fetch) یک دامنه‌ی جدا است که فقط با

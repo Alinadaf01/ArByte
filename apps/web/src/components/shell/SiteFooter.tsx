@@ -313,19 +313,22 @@ export function SiteFooter({ info }: { info: SiteInfo }) {
                   </li>
                 ))}
               </ul>
-              <div className="flex flex-wrap items-start gap-2.5">
-                {info.trustBadge ? (
-                  <TrustBadge badge={info.trustBadge} size="size-16" />
-                ) : null}
-                <EmallsBadge size="w-[75px]" />
-                <BalePayBadge width={150} />
-                <TorobBadge size="w-[75px]" />
-              </div>
             </div>
           ) : null}
         </div>
 
-        <div className="relative mx-auto mt-[clamp(26px,4vh,44px)] flex max-w-[1240px] flex-wrap items-center justify-between gap-3.5 border-t border-white/10 pt-5">
+        {/* نمادها/بج‌ها — ردیف جدا و تمام‌عرض (نه گوشه‌ی ستون تماس) تا با
+            اضافه‌شدن بج‌های بیشتر (ایمالز/بله‌پی/ترب) فضای خالی فوتر پر شود. */}
+        <div className="relative mx-auto mt-[clamp(26px,4vh,44px)] flex max-w-[1240px] flex-wrap items-center justify-between gap-5 border-t border-white/10 pt-5">
+          {info.trustBadge ? (
+            <TrustBadge badge={info.trustBadge} size="size-16" />
+          ) : null}
+          <EmallsBadge size="w-[75px]" />
+          <BalePayBadge width={150} />
+          <TorobBadge size="w-[75px]" />
+        </div>
+
+        <div className="relative mx-auto mt-5 flex max-w-[1240px] flex-wrap items-center justify-between gap-3.5 border-t border-white/10 pt-5">
           <div className="flex flex-wrap gap-4.5">
             <Link
               href="/legal"
