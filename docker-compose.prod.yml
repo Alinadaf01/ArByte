@@ -145,6 +145,17 @@ services:
       - media:/var/www/media:ro
       - ./deploy/certbot/conf:/etc/letsencrypt:ro
       - ./deploy/certbot/www:/var/www/certbot:ro
+    # storefront به دامنه‌ی عمومی خودش (NEXT_PUBLIC_API_BASE_URL) fetch می‌زند؛
+    # بدون این alias آن درخواست از شبکه‌ی داکر بیرون می‌رفت و با IP عمومی همین
+    # سرور hairpin NAT می‌کرد — برای JSON کوچک کار می‌کرد ولی برای فایل‌های
+    # بزرگ (عکس محصول) گیر می‌کرد (headers می‌آمد، بدنه هیچ‌وقت کامل نمی‌شد).
+    # با این alias، DNS داخلی داکر همین دامنه‌ها را مستقیم به IP داخلی nginx
+    # می‌دهد — هرگز از شبکه‌ی داکر بیرون نمی‌رود.
+    networks:
+      default:
+        aliases:
+          - ${DOMAIN_API:?}
+          - ${DOMAIN_ADMIN:?}
     depends_on:
       - web
 
