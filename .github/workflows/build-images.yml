@@ -2,7 +2,10 @@
 # دانلود Chromium دسترسی مطمئن ندارد): arbyte-backend (Django + Chromium برای PDF)،
 # arbyte-nginx (پنل ادمین build‌شده + nginx) و arbyte-storefront (فروشگاه،
 # Next.js standalone — همان دلیل node:22-alpine هم گاهی از سرور ایران مسدود
-# است). مقصدها:
+# است). postgres/redis رسمی هم از همین سرورها (و حتی mirror.gcr.io) با ۴۰۳
+# مسدود می‌شوند — دوباره زیر ghcr.io/<owner> تگ و push می‌شوند
+# (docker-compose.prod.yml به همین‌ها اشاره می‌کند، نه docker.io/library/...).
+# مقصدها:
 #   • ghcr.io/<owner> (همیشه)
 #   • docker.io/<DOCKERHUB_USER> اگر secretهای DOCKERHUB_USER/DOCKERHUB_TOKEN تنظیم باشند
 #     (طبق تجربه‌ی وایب‌شاپ Docker Hub از سرور ایران پایدارتر از GHCR است)
@@ -44,6 +47,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: "mirror: ایمیج‌های رسمی زیر ghcr.io (docker.io از ایران ۴۰۳ می‌دهد)"
+        run: |
+          g=${{ steps.reg.outputs.ghcr }}
+          for pair in "postgres:16-alpine" "redis:7-alpine" "certbot/certbot:latest" "alpine:latest"; do
+            docker pull "$pair"
+            name="$(basename "$pair")"
+            docker tag "$pair" "$g/$name"
+            docker push "$g/$name"
+          done
       - name: backend
         uses: docker/build-push-action@v6
         with:

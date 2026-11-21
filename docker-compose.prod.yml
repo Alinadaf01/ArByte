@@ -12,7 +12,10 @@
 #
 # ایمیج‌ها بیرون از ایران در GitHub Actions ساخته می‌شوند
 # (.github/workflows/build-images.yml) و این‌جا فقط pull (یا docker load) می‌شوند؛
-# سرور ایران به PyPI/npm/دانلود Chromium دسترسی مطمئن ندارد.
+# سرور ایران به PyPI/npm/دانلود Chromium دسترسی مطمئن ندارد. حتی postgres/redis
+# رسمی (docker.io/library/...، و mirror.gcr.io) از سرور ایران با ۴۰۳ Forbidden
+# مسدود می‌شوند — build-images.yml همان ایمیج‌های رسمی را زیر ghcr.io/<owner>
+# تگ و push می‌کند؛ پس این‌جا هم از همان مسیر pull می‌کنیم، نه docker.io مستقیم.
 #
 # همیشه با `--env-file .env.production` اجرا کنید (deploy/*.sh همین کار را
 # می‌کنند) — جایگزینی ${...} در همین فایل فقط از آن فایل خوانده می‌شود.
@@ -35,7 +38,7 @@ x-backend: &backend
 
 services:
   db:
-    image: postgres:16-alpine
+    image: ${IMAGE_REGISTRY:?}/postgres:16-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-arbyte}
@@ -50,7 +53,7 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: ${IMAGE_REGISTRY:?}/redis:7-alpine
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -142,7 +145,7 @@ services:
       - web
 
   certbot:
-    image: certbot/certbot:latest
+    image: ${IMAGE_REGISTRY:?}/certbot:latest
     profiles: ["tools"]
     volumes:
       - ./deploy/certbot/conf:/etc/letsencrypt
