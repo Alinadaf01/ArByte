@@ -50,7 +50,7 @@ jobs:
       - name: "mirror: ایمیج‌های رسمی زیر ghcr.io (docker.io از ایران ۴۰۳ می‌دهد)"
         run: |
           g=${{ steps.reg.outputs.ghcr }}
-          for pair in "postgres:16-alpine" "redis:7-alpine" "certbot/certbot:latest" "alpine:latest"; do
+          for pair in "postgres:16-alpine" "redis:7-alpine" "certbot/certbot:latest" "certbot/dns-cloudflare:latest" "alpine:latest"; do
             docker pull "$pair"
             name="$(basename "$pair")"
             docker tag "$pair" "$g/$name"
