@@ -100,14 +100,18 @@ services:
 
   # فروشگاه خودمیزبان (Next.js standalone). روی سرور قدیمی (فروشگاه هنوز
   # Vercel) هرگز `up` نمی‌شود چون چیزی صریحاً صدایش نمی‌زند — تعریف‌شدنش این‌جا
-  # بی‌ضرر است. API_INTERNAL_URL از شبکه‌ی داخلی داکر به Django می‌زند (سریع‌تر
-  # و بی‌نیاز از رفت‌وبرگشت از طریق nginx/دامنه‌ی عمومی).
+  # بی‌ضرر است.
+  #
+  # ⚠️ عمداً API_INTERNAL_URL ست نمی‌شود (برخلاف یک تلاش قبلی برای میان‌بر زدن
+  # شبکه‌ی داخلی داکر به web:8000): هم ALLOWED_HOSTS جنگو درخواست با Host:
+  # web:8000 را ۴۰۰ می‌کند (آن میزبان در لیست نیست)، هم مسیر /media/ کلاً فقط
+  # در nginx (الگوی alias) سرو می‌شود، نه در خودِ جنگو/gunicorn — میان‌بر زدن
+  # nginx یعنی عکس‌های محصول هم ۴۰۰/۴۰۴ می‌شوند. سمت سرور باید از همان دامنه‌ی
+  # عمومی (NEXT_PUBLIC_API_BASE_URL، build-time) رد شود تا به nginx برسد.
   storefront:
     image: ${IMAGE_REGISTRY:?}/arbyte-storefront:${IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file: .env.production
-    environment:
-      API_INTERNAL_URL: http://web:8000/api/v1
     healthcheck:
       # ایمیج node:22-alpine ساده است، curl/wget ندارد — همان ترفند بک‌اند
       # (python -c) این‌جا با node -e.
