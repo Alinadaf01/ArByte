@@ -112,8 +112,8 @@ stage_3() {
     ok ".env.production ساخته شد. دامنه‌ها، IMAGE_REGISTRY و KAVENEGAR_API_KEY را در آن ویرایش کنید."
     warn "این سه مقدار را همین حالا بیرون از سرور نگه دارید:"
     echo "  FIELD_ENCRYPTION_KEY=$fernet   (گم شود = کلیدهای پنل غیرقابل‌خواندن)"
-    echo "  REVALIDATE_SECRET=$reval   (در Vercel هم)"
-    echo "  BFF_SHARED_SECRET=$bff   (در Vercel هم)"
+    echo "  REVALIDATE_SECRET=$reval   (اگر فروشگاه هنوز Vercel است، همان‌جا هم)"
+    echo "  BFF_SHARED_SECRET=$bff   (اگر فروشگاه هنوز Vercel است، همان‌جا هم)"
 }
 
 stage_4() {
@@ -128,10 +128,15 @@ stage_4() {
         if [[ -n "${DOCKERHUB_TOKEN:-}" ]]; then
             retry sh -c 'echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USER" --password-stdin'
         fi
-        retry dc pull web nginx
+        # storefront فقط وقتی DOMAIN_WEB ست باشد (فروشگاه خودمیزبان این سرور).
+        if [[ -n "${DOMAIN_WEB:-}" ]]; then
+            retry dc pull web nginx storefront
+        else
+            retry dc pull web nginx
+        fi
     fi
     retry dc pull db redis || true
-    ok "ایمیج‌ها آماده‌اند:"; docker images | grep -E "arbyte-(backend|nginx)" || true
+    ok "ایمیج‌ها آماده‌اند:"; docker images | grep -E "arbyte-(backend|nginx|storefront)" || true
 }
 
 stage_5() {
@@ -143,12 +148,17 @@ stage_5() {
     dc run --rm web python manage.py migrate --noinput
     dc run --rm web python manage.py collectstatic --noinput
     dc up -d web celery-worker celery-beat
+    if [[ -n "${DOMAIN_WEB:-}" ]]; then
+        dc up -d storefront
+    fi
     if [[ ! -f "$SCRIPT_DIR/certbot/conf/live/$DOMAIN_API/fullchain.pem" ]]; then
-        log "گواهی Let's Encrypt برای $DOMAIN_API و $DOMAIN_ADMIN (DNS هر دو باید به این سرور اشاره کند)..."
+        local cert_domains=(-d "$DOMAIN_API" -d "$DOMAIN_ADMIN")
+        [[ -n "${DOMAIN_WEB:-}" ]] && cert_domains+=(-d "$DOMAIN_WEB" -d "www.$DOMAIN_WEB" -d "direct.$DOMAIN_WEB")
+        log "گواهی Let's Encrypt برای ${cert_domains[*]} (DNS همه باید به این سرور اشاره کند)..."
         NGINX_MODE=bootstrap dc up -d --force-recreate nginx
         sleep 3
         dc run --rm certbot certonly --webroot -w /var/www/certbot \
-            -d "$DOMAIN_API" -d "$DOMAIN_ADMIN" --email "$CERTBOT_EMAIL" --agree-tos --no-eff-email --non-interactive
+            "${cert_domains[@]}" --email "$CERTBOT_EMAIL" --agree-tos --no-eff-email --non-interactive
     fi
     NGINX_MODE=ssl dc up -d --force-recreate nginx
     dc ps

@@ -1,8 +1,14 @@
 # آربایت — Compose تولیدی برای سرور ایران (docs/DEPLOY.md).
 #
-# معماری: فروشگاه روی Vercel است و این‌جا ساخته/سرو نمی‌شود. این سرور فقط:
+# معماری:
 #   api.arbyte.ir   → Django (gunicorn) + /media + فید ترب
 #   admin.arbyte.ir → پنل مدیریت (build ایستا داخل ایمیج nginx) + پراکسی /api
+#   arbyte.ir       → فروشگاه (Next.js standalone، سرویس storefront) —
+#                     فقط وقتی DOMAIN_WEB در .env.production ست باشد؛ روی
+#                     سرور قدیمی که فروشگاه هنوز روی Vercel است، DOMAIN_WEB
+#                     خالی می‌ماند و storefront هرگز `up` نمی‌شود (deploy.sh
+#                     و setup.sh هر دو این سرویس را صریحاً فقط با همین شرط
+#                     می‌آورند بالا، نه با یک `compose up` بی‌قید).
 #
 # ایمیج‌ها بیرون از ایران در GitHub Actions ساخته می‌شوند
 # (.github/workflows/build-images.yml) و این‌جا فقط pull (یا docker load) می‌شوند؛
@@ -89,12 +95,39 @@ services:
     <<: *backend
     command: celery -A config beat --loglevel=info --schedule /tmp/celerybeat-schedule
 
+  # فروشگاه خودمیزبان (Next.js standalone). روی سرور قدیمی (فروشگاه هنوز
+  # Vercel) هرگز `up` نمی‌شود چون چیزی صریحاً صدایش نمی‌زند — تعریف‌شدنش این‌جا
+  # بی‌ضرر است. API_INTERNAL_URL از شبکه‌ی داخلی داکر به Django می‌زند (سریع‌تر
+  # و بی‌نیاز از رفت‌وبرگشت از طریق nginx/دامنه‌ی عمومی).
+  storefront:
+    image: ${IMAGE_REGISTRY:?}/arbyte-storefront:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      API_INTERNAL_URL: http://web:8000/api/v1
+    healthcheck:
+      # ایمیج node:22-alpine ساده است، curl/wget ندارد — همان ترفند بک‌اند
+      # (python -c) این‌جا با node -e.
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      web:
+        condition: service_healthy
+
   nginx:
     image: ${IMAGE_REGISTRY:?}/arbyte-nginx:${IMAGE_TAG:-latest}
     restart: unless-stopped
     environment:
       DOMAIN_API: ${DOMAIN_API:?}
       DOMAIN_ADMIN: ${DOMAIN_ADMIN:?}
+      # خالی روی سرور قدیمی (فروشگاه هنوز Vercel) — envsubst آن را به رشته‌ی
+      # خالی تبدیل می‌کند (نه این‌که نامتعریف بماند)، پس nginx بدون خطای
+      # «unknown variable» بالا می‌آید؛ آن server block هم بی‌اثر می‌ماند چون
+      # server_name خالی هیچ‌وقت match نمی‌شود.
+      DOMAIN_WEB: ${DOMAIN_WEB:-}
       # bootstrap = فقط HTTP برای گرفتن اولین گواهی (deploy/setup.sh مرحله ۵).
       NGINX_MODE: ${NGINX_MODE:-ssl}
     ports:

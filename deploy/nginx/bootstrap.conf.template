@@ -2,7 +2,7 @@
 # HTTP-01 به nginx روی پورت ۸۰ نیاز دارد. بعد از گرفتن گواهی NGINX_MODE=ssl.
 server {
     listen 80;
-    server_name ${DOMAIN_API} ${DOMAIN_ADMIN};
+    server_name ${DOMAIN_API} ${DOMAIN_ADMIN} ${DOMAIN_WEB} www.${DOMAIN_WEB} direct.${DOMAIN_WEB};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { default_type text/plain; return 200 "arbyte — SSL bootstrap\n"; }
 }

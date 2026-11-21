@@ -188,3 +188,10 @@ jobs:
           push: false
           cache-from: type=gha,scope=nginx
           cache-to: type=gha,mode=max,scope=nginx
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          cache-from: type=gha,scope=storefront
+          cache-to: type=gha,mode=max,scope=storefront

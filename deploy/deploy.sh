@@ -37,7 +37,10 @@ archives=("$SCRIPT_DIR"/incoming/*.tar "$SCRIPT_DIR"/incoming/*.tar.gz)
 if (( ${#archives[@]} )); then
     for a in "${archives[@]}"; do docker load -i "$a" && mv "$a" "$a.loaded"; done
 else
-    for i in 1 2 3 4 5; do dc pull web nginx && break; [[ $i == 5 ]] && exit 1; sleep $((i * 10)); done
+    # storefront فقط وقتی DOMAIN_WEB ست باشد (فروشگاه خودمیزبان، نه Vercel).
+    pull_services=(web nginx)
+    [[ -n "${DOMAIN_WEB:-}" ]] && pull_services+=(storefront)
+    for i in 1 2 3 4 5; do dc pull "${pull_services[@]}" && break; [[ $i == 5 ]] && exit 1; sleep $((i * 10)); done
 fi
 
 echo "[..] migrate + collectstatic با ایمیج تازه..."
@@ -80,6 +83,9 @@ for cid in $old_ids; do docker stop -t 30 "$cid" >/dev/null && docker rm "$cid" 
 dc up -d --no-deps --no-recreate --scale web=1 web
 
 dc up -d --no-deps celery-worker celery-beat
+# storefront فقط وقتی DOMAIN_WEB ست باشد (فروشگاه خودمیزبان، نه Vercel).
+# بدون رقص zero-downtime وب: بدون migration است، چند ثانیه قطعی بی‌اهمیت است.
+[[ -n "${DOMAIN_WEB:-}" ]] && dc up -d --no-deps storefront
 NGINX_MODE=ssl dc up -d --no-deps nginx
 docker image prune -f >/dev/null
 echo "[OK] استقرار ${IMAGE_TAG} تمام شد."

@@ -1,6 +1,7 @@
-# آربایت — nginx تولیدی (ایمیج arbyte-nginx؛ ${DOMAIN_API}/${DOMAIN_ADMIN} با
-# envsubst ایمیج رسمی nginx جایگزین می‌شوند). فروشگاه روی Vercel است و این‌جا
-# سرور بلاکی برای arbyte.ir نیست.
+# آربایت — nginx تولیدی (ایمیج arbyte-nginx؛ ${DOMAIN_API}/${DOMAIN_ADMIN}/
+# ${DOMAIN_WEB} با envsubst ایمیج رسمی nginx جایگزین می‌شوند). روی سرور قدیمی
+# (فروشگاه هنوز Vercel) ${DOMAIN_WEB} خالی است — server block فروشگاه پایین
+# با server_name خالی/بی‌معنی تعریف می‌شود و هیچ‌وقت match نمی‌شود، بی‌ضرر.
 
 # Docker DNS + متغیر در proxy_pass: nginx آدرس web را هر ۱۰ ثانیه دوباره
 # resolve می‌کند؛ لازمه‌ی جایگزینی بی‌قطعی کانتینر web در deploy/deploy.sh.
@@ -18,7 +19,7 @@ server_tokens off;
 
 server {
     listen 80;
-    server_name ${DOMAIN_API} ${DOMAIN_ADMIN};
+    server_name ${DOMAIN_API} ${DOMAIN_ADMIN} ${DOMAIN_WEB} www.${DOMAIN_WEB} direct.${DOMAIN_WEB};
     location /.well-known/acme-challenge/ { root /var/www/certbot; }
     location / { return 301 https://$host$request_uri; }
 }
@@ -144,5 +145,43 @@ server {
     location / {
         try_files $uri $uri/ /index.html;
         expires -1;
+    }
+}
+
+# --- فروشگاه: Next.js standalone -----------------------------------------
+# روی سرور قدیمی ${DOMAIN_WEB} خالی است → server_name بی‌معنی، این بلوک هیچ‌وقت
+# match نمی‌شود. گواهی از همان cert مشترک (SAN شامل این دامنه‌ها، deploy/setup.sh
+# مرحله ۵). هیچ add_header امنیتی این‌جا نیست: middleware.ts خودِ Next.js
+# (nonce-based CSP، ADR-005) این هدرها را per-request می‌سازد — تکرارشان این‌جا
+# یا با آن تداخل می‌کند یا هدر دوم را نادیده می‌گیرد.
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN_WEB} www.${DOMAIN_WEB} direct.${DOMAIN_WEB};
+
+    ssl_certificate     /etc/letsencrypt/live/${DOMAIN_API}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_API}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 10m;
+
+    set $storefront http://storefront:3000;
+
+    # فایل‌های build (hash در نام) تغییرناپذیرند؛ بقیه (صفحات/API) کش نمی‌شوند.
+    location /_next/static/ {
+        proxy_pass $storefront;
+        proxy_set_header Host $host;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location / {
+        proxy_pass $storefront;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 60s;
     }
 }
