@@ -41,7 +41,10 @@
     {% for item in items %}
     <tr>
       <td class="num">{{ forloop.counter }}</td>
-      <td>{{ item.name }}{% if item.variant_label %} <span class="muted">({{ item.variant_label }})</span>{% endif %}</td>
+      <td>
+        {{ item.name }}{% if item.variant_label %} <span class="muted">({{ item.variant_label }})</span>{% endif %}
+        {% if item.condition_line %}<div class="footnote">{{ item.condition_line }}</div>{% endif %}
+      </td>
       <td class="ltr">{{ item.sku }}</td>
       <td class="num">{{ item.quantity }}</td>
       <td class="num">{{ item.unit_price }}</td>

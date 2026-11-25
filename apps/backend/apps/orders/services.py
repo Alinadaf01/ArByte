@@ -357,10 +357,28 @@ def admin_create_order(
         available = available_quantity_for(variant)
         if quantity > available:
             shortages.append({"variantId": str(variant.id), "available": available})
-        price = live_price(variant)[0]
+        # درخواست مدیر — همین واحدِ فیزیکی ممکن است بهتر/بدتر از وضعیت عمومی
+        # محصول باشد (مثلاً باتری/هارد سالم‌تر) و قیمتش دستی فرق کند؛ قیمت
+        # زنده‌ی کاتالوگ فقط پیش‌فرض است، نه الزام.
+        override = row.get("unit_price")
+        if override is not None:
+            price = int(override)
+            if price <= 0:
+                raise CheckoutError("VALIDATION_ERROR", "قیمت واحد باید مثبت باشد.", field="items")
+        else:
+            price = live_price(variant)[0]
         final_price = price * quantity
         subtotal += final_price
-        order_items_data.append({"variant": variant, "unit_price": price, "quantity": quantity, "final_price": final_price})
+        order_items_data.append({
+            "variant": variant,
+            "unit_price": price,
+            "quantity": quantity,
+            "final_price": final_price,
+            "grade": str(row.get("grade") or "").strip(),
+            "battery_health_percent": row.get("battery_health_percent"),
+            "battery_cycle_count": row.get("battery_cycle_count"),
+            "storage_health_percent": row.get("storage_health_percent"),
+        })
 
     if shortages:
         raise InsufficientStockCheckoutError(shortages)
@@ -408,6 +426,10 @@ def admin_create_order(
             unit_price=data["unit_price"],
             quantity=data["quantity"],
             final_price=data["final_price"],
+            grade=data["grade"],
+            battery_health_percent=data["battery_health_percent"],
+            battery_cycle_count=data["battery_cycle_count"],
+            storage_health_percent=data["storage_health_percent"],
         )
         try:
             Inventory.objects.reserve(variant, data["quantity"], reference=order.order_number, user=staff_user)

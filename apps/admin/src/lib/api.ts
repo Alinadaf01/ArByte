@@ -348,7 +348,15 @@ export interface ManualOrderInput {
   shippingCity: string;
   shippingAddressLine: string;
   shippingPostalCode?: string;
-  items: { variantId: string; quantity: number }[];
+  items: {
+    variantId: string;
+    quantity: number;
+    unitPrice?: number;
+    grade?: string;
+    batteryHealthPercent?: number;
+    batteryCycleCount?: number;
+    storageHealthPercent?: number;
+  }[];
   paymentPlan: "ONLINE" | "BANK_TRANSFER" | "COMBINED";
   markPaid: boolean;
   discountLines: { label: string; amount: number }[];

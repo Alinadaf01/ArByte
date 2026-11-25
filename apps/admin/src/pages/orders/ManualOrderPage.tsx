@@ -17,6 +17,13 @@ import { PAYMENT_PLAN_LABELS, type PaymentPlan } from "@/types/order";
 interface OrderLine {
   variant: OrderVariantSearchRow;
   quantity: number;
+  // درخواست مدیر — قیمت واحد همین واحدِ فیزیکی، پیش‌فرض از کاتالوگ ولی
+  // قابل‌ویرایش (وضعیت بهتر/بدتر از نمونه‌ی عمومی = قیمت فرق می‌کند).
+  unitPrice: string;
+  grade: string;
+  batteryHealthPercent: string;
+  batteryCycleCount: string;
+  storageHealthPercent: string;
 }
 
 interface DiscountLineForm {
@@ -74,7 +81,18 @@ export default function ManualOrderPage() {
   function addLine(variant: OrderVariantSearchRow) {
     setLines((prev) => {
       if (prev.some((l) => l.variant.id === variant.id)) return prev;
-      return [...prev, { variant, quantity: 1 }];
+      return [
+        ...prev,
+        {
+          variant,
+          quantity: 1,
+          unitPrice: String(variant.finalPrice),
+          grade: "",
+          batteryHealthPercent: "",
+          batteryCycleCount: "",
+          storageHealthPercent: "",
+        },
+      ];
     });
     setResults([]);
     setSearch("");
@@ -86,6 +104,18 @@ export default function ManualOrderPage() {
         l.variant.id === variantId
           ? { ...l, quantity: Math.max(1, quantity) }
           : l,
+      ),
+    );
+  }
+
+  function patchLine(
+    variantId: string,
+    field: keyof Omit<OrderLine, "variant" | "quantity">,
+    value: string,
+  ) {
+    setLines((prev) =>
+      prev.map((l) =>
+        l.variant.id === variantId ? { ...l, [field]: value } : l,
       ),
     );
   }
@@ -114,7 +144,7 @@ export default function ManualOrderPage() {
   }
 
   const subtotal = lines.reduce(
-    (sum, l) => sum + l.variant.finalPrice * l.quantity,
+    (sum, l) => sum + (Number(l.unitPrice) || 0) * l.quantity,
     0,
   );
   const discountTotal = discountLines.reduce(
@@ -135,6 +165,17 @@ export default function ManualOrderPage() {
         items: lines.map((l) => ({
           variantId: l.variant.id,
           quantity: l.quantity,
+          unitPrice: Number(l.unitPrice) || undefined,
+          grade: l.grade.trim() || undefined,
+          batteryHealthPercent: l.batteryHealthPercent
+            ? Number(l.batteryHealthPercent)
+            : undefined,
+          batteryCycleCount: l.batteryCycleCount
+            ? Number(l.batteryCycleCount)
+            : undefined,
+          storageHealthPercent: l.storageHealthPercent
+            ? Number(l.storageHealthPercent)
+            : undefined,
         })),
         paymentPlan,
         markPaid,
@@ -155,6 +196,7 @@ export default function ManualOrderPage() {
   const hasInvalidDiscountLine = discountLines.some(
     (d) => !d.label.trim() || !(Number(d.amount) > 0),
   );
+  const hasInvalidLine = lines.some((l) => !(Number(l.unitPrice) > 0));
 
   const canSubmit =
     /^09\d{9}$/.test(mobile) &&
@@ -163,6 +205,7 @@ export default function ManualOrderPage() {
     shippingCity.trim() &&
     shippingAddressLine.trim() &&
     lines.length > 0 &&
+    !hasInvalidLine &&
     !hasInvalidDiscountLine &&
     discountTotal <= subtotal;
 
@@ -271,43 +314,119 @@ export default function ManualOrderPage() {
             {lines.map((line) => (
               <li
                 key={line.variant.id}
-                className="grid grid-cols-1 items-center gap-2 rounded-xl border border-white/[0.06] bg-ink-800/40 px-3.5 py-3 sm:grid-cols-[1fr_7rem_8rem_auto]"
+                className="flex flex-col gap-2.5 rounded-xl border border-white/[0.06] bg-ink-800/40 px-3.5 py-3"
               >
-                <div className="min-w-0">
-                  <p className="m-0 truncate text-sm text-white">
-                    {line.variant.productName}
-                    {line.variant.name ? (
-                      <span className="text-slate-400">
-                        {" "}
-                        · {line.variant.name}
-                      </span>
-                    ) : null}
-                  </p>
-                  <p className="m-0 text-[11px] text-slate-500" dir="ltr">
-                    {line.variant.sku} · موجودی{" "}
-                    {line.variant.available.toLocaleString("fa-IR")}
-                  </p>
+                <div className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[1fr_6rem_8rem_auto]">
+                  <div className="min-w-0">
+                    <p className="m-0 truncate text-sm text-white">
+                      {line.variant.productName}
+                      {line.variant.name ? (
+                        <span className="text-slate-400">
+                          {" "}
+                          · {line.variant.name}
+                        </span>
+                      ) : null}
+                    </p>
+                    <p className="m-0 text-[11px] text-slate-500" dir="ltr">
+                      {line.variant.sku} · موجودی{" "}
+                      {line.variant.available.toLocaleString("fa-IR")}
+                    </p>
+                  </div>
+                  <Input
+                    type="number"
+                    min={1}
+                    dir="ltr"
+                    value={line.quantity}
+                    onChange={(e) =>
+                      setQuantity(line.variant.id, Number(e.target.value))
+                    }
+                  />
+                  <Input
+                    type="number"
+                    min={1}
+                    dir="ltr"
+                    title="قیمت واحد — قابل‌ویرایش، پیش‌فرض از کاتالوگ"
+                    value={line.unitPrice}
+                    onChange={(e) =>
+                      patchLine(line.variant.id, "unitPrice", e.target.value)
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={() => removeLine(line.variant.id)}
+                  >
+                    <Trash2 className="size-4" strokeWidth={1.8} />
+                  </Button>
                 </div>
-                <Input
-                  type="number"
-                  min={1}
-                  dir="ltr"
-                  value={line.quantity}
-                  onChange={(e) =>
-                    setQuantity(line.variant.id, Number(e.target.value))
-                  }
-                />
-                <span className="text-sm font-semibold text-white">
-                  {formatPrice(line.variant.finalPrice * line.quantity)}
-                </span>
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="sm"
-                  onClick={() => removeLine(line.variant.id)}
-                >
-                  <Trash2 className="size-4" strokeWidth={1.8} />
-                </Button>
+
+                {/* درخواست مدیر — وضعیت واقعی همین واحد (نه نمونه‌ی عمومی
+                    محصول)؛ اختیاری، روی فاکتور ریز زیر عنوان محصول می‌آید. */}
+                <div className="grid grid-cols-2 gap-1.5 border-t border-white/[0.04] pt-2.5 sm:grid-cols-4">
+                  <Input
+                    className="!h-8 !text-xs"
+                    placeholder="گرید (مثلاً A+)"
+                    value={line.grade}
+                    onChange={(e) =>
+                      patchLine(line.variant.id, "grade", e.target.value)
+                    }
+                  />
+                  <Input
+                    className="!h-8 !text-xs"
+                    type="number"
+                    min={0}
+                    max={100}
+                    dir="ltr"
+                    placeholder="سلامت باتری ٪"
+                    value={line.batteryHealthPercent}
+                    onChange={(e) =>
+                      patchLine(
+                        line.variant.id,
+                        "batteryHealthPercent",
+                        e.target.value,
+                      )
+                    }
+                  />
+                  <Input
+                    className="!h-8 !text-xs"
+                    type="number"
+                    min={0}
+                    dir="ltr"
+                    placeholder="سایکل باتری"
+                    value={line.batteryCycleCount}
+                    onChange={(e) =>
+                      patchLine(
+                        line.variant.id,
+                        "batteryCycleCount",
+                        e.target.value,
+                      )
+                    }
+                  />
+                  <Input
+                    className="!h-8 !text-xs"
+                    type="number"
+                    min={0}
+                    max={100}
+                    dir="ltr"
+                    placeholder="سلامت هارد ٪"
+                    value={line.storageHealthPercent}
+                    onChange={(e) =>
+                      patchLine(
+                        line.variant.id,
+                        "storageHealthPercent",
+                        e.target.value,
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="flex justify-end text-xs text-slate-400">
+                  جمع این قلم:{" "}
+                  <span className="ms-1 font-semibold text-white">
+                    {formatPrice((Number(line.unitPrice) || 0) * line.quantity)}
+                  </span>
+                </div>
               </li>
             ))}
           </ul>

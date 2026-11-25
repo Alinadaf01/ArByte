@@ -63,6 +63,10 @@ class AdminOrderItemSerializer(serializers.Serializer):
     discount = serializers.IntegerField()
     subtotal = serializers.IntegerField()
     final_price = serializers.IntegerField()
+    grade = serializers.CharField()
+    battery_health_percent = serializers.IntegerField(allow_null=True)
+    battery_cycle_count = serializers.IntegerField(allow_null=True)
+    storage_health_percent = serializers.IntegerField(allow_null=True)
 
 
 class AdminOrderReceiptSerializer(serializers.Serializer):
@@ -536,7 +540,30 @@ class AdminManualOrderCreateView(APIView):
         if not isinstance(raw_items, list) or not raw_items:
             return Response({"detail": "حداقل یک قلم برای سفارش لازم است."}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            items = [{"variant_id": int(row["variant_id"]), "quantity": int(row["quantity"])} for row in raw_items]
+            items = [
+                {
+                    "variant_id": int(row["variant_id"]),
+                    "quantity": int(row["quantity"]),
+                    # درخواست مدیر — قیمت دستی برای همین واحدِ فیزیکی (ر.ک.
+                    # admin_create_order) + مشخصات وضعیت برای نمایش روی فاکتور.
+                    "unit_price": int(row["unit_price"]) if row.get("unit_price") not in (None, "") else None,
+                    "grade": row.get("grade"),
+                    "battery_health_percent": (
+                        int(row["battery_health_percent"])
+                        if row.get("battery_health_percent") not in (None, "")
+                        else None
+                    ),
+                    "battery_cycle_count": (
+                        int(row["battery_cycle_count"]) if row.get("battery_cycle_count") not in (None, "") else None
+                    ),
+                    "storage_health_percent": (
+                        int(row["storage_health_percent"])
+                        if row.get("storage_health_percent") not in (None, "")
+                        else None
+                    ),
+                }
+                for row in raw_items
+            ]
         except (KeyError, TypeError, ValueError):
             return Response({"detail": "قلم سفارش نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
 

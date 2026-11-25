@@ -45,6 +45,10 @@ export interface OrderItem {
   subtotal: number;
   finalPrice: number;
   units: OrderUnit[];
+  grade: string;
+  batteryHealthPercent: number | null;
+  batteryCycleCount: number | null;
+  storageHealthPercent: number | null;
 }
 
 export type ReceiptStatus = "PENDING" | "APPROVED" | "REJECTED";

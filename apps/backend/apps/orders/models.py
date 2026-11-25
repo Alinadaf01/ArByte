@@ -287,6 +287,15 @@ class OrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     discount = models.PositiveIntegerField(default=0)
     final_price = models.PositiveIntegerField()
+    # درخواست مدیر — سفارش دستی: وضعیت واقعی همین واحدِ فیزیکی فروخته‌شده
+    # (نه محصول کلی در کاتالوگ) ممکن است بهتر/بدتر از نمونه‌ی عمومی باشد
+    # (مثلاً پرو ۷ پلاسی که باتری/هاردش سالم‌تر است و گران‌تر فروخته می‌شود)؛
+    # روی فاکتور زیر عنوان محصول نمایش داده می‌شود تا ارزش واقعی برای مشتری
+    # روشن باشد. اختیاری و فقط برای سفارش‌های دستی پر می‌شود.
+    grade = models.CharField(max_length=20, blank=True)
+    battery_health_percent = models.PositiveSmallIntegerField(blank=True, null=True)
+    battery_cycle_count = models.PositiveIntegerField(blank=True, null=True)
+    storage_health_percent = models.PositiveSmallIntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

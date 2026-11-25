@@ -16,6 +16,22 @@ def _payment_method_display(payment) -> str:
     return f"{label} ({payment.get_gateway_display()})" if payment.gateway else label
 
 
+def _item_condition_line(item) -> str:
+    """درخواست مدیر — سفارش دستی: وضعیت واقعی همین واحد (نه نمونه‌ی کلی
+    محصول) زیر عنوان ردیف فاکتور، ریز و فشرده، تا ارزش واقعی برای مشتری
+    روشن باشد (مثلاً چرا این واحد گران‌تر از قیمت معمول فروخته شده)."""
+    parts = []
+    if item.grade:
+        parts.append(f"گرید {item.grade}")
+    if item.battery_health_percent is not None:
+        parts.append(f"سلامت باتری {item.battery_health_percent}٪")
+    if item.battery_cycle_count is not None:
+        parts.append(f"سایکل باتری {item.battery_cycle_count}")
+    if item.storage_health_percent is not None:
+        parts.append(f"سلامت هارد {item.storage_health_percent}٪")
+    return " · ".join(parts)
+
+
 def build_invoice_context(order: Order) -> dict:
     """E-04 §۱ — بازسازی با هویت آربایت (فونت Estedad، ارقام فارسی، پالت
     برند). فروشنده از SiteSettings؛ خریدار شخصی یا حقوقی (E-02 §۴ فیلدهای
@@ -52,6 +68,7 @@ def build_invoice_context(order: Order) -> dict:
                     "unit_price": format_toman_fa(item.unit_price),
                     "discount": format_toman_fa(item.discount) if item.discount else "",
                     "subtotal": format_toman_fa(item.final_price),
+                    "condition_line": _item_condition_line(item),
                 }
                 for item in order.items.all()
             ],

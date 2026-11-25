@@ -580,31 +580,50 @@ export default function OrderDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
-              {order.items.map((item) => (
-                <tr key={item.id}>
-                  <td className="px-6 py-3 font-semibold text-white">
-                    {item.productName}
-                  </td>
-                  <td className="px-4 py-3 text-slate-400">
-                    {item.variantName || "—"}
-                  </td>
-                  <td
-                    className="px-4 py-3 font-mono text-[11px] text-slate-400"
-                    dir="ltr"
-                  >
-                    {item.sku}
-                  </td>
-                  <td className="px-4 py-3 text-slate-300">
-                    {formatPrice(item.price)}
-                  </td>
-                  <td className="px-4 py-3 text-slate-300">
-                    {item.quantity.toLocaleString("fa-IR")}
-                  </td>
-                  <td className="px-4 py-3 font-bold text-white">
-                    {formatPrice(item.finalPrice)}
-                  </td>
-                </tr>
-              ))}
+              {order.items.map((item) => {
+                const conditionParts = [
+                  item.grade ? `گرید ${item.grade}` : null,
+                  item.batteryHealthPercent != null
+                    ? `سلامت باتری ${item.batteryHealthPercent}٪`
+                    : null,
+                  item.batteryCycleCount != null
+                    ? `سایکل باتری ${item.batteryCycleCount}`
+                    : null,
+                  item.storageHealthPercent != null
+                    ? `سلامت هارد ${item.storageHealthPercent}٪`
+                    : null,
+                ].filter(Boolean);
+                return (
+                  <tr key={item.id}>
+                    <td className="px-6 py-3 font-semibold text-white">
+                      {item.productName}
+                      {conditionParts.length > 0 ? (
+                        <p className="m-0 mt-0.5 text-[11px] font-normal text-slate-500">
+                          {conditionParts.join(" · ")}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {item.variantName || "—"}
+                    </td>
+                    <td
+                      className="px-4 py-3 font-mono text-[11px] text-slate-400"
+                      dir="ltr"
+                    >
+                      {item.sku}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {formatPrice(item.price)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">
+                      {item.quantity.toLocaleString("fa-IR")}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-white">
+                      {formatPrice(item.finalPrice)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

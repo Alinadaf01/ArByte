@@ -92,6 +92,44 @@ class AdminManualOrderCreateTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(Order.objects.count(), 0)
 
+    def test_unit_price_override_used_instead_of_catalog_price(self):
+        """درخواست مدیر — همین واحد فیزیکی وضعیت بهتری دارد (باتری/هارد
+        سالم‌تر) و دستی گران‌تر از قیمت کاتالوگ فروخته می‌شود."""
+        response = self._create(
+            items=[{"variant_id": self.variant.pk, "quantity": 1, "unit_price": 130_000_000}]
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["final_total"], 130_000_000)
+        item = Order.objects.get(order_number=response.data["order_number"]).items.first()
+        self.assertEqual(item.unit_price, 130_000_000)
+
+    def test_unit_price_override_must_be_positive(self):
+        response = self._create(items=[{"variant_id": self.variant.pk, "quantity": 1, "unit_price": 0}])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Order.objects.count(), 0)
+
+    def test_condition_fields_saved_on_order_item(self):
+        response = self._create(
+            items=[
+                {
+                    "variant_id": self.variant.pk,
+                    "quantity": 1,
+                    "grade": "A+",
+                    "battery_health_percent": 92,
+                    "battery_cycle_count": 140,
+                    "storage_health_percent": 97,
+                }
+            ]
+        )
+        self.assertEqual(response.status_code, 201, response.data)
+        item = Order.objects.get(order_number=response.data["order_number"]).items.first()
+        self.assertEqual(item.grade, "A+")
+        self.assertEqual(item.battery_health_percent, 92)
+        self.assertEqual(item.battery_cycle_count, 140)
+        self.assertEqual(item.storage_health_percent, 97)
+        self.assertEqual(response.data["items"][0]["grade"], "A+")
+        self.assertEqual(response.data["items"][0]["battery_health_percent"], 92)
+
 
 class WarrantyCardOverrideTests(AdminApiTestMixin, APITestCase):
     """ثبت سریال با مهلت تست/گارانتی اختصاصی (مستقل از پیش‌فرض محصول)."""
