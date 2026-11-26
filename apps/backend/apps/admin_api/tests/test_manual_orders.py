@@ -131,6 +131,134 @@ class AdminManualOrderCreateTests(AdminApiTestMixin, APITestCase):
         self.assertEqual(response.data["items"][0]["battery_health_percent"], 92)
 
 
+class AdminOrderEditTests(AdminApiTestMixin, APITestCase):
+    """درخواست مدیر — سفارش پرداخت‌شده قابل اصلاح باشد: آدرس اشتباه‌ثبت‌شده،
+    یا جایگزینی محصول با محصول دیگر (موجودی/فاکتور/جمع هم درست شود)."""
+
+    def setUp(self):
+        enable_payments()
+        self.staff = self.make_staff()
+        self.client.force_authenticate(user=self.staff)
+        self.product = self.make_product(stock=3, price=91_900_000)
+        self.variant = self.product.variants.first()
+        self.other_product = self.make_product(
+            sku="TEST-002", slug="test-product-2", name="Test Product 2", price=150_000_000, stock=2
+        )
+        self.other_variant = self.other_product.variants.first()
+        response = self.client.post(
+            reverse("admin-order-manual-create"),
+            {
+                "mobile": "09999674492",
+                "recipient_name": "مشتری تلفنی",
+                "shipping_province": "تهران",
+                "shipping_city": "تهران",
+                "shipping_address_line": "خیابان اشتباه",
+                "items": [{"variant_id": self.variant.pk, "quantity": 1}],
+                "payment_plan": "BANK_TRANSFER",
+                "mark_paid": True,
+            },
+            format="json",
+        )
+        assert response.status_code == 201, response.data
+        self.order = Order.objects.get(order_number=response.data["order_number"])
+
+    def _advance_to_shipped(self):
+        from apps.orders import fulfilment, order_status
+
+        order_status.transition_to(self.order, "PROCESSING", user=self.staff)
+        order_status.transition_to(self.order, "READY_TO_SHIP", user=self.staff)
+        fulfilment.ship_order(
+            self.order.pk, provider="تیپاکس", tracking_number="TRK-1", tracking_url=None, user=self.staff
+        )
+        self.order.refresh_from_db()
+
+    def _patch_address(self, **overrides):
+        payload = {
+            "mobile": "09121234567",
+            "recipient_name": "مشتری درست",
+            "shipping_province": "تهران",
+            "shipping_city": "تهران",
+            "shipping_address_line": "خیابان درست، پلاک ۱",
+        }
+        payload.update(overrides)
+        return self.client.patch(
+            reverse("admin-order-update-address", args=[self.order.pk]), payload, format="json"
+        )
+
+    def test_update_address_on_paid_order(self):
+        response = self._patch_address()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.shipping_address_line, "خیابان درست، پلاک ۱")
+        self.assertEqual(self.order.shipping_recipient_name, "مشتری درست")
+
+    def test_update_address_rejected_after_shipped(self):
+        self._advance_to_shipped()
+        self.assertEqual(self.order.status, "SHIPPED")
+        response = self._patch_address()
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_address_invalid_mobile_rejected(self):
+        response = self._patch_address(mobile="123")
+        self.assertEqual(response.status_code, 400)
+
+    def _replace_item(self, **overrides):
+        item = self.order.items.first()
+        payload = {"variant_id": self.other_variant.pk, "quantity": 1}
+        payload.update(overrides)
+        return self.client.post(
+            reverse("admin-order-replace-item", args=[self.order.pk, item.pk]), payload, format="json"
+        )
+
+    def test_replace_item_swaps_product_and_recomputes_total(self):
+        response = self._replace_item()
+        self.assertEqual(response.status_code, 200, response.data)
+        self.order.refresh_from_db()
+        item = self.order.items.first()
+        self.assertEqual(item.variant_id, self.other_variant.pk)
+        self.assertEqual(item.sku_snapshot, self.other_variant.sku)
+        self.assertEqual(item.unit_price, 150_000_000)
+        self.assertEqual(self.order.subtotal, 150_000_000)
+        self.assertEqual(self.order.final_total, 150_000_000)
+
+    def test_replace_item_releases_old_and_reserves_new_stock(self):
+        from apps.catalog.models import ProductVariant
+        from apps.public_api.cart_service import available_quantity_for
+
+        old_available_before = available_quantity_for(self.variant)
+        new_available_before = available_quantity_for(self.other_variant)
+        response = self._replace_item()
+        self.assertEqual(response.status_code, 200, response.data)
+        # هر دو واریانت دوباره از DB خوانده می‌شوند — Inventory در همین پایتون
+        # آبجکت از قبل cache شده بود (reverse OneToOne)، refresh واقعی نمی‌دهد.
+        old_variant = ProductVariant.objects.select_related("inventory").get(pk=self.variant.pk)
+        new_variant = ProductVariant.objects.select_related("inventory").get(pk=self.other_variant.pk)
+        self.assertEqual(available_quantity_for(old_variant), old_available_before + 1)
+        self.assertEqual(available_quantity_for(new_variant), new_available_before - 1)
+
+    def test_replace_item_with_custom_price_and_condition(self):
+        response = self._replace_item(unit_price=140_000_000, grade="B", battery_health_percent=80)
+        self.assertEqual(response.status_code, 200, response.data)
+        self.order.refresh_from_db()
+        item = self.order.items.first()
+        self.assertEqual(item.unit_price, 140_000_000)
+        self.assertEqual(item.grade, "B")
+        self.assertEqual(item.battery_health_percent, 80)
+        self.assertEqual(self.order.final_total, 140_000_000)
+
+    def test_replace_item_insufficient_stock_rejected(self):
+        response = self._replace_item(quantity=99)
+        self.assertEqual(response.status_code, 409)
+        self.order.refresh_from_db()
+        item = self.order.items.first()
+        self.assertEqual(item.variant_id, self.variant.pk)
+
+    def test_replace_item_rejected_after_shipped(self):
+        self._advance_to_shipped()
+        response = self._replace_item()
+        self.assertEqual(response.status_code, 400)
+
+
 class WarrantyCardOverrideTests(AdminApiTestMixin, APITestCase):
     """ثبت سریال با مهلت تست/گارانتی اختصاصی (مستقل از پیش‌فرض محصول)."""
 

@@ -453,6 +453,144 @@ def admin_create_order(
     return order
 
 
+# ---------- ویرایش سفارش توسط ادمین (آدرس/جایگزینی قلم) ----------
+
+# درخواست مدیر — دستمان روی اصلاح سفارش‌های پرداخت‌شده باز باشد، اما فقط تا
+# قبل از SHIPPED: از آن به بعد موجودی واقعاً stock_out شده (نه فقط رزرو،
+# order_status.py) و مرسوله احتمالاً فیزیکی دست حمل‌ونقل است، پس اصلاح
+# آدرس/قلم دیگر «تصحیح قبل از ارسال» نیست، یک مرجوع/ارسال جدید لازم دارد.
+EDITABLE_ORDER_STATUSES = {"PENDING", "AWAITING_PAYMENT", "PAYMENT_REVIEW", "PAID", "PROCESSING", "READY_TO_SHIP"}
+
+
+@transaction.atomic
+def admin_update_shipping_address(
+    *,
+    order: Order,
+    recipient_name: str,
+    mobile: str,
+    province: str,
+    city: str,
+    address_line: str,
+    postal_code: str | None,
+) -> Order:
+    """آدرس اشتباه‌ثبت‌شده روی سفارش پرداخت‌شده قابل اصلاح — فاکتور
+    (apps.documents.invoice) با همین Order.save خودش stale می‌شود و دفعه‌ی
+    بعد (پنل یا پنل مشتری) از روی DB تازه رندر می‌شود، کار اضافه‌ای لازم
+    نیست."""
+    if order.status not in EDITABLE_ORDER_STATUSES:
+        raise CheckoutError("VALIDATION_ERROR", "آدرس این سفارش در وضعیت فعلی قابل ویرایش نیست.")
+    if not recipient_name or not province or not city or not address_line:
+        raise CheckoutError("VALIDATION_ERROR", "گیرنده، استان، شهر و نشانی الزامی‌اند.")
+
+    order.shipping_recipient_name = recipient_name
+    order.shipping_mobile = mobile
+    order.shipping_province = province
+    order.shipping_city = city
+    order.shipping_address_line = address_line
+    order.shipping_postal_code = postal_code
+    order.save(
+        update_fields=[
+            "shipping_recipient_name", "shipping_mobile", "shipping_province",
+            "shipping_city", "shipping_address_line", "shipping_postal_code", "updated_at",
+        ]
+    )
+    return order
+
+
+@transaction.atomic
+def admin_replace_order_item(
+    *,
+    staff_user,
+    order: Order,
+    item: OrderItem,
+    new_variant_id: int,
+    quantity: int,
+    unit_price: int | None,
+    grade: str,
+    battery_health_percent: int | None,
+    battery_cycle_count: int | None,
+    storage_health_percent: int | None,
+) -> Order:
+    """مشتری محصولی خریده که باید با محصول دیگری جایگزین شود (فاکتور هم
+    درست شود). قبل از SHIPPED موجودی فقط رزرو است (order_status.py)، پس
+    جایگزینی یعنی آزاد کردن رزرو واریانت قبلی + رزرو واریانت تازه — عیناً
+    همان الگوی admin_create_order، نه stock_out/stock_in."""
+    from apps.catalog.models import ProductVariant
+    from apps.inventory.models import InsufficientStockError, Inventory
+    from apps.public_api.cart_service import available_quantity_for
+
+    if order.status not in EDITABLE_ORDER_STATUSES:
+        raise CheckoutError("VALIDATION_ERROR", "اقلام این سفارش در وضعیت فعلی قابل ویرایش نیست.")
+    if item.order_id != order.pk:
+        raise CheckoutError("VALIDATION_ERROR", "این قلم به این سفارش تعلق ندارد.")
+    if quantity < 1:
+        raise CheckoutError("VALIDATION_ERROR", "تعداد باید حداقل ۱ باشد.", field="quantity")
+
+    try:
+        new_variant = ProductVariant.objects.select_related("product", "inventory").get(
+            pk=new_variant_id, deleted_at__isnull=True, product__deleted_at__isnull=True
+        )
+    except ProductVariant.DoesNotExist:
+        raise CheckoutError("VALIDATION_ERROR", "محصول جدید یافت نشد.", field="variantId")
+
+    if unit_price is not None:
+        if unit_price <= 0:
+            raise CheckoutError("VALIDATION_ERROR", "قیمت واحد باید مثبت باشد.", field="unitPrice")
+        price = unit_price
+    else:
+        price = live_price(new_variant)[0]
+
+    old_variant = item.variant
+    same_variant = bool(old_variant) and old_variant.pk == new_variant.pk
+
+    # رزرو/آزادسازی موجودی — فقط تفاوت لازم را جابه‌جا می‌کند تا رزرو
+    # واریانتی که شاید هم‌زمان در سفارش‌های دیگر هم رزرو شده بی‌دلیل دست نخورد.
+    if same_variant:
+        delta = quantity - item.quantity
+        if delta > 0:
+            available = available_quantity_for(new_variant)
+            if delta > available:
+                raise InsufficientStockCheckoutError([{"variantId": str(new_variant.id), "available": available}])
+            Inventory.objects.reserve(new_variant, delta, reference=order.order_number, user=staff_user)
+        elif delta < 0:
+            Inventory.objects.release(new_variant, -delta, reference=order.order_number, user=staff_user)
+    else:
+        available = available_quantity_for(new_variant)
+        if quantity > available:
+            raise InsufficientStockCheckoutError([{"variantId": str(new_variant.id), "available": available}])
+        try:
+            Inventory.objects.reserve(new_variant, quantity, reference=order.order_number, user=staff_user)
+        except InsufficientStockError:
+            raise InsufficientStockCheckoutError(
+                [{"variantId": str(new_variant.id), "available": available_quantity_for(new_variant)}]
+            ) from None
+        if old_variant:
+            Inventory.objects.release(old_variant, item.quantity, reference=order.order_number, user=staff_user)
+
+    item.variant = new_variant
+    item.product_name_snapshot = new_variant.product.name
+    item.variant_name_snapshot = new_variant.name or None
+    item.sku_snapshot = new_variant.sku
+    item.unit_price = price
+    item.quantity = quantity
+    item.final_price = price * quantity
+    item.grade = grade
+    item.battery_health_percent = battery_health_percent
+    item.battery_cycle_count = battery_cycle_count
+    item.storage_health_percent = storage_health_percent
+    item.save()
+
+    subtotal = sum(oi.final_price for oi in order.items.all())
+    if order.discount_total > subtotal:
+        raise CheckoutError(
+            "VALIDATION_ERROR", "تخفیف فعلی سفارش از جمع جدید بیشتر است؛ ابتدا تخفیف را اصلاح کنید."
+        )
+    order.subtotal = subtotal
+    order.final_total = subtotal - order.discount_total
+    order.save(update_fields=["subtotal", "final_total", "updated_at"])
+    return order
+
+
 # ---------- کارت‌به‌کارت (§۳) ----------
 
 MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024  # ۵ مگابایت

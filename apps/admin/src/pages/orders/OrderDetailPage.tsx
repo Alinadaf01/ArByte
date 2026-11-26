@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Chip } from "@/components/ui/Chip";
 import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Field";
+import { Field, Input, Textarea } from "@/components/ui/Field";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ErrorState } from "@/components/ui/Stateviews";
 import { OrderStatusActions } from "@/pages/orders/OrderStatusActions";
@@ -17,9 +17,13 @@ import {
   getOrder,
   fetchReceiptFile,
   type ReceiptFile,
+  replaceOrderItem,
   reviewReceipt,
   saveOrderSerials,
+  searchOrderVariants,
+  updateOrderAddress,
   type OrderDocumentKind,
+  type OrderVariantSearchRow,
 } from "@/lib/api";
 import { formatPrice, formatJalaliDateTime } from "@/lib/formatters";
 import { useToast } from "@/lib/ToastContext";
@@ -32,6 +36,7 @@ import {
   STATUS_TONE,
   statusLabel,
   type AdminOrder,
+  type OrderItem,
   type OrderReceipt,
 } from "@/types/order";
 
@@ -42,6 +47,17 @@ const DOCUMENT_KINDS: OrderDocumentKind[] = [
   "warranty-cards",
 ];
 const SERIAL_EDITABLE = new Set(["PAID", "PROCESSING"]);
+// درخواست مدیر — دستمان روی اصلاح سفارش‌های پرداخت‌شده باز باشد؛ عیناً
+// apps/backend/apps/orders/services.py's EDITABLE_ORDER_STATUSES (فقط تا
+// قبل از SHIPPED، چون از آن به بعد موجودی واقعاً کسر شده).
+const ORDER_EDITABLE_STATUSES = new Set([
+  "PENDING",
+  "AWAITING_PAYMENT",
+  "PAYMENT_REVIEW",
+  "PAID",
+  "PROCESSING",
+  "READY_TO_SHIP",
+]);
 
 function useInvalidateOrder(orderId: string) {
   const queryClient = useQueryClient();
@@ -474,6 +490,379 @@ function SerialsCard({ order }: { order: AdminOrder }) {
   );
 }
 
+interface AddressFormValues {
+  mobile: string;
+  recipientName: string;
+  shippingProvince: string;
+  shippingCity: string;
+  shippingAddressLine: string;
+  shippingPostalCode: string;
+}
+
+/** درخواست مدیر — سفارش پرداخت‌شده‌ای که آدرسش اشتباه ثبت شده باید قابل
+ * اصلاح باشد؛ فاکتور (پنل و پنل مشتری) خودش بعد از اصلاح دوباره رندر می‌شود. */
+function AddressCard({ order }: { order: AdminOrder }) {
+  const toast = useToast();
+  const invalidate = useInvalidateOrder(order.id);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<AddressFormValues>(() => ({
+    mobile: order.shippingMobile,
+    recipientName: order.shippingRecipientName,
+    shippingProvince: order.shippingProvince,
+    shippingCity: order.shippingCity,
+    shippingAddressLine: order.shippingAddressLine,
+    shippingPostalCode: order.shippingPostalCode ?? "",
+  }));
+  const editable = ORDER_EDITABLE_STATUSES.has(order.status);
+
+  function startEditing() {
+    setForm({
+      mobile: order.shippingMobile,
+      recipientName: order.shippingRecipientName,
+      shippingProvince: order.shippingProvince,
+      shippingCity: order.shippingCity,
+      shippingAddressLine: order.shippingAddressLine,
+      shippingPostalCode: order.shippingPostalCode ?? "",
+    });
+    setEditing(true);
+  }
+
+  function patch(field: keyof AddressFormValues, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      updateOrderAddress(order.id, {
+        ...form,
+        shippingPostalCode: form.shippingPostalCode.trim() || undefined,
+      }),
+    onSuccess: () => {
+      invalidate();
+      toast.showSuccess("آدرس سفارش اصلاح شد؛ فاکتور به‌روز می‌شود.");
+      setEditing(false);
+    },
+    onError: (error: unknown) =>
+      toast.showError(
+        error instanceof Error ? error.message : "ویرایش آدرس ناموفق بود.",
+      ),
+  });
+
+  const canSave =
+    /^09\d{9}$/.test(form.mobile) &&
+    form.recipientName.trim() !== "" &&
+    form.shippingProvince.trim() !== "" &&
+    form.shippingCity.trim() !== "" &&
+    form.shippingAddressLine.trim() !== "";
+
+  return (
+    <section className="glass-card flex flex-col gap-2 p-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="m-0 mb-1 text-sm font-bold text-white">مشتری و تحویل</h2>
+        {editable && !editing && (
+          <Button size="sm" variant="secondary" onClick={startEditing}>
+            ویرایش آدرس
+          </Button>
+        )}
+      </div>
+      {!editing ? (
+        <>
+          <InfoRow label="گیرنده" value={order.shippingRecipientName} />
+          <InfoRow label="موبایل گیرنده" value={order.shippingMobile} ltr />
+          <InfoRow label="موبایل حساب" value={order.userPhone} ltr />
+          <InfoRow
+            label="نشانی"
+            value={`${order.shippingProvince}، ${order.shippingCity}، ${order.shippingAddressLine}`}
+          />
+          <InfoRow label="کد پستی" value={order.shippingPostalCode} ltr />
+          <InfoRow label="روش ارسال" value={order.shippingMethodName} />
+          <InfoRow label="شرکت ارسال" value={order.shipment?.provider} />
+          <InfoRow
+            label="کد رهگیری"
+            value={order.shipment?.trackingNumber}
+            ltr
+          />
+        </>
+      ) : (
+        <div className="flex flex-col gap-3 pt-1">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Field label="موبایل گیرنده" required>
+              <Input
+                dir="ltr"
+                value={form.mobile}
+                onChange={(e) => patch("mobile", e.target.value.trim())}
+              />
+            </Field>
+            <Field label="نام گیرنده" required>
+              <Input
+                value={form.recipientName}
+                onChange={(e) => patch("recipientName", e.target.value)}
+              />
+            </Field>
+            <Field label="استان" required>
+              <Input
+                value={form.shippingProvince}
+                onChange={(e) => patch("shippingProvince", e.target.value)}
+              />
+            </Field>
+            <Field label="شهر" required>
+              <Input
+                value={form.shippingCity}
+                onChange={(e) => patch("shippingCity", e.target.value)}
+              />
+            </Field>
+            <Field label="کد پستی" hint="اختیاری">
+              <Input
+                dir="ltr"
+                value={form.shippingPostalCode}
+                onChange={(e) => patch("shippingPostalCode", e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="نشانی کامل" required>
+            <Textarea
+              value={form.shippingAddressLine}
+              onChange={(e) => patch("shippingAddressLine", e.target.value)}
+            />
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={mutation.isPending}
+              onClick={() => setEditing(false)}
+            >
+              انصراف
+            </Button>
+            <Button
+              size="sm"
+              disabled={!canSave || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? "در حال ذخیره…" : "ذخیره‌ی آدرس"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** درخواست مدیر — مشتری محصولی خریده که باید با محصول دیگری جایگزین شود؛
+ * فاکتور هم باید درست شود. تا قبل از SHIPPED موجودی فقط رزرو است، پس
+ * جایگزینی یعنی آزاد کردن رزرو قبلی + رزرو محصول تازه (پشت‌صحنه). */
+function ItemReplacePanel({
+  order,
+  item,
+  colSpan,
+  onDone,
+}: {
+  order: AdminOrder;
+  item: OrderItem;
+  colSpan: number;
+  onDone: () => void;
+}) {
+  const toast = useToast();
+  const invalidate = useInvalidateOrder(order.id);
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<OrderVariantSearchRow[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState<OrderVariantSearchRow | null>(null);
+  const [quantity, setQuantity] = useState(String(item.quantity));
+  const [unitPrice, setUnitPrice] = useState(String(item.price));
+  const [grade, setGrade] = useState(item.grade);
+  const [batteryHealthPercent, setBatteryHealthPercent] = useState(
+    item.batteryHealthPercent != null ? String(item.batteryHealthPercent) : "",
+  );
+  const [batteryCycleCount, setBatteryCycleCount] = useState(
+    item.batteryCycleCount != null ? String(item.batteryCycleCount) : "",
+  );
+  const [storageHealthPercent, setStorageHealthPercent] = useState(
+    item.storageHealthPercent != null ? String(item.storageHealthPercent) : "",
+  );
+
+  async function runSearch() {
+    if (!search.trim()) {
+      setResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      setResults(await searchOrderVariants(search.trim()));
+    } catch (error) {
+      toast.showError(
+        error instanceof Error ? error.message : "جست‌وجوی محصول ناموفق بود.",
+      );
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  function pick(row: OrderVariantSearchRow) {
+    setSelected(row);
+    setUnitPrice(String(row.finalPrice));
+    setResults([]);
+    setSearch("");
+  }
+
+  const mutation = useMutation({
+    mutationFn: () =>
+      replaceOrderItem(order.id, item.id, {
+        variantId: selected!.id,
+        quantity: Number(quantity) || 1,
+        unitPrice: Number(unitPrice) || undefined,
+        grade: grade.trim() || undefined,
+        batteryHealthPercent: batteryHealthPercent
+          ? Number(batteryHealthPercent)
+          : undefined,
+        batteryCycleCount: batteryCycleCount
+          ? Number(batteryCycleCount)
+          : undefined,
+        storageHealthPercent: storageHealthPercent
+          ? Number(storageHealthPercent)
+          : undefined,
+      }),
+    onSuccess: () => {
+      invalidate();
+      toast.showSuccess("محصول این قلم جایگزین شد؛ فاکتور به‌روز می‌شود.");
+      onDone();
+    },
+    onError: (error: unknown) =>
+      toast.showError(
+        error instanceof Error ? error.message : "جایگزینی محصول ناموفق بود.",
+      ),
+  });
+
+  const canSave = !!selected && Number(quantity) > 0 && Number(unitPrice) > 0;
+
+  return (
+    <tr>
+      <td colSpan={colSpan} className="bg-ink-800/40 px-6 py-4">
+        <div className="flex flex-col gap-3">
+          <p className="m-0 text-xs text-slate-400">
+            محصول جدید را جست‌وجو کنید تا جایگزین «{item.productName}» شود؛ قیمت
+            و مشخصات فنی هم قابل‌ویرایش است.
+          </p>
+          <div className="flex gap-2">
+            <Input
+              placeholder="جست‌وجوی محصول جدید با نام یا SKU…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && runSearch()}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={searching}
+              onClick={runSearch}
+            >
+              {searching ? "در حال جست‌وجو…" : "جست‌وجو"}
+            </Button>
+          </div>
+          {results.length > 0 && (
+            <ul className="m-0 flex list-none flex-col gap-1.5 rounded-xl border border-white/[0.06] bg-ink-900/60 p-2">
+              {results.map((row) => (
+                <li key={row.id}>
+                  <button
+                    type="button"
+                    onClick={() => pick(row)}
+                    className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-start text-sm text-slate-200 hover:bg-white/[0.04]"
+                  >
+                    <span className="min-w-0 truncate">
+                      {row.productName}
+                      {row.name ? (
+                        <span className="text-slate-400"> · {row.name}</span>
+                      ) : null}
+                    </span>
+                    <span className="shrink-0 text-xs text-slate-400">
+                      {formatPrice(row.finalPrice)} · موجودی{" "}
+                      {row.available.toLocaleString("fa-IR")}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {selected && (
+            <div className="rounded-xl border border-brand-400/30 bg-brand-400/5 px-3.5 py-3 text-sm text-white">
+              محصول جدید: {selected.productName}
+              {selected.name ? (
+                <span className="text-slate-400"> · {selected.name}</span>
+              ) : null}
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Input
+              type="number"
+              min={1}
+              dir="ltr"
+              placeholder="تعداد"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+            <Input
+              type="number"
+              min={1}
+              dir="ltr"
+              placeholder="قیمت واحد"
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+            />
+            <Input
+              placeholder="گرید (مثلاً A+)"
+              value={grade}
+              onChange={(e) => setGrade(e.target.value)}
+            />
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              dir="ltr"
+              placeholder="سلامت باتری ٪"
+              value={batteryHealthPercent}
+              onChange={(e) => setBatteryHealthPercent(e.target.value)}
+            />
+            <Input
+              type="number"
+              min={0}
+              dir="ltr"
+              placeholder="سایکل باتری"
+              value={batteryCycleCount}
+              onChange={(e) => setBatteryCycleCount(e.target.value)}
+            />
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              dir="ltr"
+              placeholder="سلامت هارد ٪"
+              value={storageHealthPercent}
+              onChange={(e) => setStorageHealthPercent(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={mutation.isPending}
+              onClick={onDone}
+            >
+              انصراف
+            </Button>
+            <Button
+              size="sm"
+              disabled={!canSave || mutation.isPending}
+              onClick={() => mutation.mutate()}
+            >
+              {mutation.isPending ? "در حال ذخیره…" : "ذخیره‌ی جایگزینی"}
+            </Button>
+          </div>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 function InfoRow({
   label,
   value,
@@ -505,6 +894,7 @@ export default function OrderDetailPage() {
   const documents = useOrderDocuments(
     order ?? { id: id!, orderNumber: "", paidAt: null },
   );
+  const [replacingItemId, setReplacingItemId] = useState<number | null>(null);
 
   if (isError)
     return (
@@ -577,6 +967,7 @@ export default function OrderDetailPage() {
                 <th className="px-4 py-3 font-medium">قیمت واحد</th>
                 <th className="px-4 py-3 font-medium">تعداد</th>
                 <th className="px-4 py-3 font-medium">جمع</th>
+                <th className="px-4 py-3 font-medium">عملیات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
@@ -593,35 +984,59 @@ export default function OrderDetailPage() {
                     ? `سلامت هارد ${item.storageHealthPercent}٪`
                     : null,
                 ].filter(Boolean);
+                const replacing = replacingItemId === item.id;
                 return (
-                  <tr key={item.id}>
-                    <td className="px-6 py-3 font-semibold text-white">
-                      {item.productName}
-                      {conditionParts.length > 0 ? (
-                        <p className="m-0 mt-0.5 text-[11px] font-normal text-slate-500">
-                          {conditionParts.join(" · ")}
-                        </p>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">
-                      {item.variantName || "—"}
-                    </td>
-                    <td
-                      className="px-4 py-3 font-mono text-[11px] text-slate-400"
-                      dir="ltr"
-                    >
-                      {item.sku}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {formatPrice(item.price)}
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {item.quantity.toLocaleString("fa-IR")}
-                    </td>
-                    <td className="px-4 py-3 font-bold text-white">
-                      {formatPrice(item.finalPrice)}
-                    </td>
-                  </tr>
+                  <Fragment key={item.id}>
+                    <tr>
+                      <td className="px-6 py-3 font-semibold text-white">
+                        {item.productName}
+                        {conditionParts.length > 0 ? (
+                          <p className="m-0 mt-0.5 text-[11px] font-normal text-slate-500">
+                            {conditionParts.join(" · ")}
+                          </p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {item.variantName || "—"}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-mono text-[11px] text-slate-400"
+                        dir="ltr"
+                      >
+                        {item.sku}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {formatPrice(item.price)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {item.quantity.toLocaleString("fa-IR")}
+                      </td>
+                      <td className="px-4 py-3 font-bold text-white">
+                        {formatPrice(item.finalPrice)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {ORDER_EDITABLE_STATUSES.has(order.status) && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() =>
+                              setReplacingItemId(replacing ? null : item.id)
+                            }
+                          >
+                            {replacing ? "بستن" : "تغییر محصول"}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                    {replacing && (
+                      <ItemReplacePanel
+                        order={order}
+                        item={item}
+                        colSpan={7}
+                        onDone={() => setReplacingItemId(null)}
+                      />
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -660,26 +1075,7 @@ export default function OrderDetailPage() {
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="glass-card flex flex-col gap-2 p-6">
-          <h2 className="m-0 mb-1 text-sm font-bold text-white">
-            مشتری و تحویل
-          </h2>
-          <InfoRow label="گیرنده" value={order.shippingRecipientName} />
-          <InfoRow label="موبایل گیرنده" value={order.shippingMobile} ltr />
-          <InfoRow label="موبایل حساب" value={order.userPhone} ltr />
-          <InfoRow
-            label="نشانی"
-            value={`${order.shippingProvince}، ${order.shippingCity}، ${order.shippingAddressLine}`}
-          />
-          <InfoRow label="کد پستی" value={order.shippingPostalCode} ltr />
-          <InfoRow label="روش ارسال" value={order.shippingMethodName} />
-          <InfoRow label="شرکت ارسال" value={order.shipment?.provider} />
-          <InfoRow
-            label="کد رهگیری"
-            value={order.shipment?.trackingNumber}
-            ltr
-          />
-        </section>
+        <AddressCard order={order} />
 
         <section className="glass-card flex flex-col gap-2 p-6">
           <h2 className="m-0 mb-1 text-sm font-bold text-white">

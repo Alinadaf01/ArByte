@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from apps.catalog.models import ProductVariant
 from apps.orders import fulfilment, order_status, payment_state
 from apps.orders import services as order_services
-from apps.orders.models import Order, Payment
+from apps.orders.models import Order, OrderItem, Payment
 from apps.orders.order_status import InvalidOrderTransition, MissingSerialNumbers
 from apps.orders.services import CheckoutError, InsufficientStockCheckoutError
 from apps.users.models import User, phone_validator
@@ -510,6 +510,149 @@ class AdminOrderVariantSearchView(ListAPIView):
         if term:
             qs = qs.filter(Q(sku__icontains=term) | Q(product__name__icontains=term) | Q(name__icontains=term))
         return qs.order_by("product__name", "sku")[:20]
+
+
+class AdminOrderUpdateAddressView(APIView):
+    """درخواست مدیر — سفارش پرداخت‌شده‌ای که آدرسش اشتباه ثبت شده باید قابل
+    اصلاح باشد؛ فاکتور (مشتری هم) خودش با تغییر Order.updated_at دوباره از
+    DB تازه رندر می‌شود، apps.documents.invoice.get_invoice_pdf."""
+
+    permission_classes = [require_section("orders", action="edit")]
+
+    def patch(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        data = request.data
+        mobile = str(data.get("mobile", "") or "").strip()
+        try:
+            phone_validator(mobile)
+        except Exception:
+            return Response({"detail": "شماره موبایل نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        before = {
+            "shippingRecipientName": order.shipping_recipient_name,
+            "shippingMobile": order.shipping_mobile,
+            "shippingProvince": order.shipping_province,
+            "shippingCity": order.shipping_city,
+            "shippingAddressLine": order.shipping_address_line,
+            "shippingPostalCode": order.shipping_postal_code,
+        }
+        try:
+            order_services.admin_update_shipping_address(
+                order=order,
+                recipient_name=str(data.get("recipient_name", "") or "").strip(),
+                mobile=mobile,
+                province=str(data.get("shipping_province", "") or "").strip(),
+                city=str(data.get("shipping_city", "") or "").strip(),
+                address_line=str(data.get("shipping_address_line", "") or "").strip(),
+                postal_code=data.get("shipping_postal_code") or None,
+            )
+        except CheckoutError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        log_admin_action(
+            user=request.user,
+            action="update_shipping_address",
+            model_name="Order",
+            object_id=order.pk,
+            changes={
+                "before": before,
+                "after": {
+                    "shippingRecipientName": order.shipping_recipient_name,
+                    "shippingMobile": order.shipping_mobile,
+                    "shippingProvince": order.shipping_province,
+                    "shippingCity": order.shipping_city,
+                    "shippingAddressLine": order.shipping_address_line,
+                    "shippingPostalCode": order.shipping_postal_code,
+                },
+            },
+        )
+        order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
+        return Response(AdminOrderSerializer(order).data)
+
+
+class AdminOrderReplaceItemView(APIView):
+    """درخواست مدیر — محصولی که مشتری خریده باید با محصول دیگری جایگزین شود
+    (فاکتور هم باید درست شود). فقط تا قبل از SHIPPED (ر.ک.
+    order_services.admin_replace_order_item) — بعد از آن موجودی واقعاً کسر
+    شده و این دیگر «اصلاح قبل از ارسال» نیست."""
+
+    permission_classes = [require_section("orders", action="edit")]
+
+    def post(self, request, pk, item_id):
+        order = get_object_or_404(Order, pk=pk)
+        item = get_object_or_404(OrderItem, pk=item_id, order=order)
+        data = request.data
+        try:
+            new_variant_id = int(data["variant_id"])
+        except (KeyError, TypeError, ValueError):
+            return Response({"detail": "محصول جدید نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            quantity = int(data.get("quantity", item.quantity))
+        except (TypeError, ValueError):
+            return Response({"detail": "تعداد نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+        unit_price = data.get("unit_price")
+        try:
+            unit_price = int(unit_price) if unit_price not in (None, "") else None
+        except (TypeError, ValueError):
+            return Response({"detail": "قیمت واحد نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+        before = {
+            "variantId": item.variant_id,
+            "productName": item.product_name_snapshot,
+            "sku": item.sku_snapshot,
+            "unitPrice": item.unit_price,
+            "quantity": item.quantity,
+        }
+        try:
+            order_services.admin_replace_order_item(
+                staff_user=request.user,
+                order=order,
+                item=item,
+                new_variant_id=new_variant_id,
+                quantity=quantity,
+                unit_price=unit_price,
+                grade=str(data.get("grade") or "").strip(),
+                battery_health_percent=(
+                    int(data["battery_health_percent"])
+                    if data.get("battery_health_percent") not in (None, "")
+                    else None
+                ),
+                battery_cycle_count=(
+                    int(data["battery_cycle_count"]) if data.get("battery_cycle_count") not in (None, "") else None
+                ),
+                storage_health_percent=(
+                    int(data["storage_health_percent"])
+                    if data.get("storage_health_percent") not in (None, "")
+                    else None
+                ),
+            )
+        except InsufficientStockCheckoutError as exc:
+            return Response(
+                {"detail": "موجودی محصول جدید کافی نیست.", "shortages": exc.shortages},
+                status=status.HTTP_409_CONFLICT,
+            )
+        except CheckoutError as exc:
+            return Response({"detail": exc.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        item.refresh_from_db()
+        log_admin_action(
+            user=request.user,
+            action="replace_order_item",
+            model_name="OrderItem",
+            object_id=item.pk,
+            changes={
+                "before": before,
+                "after": {
+                    "variantId": item.variant_id,
+                    "productName": item.product_name_snapshot,
+                    "sku": item.sku_snapshot,
+                    "unitPrice": item.unit_price,
+                    "quantity": item.quantity,
+                },
+            },
+        )
+        order = Order.objects.select_related("user", "shipment").prefetch_related(*ORDER_PREFETCH).get(pk=order.pk)
+        return Response(AdminOrderSerializer(order).data)
 
 
 class AdminManualOrderCreateView(APIView):

@@ -284,6 +284,53 @@ export async function getOrder(id: string): Promise<AdminOrder> {
   return parseOrThrow(res, "دریافت سفارش ناموفق بود.");
 }
 
+/** درخواست مدیر — آدرس اشتباه‌ثبت‌شده روی سفارش پرداخت‌شده قابل اصلاح باشد. */
+export async function updateOrderAddress(
+  id: string,
+  body: {
+    mobile: string;
+    recipientName: string;
+    shippingProvince: string;
+    shippingCity: string;
+    shippingAddressLine: string;
+    shippingPostalCode?: string;
+  },
+): Promise<AdminOrder> {
+  const res = await authorizedFetch(`/orders/${id}/address/`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "ویرایش آدرس ناموفق بود."));
+  return res.json();
+}
+
+/** درخواست مدیر — جایگزینی محصول یک قلم سفارش با محصول دیگر (فاکتور هم اصلاح می‌شود). */
+export async function replaceOrderItem(
+  orderId: string,
+  itemId: number,
+  body: {
+    variantId: string;
+    quantity: number;
+    unitPrice?: number;
+    grade?: string;
+    batteryHealthPercent?: number;
+    batteryCycleCount?: number;
+    storageHealthPercent?: number;
+  },
+): Promise<AdminOrder> {
+  const res = await authorizedFetch(
+    `/orders/${orderId}/items/${itemId}/replace/`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+  if (!res.ok)
+    throw new Error(await readErrorDetail(res, "جایگزینی محصول ناموفق بود."));
+  return res.json();
+}
+
 /** F-01 §۳ — یک مسیر برای همه‌ی گذارهای دستی؛ SHIPPED شرکت ارسال و کد رهگیری می‌خواهد. */
 export async function transitionOrder(
   id: string,
